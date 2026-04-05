@@ -1,0 +1,127 @@
+import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../../shared/types.js";
+import { levels } from "../data/store.js";
+import { HttpError } from "../lib/http.js";
+
+const now = () => new Date().toISOString();
+type CreateLevelServiceInput = {
+  title: CreateLevelInput["title"];
+  data: CreateLevelInput["data"];
+  description?: string | undefined;
+  tags?: CreateLevelInput["tags"] | undefined;
+};
+
+export class LevelService {
+  createLevel(authorId: string, input: CreateLevelServiceInput): Level {
+    const timestamp = now();
+    const level: Level = {
+      id: `level-${levels.length + 1}`,
+      title: input.title,
+      description: input.description ?? "",
+      tags: input.tags ?? [],
+      data: input.data,
+      authorId,
+      status: "draft",
+      averageRating: 0,
+      ratingCount: 0,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    levels.push(level);
+    return level;
+  }
+
+  getLevelById(levelId: string): Level {
+    const level = levels.find((candidate) => candidate.id === levelId);
+    if (!level) {
+      throw new HttpError(404, "LEVEL_NOT_FOUND", "Level not found");
+    }
+    return level;
+  }
+
+  getPublishedLevels(options?: { tag?: LevelTag; sort?: PublishedLevelsSort }): Level[] {
+    const tag = options?.tag;
+    const sort = options?.sort ?? "newest";
+
+    return levels
+      .filter((level) => level.status === "published" && (tag === undefined || level.tags.includes(tag)))
+      .sort((left, right) => {
+        switch (sort) {
+          case "highestRated":
+            return (
+              right.averageRating - left.averageRating ||
+              right.ratingCount - left.ratingCount ||
+              right.createdAt.localeCompare(left.createdAt)
+            );
+          case "mostRated":
+            return (
+              right.ratingCount - left.ratingCount ||
+              right.averageRating - left.averageRating ||
+              right.createdAt.localeCompare(left.createdAt)
+            );
+          case "newest":
+          default:
+            return right.createdAt.localeCompare(left.createdAt);
+        }
+      });
+  }
+
+  ensureLevelOwnedByDesigner(levelId: string, designerId: string): Level {
+    const level = this.getLevelById(levelId);
+    if (level.authorId !== designerId) {
+      throw new HttpError(403, "FORBIDDEN", "Cannot submit another designer's level");
+    }
+    return level;
+  }
+
+  markPendingReview(levelId: string): Level {
+    const level = this.getLevelById(levelId);
+    if (level.status !== "draft" && level.status !== "rejected") {
+      throw new HttpError(409, "INVALID_LEVEL_STATUS", "Level cannot be submitted in current status");
+    }
+
+    level.status = "pending_review";
+    delete level.rejectionReason;
+    level.updatedAt = now();
+    return level;
+  }
+
+  publishLevel(levelId: string): Level {
+    const level = this.getLevelById(levelId);
+    if (level.status !== "pending_review") {
+      throw new HttpError(409, "INVALID_LEVEL_STATUS", "Only pending levels can be approved");
+    }
+
+    const timestamp = now();
+    level.status = "published";
+    level.publishedAt = timestamp;
+    level.updatedAt = timestamp;
+    return level;
+  }
+
+  rejectLevel(levelId: string, reason?: string): Level {
+    const level = this.getLevelById(levelId);
+    if (level.status !== "pending_review") {
+      throw new HttpError(409, "INVALID_LEVEL_STATUS", "Only pending levels can be rejected");
+    }
+
+    level.status = "rejected";
+    if (reason) {
+      level.rejectionReason = reason;
+    } else {
+      delete level.rejectionReason;
+    }
+    level.updatedAt = now();
+    return level;
+  }
+
+  updateRatingSummary(levelId: string, averageRating: number, ratingCount: number): Level {
+    const level = this.getLevelById(levelId);
+    level.averageRating = averageRating;
+    level.ratingCount = ratingCount;
+    level.updatedAt = now();
+    return level;
+  }
+}
+
+export const levelService = new LevelService();
