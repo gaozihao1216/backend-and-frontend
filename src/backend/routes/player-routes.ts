@@ -23,6 +23,7 @@ export const playerRouter = Router();
 playerRouter.use(requireRole("player"));
 
 playerRouter.get("/levels", (req, res) => {
+  // 玩家端关卡列表支持按标签和排序方式筛选。
   const query = parseOrThrow(PublishedLevelsQuerySchema, req.query);
   const options = {
     ...(query.tag ? { tag: query.tag } : {}),
@@ -38,6 +39,7 @@ playerRouter.get("/levels/:levelId", (req, res) => {
   const params = parseOrThrow(LevelIdParamsSchema, req.params);
   const level = levelService.getLevelById(params.levelId);
   if (level.status !== "published") {
+    // 对玩家来说，未发布关卡应该表现得像不存在，而不是泄露其真实状态。
     throw new HttpError(404, "LEVEL_NOT_FOUND", "Published level not found");
   }
   res.json(success(parseOrThrow(LevelSchema, level)));
@@ -81,6 +83,7 @@ playerRouter.get("/favorites", (req, res) => {
       ...favorite,
       level: levelService.getLevelById(favorite.levelId),
     }))
+    // 收藏列表只展示仍然处于 published 的关卡，避免历史收藏露出无效数据。
     .filter((favorite) => favorite.level.status === "published")
     .map((favorite) => parseOrThrow(FavoriteWithLevelSchema, favorite));
   res.json(success(favoriteEntries));

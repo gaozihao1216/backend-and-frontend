@@ -3,6 +3,7 @@ import { IdSchema, IsoDateTimeSchema, UserRoleSchema } from "./common.js";
 import { CommentSchema } from "./comment.js";
 import { LevelSchema } from "./level.js";
 
+// User 使用按 role 判别的联合类型，前后端都能基于 role 做类型收窄。
 export const BaseUserSchema = z.object({
   id: IdSchema,
   username: z.string().min(3).max(32),
@@ -47,6 +48,7 @@ export const UserProfileSchema = z.object({
 });
 
 export const BindBackendUserInputSchema = z.object({
+  // localUserId 是前端本地身份标识，不直接暴露为后端用户 id。
   localUserId: z.string().trim().min(1).max(64),
   nickname: z.string().trim().min(2).max(20),
   role: UserRoleSchema,

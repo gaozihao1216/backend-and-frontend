@@ -1,5 +1,5 @@
 import type { CreateRatingInput, Rating } from "../../shared/types.js";
-import { ratings } from "../data/store.js";
+import { ratings, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 import { levelService } from "./level-service.js";
 
@@ -18,9 +18,11 @@ export class RatingService {
     );
 
     if (existingRating) {
+      // 同一玩家对同一关卡只保留一条评分记录；再次评分视为更新而不是新增。
       existingRating.score = input.score;
       existingRating.updatedAt = timestamp;
       this.refreshLevelSummary(levelId);
+      saveStore();
       return existingRating;
     }
 
@@ -35,6 +37,7 @@ export class RatingService {
 
     ratings.push(rating);
     this.refreshLevelSummary(levelId);
+    saveStore();
     return rating;
   }
 
@@ -42,6 +45,7 @@ export class RatingService {
     const levelRatings = ratings.filter((rating) => rating.levelId === levelId);
     const ratingCount = levelRatings.length;
     const total = levelRatings.reduce((sum, rating) => sum + rating.score, 0);
+    // 保留两位小数，避免前端每次都自己再做一遍平均值和格式化。
     const averageRating = ratingCount === 0 ? 0 : Number((total / ratingCount).toFixed(2));
 
     levelService.updateRatingSummary(levelId, averageRating, ratingCount);

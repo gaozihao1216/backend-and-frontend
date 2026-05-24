@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { type AuthRole, type AuthUser } from "../lib/auth.js";
 import { BackendBindingPanel } from "./BackendBindingPanel.js";
+import { LevelPreviewCard } from "./game/LevelPreviewCard.js";
 import { AdminCommunityPage } from "../pages/AdminCommunityPage.js";
 import { AdminPage } from "../pages/AdminPage.js";
 import { DesignerBirdLabPage } from "../pages/DesignerBirdLabPage.js";
@@ -8,11 +9,13 @@ import { DesignerPage } from "../pages/DesignerPage.js";
 import { PlayerPage } from "../pages/PlayerPage.js";
 import { PlayerCommunityPage } from "../pages/PlayerCommunityPage.js";
 import { UserProfilePage } from "../pages/UserProfilePage.js";
+import { getStarterLevelSource } from "../lib/level-repository.js";
 
 type RoleHomePageProps = {
   user: AuthUser;
   onOpenSettings: () => void;
   onUserUpdated: (user: AuthUser) => void;
+  onOpenDesignerDesign?: () => void;
 };
 
 type DetailView =
@@ -410,7 +413,12 @@ const renderDetailContent = (
   }
 };
 
-export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePageProps) => {
+export const RoleHomePage = ({
+  user,
+  onOpenSettings,
+  onUserUpdated,
+  onOpenDesignerDesign,
+}: RoleHomePageProps) => {
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{
     active: boolean;
@@ -437,8 +445,10 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
   const [shopItems, setShopItems] = useState<ShopItem[]>(() => createShopInventory(0));
   const [shopMessage, setShopMessage] = useState("");
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
+  const [playingLevelId, setPlayingLevelId] = useState<string | null>(null);
   const isShopOverlayOpen = detailView === "player-shop";
   const selectedLevel = chainLevels.find((level) => level.id === selectedLevelId) ?? null;
+  const playingLevel = chainLevels.find((level) => level.id === playingLevelId) ?? null;
 
   useEffect(() => {
     const viewport = mapViewportRef.current;
@@ -451,6 +461,12 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
   }, []);
 
   const openDetail = (nextView: Exclude<DetailView, null>) => {
+    if (nextView === "designer-map") {
+      onOpenDesignerDesign?.();
+      setActionOpen(false);
+      return;
+    }
+
     setDetailView(nextView);
     setActionOpen(false);
   };
@@ -512,6 +528,7 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
 
   const openLevelOverlay = (levelId: string) => {
     setSelectedLevelId(levelId);
+    setPlayingLevelId(null);
     setActionOpen(false);
     setStatusOpen(false);
   };
@@ -551,6 +568,20 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
 
   const stopMapDragging = () => {
     dragStateRef.current.active = false;
+  };
+
+  const closeLevelOverlay = () => {
+    setSelectedLevelId(null);
+    setPlayingLevelId(null);
+  };
+
+  const startLevelDemo = (levelId: string) => {
+    setSelectedLevelId(null);
+    setPlayingLevelId(levelId);
+  };
+
+  const exitLevelDemo = () => {
+    setPlayingLevelId(null);
   };
 
   return (
@@ -742,7 +773,7 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
                   <button
                     type="button"
                     className="secondary"
-                    onClick={() => setSelectedLevelId(null)}
+                    onClick={closeLevelOverlay}
                   >
                     关闭介绍
                   </button>
@@ -751,7 +782,7 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
                 <div className="level-overlay-content">
                   <section className="level-preview-card">
                     <div className="level-preview-sheet">
-                      <span>白纸简略图</span>
+                      <span>{selectedLevel.id === "01" ? "点击右侧“开始游戏”进入试玩" : "白纸简略图"}</span>
                     </div>
                   </section>
 
@@ -769,16 +800,42 @@ export const RoleHomePage = ({ user, onOpenSettings, onUserUpdated }: RoleHomePa
                     <button
                       type="button"
                       disabled={selectedLevel.status === "locked"}
-                      onClick={() =>
-                        setShopMessage(
-                          selectedLevel.status === "locked"
-                            ? "该关卡尚未解锁"
-                            : `准备进入 ${selectedLevel.title}`,
-                        )
-                      }
+                      onClick={() => {
+                        if (selectedLevel.status === "locked") {
+                          setShopMessage("该关卡尚未解锁");
+                          return;
+                        }
+
+                        if (selectedLevel.id === "01") {
+                          startLevelDemo(selectedLevel.id);
+                          return;
+                        }
+
+                        setShopMessage(`准备进入 ${selectedLevel.title}`);
+                      }}
                     >
                       开始游戏
                     </button>
+                  </section>
+                </div>
+              </section>
+            </div>
+          ) : null}
+
+          {playingLevel ? (
+            <div className="level-overlay-backdrop" role="presentation">
+              <section className="level-overlay-panel game-overlay-panel" aria-label={`游戏 ${playingLevel.title}`}>
+                <div className="level-overlay-content game-overlay-content">
+                  <section className="level-preview-card level-preview-card-full game-preview-card">
+                    <div className="game-canvas-frame">
+                      {playingLevel.id === "01" ? (
+                        <LevelPreviewCard
+                          source={getStarterLevelSource()}
+                          defaultOpen
+                          onExit={exitLevelDemo}
+                        />
+                      ) : null}
+                    </div>
                   </section>
                 </div>
               </section>

@@ -1,3 +1,5 @@
+// shared/types.ts 是整个项目的“统一出口”：
+// 前端、后端都只需要从这里 import，即可拿到 schema 和对应类型。
 export * from "./schemas/common.js";
 export * from "./schemas/user.js";
 export * from "./schemas/level.js";

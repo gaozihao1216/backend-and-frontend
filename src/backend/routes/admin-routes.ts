@@ -5,10 +5,12 @@ import {
   ReviewSubmissionInputSchema,
   SubmissionIdParamsSchema,
   SubmissionSchema,
+  SubmissionWithLevelSchema,
 } from "../../shared/types.js";
 import { getCurrentUser, parseOrThrow, success } from "../lib/http.js";
 import { commentService } from "../services/comment-service.js";
 import { requireRole } from "../middleware/auth.js";
+import { levelService } from "../services/level-service.js";
 import { submissionService } from "../services/submission-service.js";
 
 export const adminRouter = Router();
@@ -16,6 +18,7 @@ export const adminRouter = Router();
 adminRouter.use(requireRole("admin"));
 
 adminRouter.get("/comments", (_req, res) => {
+  // 管理员查看的是全量评论，因此不做按关卡过滤。
   const comments = commentService
     .getAllComments()
     .map((comment) => parseOrThrow(CommentSchema, comment));
@@ -29,9 +32,14 @@ adminRouter.delete("/comments/:commentId", (req, res) => {
 });
 
 adminRouter.get("/submissions/pending", (_req, res) => {
-  const pending = submissionService.getPendingSubmissions().map((submission) =>
-    parseOrThrow(SubmissionSchema, submission),
-  );
+  // 这里顺手把 submission 关联的 level 拼出来，方便前端审核页直接展示。
+  const pending = submissionService.getPendingSubmissions().map((submission) => {
+    const level = levelService.getLevelById(submission.levelId);
+    return parseOrThrow(SubmissionWithLevelSchema, {
+      ...submission,
+      level,
+    });
+  });
   res.json(success(pending));
 });
 

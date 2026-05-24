@@ -1,8 +1,10 @@
 import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../../shared/types.js";
-import { levels } from "../data/store.js";
+import { levels, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 
 const now = () => new Date().toISOString();
+
+// Service 层不直接依赖 Express，请求上下文相关的信息应在路由层先解析完。
 type CreateLevelServiceInput = {
   title: CreateLevelInput["title"];
   data: CreateLevelInput["data"];
@@ -28,6 +30,7 @@ export class LevelService {
     };
 
     levels.push(level);
+    saveStore();
     return level;
   }
 
@@ -43,6 +46,7 @@ export class LevelService {
     const tag = options?.tag;
     const sort = options?.sort ?? "newest";
 
+    // 先过滤 published，再按约定的优先级排序，保证前端展示稳定。
     return levels
       .filter((level) => level.status === "published" && (tag === undefined || level.tags.includes(tag)))
       .sort((left, right) => {
@@ -83,6 +87,7 @@ export class LevelService {
     level.status = "pending_review";
     delete level.rejectionReason;
     level.updatedAt = now();
+    saveStore();
     return level;
   }
 
@@ -92,10 +97,12 @@ export class LevelService {
       throw new HttpError(409, "INVALID_LEVEL_STATUS", "Only pending levels can be approved");
     }
 
+    // 发布时间单独记录，便于后续做“新发布”相关排序或展示。
     const timestamp = now();
     level.status = "published";
     level.publishedAt = timestamp;
     level.updatedAt = timestamp;
+    saveStore();
     return level;
   }
 
@@ -112,6 +119,7 @@ export class LevelService {
       delete level.rejectionReason;
     }
     level.updatedAt = now();
+    saveStore();
     return level;
   }
 
@@ -120,6 +128,7 @@ export class LevelService {
     level.averageRating = averageRating;
     level.ratingCount = ratingCount;
     level.updatedAt = now();
+    saveStore();
     return level;
   }
 }

@@ -14,6 +14,7 @@ import {
   RatingSchema,
   ReviewSubmissionInputSchema,
   SubmissionSchema,
+  SubmissionWithLevelSchema,
   UserSchema,
   UserProfileSchema,
   createSuccessResponseSchema,
@@ -29,11 +30,16 @@ import {
   type PublishedLevelsSort,
   type ReviewSubmissionInput,
   type Submission,
+  type SubmissionWithLevel,
   type User,
   type UserProfile,
 } from "../../shared/types.js";
 import { API_BASE_URL } from "./config.js";
 
+// 前端请求层统一负责三件事：
+// 1. 请求前做输入校验
+// 2. 响应后做结构校验
+// 3. 把网络/超时/非 JSON 错误转成可读错误消息
 const JsonHeadersSchema = z.record(z.string(), z.string());
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -44,6 +50,7 @@ const parseApiResponse = async <T>(
   const rawBody = await response.text();
   const contentType = response.headers.get("content-type") ?? "unknown";
 
+  // 后端如果返回空体，前端无法判断是成功还是失败，这里直接抛出明确错误。
   if (rawBody.trim().length === 0) {
     throw new Error(
       `Backend returned an empty response (${response.status} ${response.statusText}) for ${response.url || "the request"}.`,
@@ -54,12 +61,14 @@ const parseApiResponse = async <T>(
   try {
     payload = JSON.parse(rawBody) as unknown;
   } catch {
+    // 这里专门拦截 HTML 报错页、纯文本报错等“看起来不是接口响应”的情况。
     throw new Error(
       `Backend returned a non-JSON response (${response.status} ${response.statusText}, content-type: ${contentType}).`,
     );
   }
 
   if (!response.ok) {
+    // 如果错误响应也符合统一 error schema，就优先把业务错误消息透给 UI。
     const error = ErrorResponseSchema.safeParse(payload);
     if (error.success) {
       throw new Error(error.data.error.message);
@@ -85,6 +94,7 @@ const request = async <T>(
   const requestUrl = `${API_BASE_URL}${path}`;
   let response: Response;
   const abortController = new AbortController();
+  // 所有请求统一带超时，防止页面长时间挂起在 pending 状态。
   const timeoutId = window.setTimeout(() => {
     abortController.abort();
   }, REQUEST_TIMEOUT_MS);
@@ -105,6 +115,7 @@ const request = async <T>(
     const target = API_BASE_URL || "the current frontend origin";
     const message =
       error instanceof Error ? error.message : "Unknown network error";
+    // 这里把“后端没启动 / 代理没配 / 环境变量没配”的常见问题写得更直白。
     throw new Error(
       `Cannot reach backend via ${target}. Start the backend on http://localhost:3000 and use the Vite dev server proxy, or set VITE_API_BASE_URL. Original error: ${message}`,
     );
@@ -143,14 +154,14 @@ export const submitLevel = async (
     SubmissionSchema,
   );
 
-export const getPendingSubmissions = async (userId: string): Promise<Submission[]> =>
+export const getPendingSubmissions = async (userId: string): Promise<SubmissionWithLevel[]> =>
   request(
     "/admin/submissions/pending",
     {
       method: "GET",
       headers: { "x-user-id": userId },
     },
-    z.array(SubmissionSchema),
+    z.array(SubmissionWithLevelSchema),
   );
 
 export const reviewSubmission = async (
@@ -173,6 +184,7 @@ export const getPublishedLevels = async (
   options?: { tag?: LevelTag; sort?: PublishedLevelsSort },
 ): Promise<Level[]> => {
   const params = new URLSearchParams();
+  // 查询参数同样先过 schema，避免前端拼出无效值。
   if (options?.tag) {
     params.set("tag", LevelTagSchema.parse(options.tag));
   }
@@ -295,6 +307,15 @@ export const getUserProfile = async (
     UserProfileSchema,
   );
 
+export const getBackendUsers = async (): Promise<User[]> =>
+  request(
+    "/users",
+    {
+      method: "GET",
+    },
+    z.array(UserSchema),
+  );
+
 export const bindBackendUser = async (input: {
   localUserId: string;
   nickname: string;
@@ -321,6 +342,14 @@ export const createDefaultLevelInput = (): CreateLevelInput => ({
       width: 1200,
       height: 800,
       gravity: 9.8,
+    },
+    ground: {
+      type: "line",
+      points: [
+        { x: 0, y: 752 },
+        { x: 600, y: 752 },
+        { x: 1200, y: 752 },
+      ],
     },
     birdInventory: {
       basic: 3,

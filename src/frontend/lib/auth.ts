@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bindBackendUser } from "./api.js";
+import { bindBackendUser, getBackendUsers } from "./api.js";
 import type { FrontendRole } from "./config.js";
 
 export const INVITE_CODE = "66260696";
@@ -417,7 +417,10 @@ export const attachApiUserIdToAuthUser = (userId: string, apiUserId: string): Au
 export const ensureBackendBoundAuthUser = async (user: AuthUser): Promise<AuthUser> => {
   const boundApiUserId = getBoundApiUserId(user);
   if (boundApiUserId) {
-    return user;
+    const backendUsers = await getBackendUsers();
+    if (backendUsers.some((candidate) => candidate.id === boundApiUserId && candidate.role === user.role)) {
+      return user;
+    }
   }
 
   const backendUser = await bindBackendUser({
@@ -495,7 +498,7 @@ export const loginWithLocalAuth = (input: LoginInput): ValidationResult<AuthUser
   };
 };
 
-export const registerWithLocalAuth = (input: RegisterInput): ValidationResult<AuthUser> => {
+export const registerWithLocalAuth = async (input: RegisterInput): Promise<ValidationResult<AuthUser>> => {
   const validated = validateRegisterInput(input);
   if (!validated.success) {
     return validated;
@@ -524,6 +527,35 @@ export const registerWithLocalAuth = (input: RegisterInput): ValidationResult<Au
 
   authUsers = [...authUsers, created];
   persistAuthUsers();
+
+  if (validated.data.role === "designer" || validated.data.role === "admin") {
+    try {
+      const backendUser = await bindBackendUser({
+        localUserId: created.id,
+        nickname: created.nickname,
+        role: created.role,
+      });
+      const boundUser = attachApiUserIdToAuthUser(created.id, backendUser.id);
+
+      if (!boundUser) {
+        throw new Error("Failed to attach backend account");
+      }
+
+      return {
+        success: true,
+        data: boundUser,
+      };
+    } catch (error) {
+      // 让“注册”和“后端账号分配”保持同一事务感知，失败时回滚本地账号，避免留下半完成状态。
+      authUsers = authUsers.filter((candidate) => candidate.id !== created.id);
+      persistAuthUsers();
+
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "创建后端账号失败",
+      };
+    }
+  }
 
   return {
     success: true,

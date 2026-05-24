@@ -78,7 +78,7 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
       await finalizeAuthentication(result.data);
       setMessage(`欢迎回来，${result.data.nickname}`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "绑定后端账号失败");
+      setError(caught instanceof Error ? caught.message : "同步后端账号失败");
     } finally {
       setSubmitting(false);
     }
@@ -100,19 +100,21 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
             inviteCode,
           };
 
-    const result = registerWithLocalAuth(input);
-    if (!result.success) {
-      setError(result.message);
-      return;
-    }
-
     setSubmitting(true);
 
     try {
-      await finalizeAuthentication(result.data);
+      const result = await registerWithLocalAuth(input);
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+
+      const authenticatedUser =
+        result.data.apiUserId ? result.data : await ensureBackendBoundAuthUser(result.data);
+      onAuthenticated(authenticatedUser);
       setMessage(`注册成功，已进入${roleNames[result.data.role]}主页`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "绑定后端账号失败");
+      setError(caught instanceof Error ? caught.message : "创建或同步后端账号失败");
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +128,7 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
         <p className="eyebrow">Three Roles</p>
         <h1>选择身份后登录或注册，进入对应的主界面</h1>
         <p className="hero-copy">
-          当前阶段只实现前端认证交互。登录后将根据身份切换到玩家、设计师或管理员主页。
+          本地账号会保存在浏览器中；新注册的设计师和管理员会自动开通后端账号，登录后可直接进入对应主页。
         </p>
         <div className="role-cards">
           {(Object.keys(API_USERS) as FrontendRole[]).map((candidate) => (
@@ -163,7 +165,9 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
 
         <p className="panel-copy">
           当前身份：{roleNames[role]}。
-          {mode === "register" ? "设计师与管理员需输入验证码 66260696" : "请输入昵称和密码完成登录"}
+          {mode === "register"
+            ? "设计师与管理员需输入验证码 66260696，注册成功后会自动开通对应后端账号"
+            : "请输入昵称和密码完成登录"}
         </p>
 
         <label>

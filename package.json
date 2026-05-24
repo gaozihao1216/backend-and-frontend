@@ -11,16 +11,19 @@
     "start": "node dist/backend/server.js",
     "build": "tsc -p tsconfig.json && vite build",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test src/**/*.test.ts"
+    "test": "node --import tsx --test src/**/*.test.ts",
+    "demo:fracture": "node --import tsx src/frontend/game/fracture-demo.ts"
   },
   "dependencies": {
     "express": "^4.21.2",
+    "matter-js": "^0.20.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
+    "@types/matter-js": "^0.20.2",
     "@types/node": "^22.13.10",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

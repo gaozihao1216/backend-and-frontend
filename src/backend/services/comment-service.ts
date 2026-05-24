@@ -1,5 +1,5 @@
 import type { Comment, CreateCommentInput } from "../../shared/types.js";
-import { comments } from "../data/store.js";
+import { comments, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 import { levelService } from "./level-service.js";
 
@@ -13,6 +13,7 @@ export class CommentService {
     }
 
     return comments
+      // 评论默认按时间倒序返回，方便页面直接显示“最新在前”。
       .filter((comment) => comment.levelId === levelId)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
@@ -24,6 +25,7 @@ export class CommentService {
   createComment(playerId: string, levelId: string, input: CreateCommentInput): Comment {
     const level = levelService.getLevelById(levelId);
     if (level.status !== "published") {
+      // 只有已发布关卡才能产生玩家互动，草稿和待审关卡对玩家不可见。
       throw new HttpError(409, "LEVEL_NOT_PUBLISHED", "Only published levels can receive comments");
     }
 
@@ -36,6 +38,7 @@ export class CommentService {
     };
 
     comments.push(comment);
+    saveStore();
     return comment;
   }
 
@@ -51,6 +54,7 @@ export class CommentService {
     }
 
     comments.splice(index, 1);
+    saveStore();
     return deleted;
   }
 }

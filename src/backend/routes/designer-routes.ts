@@ -12,9 +12,11 @@ import { submissionService } from "../services/submission-service.js";
 
 export const designerRouter = Router();
 
+// 设计师路由统一先过角色校验，后面的 handler 默认都基于“当前用户是 designer”。
 designerRouter.use(requireRole("designer"));
 
 designerRouter.post("/levels", (req, res) => {
+  // 路由层只做参数解析与响应封装，真正的业务逻辑下沉到 service。
   const input = parseOrThrow(CreateLevelInputSchema, req.body);
   const currentUser = getCurrentUser(req);
   const level = levelService.createLevel(currentUser.id, input);
@@ -25,6 +27,7 @@ designerRouter.post("/levels", (req, res) => {
 designerRouter.post("/submissions", (req, res) => {
   const input = parseOrThrow(SubmitLevelInputSchema, req.body);
   const currentUser = getCurrentUser(req);
+  // 提交前先确认关卡归属，避免设计师替别人提交。
   levelService.ensureLevelOwnedByDesigner(input.levelId, currentUser.id);
   const submission = submissionService.submitLevel(input.levelId, currentUser.id);
   const response = success(parseOrThrow(SubmissionSchema, submission));

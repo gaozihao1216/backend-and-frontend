@@ -20,10 +20,10 @@ export const BackendBindingPanel = ({ title, user, onBound }: BackendBindingPane
     try {
       const updatedUser = await ensureBackendBoundAuthUser(user);
 
-      setMessage(`已绑定后端账号 ${updatedUser.apiUserId}`);
+      setMessage(`已同步后端账号 ${updatedUser.apiUserId}`);
       onBound(updatedUser);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "绑定后端账号失败");
+      setError(caught instanceof Error ? caught.message : "同步后端账号失败");
     } finally {
       setBinding(false);
     }
@@ -33,10 +33,10 @@ export const BackendBindingPanel = ({ title, user, onBound }: BackendBindingPane
     <section className="panel">
       <h2>{title}</h2>
       <p className="panel-copy">
-        当前账号 {user.nickname} 是前端本地注册账号，尚未绑定后端用户。完成绑定后即可使用完整社区功能。
+        当前账号 {user.nickname} 还没有可用的后端身份。新注册的设计师和管理员会自动开通后端账号；如果这是旧账号，只需补做一次同步即可继续使用完整功能。
       </p>
       <button type="button" onClick={() => void handleBind()} disabled={binding}>
-        {binding ? "Binding..." : "Bind Backend Account"}
+        {binding ? "同步中..." : "同步后端账号"}
       </button>
       {message ? <p className="feedback success">{message}</p> : null}
       {error ? <p className="feedback error">{error}</p> : null}

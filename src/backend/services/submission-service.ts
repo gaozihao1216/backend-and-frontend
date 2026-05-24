@@ -1,5 +1,5 @@
 import type { ReviewSubmissionInput, Submission } from "../../shared/types.js";
-import { submissions } from "../data/store.js";
+import { saveStore, submissions } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 import { levelService } from "./level-service.js";
 
@@ -7,6 +7,7 @@ const now = () => new Date().toISOString();
 
 export class SubmissionService {
   submitLevel(levelId: string, submitterId: string): Submission {
+    // 同一个关卡在同一时刻只允许存在一个待审核 submission，避免管理端重复处理。
     const existingPending = submissions.find(
       (submission) =>
         submission.levelId === levelId && submission.status === "pending_review",
@@ -27,6 +28,7 @@ export class SubmissionService {
     };
 
     submissions.push(submission);
+    saveStore();
     return submission;
   }
 
@@ -58,12 +60,14 @@ export class SubmissionService {
     }
     submission.reviewedAt = now();
 
+    // submission 状态和 level 状态必须同步推进，否则前后台会出现状态不一致。
     if (input.status === "approved") {
       levelService.publishLevel(submission.levelId);
     } else {
       levelService.rejectLevel(submission.levelId, input.reviewNote);
     }
 
+    saveStore();
     return submission;
   }
 }

@@ -1,5 +1,5 @@
 import type { BindBackendUserInput, User, UserProfile } from "../../shared/types.js";
-import { comments, favorites, levels, ratings, users } from "../data/store.js";
+import { comments, favorites, levels, ratings, saveStore, users } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 
 const now = () => new Date().toISOString();
@@ -13,6 +13,7 @@ const createBoundUsername = (role: BindBackendUserInput["role"], localUserId: st
   }
 
   const suffix = hash.toString(USERNAME_HASH_RADIX).padStart(7, "0");
+  // 绑定后的用户名是可重复推导的，这样同一个本地账号重复绑定时能命中同一后端用户。
   return `local-${role}-${suffix}`;
 };
 
@@ -34,6 +35,7 @@ export class UserService {
 
     return {
       user,
+      // 这里只返回公开可展示的概要信息，而不是把用户相关所有数据都塞回去。
       publishedLevels: levels
         .filter((level) => level.authorId === userId && level.status === "published")
         .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
@@ -52,6 +54,7 @@ export class UserService {
     const username = createBoundUsername(input.role, input.localUserId);
     const existing = users.find((candidate) => candidate.username === username);
     if (existing) {
+      // 同一 localUserId + role 的绑定请求应复用旧用户，避免重复创建。
       return existing;
     }
 
@@ -67,6 +70,7 @@ export class UserService {
     };
 
     users.push(user);
+    saveStore();
     return user;
   }
 }

@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { getPendingSubmissions, reviewSubmission } from "../lib/api.js";
+import { LevelPreviewCard } from "../components/game/LevelPreviewCard.js";
 import { API_USERS } from "../lib/config.js";
-import type { Submission } from "../../shared/types.js";
+import { createSubmissionLevelSource } from "../lib/level-repository.js";
+import { STARTER_LEVEL_ID } from "../../shared/levels/index.js";
+import type { SubmissionWithLevel } from "../../shared/types.js";
 
 type AdminPageProps = {
   userId?: string;
 };
 
 export const AdminPage = ({ userId = API_USERS.admin.id }: AdminPageProps) => {
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionWithLevel[]>([]);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -71,6 +74,10 @@ export const AdminPage = ({ userId = API_USERS.admin.id }: AdminPageProps) => {
             </div>
             <p className="meta">Level ID: {submission.levelId}</p>
             <p className="meta">Submitter ID: {submission.submitterId}</p>
+            <LevelPreviewCard
+              source={createSubmissionLevelSource(submission.level)}
+              defaultOpen={submission.levelId === STARTER_LEVEL_ID}
+            />
             <label>
               <span>Review Note</span>
               <textarea

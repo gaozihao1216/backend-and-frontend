@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { IdSchema, IsoDateTimeSchema, LevelStatusSchema } from "./common.js";
 
+// 这些 tag/sort 枚举既服务于前端筛选 UI，也服务于后端查询校验。
 export const LevelTagSchema = z.enum([
   "puzzle",
   "hard",
@@ -27,6 +28,33 @@ export const PositionSchema = z.object({
   y: z.number(),
 });
 
+export const GroundLineSchema = z.object({
+  type: z.literal("line"),
+  points: z.array(PositionSchema).min(2),
+});
+
+export const GroundBezierSchema = z.object({
+  type: z.literal("bezier"),
+  controlPoints: z.array(PositionSchema).min(3),
+});
+
+export const LevelGroundSchema = z.discriminatedUnion("type", [
+  GroundLineSchema,
+  GroundBezierSchema,
+]);
+
+export const TerrainVoidSpanSchema = z.object({
+  id: IdSchema,
+  startX: z.number(),
+  endX: z.number(),
+});
+
+export const LevelTerrainSchema = z.object({
+  ceilingBoundary: LevelGroundSchema.optional(),
+  groundBoundary: LevelGroundSchema,
+  voidSpans: z.array(TerrainVoidSpanSchema),
+});
+
 export const SizeSchema = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
@@ -37,12 +65,14 @@ export const LevelObstacleSchema = z.object({
   material: z.enum(["wood", "stone", "glass"]),
   position: PositionSchema,
   size: SizeSchema,
+  angle: z.number().optional(),
 });
 
 export const LevelEnemySchema = z.object({
   id: IdSchema,
   type: z.enum(["pig"]),
   position: PositionSchema,
+  size: SizeSchema.optional(),
 });
 
 export const LevelDataSchema = z.object({
@@ -51,6 +81,9 @@ export const LevelDataSchema = z.object({
     height: z.number().positive(),
     gravity: z.number().positive(),
   }),
+  ground: LevelGroundSchema.optional(),
+  terrain: LevelTerrainSchema.optional(),
+  // 目前只实现了基础小鸟库存，但 schema 结构预留了后续扩展空间。
   birdInventory: z.object({
     basic: z.number().int().nonnegative(),
   }),
@@ -74,6 +107,8 @@ export const LevelSchema = z.object({
   publishedAt: IsoDateTimeSchema.optional(),
 });
 
+// CreateLevelInput 与完整 Level 分开定义：
+// 前者是客户端提交体，后者是服务端补全元数据后的完整记录。
 export const CreateLevelInputSchema = z.object({
   title: z.string().min(1).max(100),
   description: z.string().max(1000).default(""),
@@ -90,6 +125,11 @@ export const LevelIdParamsSchema = z.object({
 });
 
 export type Position = z.infer<typeof PositionSchema>;
+export type GroundLine = z.infer<typeof GroundLineSchema>;
+export type GroundBezier = z.infer<typeof GroundBezierSchema>;
+export type LevelGround = z.infer<typeof LevelGroundSchema>;
+export type TerrainVoidSpan = z.infer<typeof TerrainVoidSpanSchema>;
+export type LevelTerrain = z.infer<typeof LevelTerrainSchema>;
 export type Size = z.infer<typeof SizeSchema>;
 export type LevelTag = z.infer<typeof LevelTagSchema>;
 export type PublishedLevelsSort = z.infer<typeof PublishedLevelsSortSchema>;

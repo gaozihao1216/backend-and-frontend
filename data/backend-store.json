@@ -1,0 +1,173 @@
+{
+  "users": [
+    {
+      "id": "player-1",
+      "username": "player1",
+      "displayName": "Player One",
+      "role": "player",
+      "createdAt": "2026-04-20T17:35:03.286Z",
+      "updatedAt": "2026-04-20T17:35:03.286Z"
+    },
+    {
+      "id": "designer-1",
+      "username": "designer1",
+      "displayName": "Designer One",
+      "role": "designer",
+      "createdAt": "2026-04-20T17:35:03.286Z",
+      "updatedAt": "2026-04-20T17:35:03.286Z"
+    },
+    {
+      "id": "admin-1",
+      "username": "admin1",
+      "displayName": "Admin One",
+      "role": "admin",
+      "createdAt": "2026-04-20T17:35:03.286Z",
+      "updatedAt": "2026-04-20T17:35:03.286Z"
+    },
+    {
+      "id": "designer-2",
+      "username": "local-designer-1a1omur",
+      "displayName": "LongLocalUser",
+      "role": "designer",
+      "createdAt": "2026-04-20T17:35:03.311Z",
+      "updatedAt": "2026-04-20T17:35:03.311Z"
+    },
+    {
+      "id": "player-2",
+      "username": "local-player-11247tn",
+      "displayName": "LocalPlayer",
+      "role": "player",
+      "createdAt": "2026-04-23T06:18:19.724Z",
+      "updatedAt": "2026-04-23T06:18:19.724Z"
+    }
+  ],
+  "levels": [
+    {
+      "id": "level-1",
+      "title": "Starter Level",
+      "description": "预置示例关卡",
+      "tags": [
+        "beginner",
+        "puzzle"
+      ],
+      "data": {
+        "world": {
+          "width": 1200,
+          "height": 800,
+          "gravity": 9.8
+        },
+        "ground": {
+          "type": "line",
+          "points": [
+            {
+              "x": 0,
+              "y": 752
+            },
+            {
+              "x": 600,
+              "y": 752
+            },
+            {
+              "x": 1200,
+              "y": 752
+            }
+          ]
+        },
+        "birdInventory": {
+          "basic": 3
+        },
+        "obstacles": [
+          {
+            "id": "obstacle-glass-panel",
+            "material": "glass",
+            "position": {
+              "x": 700,
+              "y": 640
+            },
+            "size": {
+              "width": 20,
+              "height": 140
+            }
+          },
+          {
+            "id": "obstacle-wood-panel",
+            "material": "wood",
+            "position": {
+              "x": 860,
+              "y": 630
+            },
+            "size": {
+              "width": 44,
+              "height": 150
+            }
+          },
+          {
+            "id": "obstacle-stone-block",
+            "material": "stone",
+            "position": {
+              "x": 1040,
+              "y": 640
+            },
+            "size": {
+              "width": 96,
+              "height": 96
+            }
+          },
+          {
+            "id": "obstacle-wood-ledge",
+            "material": "wood",
+            "position": {
+              "x": 900,
+              "y": 540
+            },
+            "size": {
+              "width": 180,
+              "height": 24
+            }
+          },
+          {
+            "id": "obstacle-glass-top",
+            "material": "glass",
+            "position": {
+              "x": 700,
+              "y": 518
+            },
+            "size": {
+              "width": 72,
+              "height": 20
+            }
+          }
+        ],
+        "enemies": [
+          {
+            "id": "enemy-1",
+            "type": "pig",
+            "position": {
+              "x": 900,
+              "y": 470
+            }
+          },
+          {
+            "id": "enemy-2",
+            "type": "pig",
+            "position": {
+              "x": 1040,
+              "y": 565
+            }
+          }
+        ]
+      },
+      "authorId": "designer-1",
+      "status": "published",
+      "averageRating": 0,
+      "ratingCount": 0,
+      "createdAt": "2026-04-20T17:35:03.287Z",
+      "updatedAt": "2026-04-20T17:35:03.287Z",
+      "publishedAt": "2026-04-20T17:35:03.287Z"
+    }
+  ],
+  "submissions": [],
+  "ratings": [],
+  "comments": [],
+  "favorites": []
+}

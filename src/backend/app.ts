@@ -10,6 +10,7 @@ import { userService } from "./services/user-service.js";
 export const createApp = () => {
   const app = express();
 
+  // 整个项目统一使用 JSON API，因此最先挂载 JSON body parser。
   app.use(express.json());
 
   app.get("/health", (_req, res) => {
@@ -26,6 +27,7 @@ export const createApp = () => {
     res.status(201).json(success(parseOrThrow(UserSchema, user)));
   });
 
+  // 从这里开始的接口都要求有认证用户。
   app.use(authenticate);
   app.get("/users/:userId/profile", (req, res) => {
     const params = parseOrThrow(UserIdParamsSchema, req.params);
@@ -37,12 +39,14 @@ export const createApp = () => {
   app.use("/player", playerRouter);
 
   app.use((req: Request, _res: Response, next: NextFunction) => {
+    // 所有未命中的路由统一转换成结构化 404，而不是返回默认 HTML。
     next(new HttpError(404, "NOT_FOUND", `Route not found: ${req.method} ${req.path}`));
   });
 
   app.use(
     (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
       if (error instanceof HttpError) {
+        // 业务错误已知时，保留明确的 code/message 给前端使用。
         const response = errorResponse(
           error.statusCode,
           error.code,
@@ -53,6 +57,7 @@ export const createApp = () => {
         return;
       }
 
+      // 未知错误统一降级成 500，避免把内部实现细节暴露给客户端。
       const response = errorResponse(500, "INTERNAL_SERVER_ERROR", "Unexpected server error");
       res.status(response.statusCode).json(response.body);
     },

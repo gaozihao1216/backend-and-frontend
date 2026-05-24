@@ -8,7 +8,10 @@ import {
   rateLevel,
   unfavoriteLevel,
 } from "../lib/api.js";
+import { LevelPreviewCard } from "../components/game/LevelPreviewCard.js";
 import { API_USERS } from "../lib/config.js";
+import { createPublishedLevelSource } from "../lib/level-repository.js";
+import { STARTER_LEVEL_ID } from "../../shared/levels/index.js";
 import type {
   Comment,
   FavoriteWithLevel,
@@ -193,6 +196,7 @@ export const PlayerPage = ({ userId = API_USERS.player.id }: PlayerPageProps) =>
               ))}
             </div>
             <p className="meta">Level ID: {level.id}</p>
+            <LevelPreviewCard source={createPublishedLevelSource(level)} defaultOpen={level.id === STARTER_LEVEL_ID} />
             <label>
               <span>Score</span>
               <select

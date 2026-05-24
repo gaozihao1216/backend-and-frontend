@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// common.ts 放跨领域都会复用的基础 schema，避免每个模块重复定义。
 export const IdSchema = z.string().min(1);
 export const IsoDateTimeSchema = z.string().datetime({ offset: true });
 
