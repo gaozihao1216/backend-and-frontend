@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { createSuccessResponseSchema } from "../../schemas/api.js";
-import { LevelSchema } from "../../schemas/level.js";
-import { SubmissionSchema } from "../../schemas/submission.js";
+import { DesignerLevelSchema, DesignerSubmissionSchema } from "./objects.js";
 
-export const CreateLevelResponseDataSchema = LevelSchema;
+export const CreateLevelResponseDataSchema = DesignerLevelSchema;
 export const CreateLevelResponseSchema = createSuccessResponseSchema(CreateLevelResponseDataSchema);
 
-export const SubmitLevelResponseDataSchema = SubmissionSchema;
+export const SubmitLevelResponseDataSchema = DesignerSubmissionSchema;
 export const SubmitLevelResponseSchema = createSuccessResponseSchema(
   SubmitLevelResponseDataSchema,
 );

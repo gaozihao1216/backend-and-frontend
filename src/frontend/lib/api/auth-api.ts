@@ -1,4 +1,5 @@
 import {
+  GetBackendUsersRequestQuerySchema,
   BindBackendUserRequestBodySchema,
   BindBackendUserResponseDataSchema,
   GetBackendUsersResponseDataSchema,
@@ -7,14 +8,17 @@ import {
 } from "../../../shared/types.js";
 import { request } from "./client.js";
 
-export const getBackendUsers = async (): Promise<BoundBackendUser[]> =>
-  request(
+export const getBackendUsers = async (): Promise<BoundBackendUser[]> => {
+  GetBackendUsersRequestQuerySchema.parse({});
+
+  return request(
     "/auth/backend-users",
     {
       method: "GET",
     },
     GetBackendUsersResponseDataSchema,
   );
+};
 
 export const bindBackendUser = async (
   input: BindBackendUserRequestBody,

@@ -1,14 +1,21 @@
 import {
   CreateCommentRequestBodySchema,
+  CreateCommentRequestParamsSchema,
   CreateCommentResponseDataSchema,
+  FavoriteLevelRequestParamsSchema,
   FavoriteLevelResponseDataSchema,
+  GetFavoriteLevelsRequestQuerySchema,
   GetFavoriteLevelsResponseDataSchema,
+  GetLevelCommentsRequestParamsSchema,
   GetLevelCommentsResponseDataSchema,
+  GetPublishedLevelRequestParamsSchema,
   GetPublishedLevelResponseDataSchema,
   GetPublishedLevelsResponseDataSchema,
   GetPublishedLevelsRequestQuerySchema,
   RateLevelRequestBodySchema,
+  RateLevelRequestParamsSchema,
   RateLevelResponseDataSchema,
+  UnfavoriteLevelRequestParamsSchema,
   UnfavoriteLevelResponseDataSchema,
   type CreateCommentRequestBody,
   type GetPublishedLevelsRequestQuery,
@@ -52,7 +59,7 @@ export const getPublishedLevel = async (
   levelId: string,
 ): Promise<PublishedLevel> =>
   request(
-    `/player/levels/${levelId}`,
+    `/player/levels/${GetPublishedLevelRequestParamsSchema.parse({ levelId }).levelId}`,
     {
       method: "GET",
       headers: { "x-user-id": userId },
@@ -60,8 +67,10 @@ export const getPublishedLevel = async (
     GetPublishedLevelResponseDataSchema,
   );
 
-export const getFavoriteLevels = async (userId: string): Promise<PlayerFavoriteWithLevel[]> =>
-  request(
+export const getFavoriteLevels = async (userId: string): Promise<PlayerFavoriteWithLevel[]> => {
+  GetFavoriteLevelsRequestQuerySchema.parse({});
+
+  return request(
     "/player/favorites",
     {
       method: "GET",
@@ -69,10 +78,11 @@ export const getFavoriteLevels = async (userId: string): Promise<PlayerFavoriteW
     },
     GetFavoriteLevelsResponseDataSchema,
   );
+};
 
 export const favoriteLevel = async (userId: string, levelId: string): Promise<PlayerFavorite> =>
   request(
-    `/player/levels/${levelId}/favorite`,
+    `/player/levels/${FavoriteLevelRequestParamsSchema.parse({ levelId }).levelId}/favorite`,
     {
       method: "POST",
       headers: { "x-user-id": userId },
@@ -82,7 +92,7 @@ export const favoriteLevel = async (userId: string, levelId: string): Promise<Pl
 
 export const unfavoriteLevel = async (userId: string, levelId: string): Promise<PlayerFavorite> =>
   request(
-    `/player/levels/${levelId}/favorite`,
+    `/player/levels/${UnfavoriteLevelRequestParamsSchema.parse({ levelId }).levelId}/favorite`,
     {
       method: "DELETE",
       headers: { "x-user-id": userId },
@@ -96,7 +106,7 @@ export const rateLevel = async (
   input: RateLevelRequestBody,
 ): Promise<LevelRating> =>
   request(
-    `/player/levels/${levelId}/ratings`,
+    `/player/levels/${RateLevelRequestParamsSchema.parse({ levelId }).levelId}/ratings`,
     {
       method: "POST",
       headers: { "x-user-id": userId },
@@ -107,7 +117,7 @@ export const rateLevel = async (
 
 export const getLevelComments = async (userId: string, levelId: string): Promise<LevelComment[]> =>
   request(
-    `/player/levels/${levelId}/comments`,
+    `/player/levels/${GetLevelCommentsRequestParamsSchema.parse({ levelId }).levelId}/comments`,
     {
       method: "GET",
       headers: { "x-user-id": userId },
@@ -121,7 +131,7 @@ export const createComment = async (
   input: CreateCommentRequestBody,
 ): Promise<LevelComment> =>
   request(
-    `/player/levels/${levelId}/comments`,
+    `/player/levels/${CreateCommentRequestParamsSchema.parse({ levelId }).levelId}/comments`,
     {
       method: "POST",
       headers: { "x-user-id": userId },

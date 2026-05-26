@@ -200,6 +200,114 @@
       "createdAt": "2026-05-25T16:36:07.978Z",
       "updatedAt": "2026-05-25T16:36:07.990Z",
       "publishedAt": "2026-05-25T16:36:07.983Z"
+    },
+    {
+      "id": "level-3",
+      "title": "Profile Showcase Level",
+      "description": "Profile aggregation test",
+      "tags": [
+        "funny"
+      ],
+      "data": {
+        "world": {
+          "width": 1280,
+          "height": 720,
+          "gravity": 9.8
+        },
+        "birdInventory": {
+          "basic": 3
+        },
+        "obstacles": [],
+        "enemies": [
+          {
+            "id": "enemy-profile-test",
+            "type": "pig",
+            "position": {
+              "x": 860,
+              "y": 140
+            }
+          }
+        ]
+      },
+      "authorId": "designer-1",
+      "status": "published",
+      "averageRating": 5,
+      "ratingCount": 1,
+      "createdAt": "2026-05-26T00:49:24.859Z",
+      "updatedAt": "2026-05-26T00:49:24.898Z",
+      "publishedAt": "2026-05-26T00:49:24.885Z"
+    },
+    {
+      "id": "level-4",
+      "title": "Profile Showcase Level",
+      "description": "Profile aggregation test",
+      "tags": [
+        "funny"
+      ],
+      "data": {
+        "world": {
+          "width": 1280,
+          "height": 720,
+          "gravity": 9.8
+        },
+        "birdInventory": {
+          "basic": 3
+        },
+        "obstacles": [],
+        "enemies": [
+          {
+            "id": "enemy-profile-test",
+            "type": "pig",
+            "position": {
+              "x": 860,
+              "y": 140
+            }
+          }
+        ]
+      },
+      "authorId": "designer-1",
+      "status": "published",
+      "averageRating": 5,
+      "ratingCount": 1,
+      "createdAt": "2026-05-26T00:49:38.246Z",
+      "updatedAt": "2026-05-26T00:49:38.271Z",
+      "publishedAt": "2026-05-26T00:49:38.261Z"
+    },
+    {
+      "id": "level-5",
+      "title": "Profile Showcase Level",
+      "description": "Profile aggregation test",
+      "tags": [
+        "funny"
+      ],
+      "data": {
+        "world": {
+          "width": 1280,
+          "height": 720,
+          "gravity": 9.8
+        },
+        "birdInventory": {
+          "basic": 3
+        },
+        "obstacles": [],
+        "enemies": [
+          {
+            "id": "enemy-profile-test",
+            "type": "pig",
+            "position": {
+              "x": 860,
+              "y": 140
+            }
+          }
+        ]
+      },
+      "authorId": "designer-1",
+      "status": "published",
+      "averageRating": 5,
+      "ratingCount": 1,
+      "createdAt": "2026-05-26T00:49:54.054Z",
+      "updatedAt": "2026-05-26T00:49:54.069Z",
+      "publishedAt": "2026-05-26T00:49:54.060Z"
     }
   ],
   "submissions": [
@@ -208,9 +316,36 @@
       "levelId": "level-2",
       "submitterId": "designer-1",
       "status": "approved",
-      "submittedAt": "2026-05-25T16:36:07.981Z",
       "reviewerId": "admin-1",
+      "submittedAt": "2026-05-25T16:36:07.981Z",
       "reviewedAt": "2026-05-25T16:36:07.983Z"
+    },
+    {
+      "id": "submission-2",
+      "levelId": "level-3",
+      "submitterId": "designer-1",
+      "status": "approved",
+      "reviewerId": "admin-1",
+      "submittedAt": "2026-05-26T00:49:24.874Z",
+      "reviewedAt": "2026-05-26T00:49:24.885Z"
+    },
+    {
+      "id": "submission-3",
+      "levelId": "level-4",
+      "submitterId": "designer-1",
+      "status": "approved",
+      "reviewerId": "admin-1",
+      "submittedAt": "2026-05-26T00:49:38.257Z",
+      "reviewedAt": "2026-05-26T00:49:38.261Z"
+    },
+    {
+      "id": "submission-4",
+      "levelId": "level-5",
+      "submitterId": "designer-1",
+      "status": "approved",
+      "submittedAt": "2026-05-26T00:49:54.059Z",
+      "reviewerId": "admin-1",
+      "reviewedAt": "2026-05-26T00:49:54.060Z"
     }
   ],
   "ratings": [
@@ -221,6 +356,30 @@
       "score": 5,
       "createdAt": "2026-05-25T16:36:07.990Z",
       "updatedAt": "2026-05-25T16:36:07.990Z"
+    },
+    {
+      "id": "rating-2",
+      "levelId": "level-3",
+      "playerId": "designer-1",
+      "score": 5,
+      "createdAt": "2026-05-26T00:49:24.898Z",
+      "updatedAt": "2026-05-26T00:49:24.898Z"
+    },
+    {
+      "id": "rating-3",
+      "levelId": "level-4",
+      "playerId": "designer-1",
+      "score": 5,
+      "createdAt": "2026-05-26T00:49:38.270Z",
+      "updatedAt": "2026-05-26T00:49:38.270Z"
+    },
+    {
+      "id": "rating-4",
+      "levelId": "level-5",
+      "playerId": "designer-1",
+      "score": 5,
+      "createdAt": "2026-05-26T00:49:54.069Z",
+      "updatedAt": "2026-05-26T00:49:54.069Z"
     }
   ],
   "comments": [
@@ -230,6 +389,27 @@
       "userId": "designer-1",
       "content": "设计师自评：适合做首发展示。",
       "createdAt": "2026-05-25T16:36:07.986Z"
+    },
+    {
+      "id": "comment-2",
+      "levelId": "level-3",
+      "userId": "designer-1",
+      "content": "设计师自评：适合做首发展示。",
+      "createdAt": "2026-05-26T00:49:24.893Z"
+    },
+    {
+      "id": "comment-3",
+      "levelId": "level-4",
+      "userId": "designer-1",
+      "content": "设计师自评：适合做首发展示。",
+      "createdAt": "2026-05-26T00:49:38.265Z"
+    },
+    {
+      "id": "comment-4",
+      "levelId": "level-5",
+      "userId": "designer-1",
+      "content": "设计师自评：适合做首发展示。",
+      "createdAt": "2026-05-26T00:49:54.065Z"
     }
   ],
   "favorites": [
@@ -238,6 +418,24 @@
       "levelId": "level-2",
       "userId": "designer-1",
       "createdAt": "2026-05-25T16:36:07.988Z"
+    },
+    {
+      "id": "favorite-2",
+      "levelId": "level-3",
+      "userId": "designer-1",
+      "createdAt": "2026-05-26T00:49:24.895Z"
+    },
+    {
+      "id": "favorite-3",
+      "levelId": "level-4",
+      "userId": "designer-1",
+      "createdAt": "2026-05-26T00:49:38.268Z"
+    },
+    {
+      "id": "favorite-4",
+      "levelId": "level-5",
+      "userId": "designer-1",
+      "createdAt": "2026-05-26T00:49:54.067Z"
     }
   ]
 }

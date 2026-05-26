@@ -1,9 +1,9 @@
 import { Router } from "express";
 import {
-  CreateLevelInputSchema,
-  LevelSchema,
-  SubmitLevelInputSchema,
-  SubmissionSchema,
+  CreateLevelRequestBodySchema,
+  CreateLevelResponseDataSchema,
+  SubmitLevelRequestBodySchema,
+  SubmitLevelResponseDataSchema,
 } from "../../shared/types.js";
 import { getCurrentUser, parseOrThrow, success } from "../lib/http.js";
 import { requireRole } from "../middleware/auth.js";
@@ -17,19 +17,19 @@ designerRouter.use(requireRole("designer"));
 
 designerRouter.post("/levels", (req, res) => {
   // 路由层只做参数解析与响应封装，真正的业务逻辑下沉到 service。
-  const input = parseOrThrow(CreateLevelInputSchema, req.body);
+  const input = parseOrThrow(CreateLevelRequestBodySchema, req.body);
   const currentUser = getCurrentUser(req);
   const level = levelService.createLevel(currentUser.id, input);
-  const response = success(parseOrThrow(LevelSchema, level));
+  const response = success(parseOrThrow(CreateLevelResponseDataSchema, level));
   res.status(201).json(response);
 });
 
 designerRouter.post("/submissions", (req, res) => {
-  const input = parseOrThrow(SubmitLevelInputSchema, req.body);
+  const input = parseOrThrow(SubmitLevelRequestBodySchema, req.body);
   const currentUser = getCurrentUser(req);
   // 提交前先确认关卡归属，避免设计师替别人提交。
   levelService.ensureLevelOwnedByDesigner(input.levelId, currentUser.id);
   const submission = submissionService.submitLevel(input.levelId, currentUser.id);
-  const response = success(parseOrThrow(SubmissionSchema, submission));
+  const response = success(parseOrThrow(SubmitLevelResponseDataSchema, submission));
   res.status(201).json(response);
 });

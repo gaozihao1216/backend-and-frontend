@@ -1,17 +1,15 @@
 import express, { type NextFunction, type Request, type Response } from "express";
-import {
-  BindBackendUserRequestBodySchema,
-  BoundBackendUserSchema,
-  GetBackendUsersResponseDataSchema,
-} from "../shared/types.js";
 import { adminRouter } from "./routes/admin-routes.js";
-import { authRouter } from "./routes/auth-routes.js";
+import {
+  authRouter,
+  bindBackendUserHandler,
+  getBackendUsersHandler,
+} from "./routes/auth-routes.js";
 import { designerRouter } from "./routes/designer-routes.js";
 import { playerRouter } from "./routes/player-routes.js";
 import { userRouter } from "./routes/user-routes.js";
 import { authenticate } from "./middleware/auth.js";
-import { HttpError, errorResponse, parseOrThrow, success } from "./lib/http.js";
-import { authService } from "./services/auth-service.js";
+import { HttpError, errorResponse, success } from "./lib/http.js";
 
 export const createApp = () => {
   const app = express();
@@ -23,15 +21,8 @@ export const createApp = () => {
     res.json(success({ status: "ok" as const }));
   });
 
-  app.get("/users", (_req, res) => {
-    res.json(success(GetBackendUsersResponseDataSchema.parse(authService.getBackendUsers())));
-  });
-
-  app.post("/users/bind", (req, res) => {
-    const input = parseOrThrow(BindBackendUserRequestBodySchema, req.body);
-    const user = BoundBackendUserSchema.parse(authService.bindBackendUser(input));
-    res.status(201).json(success(user));
-  });
+  app.get("/users", getBackendUsersHandler);
+  app.post("/users/bind", bindBackendUserHandler);
 
   app.use("/auth", authRouter);
 

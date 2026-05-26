@@ -1,8 +1,12 @@
 import {
+  DeleteCommentRequestParamsSchema,
   DeleteCommentResponseDataSchema,
+  GetAdminCommentsRequestQuerySchema,
   GetAdminCommentsResponseDataSchema,
+  GetPendingSubmissionsRequestQuerySchema,
   GetPendingSubmissionsResponseDataSchema,
   ReviewSubmissionRequestBodySchema,
+  ReviewSubmissionRequestParamsSchema,
   ReviewSubmissionResponseDataSchema,
   type AdminComment,
   type PendingSubmission,
@@ -11,8 +15,10 @@ import {
 } from "../../../shared/types.js";
 import { request } from "./client.js";
 
-export const getPendingSubmissions = async (userId: string): Promise<PendingSubmission[]> =>
-  request(
+export const getPendingSubmissions = async (userId: string): Promise<PendingSubmission[]> => {
+  GetPendingSubmissionsRequestQuerySchema.parse({});
+
+  return request(
     "/admin/submissions/pending",
     {
       method: "GET",
@@ -20,6 +26,7 @@ export const getPendingSubmissions = async (userId: string): Promise<PendingSubm
     },
     GetPendingSubmissionsResponseDataSchema,
   );
+};
 
 export const reviewSubmission = async (
   userId: string,
@@ -27,7 +34,7 @@ export const reviewSubmission = async (
   input: ReviewSubmissionRequestBody,
 ): Promise<ReviewedSubmission> =>
   request(
-    `/admin/submissions/${submissionId}/review`,
+    `/admin/submissions/${ReviewSubmissionRequestParamsSchema.parse({ submissionId }).submissionId}/review`,
     {
       method: "POST",
       headers: { "x-user-id": userId },
@@ -36,8 +43,10 @@ export const reviewSubmission = async (
     ReviewSubmissionResponseDataSchema,
   );
 
-export const getAdminComments = async (userId: string): Promise<AdminComment[]> =>
-  request(
+export const getAdminComments = async (userId: string): Promise<AdminComment[]> => {
+  GetAdminCommentsRequestQuerySchema.parse({});
+
+  return request(
     "/admin/comments",
     {
       method: "GET",
@@ -45,10 +54,11 @@ export const getAdminComments = async (userId: string): Promise<AdminComment[]> 
     },
     GetAdminCommentsResponseDataSchema,
   );
+};
 
 export const deleteComment = async (userId: string, commentId: string): Promise<AdminComment> =>
   request(
-    `/admin/comments/${commentId}`,
+    `/admin/comments/${DeleteCommentRequestParamsSchema.parse({ commentId }).commentId}`,
     {
       method: "DELETE",
       headers: { "x-user-id": userId },

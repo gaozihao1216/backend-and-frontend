@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createSuccessResponseSchema } from "../../schemas/api.js";
-import { UserProfileSchema } from "../../schemas/user.js";
+import { UserProfileObjectSchema } from "./objects.js";
 
-export const GetUserProfileResponseDataSchema = UserProfileSchema;
+export const GetUserProfileResponseDataSchema = UserProfileObjectSchema;
 export const GetUserProfileResponseSchema = createSuccessResponseSchema(
   GetUserProfileResponseDataSchema,
 );
