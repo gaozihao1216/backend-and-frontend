@@ -1,0 +1,267 @@
+一、系统整体架构
+
+  这个项目是一个“UGC 关卡平台”原型，核心角色有 player、designer、admin。玩家可以玩和评价关卡，设计师可以创建并提交关卡，管
+  理员可以审核提交内容。
+
+  前端在 src/frontend，是 React + TypeScript。后端主服务在 src/backend，是 Node.js + Express + TypeScript。仓库里还有一个
+  src/main/scala 的 Scala microservice 示例，但当前主流程实际接入的是 src/backend 这套 Node 服务，课堂展示建议聚焦这一套，
+  不要分散时间。
+
+  API 类型定义统一放在 src/shared：
+
+  - 底层业务 schema 在 src/shared/schemas
+  - 面向 API 的分层定义在 src/shared/api/<module>/objects.ts、requests.ts、responses.ts
+  - 统一出口在 src/shared/types.ts:1
+
+  职责可以这样讲：
+
+  - router：解析请求、做参数校验、调用 service、封装响应
+  - service：承接核心业务逻辑
+  - domain/schema：定义业务对象和输入输出类型
+  - tables/store：这个项目没有真实数据库表，当前用 src/backend/data/store.ts:1 和 backend-store.json 模拟持久化数据
+
+  二、模块讲解顺序
+
+  推荐顺序：
+
+  1. auth
+  2. designer
+  3. admin
+  4. player
+  5. user
+
+  这样讲的原因：
+
+  - auth 最适合作为入口，因为所有角色身份绑定都从这里开始。
+  - designer 先讲“创建关卡、提交审核”，能建立主业务线。
+  - admin 接着讲“审核提交”，刚好把设计师流程闭环。
+  - player 再讲“看到已发布关卡、评论、收藏、评分”，能体现审核后的结果如何进入玩家端。
+  - user 最后讲用户资料页，作为补充模块，结构简单，适合收尾。
+
+  三、每个核心模块的 API 讲解
+
+  1. auth 模块
+
+  - API 名称：获取可绑定后端用户列表
+  - 文件位置：
+      - 前端：src/frontend/lib/api/auth-api.ts:1
+      - 后端 router：src/backend/routes/auth-routes.ts:1
+      - request：src/shared/api/auth/requests.ts:1
+      - response：src/shared/api/auth/responses.ts:1
+      - object：src/shared/api/auth/objects.ts:1
+  - request 类型：GetBackendUsersRequestQuery
+  - response 类型：GetBackendUsersResponseData / GetBackendUsersResponse
+  - 业务目标：给前端返回当前后端已有用户，供本地身份与后端身份绑定
+  - 核心业务逻辑：route 校验 query 后，调用 authService.getBackendUsers()，再用 response schema 校验返回
+  - 调用链：frontend getBackendUsers -> backend authRouter.get("/backend-users") -> authService.getBackendUsers()
+  - 前后端如何对齐：前端和后端都从 shared/types.ts 引同一个 request/response schema，不各写一套
+  - 老师可能追问的问题：为什么连一个 GET 接口也单独定义 request 类型？
+  - 我应该怎么回答：因为我们想让模块结构统一。即使 query 为空，也保留 RequestQuerySchema，这样课堂展示时每个 API 都有完整
+    的输入和输出边界。
+  - API 名称：绑定后端用户
+  - 文件位置：同上
+  - request 类型：BindBackendUserRequestBody
+  - response 类型：BindBackendUserResponseData / BindBackendUserResponse
+  - 业务目标：把前端本地用户和后端用户体系绑定起来
+  - 核心业务逻辑：route 先校验 body，再调用 authService.bindBackendUser(input)，最后校验返回对象
+  - 调用链：frontend bindBackendUser -> backend POST /auth/bind -> authService.bindBackendUser
+  - 前后端如何对齐：body schema 只在 shared 定义一次，前端发请求前 parse，后端收请求后再 parse
+  - 老师可能追问的问题：为什么前后端都要校验一次？
+  - 我应该怎么回答：前端校验是为了尽早发现错误并减少无效请求，后端校验是为了保证服务端安全和数据可信，二者职责不同。
+
+  2. designer 模块
+
+  - API 名称：创建关卡
+  - 文件位置：
+      - 前端：src/frontend/lib/api/designer-api.ts:1
+      - 后端：src/backend/routes/designer-routes.ts:1
+      - request：src/shared/api/designer/requests.ts:1
+      - response：src/shared/api/designer/responses.ts:1
+      - object：src/shared/api/designer/objects.ts:1
+  - request 类型：CreateLevelRequestBody
+  - response 类型：CreateLevelResponseData / CreateLevelResponse
+  - 业务目标：设计师创建一个草稿关卡
+  - 核心业务逻辑：route 校验关卡输入，取当前登录设计师，调用 levelService.createLevel
+  - 调用链：frontend createLevel -> POST /designer/levels -> levelService.createLevel
+  - 前后端如何对齐：CreateLevelRequestBodySchema 和 CreateLevelResponseDataSchema 前后端共用；response 明确返回
+    DesignerLevel
+  - 老师可能追问的问题：为什么 response 不直接用底层 LevelSchema 名字？
+  - 我应该怎么回答：为了让 API 层语义更清楚。底层 schema 是领域对象，API response 用模块内 object 名称，更适合课堂 review
+    展示分层。
+  - API 名称：提交关卡审核
+  - 文件位置：同上
+  - request 类型：SubmitLevelRequestBody
+  - response 类型：SubmitLevelResponseData / SubmitLevelResponse
+  - 业务目标：设计师把草稿关卡送审
+  - 核心业务逻辑：先检查关卡归属，再调用 submissionService.submitLevel
+  - 调用链：frontend submitLevel -> POST /designer/submissions -> levelService.ensureLevelOwnedByDesigner ->
+    submissionService.submitLevel
+  - 前后端如何对齐：前端构造 { levelId } 时先过 request schema，后端收到 body 后再过同一个 schema
+  - 老师可能追问的问题：为什么归属校验放在 route 里调用 service，而不是直接在前端限制？
+  - 我应该怎么回答：前端只能做体验层限制，真正的权限和归属必须在后端保证，否则请求可以被伪造。
+
+  3. admin 模块
+
+  - API 名称：获取待审核提交
+  - 文件位置：
+      - 前端：src/frontend/lib/api/admin-api.ts:1
+      - 后端：src/backend/routes/admin-routes.ts:1
+      - request：src/shared/api/admin/requests.ts:1
+      - response：src/shared/api/admin/responses.ts:1
+      - object：src/shared/api/admin/objects.ts:1
+  - request 类型：GetPendingSubmissionsRequestQuery
+  - response 类型：GetPendingSubmissionsResponseData / GetPendingSubmissionsResponse
+  - 业务目标：给管理员展示所有待审核 submission，并带上对应 level
+  - 核心业务逻辑：service 先取 pending submissions，route 层再拼接 level，形成 PendingSubmission
+  - 调用链：frontend getPendingSubmissions -> GET /admin/submissions/pending -> submissionService.getPendingSubmissions ->
+    levelService.getLevelById
+  - 前后端如何对齐：response 不只是 SubmissionSchema，而是共享的 PendingSubmissionSchema
+  - 老师可能追问的问题：为什么这里要返回带 level 的复合对象？
+  - 我应该怎么回答：因为审核页直接需要关卡信息，如果只给 submission，前端还要二次请求，不利于展示，也不利于 API 清晰性。
+  - API 名称：审核提交
+  - 文件位置：同上
+  - request 类型：ReviewSubmissionRequestParams + ReviewSubmissionRequestBody
+  - response 类型：ReviewSubmissionResponseData / ReviewSubmissionResponse
+  - 业务目标：管理员批准或拒绝某次提交
+  - 核心业务逻辑：先拿 submissionId 和审核结果，再调用 submissionService.reviewSubmission
+  - 调用链：frontend reviewSubmission -> POST /admin/submissions/:submissionId/review ->
+    submissionService.reviewSubmission
+  - 前后端如何对齐：params 和 body 都在 shared 中定义，避免路径参数和 body 命名不一致
+  - 老师可能追问的问题：为什么 approved/rejected 放在 body 里？
+  - 我应该怎么回答：因为这属于业务输入，而不是资源定位信息。路径定位的是哪条 submission，body 表达的是审核动作和备注。
+
+  4. player 模块
+
+  - API 名称：获取已发布关卡列表
+  - 文件位置：
+      - 前端：src/frontend/lib/api/player-api.ts:1
+      - 后端：src/backend/routes/player-routes.ts:1
+      - request：src/shared/api/player/requests.ts:1
+      - response：src/shared/api/player/responses.ts:1
+      - object：src/shared/api/player/objects.ts:1
+  - request 类型：GetPublishedLevelsRequestQuery
+  - response 类型：GetPublishedLevelsResponseData / GetPublishedLevelsResponse
+  - 业务目标：玩家查看已发布关卡，并支持 tag、sort 筛选
+  - 核心业务逻辑：route 校验 query，构造 options，调用 levelService.getPublishedLevels(options)
+  - 调用链：frontend getPublishedLevels -> GET /player/levels -> levelService.getPublishedLevels
+  - 前后端如何对齐：前端用同一个 query schema 构造 URLSearchParams，后端再用同一个 schema 解析 req.query
+  - 老师可能追问的问题：为什么 sort 有 default？
+  - 我应该怎么回答：这样前后端行为一致，不传时都落到 newest，减少歧义。
+  - API 名称：发表评论
+  - 文件位置：同模块
+  - request 类型：CreateCommentRequestParams + CreateCommentRequestBody
+  - response 类型：CreateCommentResponseData / CreateCommentResponse
+  - 业务目标：玩家对已发布关卡发表评论
+  - 核心业务逻辑：先校验 levelId 和 comment body，再取当前用户，调用 commentService.createComment
+  - 调用链：frontend createComment -> POST /player/levels/:levelId/comments -> commentService.createComment
+  - 前后端如何对齐：路径参数和 body 都有 shared schema；response 返回 LevelComment
+  - 老师可能追问的问题：为什么 comment 的 content 在 schema 里 trim？
+  - 我应该怎么回答：为了避免纯空格通过校验，这是输入层最基础的数据清洗。
+  - API 名称：评分关卡
+  - 文件位置：同模块
+  - request 类型：RateLevelRequestParams + RateLevelRequestBody
+  - response 类型：RateLevelResponseData / RateLevelResponse
+  - 业务目标：玩家给关卡打分
+  - 核心业务逻辑：校验 levelId 和 score，取当前用户，调用 ratingService.rateLevel
+  - 调用链：frontend rateLevel -> POST /player/levels/:levelId/ratings -> ratingService.rateLevel
+  - 前后端如何对齐：score 的取值范围由 shared 中的 RatingValueSchema 统一控制
+  - 老师可能追问的问题：为什么评分要单独抽 RatingValueSchema？
+  - 我应该怎么回答：因为它既用于创建输入，也用于持久化对象，抽出来可以避免多处重复写 1 到 5 的限制。
+
+  5. user 模块
+
+  - API 名称：获取用户资料页
+  - 文件位置：
+      - 前端：src/frontend/lib/api/user-api.ts:1
+      - 后端：src/backend/routes/user-routes.ts:1
+      - request：src/shared/api/user/requests.ts:1
+      - response：src/shared/api/user/responses.ts:1
+      - object：src/shared/api/user/objects.ts:1
+  - request 类型：GetUserProfileRequestParams
+  - response 类型：GetUserProfileResponseData / GetUserProfileResponse
+  - 业务目标：返回一个用户的公开资料，包括用户信息、已发布关卡、最新评论和统计
+  - 核心业务逻辑：route 校验 userId 后调用 userService.getProfile
+  - 调用链：frontend getUserProfile -> GET /users/:userId/profile -> userService.getProfile
+  - 前后端如何对齐：前端不再直接拼裸 profileUserId，而是先走 shared params schema
+  - 老师可能追问的问题：为什么 user 模块又有 UserObjectSchema 和 ApiUserSchema 两套名字？
+  - 我应该怎么回答：这是为了兼容现有代码，当前保留了旧别名，同时新增了更统一的 object 命名，后续可以再逐步收口。
+
+  四、重点选择 3 到 5 个最适合展示的 API
+
+  最推荐展示这 5 个：
+
+  1. POST /designer/levels
+
+  - 业务简单清楚：创建关卡
+  - request/response 完整
+  - 能展示 designer 模块的分层设计
+
+  2. POST /designer/submissions
+
+  - 能自然衔接“创建后送审”
+  - 能讲权限和归属校验
+  - 调用链清晰
+
+  3. GET /admin/submissions/pending
+
+  - 最能体现 response object 不是简单表对象，而是组合对象
+  - 很适合讲“为什么要单独有 object schema”
+
+  4. POST /admin/submissions/:submissionId/review
+
+  - 最能体现 params + body 双输入
+  - 也能讲审核状态这种业务输入为什么在 body 中
+
+  5. GET /player/levels
+
+  - 最能体现 query schema、默认值、前后端共享筛选逻辑
+  - 能把审核后的结果如何进入玩家端讲清楚
+
+  如果时间不够，压缩成 3 个就选：
+
+  1. POST /designer/levels
+  2. POST /admin/submissions/:submissionId/review
+  3. GET /player/levels
+
+  五、14 分钟 presentation 时间分配
+
+  - 0:00-1:00 项目背景和角色
+  - 1:00-2:00 系统整体架构
+  - 2:00-4:30 designer 模块：创建关卡、提交审核
+  - 4:30-7:00 admin 模块：待审核列表、审核提交
+  - 7:00-9:00 player 模块：已发布关卡列表、评论或评分
+  - 9:00-11:00 类型定义组织方式：schemas / objects / requests / responses
+  - 11:00-12:30 前后端如何对齐：shared types、route 校验、frontend parse
+  - 12:30-13:30 本轮 code review 修复点：命名统一、重复逻辑收口、模块结构一致
+  - 13:30-14:00 总结
+
+  六、可以直接口头讲的中文讲稿
+
+  大家好，我们这组做的是一个 UGC 关卡平台，里面有三类角色。player 负责玩和评价关卡，designer 负责创建和提交关卡，admin 负
+  责审核。我们这次展示重点不是 UI，而是前后端 API 怎么做类型对齐。
+
+  整体结构上，前端在 src/frontend，用 React 和 TypeScript。后端主服务在 src/backend，用 Express 和 TypeScript。前后端共用
+  的类型定义放在 src/shared。其中底层 schema 在 shared/schemas，API 相关的输入输出定义按模块放在 shared/api 下面，每个模块
+  都有 objects.ts、requests.ts、responses.ts。这样做的好处是，每个 API 都能清楚地区分业务对象、请求类型和响应类型。
+
+  我们讲解顺序是从 auth 开始，再到 designer、admin、player，最后补充 user。因为这样比较符合业务流：先绑定身份，再由设计师
+  创建和提交关卡，管理员审核通过之后，玩家才能看到并评价这些关卡。
+
+  先看 designer 模块的创建关卡接口。前端调用 createLevel，请求体类型是 CreateLevelRequestBody，后端 route 收到以后先用同一
+  个 schema 做校验，再调用 levelService.createLevel，最后返回 CreateLevelResponseData。这里可以看到，我们不是前端写一套类
+  型、后端再写一套，而是共享同一份定义。
+
+  然后看提交审核和管理员审核。设计师调用 submitLevel，管理员再调用 reviewSubmission。这里比较适合展示的是，审核接口同时有
+  params 和 body：路径里的 submissionId 表示审核哪一条提交，body 里的 approved 或 rejected 表示审核动作。这样划分后，接口
+  语义更清楚。
+
+  再看玩家端的 GET /player/levels。这个接口能体现 query 类型对齐。前端先用 GetPublishedLevelsRequestQuerySchema 校验筛选条
+  件，比如 tag 和 sort，后端收到 query 后再用同一个 schema 解析，所以前后端对“可传哪些筛选条件、默认值是什么”的理解是一致
+  的。
+
+  这次 code review 我们重点修了几件事。第一，把很多 route 里直接依赖底层 schema 的写法，统一改成依赖 API 层的 request /
+  response / object 定义。第二，补齐了有些模块里缺失的 request query type 和 response type。第三，把 app.ts 里重复的 auth
+  逻辑收口成共用 handler，避免同一个接口在不同文件里各写一遍。
+
+  最后总结一下，我们这套实现的重点不是功能有多复杂，而是每个 API 都能讲清楚三件事：输入是什么，输出是什么，中间业务逻辑在
+  哪里做。这样在课堂 code review 的时候，老师比较容易看到我们在类型安全和前后端对齐上的设计。
