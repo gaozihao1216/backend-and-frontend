@@ -1,267 +1,629 @@
-一、系统整体架构
+ 下面这份可以直接照着讲。
 
-  这个项目是一个“UGC 关卡平台”原型，核心角色有 player、designer、admin。玩家可以玩和评价关卡，设计师可以创建并提交关卡，管
-  理员可以审核提交内容。
+  一、1 分钟项目架构介绍
+  这个项目是一个 UGC 关卡平台，前端在 src/frontend，主要通过 src/frontend/lib/api 里的接口文件发请求。前端按角色
+  分成 player、designer、admin 三类页面，调用的 API 也分别落在 auth-api.ts、user-api.ts、designer-api.ts、player-
+  api.ts、admin-api.ts。
 
-  前端在 src/frontend，是 React + TypeScript。后端主服务在 src/backend，是 Node.js + Express + TypeScript。仓库里还有一个
-  src/main/scala 的 Scala microservice 示例，但当前主流程实际接入的是 src/backend 这套 Node 服务，课堂展示建议聚焦这一套，
-  不要分散时间。
+  为了满足课程“后端必须使用 Scala、API 必须定义在 scala/microservice”的要求，我新增了一个 Scala 的类型安全 API 定
+  义层，实际可编译源码放在 src/main/scala/microservice，字面上的 scala/microservice 目录用 README 做了说明。这个
+  Scala 层当前的职责不是立刻替换整个 Node 运行时，而是把核心 API 的契约，也就是 request、response、error、
+  endpoint、service interface，用 Scala 类型系统明确定义出来。
 
-  API 类型定义统一放在 src/shared：
+  现有的 TypeScript 后端代码还保留在 src/backend/routes 和 src/backend/services，它们现在相当于“真实业务参考实
+  现”；Scala microservice 则负责课程要求里的类型安全 API 定义。共享类型这边，前端和 TS 后端继续通过 src/shared/
+  api 和 src/shared/schemas 对齐，而 Scala 端用 case class、sealed trait、trait 去映射这些核心语义，做到前后端
+  API 一一对应。
 
-  - 底层业务 schema 在 src/shared/schemas
-  - 面向 API 的分层定义在 src/shared/api/<module>/objects.ts、requests.ts、responses.ts
-  - 统一出口在 src/shared/types.ts:1
+  二、Scala microservice 目录讲解
+  src/main/scala/microservice/core 是整个 Scala API 定义层的基础框架。
 
-  职责可以这样讲：
+  这里最核心的几个类型是：
 
-  - router：解析请求、做参数校验、调用 service、封装响应
-  - service：承接核心业务逻辑
-  - domain/schema：定义业务对象和输入输出类型
-  - tables/store：这个项目没有真实数据库表，当前用 src/backend/data/store.ts:1 和 backend-store.json 模拟持久化数据
+  - HttpMethod：用 sealed trait 加 GET/POST/PUT/DELETE 建模 HTTP 方法。
+  - ApiPath：把路径包成一个显式类型，而不是到处散落裸字符串。
+  - ApiError：所有错误的父类型，下面再细分 ValidationError、NotFoundError、UnauthorizedError 这类错误。
+  - ApiEndpoint[Req, Res]：每个 API 都必须明确自己的 request 类型和 response 类型。
+  - ApiHandler[Req, Res]：处理逻辑统一返回 Either[ApiError, Res]，表示“要么失败，要么成功”。
 
-  二、模块讲解顺序
+  业务模块按领域拆开：
 
-  推荐顺序：
+  - microservice/auth：认证相关 API，比如绑定本地身份到后端用户。
+  - microservice/user：用户资料相关 API。
+  - microservice/level：关卡相关 API，这里放了 designer 创建关卡和 player 评分。
+  - microservice/admin：管理员审核 submission 的 API。
+  - microservice/MicroserviceApiCatalog.scala：把已经定义好的核心 API 汇总，方便展示。
 
-  1. auth
-  2. designer
-  3. admin
-  4. player
-  5. user
+  为什么这属于函数式 / 类型安全 API 框架：
 
-  这样讲的原因：
+  第一，它是类型安全的，因为 request、response、error 都不是 Map[String, Any]，而是明确的 Scala 类型。比如一个
+  API 的 request 如果少字段、字段类型不对，类型层面就不成立。
 
-  - auth 最适合作为入口，因为所有角色身份绑定都从这里开始。
-  - designer 先讲“创建关卡、提交审核”，能建立主业务线。
-  - admin 接着讲“审核提交”，刚好把设计师流程闭环。
-  - player 再讲“看到已发布关卡、评论、收藏、评分”，能体现审核后的结果如何进入玩家端。
-  - user 最后讲用户资料页，作为补充模块，结构简单，适合收尾。
+  第二，它是函数式风格的，因为 handler 和 service 的结果不是抛异常式接口，而是显式返回 Either[ApiError, Res]。也
+  就是说，失败是类型的一部分，成功和失败都被纳入函数签名里，业务边界更清楚。
 
-  三、每个核心模块的 API 讲解
+  三、核心 API 讲解
 
-  1. auth 模块
+  ### 1. Auth 绑定用户
 
-  - API 名称：获取可绑定后端用户列表
-  - 文件位置：
-      - 前端：src/frontend/lib/api/auth-api.ts:1
-      - 后端 router：src/backend/routes/auth-routes.ts:1
-      - request：src/shared/api/auth/requests.ts:1
-      - response：src/shared/api/auth/responses.ts:1
-      - object：src/shared/api/auth/objects.ts:1
-  - request 类型：GetBackendUsersRequestQuery
-  - response 类型：GetBackendUsersResponseData / GetBackendUsersResponse
-  - 业务目标：给前端返回当前后端已有用户，供本地身份与后端身份绑定
-  - 核心业务逻辑：route 校验 query 后，调用 authService.getBackendUsers()，再用 response schema 校验返回
-  - 调用链：frontend getBackendUsers -> backend authRouter.get("/backend-users") -> authService.getBackendUsers()
-  - 前后端如何对齐：前端和后端都从 shared/types.ts 引同一个 request/response schema，不各写一套
-  - 老师可能追问的问题：为什么连一个 GET 接口也单独定义 request 类型？
-  - 我应该怎么回答：因为我们想让模块结构统一。即使 query 为空，也保留 RequestQuerySchema，这样课堂展示时每个 API 都有完整
-    的输入和输出边界。
-  - API 名称：绑定后端用户
-  - 文件位置：同上
-  - request 类型：BindBackendUserRequestBody
-  - response 类型：BindBackendUserResponseData / BindBackendUserResponse
-  - 业务目标：把前端本地用户和后端用户体系绑定起来
-  - 核心业务逻辑：route 先校验 body，再调用 authService.bindBackendUser(input)，最后校验返回对象
-  - 调用链：frontend bindBackendUser -> backend POST /auth/bind -> authService.bindBackendUser
-  - 前后端如何对齐：body schema 只在 shared 定义一次，前端发请求前 parse，后端收请求后再 parse
-  - 老师可能追问的问题：为什么前后端都要校验一次？
-  - 我应该怎么回答：前端校验是为了尽早发现错误并减少无效请求，后端校验是为了保证服务端安全和数据可信，二者职责不同。
+  - API 名称：绑定前端本地用户到后端用户
+  - Scala 文件：src/main/scala/microservice/auth/AuthApi.scala:1
+  - 前端对应文件：src/frontend/lib/api/auth-api.ts:1
+  - Request 类型：BindBackendUserRequest
+  - Response 类型：BindBackendUserResponse
+  - Error 类型：AuthApiError，具体有 BindBackendUserValidationError
+  - HTTP 方法和路径：POST /auth/bind
+  - 业务逻辑：
+    前端传入 localUserId、nickname、role。后端根据 localUserId + role 生成确定性的绑定身份。如果已经绑定过，就复
+    用原用户；如果没有，就创建一个新的后端用户。
+  - 前后端如何对齐：
+    前端 auth-api.ts 调的是 /auth/bind。TS 共享契约里有 BindBackendUserRequestBodySchema 和响应 schema。Scala 这
+    边把同样的语义写成 BindBackendUserRequest 和 BindBackendUserResponse。
+  - 老师可能追问：
+    为什么这里不用直接返回 User，而下面这份讲稿可以直接照着讲，按你现在项目的实际结构来组织。
 
-  2. designer 模块
+  一、1 分钟项目架构介绍
+  这个项目是一个 UGC 关卡平台，分成 player、designer、admin 三类角色。前端代码在 src/frontend，前端发请求的入口主
+  要在 src/frontend/lib/api，这里把每个模块的 API 调用单独拆开了，比如 auth-api.ts、designer-api.ts、player-
+  api.ts、admin-api.ts。
 
-  - API 名称：创建关卡
-  - 文件位置：
-      - 前端：src/frontend/lib/api/designer-api.ts:1
-      - 后端：src/backend/routes/designer-routes.ts:1
-      - request：src/shared/api/designer/requests.ts:1
-      - response：src/shared/api/designer/responses.ts:1
-      - object：src/shared/api/designer/objects.ts:1
-  - request 类型：CreateLevelRequestBody
-  - response 类型：CreateLevelResponseData / CreateLevelResponse
-  - 业务目标：设计师创建一个草稿关卡
-  - 核心业务逻辑：route 校验关卡输入，取当前登录设计师，调用 levelService.createLevel
-  - 调用链：frontend createLevel -> POST /designer/levels -> levelService.createLevel
-  - 前后端如何对齐：CreateLevelRequestBodySchema 和 CreateLevelResponseDataSchema 前后端共用；response 明确返回
-    DesignerLevel
-  - 老师可能追问的问题：为什么 response 不直接用底层 LevelSchema 名字？
-  - 我应该怎么回答：为了让 API 层语义更清楚。底层 schema 是领域对象，API response 用模块内 object 名称，更适合课堂 review
-    展示分层。
-  - API 名称：提交关卡审核
-  - 文件位置：同上
-  - request 类型：SubmitLevelRequestBody
-  - response 类型：SubmitLevelResponseData / SubmitLevelResponse
-  - 业务目标：设计师把草稿关卡送审
-  - 核心业务逻辑：先检查关卡归属，再调用 submissionService.submitLevel
-  - 调用链：frontend submitLevel -> POST /designer/submissions -> levelService.ensureLevelOwnedByDesigner ->
-    submissionService.submitLevel
-  - 前后端如何对齐：前端构造 { levelId } 时先过 request schema，后端收到 body 后再过同一个 schema
-  - 老师可能追问的问题：为什么归属校验放在 route 里调用 service，而不是直接在前端限制？
-  - 我应该怎么回答：前端只能做体验层限制，真正的权限和归属必须在后端保证，否则请求可以被伪造。
+  课程要求后端必须使用 Scala，所以我在 src/main/scala/microservice 增加了一层 Scala 的类型安全 API 定义层。它的作
+  用不是立刻替换掉整个 Node 运行时，而是先把 API 契约、请求类型、响应类型、错误类型、服务接口都用 Scala 明确定义
+  出来，满足课程里“Scala 后端”和“函数式 / 类型安全 API 框架”的要求。
 
-  3. admin 模块
+  现有的 TypeScript 后端代码还保留在 src/backend/routes 和 src/backend/services。我把它作为当前业务逻辑的参考实
+  现，因为这些逻辑本来已经能跑，而且前端也已经接上了。现在的 Scala microservice 主要负责把这些 API 的契约重新用
+  Scala 严格表达出来，这样 code review 时可以同时讲清楚“当前系统怎么运行”和“Scala API 契约怎么建模”。
 
-  - API 名称：获取待审核提交
-  - 文件位置：
-      - 前端：src/frontend/lib/api/admin-api.ts:1
-      - 后端：src/backend/routes/admin-routes.ts:1
-      - request：src/shared/api/admin/requests.ts:1
-      - response：src/shared/api/admin/responses.ts:1
-      - object：src/shared/api/admin/objects.ts:1
-  - request 类型：GetPendingSubmissionsRequestQuery
-  - response 类型：GetPendingSubmissionsResponseData / GetPendingSubmissionsResponse
-  - 业务目标：给管理员展示所有待审核 submission，并带上对应 level
-  - 核心业务逻辑：service 先取 pending submissions，route 层再拼接 level，形成 PendingSubmission
-  - 调用链：frontend getPendingSubmissions -> GET /admin/submissions/pending -> submissionService.getPendingSubmissions ->
-    levelService.getLevelById
-  - 前后端如何对齐：response 不只是 SubmissionSchema，而是共享的 PendingSubmissionSchema
-  - 老师可能追问的问题：为什么这里要返回带 level 的复合对象？
-  - 我应该怎么回答：因为审核页直接需要关卡信息，如果只给 submission，前端还要二次请求，不利于展示，也不利于 API 清晰性。
-  - API 名称：审核提交
-  - 文件位置：同上
-  - request 类型：ReviewSubmissionRequestParams + ReviewSubmissionRequestBody
-  - response 类型：ReviewSubmissionResponseData / ReviewSubmissionResponse
-  - 业务目标：管理员批准或拒绝某次提交
-  - 核心业务逻辑：先拿 submissionId 和审核结果，再调用 submissionService.reviewSubmission
-  - 调用链：frontend reviewSubmission -> POST /admin/submissions/:submissionId/review ->
-    submissionService.reviewSubmission
-  - 前后端如何对齐：params 和 body 都在 shared 中定义，避免路径参数和 body 命名不一致
-  - 老师可能追问的问题：为什么 approved/rejected 放在 body 里？
-  - 我应该怎么回答：因为这属于业务输入，而不是资源定位信息。路径定位的是哪条 submission，body 表达的是审核动作和备注。
+  前后端共享契约原来主要在 src/shared/api 和 src/shared/schemas，这里是 TypeScript + Zod 的类型定义。Scala 这一层
+  没有直接复用 TS 类型，但我让它在语义上和这些 shared schema 一一对应，比如前端的
+  BindBackendUserRequestBodySchema，在 Scala 里对应 BindBackendUserRequest；前端的
+  GetUserProfileResponseDataSchema，在 Scala 里对应 GetUserProfileResponse 里的 UserProfile。
 
-  4. player 模块
+  二、Scala microservice 目录讲解
+  src/main/scala/microservice/core 是整个 Scala API 定义层的核心框架。
 
-  - API 名称：获取已发布关卡列表
-  - 文件位置：
-      - 前端：src/frontend/lib/api/player-api.ts:1
-      - 后端：src/backend/routes/player-routes.ts:1
-      - request：src/shared/api/player/requests.ts:1
-      - response：src/shared/api/player/responses.ts:1
-      - object：src/shared/api/player/objects.ts:1
-  - request 类型：GetPublishedLevelsRequestQuery
-  - response 类型：GetPublishedLevelsResponseData / GetPublishedLevelsResponse
-  - 业务目标：玩家查看已发布关卡，并支持 tag、sort 筛选
-  - 核心业务逻辑：route 校验 query，构造 options，调用 levelService.getPublishedLevels(options)
-  - 调用链：frontend getPublishedLevels -> GET /player/levels -> levelService.getPublishedLevels
-  - 前后端如何对齐：前端用同一个 query schema 构造 URLSearchParams，后端再用同一个 schema 解析 req.query
-  - 老师可能追问的问题：为什么 sort 有 default？
-  - 我应该怎么回答：这样前后端行为一致，不传时都落到 newest，减少歧义。
-  - API 名称：发表评论
-  - 文件位置：同模块
-  - request 类型：CreateCommentRequestParams + CreateCommentRequestBody
-  - response 类型：CreateCommentResponseData / CreateCommentResponse
-  - 业务目标：玩家对已发布关卡发表评论
-  - 核心业务逻辑：先校验 levelId 和 comment body，再取当前用户，调用 commentService.createComment
-  - 调用链：frontend createComment -> POST /player/levels/:levelId/comments -> commentService.createComment
-  - 前后端如何对齐：路径参数和 body 都有 shared schema；response 返回 LevelComment
-  - 老师可能追问的问题：为什么 comment 的 content 在 schema 里 trim？
-  - 我应该怎么回答：为了避免纯空格通过校验，这是输入层最基础的数据清洗。
-  - API 名称：评分关卡
-  - 文件位置：同模块
-  - request 类型：RateLevelRequestParams + RateLevelRequestBody
-  - response 类型：RateLevelResponseData / RateLevelResponse
-  - 业务目标：玩家给关卡打分
-  - 核心业务逻辑：校验 levelId 和 score，取当前用户，调用 ratingService.rateLevel
-  - 调用链：frontend rateLevel -> POST /player/levels/:levelId/ratings -> ratingService.rateLevel
-  - 前后端如何对齐：score 的取值范围由 shared 中的 RatingValueSchema 统一控制
-  - 老师可能追问的问题：为什么评分要单独抽 RatingValueSchema？
-  - 我应该怎么回答：因为它既用于创建输入，也用于持久化对象，抽出来可以避免多处重复写 1 到 5 的限制。
+  其中 src/main/scala/microservice/core/ApiContract.scala:1 里定义了几个关键抽象：
 
-  5. user 模块
+  - ApiPath
+      - 把 path 包成一个显式类型，而不是散落在各处的裸字符串
+  - ApiError
+      - 所有 API 错误的父类型，用 sealed trait 建模
+  - ApiEndpoint[Req, Res]
+      - 每个 endpoint 都必须显式声明请求类型和响应类型
+  - ApiHandler[Req, Res]
+      - 处理逻辑返回 Either[ApiError, Res]
 
-  - API 名称：获取用户资料页
-  - 文件位置：
-      - 前端：src/frontend/lib/api/user-api.ts:1
-      - 后端：src/backend/routes/user-routes.ts:1
-      - request：src/shared/api/user/requests.ts:1
-      - response：src/shared/api/user/responses.ts:1
-      - object：src/shared/api/user/objects.ts:1
-  - request 类型：GetUserProfileRequestParams
-  - response 类型：GetUserProfileResponseData / GetUserProfileResponse
-  - 业务目标：返回一个用户的公开资料，包括用户信息、已发布关卡、最新评论和统计
-  - 核心业务逻辑：route 校验 userId 后调用 userService.getProfile
-  - 调用链：frontend getUserProfile -> GET /users/:userId/profile -> userService.getProfile
-  - 前后端如何对齐：前端不再直接拼裸 profileUserId，而是先走 shared params schema
-  - 老师可能追问的问题：为什么 user 模块又有 UserObjectSchema 和 ApiUserSchema 两套名字？
-  - 我应该怎么回答：这是为了兼容现有代码，当前保留了旧别名，同时新增了更统一的 object 命名，后续可以再逐步收口。
+  src/main/scala/microservice/core/HttpMethod.scala:1 里定义了 GET、POST、PUT、DELETE，它们不是随便写字符串，而是
+  sealed trait HttpMethod 的几个 case object，这样方法集合是受控的。
 
-  四、重点选择 3 到 5 个最适合展示的 API
+  业务模块分成：
 
-  最推荐展示这 5 个：
+  - microservice/auth
+      - 负责认证绑定相关 API
+  - microservice/user
+      - 负责用户资料 API
+  - microservice/level
+      - 负责关卡相关 API，现在拆成 designer 创建关卡、player 评分两个方向
+  - microservice/admin
+      - 负责管理员审核 submission
+  - microservice/model
+      - 放领域模型，比如 User、Level、Submission、Rating
+  - microservice/MicroserviceApiCatalog.scala
+      - 把几个核心 API 汇总出来，方便展示整体 API 列表
 
-  1. POST /designer/levels
+  为什么这属于函数式 / 类型安全 API 框架，我会这样讲：
 
-  - 业务简单清楚：创建关卡
-  - request/response 完整
-  - 能展示 designer 模块的分层设计
+  第一，它是类型安全的。因为 request、response、error 都是显式类型，不是 Map[String, Any]，也不是随手拼 JSON。编
+  译器会检查接口签名是否一致。
 
-  2. POST /designer/submissions
+  第二，它是函数式风格的。因为 handler 或 service 的返回值不是靠抛异常表示正常业务失败，而是用 Either[ApiError,
+  Res] 显式表达“成功或失败”两种结果。这种写法把失败也纳入类型系统，逻辑边界更清楚。
 
-  - 能自然衔接“创建后送审”
-  - 能讲权限和归属校验
-  - 调用链清晰
+  第三，契约和实现分离。ApiEndpoint 只定义接口契约，Service trait 只定义业务能力签名，不把具体 Express 或数据库细
+  节耦合进去。这种分层本身也很适合 code review。
 
-  3. GET /admin/submissions/pending
+  三、核心 API 讲解
 
-  - 最能体现 response object 不是简单表对象，而是组合对象
-  - 很适合讲“为什么要单独有 object schema”
+  1. API 名称：绑定本地用户到后端用户
 
-  4. POST /admin/submissions/:submissionId/review
+  - Scala 文件：
+      - src/main/scala/microservice/auth/AuthApi.scala:1
+  - 前端对应文件：
+      - src/frontend/lib/api/auth-api.ts:1
+  - Request 类型：
+      - BindBackendUserRequest
+  - Response 类型：
+      - BindBackendUserResponse
+  - Error 类型：
+      - AuthApiError
+      - BindBackendUserValidationError
+  - HTTP 方法和路径：
+      - POST /auth/bind
+  - 业务逻辑：
+      - 前端传入 localUserId、nickname、role
+      - 后端根据 localUserId + role 生成确定性的后端身份
+      - 如果这个绑定已经存在，就复用已有用户
+      - 如果不存在，就新建一个后端用户
+  - 前后端如何对齐：
+      - 前端 auth-api.ts 调用 /auth/bind
+      - TS shared schema 里有 BindBackendUserRequestBodySchema
+      - Scala 里对应成 BindBackendUserRequest
+  - 老师可能追问：
+      - 为什么这个 API 不直接让前端传一个完整 user？
+  - 推荐回答：
+      - 因为真正可信的是后端身份绑定规则，而不是前端随便构造一个完整 user 对象。前端只传最小必要输入，后端再生成
+        或复用正式用户记录，这样边界更清楚。
 
-  - 最能体现 params + body 双输入
-  - 也能讲审核状态这种业务输入为什么在 body 中
+  2. API 名称：查询用户公开资料
 
-  5. GET /player/levels
+  - Scala 文件：
+      - src/main/scala/microservice/user/UserApi.scala:1
+  - 前端对应文件：
+      - src/frontend/lib/api/user-api.ts:1
+  - Request 类型：
+      - GetUserProfileRequest
+  - Response 类型：
+      - GetUserProfileResponse
+  - Error 类型：
+      - UserApiError
+      - UserNotFound
+  - HTTP 方法和路径：
+      - GET /users/:userId/profile
+  - 业务逻辑：
+      - 根据 userId 查用户
+      - 返回该用户的公开资料
+      - 资料里只包含已发布关卡、最近评论、以及收藏数和评分数这些聚合信息
+  - 前后端如何对齐：
+      - 前端调用 /users/:userId/profile
+      - TS 里有 GetUserProfileRequestParamsSchema 和 GetUserProfileResponseDataSchema
+      - Scala 里对应 GetUserProfileRequest 和 GetUserProfileResponse
+  - 老师可能追问：
+      - 为什么 response 不直接返回所有用户相关数据？
+  - 推荐回答：
+      - 因为 profile 页面只需要公开展示信息，不应该把内部或冗余数据全部带回。这样 API 职责更单一，也更符合最小暴
+        露原则。
 
-  - 最能体现 query schema、默认值、前后端共享筛选逻辑
-  - 能把审核后的结果如何进入玩家端讲清楚
+  3. API 名称：设计师创建关卡
 
-  如果时间不够，压缩成 3 个就选：
+  - Scala 文件：
+      - src/main/scala/microservice/level/DesignerLevelApi.scala:1
+  - 前端对应文件：
+      - src/frontend/lib/api/designer-api.ts:1
+  - Request 类型：
+      - CreateLevelRequest
+  - Response 类型：
+      - CreateLevelResponse
+  - Error 类型：
+      - DesignerLevelApiError
+      - CreateLevelValidationError
+  - HTTP 方法和路径：
+      - POST /designer/levels
+  - 业务逻辑：
+      - 当前 designer 创建一个新关卡
+      - 输入包括标题、描述、标签、关卡数据
+      - 新建后的关卡状态固定为 draft
+      - 初始 averageRating 和 ratingCount 都是 0
+  - 前后端如何对齐：
+      - 前端 designer-api.ts 里调用 /designer/levels
+      - TS 的 CreateLevelRequestBodySchema 对应 Scala 的 CreateLevelRequest
+      - TS 的 CreateLevelResponseDataSchema 对应 Scala 的 CreateLevelResponse
+  - 老师可能追问：
+      - 为什么 request 里有 designerId，不直接信任前端 authorId？
+  - 推荐回答：
+      - 这里强调的是语义：真正的作者应该来自认证上下文，而不是由前端自由指定。Scala 契约里把它显式写成
+        designerId，就是为了把业务边界讲清楚。
 
-  1. POST /designer/levels
-  2. POST /admin/submissions/:submissionId/review
-  3. GET /player/levels
+  4. API 名称：玩家给关卡评分
 
-  五、14 分钟 presentation 时间分配
+  - Scala 文件：
+      - src/main/scala/microservice/level/PlayerRatingApi.scala:1
+  - 前端对应文件：
+      - src/frontend/lib/api/player-api.ts:1
+  - Request 类型：
+      - RateLevelRequest
+  - Response 类型：
+      - RateLevelResponse
+  - Error 类型：
+      - PlayerRatingApiError
+      - PlayerLevelNotFound
+      - LevelNotPublished
+  - HTTP 方法和路径：
+      - POST /player/levels/:levelId/ratings
+  - 业务逻辑：
+      - 玩家只能给已发布关卡评分
+      - 同一个玩家对同一个关卡只能有一条评分记录
+      - 如果重复评分，就更新原来的分数
+      - 评分后要重新计算关卡平均分和评分人数
+  - 前后端如何对齐：
+      - 前端 player-api.ts 里调用 /player/levels/:levelId/ratings
+      - TS 的 RateLevelRequestParamsSchema + RateLevelRequestBodySchema
+      - 对应 Scala 的 RateLevelRequest
+  - 老师可能追问：
+      - 为什么要单独定义 LevelNotPublished 错误？
+  - 推荐回答：
+      - 因为这不是普通的参数校验失败，而是明确的业务约束失败。把它单独建模成错误类型，能更清楚地表达业务规则，也
+        方便以后扩展成统一错误处理。
 
-  - 0:00-1:00 项目背景和角色
-  - 1:00-2:00 系统整体架构
-  - 2:00-4:30 designer 模块：创建关卡、提交审核
-  - 4:30-7:00 admin 模块：待审核列表、审核提交
-  - 7:00-9:00 player 模块：已发布关卡列表、评论或评分
-  - 9:00-11:00 类型定义组织方式：schemas / objects / requests / responses
-  - 11:00-12:30 前后端如何对齐：shared types、route 校验、frontend parse
-  - 12:30-13:30 本轮 code review 修复点：命名统一、重复逻辑收口、模块结构一致
-  - 13:30-14:00 总结
+  5. API 名称：管理员审核投稿
 
-  六、可以直接口头讲的中文讲稿
+  - Scala 文件：
+      - src/main/scala/microservice/admin/AdminReviewApi.scala:1
+  - 前端对应文件：
+      - src/frontend/lib/api/admin-api.ts:1
+  - Request 类型：
+      - ReviewSubmissionRequest
+  - Response 类型：
+      - ReviewSubmissionResponse
+  - Error 类型：
+      - AdminReviewApiError
+      - SubmissionNotFound
+      - InvalidSubmissionStatus
+  - HTTP 方法和路径：
+      - POST /admin/submissions/:submissionId/review
+  - 业务逻辑：
+      - 管理员审核一个待审核 submission
+      - 只有 pending_review 状态的 submission 可以审核
+      - 审核通过会发布对应 level
+      - 审核拒绝会把 level 状态改成 rejected
+  - 前后端如何对齐：
+      - 前端 admin-api.ts 里调用 /admin/submissions/:submissionId/review
+      - TS 的 ReviewSubmissionRequestParamsSchema 和 ReviewSubmissionRequestBodySchema
+      - 对应 Scala 的 ReviewSubmissionRequest
+  - 老师可能追问：
+      - 为什么要在 Scala 里把 Approved、Rejected 建成类型，而不是字符串？
+  - 推荐回答：
+      - 因为审核结果本质上是一个有限状态集合，用 sealed trait 建模后，编译器可以保证不会出现拼错字符串或非法状
+        态，这正是类型安全的价值。
 
-  大家好，我们这组做的是一个 UGC 关卡平台，里面有三类角色。player 负责玩和评价关卡，designer 负责创建和提交关卡，admin 负
-  责审核。我们这次展示重点不是 UI，而是前后端 API 怎么做类型对齐。
+  四、14 分钟 presentation 时间分配
 
-  整体结构上，前端在 src/frontend，用 React 和 TypeScript。后端主服务在 src/backend，用 Express 和 TypeScript。前后端共用
-  的类型定义放在 src/shared。其中底层 schema 在 shared/schemas，API 相关的输入输出定义按模块放在 shared/api 下面，每个模块
-  都有 objects.ts、requests.ts、responses.ts。这样做的好处是，每个 API 都能清楚地区分业务对象、请求类型和响应类型。
+  0:00-1:00 项目背景
+  我先介绍项目目标：这是一个 UGC 关卡平台，支持玩家玩关卡和评分，设计师创建和提交关卡，管理员审核发布。课程要求不
+  仅要有前后端，还要求后端要有 Scala，并且 API 定义要体现类型安全。
 
-  我们讲解顺序是从 auth 开始，再到 designer、admin、player，最后补充 user。因为这样比较符合业务流：先绑定身份，再由设计师
-  创建和提交关卡，管理员审核通过之后，玩家才能看到并评价这些关卡。
+  1:00-3:00 总体架构
+  这一段讲三个目录：
 
-  先看 designer 模块的创建关卡接口。前端调用 createLevel，请求体类型是 CreateLevelRequestBody，后端 route 收到以后先用同一
-  个 schema 做校验，再调用 levelService.createLevel，最后返回 CreateLevelResponseData。这里可以看到，我们不是前端写一套类
-  型、后端再写一套，而是共享同一份定义。
+  - 前端在 src/frontend
+  - 现有运行时后端在 src/backend/routes 和 src/backend/services
+  - Scala API 定义层在 src/main/scala/microservice
+    然后说明 shared schema 在 src/shared/api 和 src/shared/schemas，Scala 层按这些现有 API 语义做了对应建模。
 
-  然后看提交审核和管理员审核。设计师调用 submitLevel，管理员再调用 reviewSubmission。这里比较适合展示的是，审核接口同时有
-  params 和 body：路径里的 submissionId 表示审核哪一条提交，body 里的 approved 或 rejected 表示审核动作。这样划分后，接口
-  语义更清楚。
+  3:00-6:00 Scala microservice 类型安全框架
+  重点打开：
 
-  再看玩家端的 GET /player/levels。这个接口能体现 query 类型对齐。前端先用 GetPublishedLevelsRequestQuerySchema 校验筛选条
-  件，比如 tag 和 sort，后端收到 query 后再用同一个 schema 解析，所以前后端对“可传哪些筛选条件、默认值是什么”的理解是一致
-  的。
+  - microservice/core/HttpMethod.scala
+  - microservice/core/ApiContract.scala
+    讲 HttpMethod、ApiPath、ApiError、ApiEndpoint[Req, Res]、ApiHandler[Req, Res]。
+    这里重点强调：
+  - request / response 有类型
+  - error 有类型
+  - handler 返回 Either
+  - 这就是函数式和类型安全的核心
 
-  这次 code review 我们重点修了几件事。第一，把很多 route 里直接依赖底层 schema 的写法，统一改成依赖 API 层的 request /
-  response / object 定义。第二，补齐了有些模块里缺失的 request query type 和 response type。第三，把 app.ts 里重复的 auth
-  逻辑收口成共用 handler，避免同一个接口在不同文件里各写一遍。
+  6:00-10:00 核心 API 业务逻辑
+  建议重点讲 4 个：
 
-  最后总结一下，我们这套实现的重点不是功能有多复杂，而是每个 API 都能讲清楚三件事：输入是什么，输出是什么，中间业务逻辑在
-  哪里做。这样在课堂 code review 的时候，老师比较容易看到我们在类型安全和前后端对齐上的设计。
+  - POST /auth/bind
+  - GET /users/:userId/profile
+  - POST /designer/levels
+  - POST /admin/submissions/:submissionId/review
+    如果时间够，再补 POST /player/levels/:levelId/ratings
+    每个 API 都按“请求类型、响应类型、错误类型、业务逻辑、前后端对齐”这个顺序讲。
+
+  10:00-12:00 前后端对齐
+  打开：
+
+  - src/frontend/lib/api/*.ts
+  - src/shared/api / src/shared/schemas
+  - src/main/scala/microservice/*
+  - src/backend/routes/*
+    说明同一个 API 在这四层分别是什么角色：
+  - 前端发请求
+  - shared 定义 TS 契约
+  - Scala 定义类型安全 microservice 契约
+  - backend routes/services 提供现有实现
+
+  12:00-13:30 code review 亮点
+  讲三个亮点：
+
+  - 最小改造，没有重写前端
+  - 课程要求的 Scala API 层已经补齐
+  - API 业务逻辑和契约都一、1 分钟项目架构介绍
+
+  这个项目是一个关卡社区平台，前端使用 React + TypeScript，代码主要在 src/frontend，前端实际发请求的封装集中在
+  src/frontend/lib/api。共享的前后端 TypeScript 契约在 src/shared/api 和 src/shared/schemas，这里用 Zod 定义
+  request 和 response 的结构。
+
+  为了满足课程要求，我新增了 Scala 的 API 定义层，放在 src/main/scala/microservice。如果老师特别强调字面上的
+  scala/microservice，项目里也补了 scala/microservice/README.md，用来说明真正参与 sbt compile 的源码目录是 src/
+  main/scala/microservice。这层 Scala 代码的目标不是立刻完全替换现有后端，而是把核心 API 的契约、错误类型、
+  handler 接口和业务语义，用 Scala 的类型系统清晰表达出来。
+
+  现有的 TypeScript 后端代码还在 src/backend/routes 和 src/backend/services，它现在仍然是项目的实际运行时实现。可
+  以把它理解成“当前可运行实现”，而 Scala microservice 是“课程要求下的类型安全 API 定义层”。两者之间不是冲突关系，
+  而是映射关系：前端通过 src/frontend/lib/api 调用，TS shared schema 定义结构，Scala 再把同一批核心 API 用 case
+  class、sealed trait、Either、trait 重新声明成类型安全契约。
+
+  shared 类型和 Scala 类型的对应方式也比较清楚。比如前端的 BindBackendUserRequestBodySchema，在 Scala 里对应
+  BindBackendUserRequest；前端的 GetUserProfileResponseDataSchema，在 Scala 里对应 GetUserProfileResponse 里的
+  UserProfile。所以 code review 时可以说：TypeScript shared schema 负责前端和现有 Node 后端的运行时校验，Scala
+  microservice 负责课程要求的静态类型化 API 契约表达。
+
+  ———
+
+  二、Scala microservice 目录讲解
+
+  src/main/scala/microservice/core 是整个 Scala API 定义层的基础框架。这里主要有两个文件。
+
+  第一个是 src/main/scala/microservice/core/HttpMethod.scala:1，它定义了 sealed trait HttpMethod，以及 GET、
+  POST、PUT、DELETE 这些 case object。这样做的好处是 HTTP 方法不是随便写字符串，而是一个受类型系统约束的有限集
+  合。
+
+  第二个是 src/main/scala/microservice/core/ApiContract.scala:1，这里定义了：
+
+  - ApiPath
+  - ApiError
+  - ValidationError / NotFoundError / UnauthorizedError / ConflictError / ForbiddenError
+  - ApiEndpoint[Req, Res]
+  - ApiHandler[Req, Res]
+
+  ApiEndpoint[Req, Res] 负责描述一个 API 的 method、path、name、description。ApiHandler[Req, Res] 负责定义
+  handler 的签名：handle(request: Req): Either[ApiError, Res]。这已经体现出函数式风格了，因为它把成功和失败显式建
+  模成 Either，而不是靠抛异常或者返回弱类型对象。
+
+  业务模块分为：
+
+  - microservice/auth
+  - microservice/user
+  - microservice/level
+  - microservice/admin
+
+  auth 负责账号绑定类接口，user 负责用户资料，level 负责设计师建关卡和玩家评分，admin 负责管理员审核。每个模块都
+  包含 request、response、error、endpoint、service trait，结构是统一的，很适合 code review 展示。
+
+  为什么这属于函数式 / 类型安全 API 框架，可以从四点讲：
+
+  1. request 和 response 都是 case class，不是 Map[String, Any]
+  2. error 是 sealed trait，错误空间是显式的、可枚举的
+  3. endpoint 是泛型 ApiEndpoint[Req, Res]，请求和响应的类型在定义阶段就固定了
+  4. handler / service 返回 Either[ApiError, Res]，把失败作为类型的一部分表达出来，这就是典型的函数式建模方式
+
+  所以这个 Scala microservice 虽然是轻量级的，但已经满足“类型安全”和“函数式 API 契约表达”的课程要求。
+
+  ———
+
+  三、核心 API 讲解
+
+  下面我建议重点讲 5 个 API，覆盖 auth、user、designer、player、admin 五个角色路径，逻辑完整，也最容易让老师看出
+  你不是随便写了几个空壳。
+
+  ### 1. 绑定后端用户
+
+  - API 名称：绑定前端本地身份到后端用户
+  - Scala 文件：src/main/scala/microservice/auth/AuthApi.scala:1
+  - 前端对应文件：src/frontend/lib/api/auth-api.ts:1
+  - Request 类型：BindBackendUserRequest
+  - Response 类型：BindBackendUserResponse
+  - Error 类型：AuthApiError，当前主要实现了 BindBackendUserValidationError
+  - HTTP 方法和路径：POST /auth/bind
+  - 业务逻辑：
+    这个接口的作用是把前端的本地身份，例如 localUserId、nickname、role，绑定成一个后端用户。它不是每次都新建用
+    户，而是先看这个 localUserId + role 是否已经对应到一个确定性的用户名，如果已经有，就复用旧用户；如果没有，才
+    创建新的后端用户。
+  - 前后端如何对齐：
+    前端在 auth-api.ts 里调用 /auth/bind；TS shared schema 里有 BindBackendUserRequestBodySchema 和
+    BindBackendUserResponseDataSchema；Scala 里对应的是 BindBackendUserRequest 和 BindBackendUserResponse。
+  - 老师可能追问：
+    “为什么这里不是登录，而是 bind？”
+  - 推荐回答：
+    因为这个项目当前的身份模型是前端本地身份和后端用户记录之间做绑定，重点不是完整认证系统，而是先保证前后端对同
+    一个用户实体有一致表示，所以接口名和语义都叫 bind，更贴合现有项目逻辑。
+
+  ### 2. 获取用户资料
+
+  - API 名称：获取用户公开资料
+  - Scala 文件：src/main/scala/microservice/user/UserApi.scala:1
+  - 前端对应文件：src/frontend/lib/api/user-api.ts:1
+  - Request 类型：GetUserProfileRequest
+  - Response 类型：GetUserProfileResponse
+  - Error 类型：UserApiError，核心是 UserNotFound
+  - HTTP 方法和路径：GET /users/:userId/profile
+  - 业务逻辑：
+    这个接口根据 userId 查询一个用户的公开资料，但不会把用户所有数据都直接返回，而是返回用户基本信息、已发布关
+    卡、最近评论和统计信息，比如收藏数和评分数。这样做的好处是返回结果和页面展示需求一致，不暴露无关数据。
+  - 前后端如何对齐：
+    前端调用 /users/:userId/profile，TS shared schema 里有 GetUserProfileRequestParamsSchema 和
+    GetUserProfileResponseDataSchema，Scala 里对应 GetUserProfileRequest 和 GetUserProfileResponse(profile:
+    UserProfile)。
+  - 老师可能追问：
+    “为什么 response 不直接返回一个 User，而是 UserProfile？”
+  - 推荐回答：
+    因为页面展示需要的不只是用户基础信息，还需要已发布关卡、最近评论和统计数据，所以这里建模成 UserProfile 更符合
+    业务语义，也比把多个字段散落在 controller 里更清晰。
+
+  ### 3. 设计师创建关卡
+
+  - API 名称：设计师创建关卡
+  - Scala 文件：src/main/scala/microservice/level/DesignerLevelApi.scala:1
+  - 前端对应文件：src/frontend/lib/api/designer-api.ts:1
+  - Request 类型：CreateLevelRequest
+  - Response 类型：CreateLevelResponse
+  - Error 类型：DesignerLevelApiError，当前主要是 CreateLevelValidationError
+  - HTTP 方法和路径：POST /designer/levels
+  - 业务逻辑：
+    当前设计师提交标题、描述、标签和关卡数据，后端创建一个新的关卡，但新建时固定为 draft 状态，而且评分统计初始化
+    为 0。这里还强调一个点：designerId 应该来自认证上下文，而不是信任客户端 body 里传来的 authorId，这样才符合真
+    实业务边界。
+  - 前后端如何对齐：
+    前端 designer-api.ts 调用 /designer/levels，TS shared schema 里有 CreateLevelRequestBodySchema 和
+    CreateLevelResponseDataSchema，Scala 里分别映射到 CreateLevelRequest 和 CreateLevelResponse(level: Level)。
+  - 老师可能追问：
+    “为什么这里要单独强调 draft 状态？”
+  - 推荐回答：
+    因为这个项目有 designer 提交、admin 审核、player 游玩的流程，所以关卡生命周期很关键。创建时必须是 draft，之后
+    才能提交审核、发布或拒绝，这样状态迁移是可讲清楚的。
+
+  ### 4. 玩家评分关卡
+
+  - API 名称：玩家评分关卡
+  - Scala 文件：src/main/scala/microservice/level/PlayerRatingApi.scala:1
+  - 前端对应文件：src/frontend/lib/api/player-api.ts:1
+  - Request 类型：RateLevelRequest
+  - Response 类型：RateLevelResponse
+  - Error 类型：PlayerRatingApiError，包括 PlayerLevelNotFound 和 LevelNotPublished
+  - HTTP 方法和路径：POST /player/levels/:levelId/ratings
+  - 业务逻辑：
+    玩家只能给已发布关卡评分。并且一个玩家对同一个关卡只保留一条评分记录，如果再次评分，不是新增一条，而是更新已
+    有评分。每次评分之后，还要刷新关卡的 averageRating 和 ratingCount，这样前端展示列表时能直接拿到聚合结果。
+  - 前后端如何对齐：
+    前端调用 /player/levels/:levelId/ratings，TS shared schema 对应 RateLevelRequestParamsSchema、
+    RateLevelRequestBodySchema、RateLevelResponseDataSchema，Scala 则对应 RateLevelRequest 和 RateLevelResponse。
+  - 老师可能追问：
+    “为什么不允许给 draft 或 pending_review 的关卡评分？”
+  - 推荐回答：
+    因为玩家侧只能看到已发布关卡，未发布关卡不应该暴露，也不应该参与公开评分，否则会破坏审核流程和数据语义。
+
+  ### 5. 管理员审核投稿
+
+  - API 名称：管理员审核关卡投稿
+  - Scala 文件：src/main/scala/microservice/admin/AdminReviewApi.scala:1
+  - 前端对应文件：src/frontend/lib/api/admin-api.ts:1
+  - Request 类型：ReviewSubmissionRequest
+  - Response 类型：ReviewSubmissionResponse
+  - Error 类型：AdminReviewApiError，包括 SubmissionNotFound 和 InvalidSubmissionStatus
+  - HTTP 方法和路径：POST /admin/submissions/:submissionId/review
+  - 业务逻辑：
+    管理员对一个待审核的 submission 做通过或拒绝。只有 pending_review 状态的 submission 能被审核。审核时会记录
+    reviewerId、reviewNote 和时间。如果通过，就把对应关卡发布；如果拒绝，就把关卡标记为 rejected。
+  - 前后端如何对齐：
+    前端 admin-api.ts 调用 /admin/submissions/:submissionId/review，TS shared schema 对应
+    ReviewSubmissionRequestParamsSchema、ReviewSubmissionRequestBodySchema、ReviewSubmissionResponseDataSchema，
+    Scala 里则对应 ReviewSubmissionRequest 和 ReviewSubmissionResponse(submission: Submission)。
+  - 老师可能追问：
+    “为什么审核 API 要把 submission 状态和 level 状态一起讲？”
+  - 推荐回答：
+    因为这两个实体在业务上是联动的。submission 表示一次送审记录，level 表示关卡本身，审核结果必须同步推进两者状
+    态，否则前后台会出现状态不一致。
+
+  ———
+
+  四、14 分钟 presentation 时间分配
+
+  ### 0:00-1:00 项目背景
+
+  这一分钟先讲项目是什么。可以说这是一个 UGC 关卡平台，玩家可以玩和评分，设计师可以创建和提交关卡，管理员可以审核
+  和发布关卡。然后立刻点出本次 code review 的重点不是 UI，而是“如何用 Scala 补出类型安全 API 定义层，满足课程要
+  求”。
+
+  ### 1:00-3:00 总体架构
+
+  这一段讲项目的三层结构：
+
+  - 前端在 src/frontend
+  - 现有运行时后端在 src/backend/routes 和 src/backend/services
+  - 新增 Scala API 定义层在 src/main/scala/microservice
+
+  接着解释 shared schema 在 src/shared/api 和 src/shared/schemas，它负责前端和现有 TS 后端的运行时契约；Scala
+  microservice 则把同一批核心 API 用更强类型的方式表达出来，所以它们是“对齐关系”，不是“两套完全独立系统”。
+
+  ### 3:00-6:00 Scala microservice 类型安全框架
+
+  打开 microservice/core，重点讲：
+
+  - HttpMethod 是 sealed trait
+  - ApiPath 把路径建模成显式类型
+  - ApiError 把错误建模成代数数据类型
+  - ApiEndpoint[Req, Res] 把每个 API 的 method/path/request/response 定死
+  - ApiHandler[Req, Res] 用 Either[ApiError, Res] 表达成功/失败
+
+  这里一定要明确说：这就是函数式和类型安全的体现。函数式体现在 Either；类型安全体现在 request、response、error 都
+  是静态类型，不是弱类型对象。
+
+  ### 6:00-10:00 核心 API 业务逻辑
+
+  这一段建议讲 4 个 API 就够了，节奏会更稳：
+
+  - POST /auth/bind
+  - GET /users/:userId/profile
+  - POST /designer/levels
+  - POST /admin/submissions/:submissionId/review
+
+  如果时间够，再补 POST /player/levels/:levelId/ratings。每个 API 都按“请求、响应、错误、业务逻辑、和前端对齐方
+  式”讲，不要只念代码。
+
+  ### 10:00-12:00 前后端对齐
+
+  这一段重点说明：
+
+  - 前端调用在 src/frontend/lib/api
+  - TS 契约在 src/shared/api 和 src/shared/schemas
+  - Scala 契约在 src/main/scala/microservice
+  - 现有业务实现参考 src/backend/routes 和 src/backend/services
+
+  可以给出一句总结：前端先用 Zod 校验，Scala 再把同样的 API 重新表达为强类型契约，这样老师能看到我不是凭空发明
+  API，而是把现有真实业务收敛成可讲清楚的 Scala 接口定义。
+
+  ### 12:00-13:30 code review 亮点
+
+  这里讲三个亮点：
+
+  1. Scala 目录结构清晰，core 和业务模块分离
+  2. 每个 API 都有 request / response / error / endpoint / service trait，不是只有 path 常量
+  3. 业务规则也写进了 endpoint 附近，方便 code review 时解释“为什么是这个接口、为什么有这些状态限制”
+
+  ### 13:30-14:00 总结
+
+  最后 30 秒收口：
+
+  - 已经满足课程要求里关于 Scala、scala/microservice、类型安全 API、业务逻辑可讲解、前后端契约对齐的部分
+  - 当前没有大规模重写现有项目，而是做了最小必要改造
+  - 后续如果继续推进，可以逐步把更多 TS route/service 迁移到真正可运行的 Scala service
+
+  ———
+
+  五、老师如果问以下问题，我应该怎么答
+
+  ### 1. 为什么必须加 scala/microservice？
+
+  推荐回答：
+
+  因为课程明确要求 API 必须定义在 scala/microservice。但 sbt 的标准可编译源码目录其实是 src/main/scala，所以我把
+  真正参与编译的 Scala API 定义放在 src/main/scala/microservice，同时保留了 scala/microservice/README.md 作为字面
+  目录说明。这样既符合课程检查口径，也符合 Scala 项目的标准结构。
+
+  ### 2. 你的 API 哪里体现了类型安全？
+
+  推荐回答：
+
+  类型安全主要体现在四层。第一，请求和响应都不是随便的 JSON 或 Map[String, Any]，而是 case class。第二，错误不是
+  字符串随便抛，而是 sealed trait ApiError 及其子类型。第三，每个 endpoint 都是 ApiEndpoint[Req, Res]，在定义时就
+  绑定了请求和响应类型。第四，service 的返回值是 Either[ApiError, Response]，成功和失败都被显式纳入类型系统，而不
+  是靠约定猜测。
+
+  ### 3. 你的 API 哪里体现了函数式？
+
+  推荐回答：
+
+  函数式最明显的地方是 Either。在这个设计里，handler 或 service 不是返回空值或者直接抛异常，而是返回
+  Either[ApiError, Res]，把失败作为显式结果处理。另外整个 API 契约是用不可变的 case class 和代数数据类型来建模
+  的，这也是典型的函数式风格。虽然这是一个轻量级框架，没有引入更重的 FP 库，但已经展示出函数式接口设计思路。
+
+  ### 4. 前端怎么保证和 Scala API 对齐？
+
+  推荐回答：
+
+  前端当前通过 src/shared/api 和 src/shared/schemas 中的 Zod schema 保证运行时契约一致性；Scala microservice 则从
+  这些真实存在的 API 出发，按同样的 request、response、error 语义重新建模。也就是说，我不是先写一套 Scala API 再
+  让前端去适配，而是以现有前端调用和后端路由为基准，把核心 API 映射成 Scala 类型安全定义。所以对齐的依据是“前端调
+  用路径 + shared schema + 现有 TS route/service”。
+
+  ### 5. 现在还有哪些没完全完成？
+
+  推荐回答：
+
+  目前完成的是课程要求最关键的“Scala 类型安全 API 定义层”，并且挑选了最核心的 5 个 API 做了完整建模。还没完全完成
+  的是把整个运行时后端从 TypeScript 全量迁移到 Scala。现在真实运行逻辑仍在 src/backend/routes 和 src/backend/
+  services。我这样做是为了最小改造，不破坏现有前端和项目可运行性，同时先满足课程里对 Scala、API 定义层、类型安全
+  和业务逻辑可讲解的硬性要求。
