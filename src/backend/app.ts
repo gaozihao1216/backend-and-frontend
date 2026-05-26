@@ -1,11 +1,17 @@
 import express, { type NextFunction, type Request, type Response } from "express";
-import { BindBackendUserInputSchema, UserIdParamsSchema, UserProfileSchema, UserSchema } from "../shared/types.js";
+import {
+  BindBackendUserRequestBodySchema,
+  BoundBackendUserSchema,
+  GetBackendUsersResponseDataSchema,
+} from "../shared/types.js";
 import { adminRouter } from "./routes/admin-routes.js";
+import { authRouter } from "./routes/auth-routes.js";
 import { designerRouter } from "./routes/designer-routes.js";
 import { playerRouter } from "./routes/player-routes.js";
+import { userRouter } from "./routes/user-routes.js";
 import { authenticate } from "./middleware/auth.js";
 import { HttpError, errorResponse, parseOrThrow, success } from "./lib/http.js";
-import { userService } from "./services/user-service.js";
+import { authService } from "./services/auth-service.js";
 
 export const createApp = () => {
   const app = express();
@@ -18,22 +24,20 @@ export const createApp = () => {
   });
 
   app.get("/users", (_req, res) => {
-    res.json(success(userService.getAll()));
+    res.json(success(GetBackendUsersResponseDataSchema.parse(authService.getBackendUsers())));
   });
 
   app.post("/users/bind", (req, res) => {
-    const input = parseOrThrow(BindBackendUserInputSchema, req.body);
-    const user = userService.bindLocalUser(input);
-    res.status(201).json(success(parseOrThrow(UserSchema, user)));
+    const input = parseOrThrow(BindBackendUserRequestBodySchema, req.body);
+    const user = BoundBackendUserSchema.parse(authService.bindBackendUser(input));
+    res.status(201).json(success(user));
   });
+
+  app.use("/auth", authRouter);
 
   // 从这里开始的接口都要求有认证用户。
   app.use(authenticate);
-  app.get("/users/:userId/profile", (req, res) => {
-    const params = parseOrThrow(UserIdParamsSchema, req.params);
-    const profile = userService.getProfile(params.userId);
-    res.json(success(parseOrThrow(UserProfileSchema, profile)));
-  });
+  app.use("/users", userRouter);
   app.use("/designer", designerRouter);
   app.use("/admin", adminRouter);
   app.use("/player", playerRouter);

@@ -8,3 +8,4 @@ export * from "./schemas/comment.js";
 export * from "./schemas/favorite.js";
 export * from "./schemas/rating.js";
 export * from "./schemas/api.js";
+export * from "./api/index.js";

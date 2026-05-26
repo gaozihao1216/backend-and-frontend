@@ -164,10 +164,80 @@
       "createdAt": "2026-04-20T17:35:03.287Z",
       "updatedAt": "2026-04-20T17:35:03.287Z",
       "publishedAt": "2026-04-20T17:35:03.287Z"
+    },
+    {
+      "id": "level-2",
+      "title": "Profile Showcase Level",
+      "description": "Profile aggregation test",
+      "tags": [
+        "funny"
+      ],
+      "data": {
+        "world": {
+          "width": 1280,
+          "height": 720,
+          "gravity": 9.8
+        },
+        "birdInventory": {
+          "basic": 3
+        },
+        "obstacles": [],
+        "enemies": [
+          {
+            "id": "enemy-profile-test",
+            "type": "pig",
+            "position": {
+              "x": 860,
+              "y": 140
+            }
+          }
+        ]
+      },
+      "authorId": "designer-1",
+      "status": "published",
+      "averageRating": 5,
+      "ratingCount": 1,
+      "createdAt": "2026-05-25T16:36:07.978Z",
+      "updatedAt": "2026-05-25T16:36:07.990Z",
+      "publishedAt": "2026-05-25T16:36:07.983Z"
     }
   ],
-  "submissions": [],
-  "ratings": [],
-  "comments": [],
-  "favorites": []
+  "submissions": [
+    {
+      "id": "submission-1",
+      "levelId": "level-2",
+      "submitterId": "designer-1",
+      "status": "approved",
+      "submittedAt": "2026-05-25T16:36:07.981Z",
+      "reviewerId": "admin-1",
+      "reviewedAt": "2026-05-25T16:36:07.983Z"
+    }
+  ],
+  "ratings": [
+    {
+      "id": "rating-1",
+      "levelId": "level-2",
+      "playerId": "designer-1",
+      "score": 5,
+      "createdAt": "2026-05-25T16:36:07.990Z",
+      "updatedAt": "2026-05-25T16:36:07.990Z"
+    }
+  ],
+  "comments": [
+    {
+      "id": "comment-1",
+      "levelId": "level-2",
+      "userId": "designer-1",
+      "content": "设计师自评：适合做首发展示。",
+      "createdAt": "2026-05-25T16:36:07.986Z"
+    }
+  ],
+  "favorites": [
+    {
+      "id": "favorite-1",
+      "levelId": "level-2",
+      "userId": "designer-1",
+      "createdAt": "2026-05-25T16:36:07.988Z"
+    }
+  ]
 }
