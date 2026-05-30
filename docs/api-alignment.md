@@ -186,7 +186,7 @@ Scala 侧对应的类型安全点：
 
 - `src/frontend/pages/UserProfilePage.tsx`
   - 调用 `src/frontend/lib/api/user-api.ts`
-- `src/frontend/pages/DesignerPage.tsx`
+- `src/frontend/pages/DesignerPage/index.tsx`
   - 调用 `src/frontend/lib/api/designer-api.ts`
 - `src/frontend/pages/PlayerPage.tsx`
   - 调用 `src/frontend/lib/api/player-api.ts`

@@ -4,7 +4,7 @@ import { BackendBindingPanel } from "./components/BackendBindingPanel.js";
 import { RoleHomePage } from "./components/RoleHomePage.js";
 import { SettingsPanel } from "./components/SettingsPanel.js";
 import { DesignerHomePage } from "./pages/DesignerHomePage.js";
-import { DesignerPage } from "./pages/DesignerPage.js";
+import { DesignerPage } from "./pages/DesignerPage/index.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。

@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
-import { EditorToolbar } from "../components/designer/EditorToolbar.js";
-import { LevelEditorCanvas } from "../components/designer/LevelEditorCanvas.js";
-import { RotationKnob } from "../components/designer/RotationKnob.js";
-import { SelectedEntityPanel } from "../components/designer/SelectedEntityPanel.js";
-import { LevelPreviewCard } from "../components/game/LevelPreviewCard.js";
-import {
-  getDefaultGroundMaterialRenderConfig,
-  setGroundMaterialRenderConfig,
-  type GroundMaterialRenderConfig,
-} from "../game/draw-scene.js";
-import { createDefaultLevelInput, createLevel, submitLevel } from "../lib/api.js";
-import { API_USERS } from "../lib/config.js";
+import { EditorToolbar } from "../../components/designer/EditorToolbar.js";
+import { LevelEditorCanvas } from "../../components/designer/LevelEditorCanvas.js";
+import { RotationKnob } from "../../components/designer/RotationKnob.js";
+import { SelectedEntityPanel } from "../../components/designer/SelectedEntityPanel.js";
+import { LevelPreviewCard } from "../../components/game/LevelPreviewCard.js";
+import { getDefaultGroundMaterialRenderConfig } from "../../game/draw-scene.js";
+import { createLevel, submitLevel } from "../../lib/api.js";
+import { API_USERS } from "../../lib/config.js";
 import {
   clearTerrainCeilingBoundary,
   DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG,
@@ -21,12 +17,10 @@ import {
   removeTerrainBoundaryPoint,
   removeTerrainVoidSpan,
   reorderTerrainBoundaryPoint,
-  setBoundaryBreakpointEpsilon,
   setTerrainBoundaryType,
-  type GroundStrokeSimplifyConfig,
   type TerrainEditMode,
-} from "../lib/ground.js";
-import { createDraftLevelSource, createPublishedLevelSource } from "../lib/level-repository.js";
+} from "../../lib/ground.js";
+import { createDraftLevelSource, createPublishedLevelSource } from "../../lib/level-repository.js";
 import {
   getEntitySnapshots,
   getEntitySnapshot,
@@ -41,162 +35,23 @@ import {
   updateObstacleAngle,
   type EditorClipboardSelection,
   type EditorTool,
-} from "../lib/designer-level.js";
-import type { Level, LevelData, LevelTag, Submission } from "../../shared/types.js";
-
-const initialForm = createDefaultLevelInput();
-const availableTags: LevelTag[] = ["puzzle", "hard", "beginner", "funny", "strategy"];
-const DESIGNER_BACKUPS_STORAGE_KEY = "ugc-level-platform.designer-backups.v1";
-const DESIGNER_GROUND_TUNING_STORAGE_KEY = "ugc-level-platform.designer-ground-tuning.v1";
-const MAX_DESIGNER_BACKUPS = 5;
-const MAX_UNDO_STEPS = 100;
-const GROUND_TUNING_LIMITS = {
-  minSpan: { min: 8, max: 48, step: 1 },
-  angleWeight: { min: 0, max: 3, step: 0.05 },
-  stopEpsilon: { min: 0, max: 2, step: 0.05 },
-  breakpointEpsilon: { min: 0, max: 72, step: 1 },
-  noGrassSlope: { min: 0.1, max: 1.5, step: 0.01 },
-  cliffStart: { min: 0.01, max: 1.2, step: 0.01 },
-  cliffEnd: { min: 0.05, max: 2, step: 0.01 },
-  cliffRockBoost: { min: 0, max: 1.5, step: 0.01 },
-  noiseStrength: { min: 0, max: 0.25, step: 0.01 },
-  a1: { min: 0, max: 1, step: 0.01 },
-  a2: { min: 0, max: 1.5, step: 0.01 },
-  alphaBase: { min: 0.2, max: 3, step: 0.01 },
-  alphaJitter: { min: 0, max: 1, step: 0.01 },
-  sigmoidA: { min: 0.2, max: 2.5, step: 0.01 },
-  sigmoidBeta: { min: 0.5, max: 16, step: 0.1 },
-  sigmoidGamma: { min: 0.05, max: 1.5, step: 0.01 },
-  grassCurveSampleStep: { min: 8, max: 40, step: 1 },
-  grassCurveSmoothingPasses: { min: 0, max: 5, step: 1 },
-} as const;
-
-type DesignerGroundTuningStorage = Partial<GroundStrokeSimplifyConfig> & {
-  breakpointEpsilon?: number;
-  renderConfig?: Partial<GroundMaterialRenderConfig>;
-};
-
-type DesignerBackup = {
-  id: string;
-  archiveId: string;
-  createdAt: string;
-  title: string;
-  description: string;
-  selectedTags: LevelTag[];
-  levelData: LevelData;
-};
-
-type DesignerPhase = "ground" | "entities";
-
-const isEditableTarget = (target: EventTarget | null) =>
-  target instanceof HTMLElement
-  && (
-    target.tagName === "INPUT"
-    || target.tagName === "TEXTAREA"
-    || target.tagName === "SELECT"
-    || target.isContentEditable
-  );
-
-const normalizeAngle = (angle: number) => {
-  if (angle > Math.PI) {
-    return angle - Math.PI * 2;
-  }
-  if (angle < -Math.PI) {
-    return angle + Math.PI * 2;
-  }
-  return angle;
-};
-
-const cloneLevelData = (levelData: LevelData): LevelData =>
-  JSON.parse(JSON.stringify(levelData)) as LevelData;
-
-const formatArchiveTimestamp = (value: Date) => {
-  const pad = (segment: number) => `${segment}`.padStart(2, "0");
-  return `${value.getFullYear()}${pad(value.getMonth() + 1)}${pad(value.getDate())}${pad(value.getHours())}${pad(value.getMinutes())}${pad(value.getSeconds())}`;
-};
-
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-const sanitizeGroundStrokeSimplifyConfig = (
-  value: Partial<GroundStrokeSimplifyConfig> | null | undefined,
-): GroundStrokeSimplifyConfig => ({
-  minSpan: clamp(
-    typeof value?.minSpan === "number" ? value.minSpan : DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG.minSpan,
-    GROUND_TUNING_LIMITS.minSpan.min,
-    GROUND_TUNING_LIMITS.minSpan.max,
-  ),
-  angleWeight: clamp(
-    typeof value?.angleWeight === "number" ? value.angleWeight : DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG.angleWeight,
-    GROUND_TUNING_LIMITS.angleWeight.min,
-    GROUND_TUNING_LIMITS.angleWeight.max,
-  ),
-  stopEpsilon: clamp(
-    typeof value?.stopEpsilon === "number" ? value.stopEpsilon : DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG.stopEpsilon,
-    GROUND_TUNING_LIMITS.stopEpsilon.min,
-    GROUND_TUNING_LIMITS.stopEpsilon.max,
-  ),
-});
-
-const sanitizeBoundaryBreakpointEpsilon = (value: number | null | undefined) =>
-  clamp(
-    typeof value === "number" ? value : getDefaultBoundaryBreakpointEpsilon(),
-    GROUND_TUNING_LIMITS.breakpointEpsilon.min,
-    GROUND_TUNING_LIMITS.breakpointEpsilon.max,
-  );
-
-const sanitizeGroundMaterialRenderConfig = (
-  value: Partial<GroundMaterialRenderConfig> | null | undefined,
-): GroundMaterialRenderConfig => {
-  const defaults = getDefaultGroundMaterialRenderConfig();
-  return {
-    cliffStart: clamp(typeof value?.cliffStart === "number" ? value.cliffStart : defaults.cliffStart, GROUND_TUNING_LIMITS.cliffStart.min, GROUND_TUNING_LIMITS.cliffStart.max),
-    cliffEnd: clamp(typeof value?.cliffEnd === "number" ? value.cliffEnd : defaults.cliffEnd, GROUND_TUNING_LIMITS.cliffEnd.min, GROUND_TUNING_LIMITS.cliffEnd.max),
-    noGrassSlope: clamp(typeof value?.noGrassSlope === "number" ? value.noGrassSlope : defaults.noGrassSlope, GROUND_TUNING_LIMITS.noGrassSlope.min, GROUND_TUNING_LIMITS.noGrassSlope.max),
-    cliffRockBoost: clamp(typeof value?.cliffRockBoost === "number" ? value.cliffRockBoost : defaults.cliffRockBoost, GROUND_TUNING_LIMITS.cliffRockBoost.min, GROUND_TUNING_LIMITS.cliffRockBoost.max),
-    cliffGrassPenalty: defaults.cliffGrassPenalty,
-    noiseScale: defaults.noiseScale,
-    noiseStrength: clamp(typeof value?.noiseStrength === "number" ? value.noiseStrength : defaults.noiseStrength, GROUND_TUNING_LIMITS.noiseStrength.min, GROUND_TUNING_LIMITS.noiseStrength.max),
-    a1: clamp(typeof value?.a1 === "number" ? value.a1 : defaults.a1, GROUND_TUNING_LIMITS.a1.min, GROUND_TUNING_LIMITS.a1.max),
-    a2: clamp(typeof value?.a2 === "number" ? value.a2 : defaults.a2, GROUND_TUNING_LIMITS.a2.min, GROUND_TUNING_LIMITS.a2.max),
-    alphaBase: clamp(typeof value?.alphaBase === "number" ? value.alphaBase : defaults.alphaBase, GROUND_TUNING_LIMITS.alphaBase.min, GROUND_TUNING_LIMITS.alphaBase.max),
-    alphaJitter: clamp(typeof value?.alphaJitter === "number" ? value.alphaJitter : defaults.alphaJitter, GROUND_TUNING_LIMITS.alphaJitter.min, GROUND_TUNING_LIMITS.alphaJitter.max),
-    sigmoidA: clamp(typeof value?.sigmoidA === "number" ? value.sigmoidA : defaults.sigmoidA, GROUND_TUNING_LIMITS.sigmoidA.min, GROUND_TUNING_LIMITS.sigmoidA.max),
-    sigmoidBeta: clamp(typeof value?.sigmoidBeta === "number" ? value.sigmoidBeta : defaults.sigmoidBeta, GROUND_TUNING_LIMITS.sigmoidBeta.min, GROUND_TUNING_LIMITS.sigmoidBeta.max),
-    sigmoidGamma: clamp(typeof value?.sigmoidGamma === "number" ? value.sigmoidGamma : defaults.sigmoidGamma, GROUND_TUNING_LIMITS.sigmoidGamma.min, GROUND_TUNING_LIMITS.sigmoidGamma.max),
-    grassCurveSampleStep: clamp(typeof value?.grassCurveSampleStep === "number" ? value.grassCurveSampleStep : defaults.grassCurveSampleStep, GROUND_TUNING_LIMITS.grassCurveSampleStep.min, GROUND_TUNING_LIMITS.grassCurveSampleStep.max),
-    grassCurveSmoothingPasses: clamp(typeof value?.grassCurveSmoothingPasses === "number" ? value.grassCurveSmoothingPasses : defaults.grassCurveSmoothingPasses, GROUND_TUNING_LIMITS.grassCurveSmoothingPasses.min, GROUND_TUNING_LIMITS.grassCurveSmoothingPasses.max),
-  };
-};
-
-const serializeDraft = (draft: {
-  title: string;
-  description: string;
-  selectedTags: LevelTag[];
-  levelData: LevelData;
-}) =>
-  JSON.stringify({
-    title: draft.title,
-    description: draft.description,
-    selectedTags: [...draft.selectedTags].sort(),
-    levelData: draft.levelData,
-  });
-
-type DesignerPageProps = {
-  userId?: string;
-  mode?: "design" | "settings" | "design_book" | "json_check" | "archive" | "archive_json_check";
-  archiveBackupId?: string;
-  onBack?: () => void;
-  onOpenSettingsPage?: () => void;
-  onExitSettingsPage?: () => void;
-  onOpenDesignBook?: () => void;
-  onExitDesignBook?: () => void;
-  onOpenJsonCheck?: () => void;
-  onExitJsonCheck?: () => void;
-  onOpenArchive?: (archiveBackupId: string) => void;
-  onExitArchive?: () => void;
-  onOpenArchiveJsonCheck?: (archiveBackupId: string) => void;
-  onExitArchiveJsonCheck?: () => void;
-};
+} from "../../lib/designer-level.js";
+import type { Level, LevelData, LevelTag, Submission } from "../../../shared/types.js";
+import { useDesignerDraft, availableTags } from "./hooks/useDesignerDraft.js";
+import { MAX_UNDO_STEPS, useDesignerHistory } from "./hooks/useDesignerHistory.js";
+import { MAX_DESIGNER_BACKUPS, useDesignerBackups } from "./hooks/useDesignerBackups.js";
+import { useDesignerGroundTuning } from "./hooks/useDesignerGroundTuning.js";
+import { isEditableTarget, useDesignerKeyboardShortcuts } from "./hooks/useDesignerKeyboardShortcuts.js";
+import { cloneLevelData, formatArchiveTimestamp, serializeDraft } from "./functions/draft-functions.js";
+import { GROUND_TUNING_LIMITS, normalizeAngle } from "./functions/ground-tuning-functions.js";
+import type { DesignerBackup, DesignerPageProps, DesignerPhase } from "./objects/designer-page-types.js";
+import { ArchivePanel } from "./components/ArchivePanel.js";
+import { DesignerHeader } from "./components/DesignerHeader.js";
+import { DesignerWorkspace } from "./components/DesignerWorkspace.js";
+import { DesignBookPanel } from "./components/DesignBookPanel.js";
+import { GroundTuningPanel } from "./components/GroundTuningPanel.js";
+import { JsonCheckPanel } from "./components/JsonCheckPanel.js";
+import { LevelFormPanel } from "./components/LevelFormPanel.js";
 
 export const DesignerPage = ({
   userId = API_USERS.designer.id,
@@ -218,12 +73,28 @@ export const DesignerPage = ({
   // 1. 关卡表单（标题、描述、标签）
   // 2. 可视化编辑状态（当前工具、选中对象）
   // 3. 后端交互结果（已创建关卡、提交成功消息等）
-  const [title, setTitle] = useState(initialForm.title);
-  const [description, setDescription] = useState(initialForm.description ?? "");
-  const [selectedTags, setSelectedTags] = useState<LevelTag[]>(initialForm.tags);
-  const [levelData, setLevelData] = useState(initialForm.data);
-  const [jsonText, setJsonText] = useState(JSON.stringify(initialForm.data, null, 2));
-  const [jsonError, setJsonError] = useState("");
+  const {
+    title,
+    setTitle,
+    description,
+    setDescription,
+    selectedTags,
+    setSelectedTags,
+    levelData,
+    setLevelData,
+    jsonText,
+    setJsonText,
+    jsonError,
+    setJsonError,
+    createdLevels,
+    setCreatedLevels,
+    submittedIds,
+    setSubmittedIds,
+    message,
+    setMessage,
+    error,
+    setError,
+  } = useDesignerDraft();
   const [activeTool, setActiveTool] = useState<EditorTool>("select");
   const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>([]);
   const [primarySelectedEntityId, setPrimarySelectedEntityId] = useState<string | null>(null);
@@ -234,26 +105,25 @@ export const DesignerPage = ({
   const [groupRotationAngle, setGroupRotationAngle] = useState(0);
   const [groupSelectionCenter, setGroupSelectionCenter] = useState<{ x: number; y: number } | null>(null);
   const [groupSelectionSize, setGroupSelectionSize] = useState<{ width: number; height: number } | null>(null);
-  const [undoHistory, setUndoHistory] = useState<LevelData[]>([]);
-  const [redoHistory, setRedoHistory] = useState<LevelData[]>([]);
-  const [designerBackups, setDesignerBackups] = useState<DesignerBackup[]>([]);
-  const [groundStrokeSimplifyConfig, setGroundStrokeSimplifyConfig] = useState<GroundStrokeSimplifyConfig>(
-    DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG,
-  );
-  const [boundaryBreakpointEpsilon, setBoundaryBreakpointEpsilonState] = useState(getDefaultBoundaryBreakpointEpsilon());
-  const [groundMaterialRenderConfig, setGroundMaterialRenderConfigState] = useState<GroundMaterialRenderConfig>(
-    getDefaultGroundMaterialRenderConfig(),
-  );
+  const { undoHistory, setUndoHistory, redoHistory, setRedoHistory, clearHistory } = useDesignerHistory();
+  const { designerBackups, setDesignerBackups } = useDesignerBackups();
+  const {
+    groundStrokeSimplifyConfig,
+    setGroundStrokeSimplifyConfig,
+    boundaryBreakpointEpsilon,
+    setBoundaryBreakpointEpsilonState,
+    groundMaterialRenderConfig,
+    setGroundMaterialRenderConfigState,
+    updateGroundStrokeSimplifyConfig,
+    updateBoundaryBreakpointEpsilon,
+    updateGroundMaterialRenderConfig,
+  } = useDesignerGroundTuning();
   const [designerPhase, setDesignerPhase] = useState<DesignerPhase>("ground");
   const [groundEditorEnabled, setGroundEditorEnabled] = useState(true);
   const [terrainEditMode, setTerrainEditMode] = useState<TerrainEditMode>("ground-boundary");
   const [bottomThickness, setBottomThickness] = useState(96);
   const [selectedGroundPointIndex, setSelectedGroundPointIndex] = useState<number | null>(null);
   const [selectedVoidSpanId, setSelectedVoidSpanId] = useState<string | null>(null);
-  const [createdLevels, setCreatedLevels] = useState<Level[]>([]);
-  const [submittedIds, setSubmittedIds] = useState<string[]>([]);
-  const [message, setMessage] = useState<string>("");
-  const [error, setError] = useState<string>("");
   const isTitleMissing = title.trim().length === 0;
   const selectedObstacle = levelData.obstacles.find((obstacle) => obstacle.id === primarySelectedEntityId) ?? null;
   const draftPreviewLevel = createDraftLevelSource({
@@ -406,114 +276,7 @@ export const DesignerPage = ({
     setPrimarySelectedEntityId(null);
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const raw = window.localStorage.getItem(DESIGNER_BACKUPS_STORAGE_KEY);
-    if (!raw) {
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as DesignerBackup[];
-      setDesignerBackups(Array.isArray(parsed) ? parsed.slice(0, MAX_DESIGNER_BACKUPS) : []);
-    } catch {
-      setDesignerBackups([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(DESIGNER_BACKUPS_STORAGE_KEY, JSON.stringify(designerBackups));
-  }, [designerBackups]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const raw = window.localStorage.getItem(DESIGNER_GROUND_TUNING_STORAGE_KEY);
-    if (!raw) {
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as DesignerGroundTuningStorage;
-      setGroundStrokeSimplifyConfig(sanitizeGroundStrokeSimplifyConfig(parsed));
-      const nextBreakpointEpsilon = sanitizeBoundaryBreakpointEpsilon(parsed.breakpointEpsilon);
-      setBoundaryBreakpointEpsilonState(nextBreakpointEpsilon);
-      setBoundaryBreakpointEpsilon(nextBreakpointEpsilon);
-      const nextRenderConfig = sanitizeGroundMaterialRenderConfig(parsed.renderConfig);
-      setGroundMaterialRenderConfigState(nextRenderConfig);
-      setGroundMaterialRenderConfig(nextRenderConfig);
-    } catch {
-      setGroundStrokeSimplifyConfig(DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG);
-      const nextBreakpointEpsilon = getDefaultBoundaryBreakpointEpsilon();
-      setBoundaryBreakpointEpsilonState(nextBreakpointEpsilon);
-      setBoundaryBreakpointEpsilon(nextBreakpointEpsilon);
-      const nextRenderConfig = getDefaultGroundMaterialRenderConfig();
-      setGroundMaterialRenderConfigState(nextRenderConfig);
-      setGroundMaterialRenderConfig(nextRenderConfig);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(
-      DESIGNER_GROUND_TUNING_STORAGE_KEY,
-      JSON.stringify({
-        ...groundStrokeSimplifyConfig,
-        breakpointEpsilon: boundaryBreakpointEpsilon,
-        renderConfig: groundMaterialRenderConfig,
-      } satisfies DesignerGroundTuningStorage),
-    );
-  }, [groundStrokeSimplifyConfig, boundaryBreakpointEpsilon, groundMaterialRenderConfig]);
-
-  useEffect(() => {
-    setBoundaryBreakpointEpsilon(boundaryBreakpointEpsilon);
-  }, [boundaryBreakpointEpsilon]);
-
-  useEffect(() => {
-    setGroundMaterialRenderConfig(groundMaterialRenderConfig);
-  }, [groundMaterialRenderConfig]);
-
-  const updateGroundStrokeSimplifyConfig = (
-    key: keyof GroundStrokeSimplifyConfig,
-    rawValue: number,
-  ) => {
-    setGroundStrokeSimplifyConfig((current) =>
-      sanitizeGroundStrokeSimplifyConfig({
-        ...current,
-        [key]: rawValue,
-      }),
-    );
-  };
-
-  const updateBoundaryBreakpointEpsilon = (rawValue: number) => {
-    setBoundaryBreakpointEpsilonState(sanitizeBoundaryBreakpointEpsilon(rawValue));
-  };
-
-  const updateGroundMaterialRenderConfig = (
-    key: keyof GroundMaterialRenderConfig,
-    rawValue: number,
-  ) => {
-    setGroundMaterialRenderConfigState((current) =>
-      sanitizeGroundMaterialRenderConfig({
-        ...current,
-        [key]: rawValue,
-      }),
-    );
-  };
-
-  useEffect(() => {
+  useDesignerKeyboardShortcuts(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) {
         return;
@@ -639,14 +402,7 @@ export const DesignerPage = ({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keydown", handleModifierState);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keydown", handleModifierState);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
+    return { handleKeyDown, handleKeyUp, handleModifierState };
   }, [activeBoundaryKind, canvasPointer, clipboardSelection, groundEditorEnabled, levelData, primarySelectedEntityId, redoHistory, selectedEntityIds, selectedGroundPointIndex, selectedVoidSpanId, terrainEditMode, undoHistory]);
 
   useEffect(() => {
@@ -743,132 +499,69 @@ export const DesignerPage = ({
   };
 
   if (mode === "archive_json_check") {
-    return (
-      <section className="panel designer-workspace-panel designer-json-check-page">
-        <div className="actions">
-          <button type="button" className="secondary" onClick={onExitArchiveJsonCheck}>
-            退出
-          </button>
-        </div>
-        <h2>{`archive_${archiveBackupId ?? "unknown"}/json_check`}</h2>
-        {archiveBackup ? (
-          <>
-            <p className="panel-copy">这里展示的是备份对应的 JSON 内容，只读查看，不会修改当前 design 草稿。</p>
-            <label className="designer-json-check-panel">
-              <span>Backup JSON</span>
-              <textarea
-                rows={26}
-                value={JSON.stringify(archiveBackup.levelData, null, 2)}
-                readOnly
-                spellCheck={false}
-              />
-            </label>
-          </>
-        ) : (
+    if (!archiveBackup) {
+      return (
+        <section className="panel designer-workspace-panel designer-json-check-page">
+          <div className="actions">
+            <button type="button" className="secondary" onClick={onExitArchiveJsonCheck}>
+              退出
+            </button>
+          </div>
+          <h2>{`archive_${archiveBackupId ?? "unknown"}/json_check`}</h2>
           <p className="feedback error">未找到对应的备份。</p>
-        )}
-      </section>
+        </section>
+      );
+    }
+
+    return (
+      <JsonCheckPanel
+        title={`archive_${archiveBackupId ?? "unknown"}/json_check`}
+        description="这里展示的是备份对应的 JSON 内容，只读查看，不会修改当前 design 草稿。"
+        label="Backup JSON"
+        value={JSON.stringify(archiveBackup.levelData, null, 2)}
+        readOnly
+        onExit={onExitArchiveJsonCheck}
+      />
     );
   }
 
   if (mode === "archive") {
     return (
-      <section className="panel designer-workspace-panel designer-json-check-page">
-        <div className="actions">
-          <button type="button" className="secondary" onClick={onExitArchive}>
-            退出
-          </button>
-          {archiveBackup ? (
-            <button type="button" className="secondary" onClick={() => onOpenArchiveJsonCheck?.(archiveBackup.archiveId)}>
-              查看Json文件
-            </button>
-          ) : null}
-          {archiveBackup ? (
-            <button
-              type="button"
-              onClick={() => {
-                restoreDraft(archiveBackup);
-                setUndoHistory([]);
-                setRedoHistory([]);
-                onExitArchive?.();
-              }}
-            >
-              恢复此备份
-            </button>
-          ) : null}
-        </div>
-        <h2>{`archive_${archiveBackupId ?? "unknown"}`}</h2>
-        {archiveBackup ? (
-          <>
-            <p className="panel-copy">这里展示的是当前选中备份的内容。你可以先看可视化画布，确认是不是要找的备份，再决定是否恢复。</p>
-            <LevelEditorCanvas
-              activeTool="select"
-              levelData={archiveBackup.levelData}
-              editorPhase="ground"
-              selectedEntityIds={[]}
-              primarySelectedEntityId={null}
-              onChange={() => {}}
-              onSelectionChange={() => {}}
-              onToolChange={() => {}}
-              onPointerWorldChange={() => {}}
-              gridVisible={false}
-              gridSnapEnabled={false}
-              gridSize={16}
-              isSnapTemporarilyDisabled={false}
-              groupSelectionRotationAngle={0}
-              onGroupSelectionRotationAngleChange={() => {}}
-              groupSelectionCenter={null}
-              onGroupSelectionCenterChange={() => {}}
-              groupSelectionSize={null}
-              onGroupSelectionSizeChange={() => {}}
-              groundEditEnabled={false}
-              terrainEditMode={terrainEditMode}
-              groundStrokeSimplifyConfig={groundStrokeSimplifyConfig}
-              selectedGroundPointIndex={null}
-              onGroundPointSelectionChange={() => {}}
-              selectedVoidSpanId={null}
-              onVoidSpanSelectionChange={() => {}}
-              entityEditingEnabled={false}
-              readOnly
-            />
-          </>
-        ) : (
-          <p className="feedback error">未找到对应的备份。</p>
-        )}
-      </section>
+      <ArchivePanel
+        archiveBackupId={archiveBackupId}
+        archiveBackup={archiveBackup}
+        terrainEditMode={terrainEditMode}
+        groundStrokeSimplifyConfig={groundStrokeSimplifyConfig}
+        onExitArchive={onExitArchive}
+        onOpenArchiveJsonCheck={onOpenArchiveJsonCheck}
+        onRestore={(backup) => {
+          restoreDraft(backup);
+          clearHistory();
+          onExitArchive?.();
+        }}
+      />
     );
   }
 
   if (mode === "json_check") {
     return (
-      <section className="panel designer-workspace-panel designer-json-check-page">
-        <div className="actions">
-          <button type="button" className="secondary" onClick={onExitJsonCheck}>
-            退出
-          </button>
-          <button type="button" onClick={handleConfirmJsonChange}>
-            确认修改
-          </button>
-        </div>
-        <h2>designer/design/json_check</h2>
-        <p className="panel-copy">在这里查看或修改当前设计草稿的 JSON 文件。只有点击“确认修改”后才会写回设计器。</p>
-        <label className="designer-json-check-panel">
-          <span>LevelData JSON</span>
-          <textarea
-            rows={26}
-            value={jsonText}
-            onChange={(event) => handleJsonTextChange(event.target.value)}
-            spellCheck={false}
-          />
-          {jsonError ? <span className="designer-json-error">{jsonError}</span> : null}
-        </label>
-      </section>
+      <JsonCheckPanel
+        title="designer/design/json_check"
+        description="在这里查看或修改当前设计草稿的 JSON 文件。只有点击“确认修改”后才会写回设计器。"
+        label="LevelData JSON"
+        value={jsonText}
+        error={jsonError}
+        onExit={onExitJsonCheck}
+        onConfirm={handleConfirmJsonChange}
+        onChange={handleJsonTextChange}
+      />
     );
   }
 
   if (mode === "settings") {
     return (
-      <section className="panel designer-workspace-panel designer-doc-page">
+      <GroundTuningPanel>
+        <section className="panel designer-workspace-panel designer-doc-page">
         <div className="actions">
           <button type="button" className="secondary" onClick={onExitSettingsPage}>
             返回设计页
@@ -1249,13 +942,15 @@ export const DesignerPage = ({
             </article>
           </div>
         </section>
-      </section>
+        </section>
+      </GroundTuningPanel>
     );
   }
 
   if (mode === "design_book") {
     return (
-      <section className="panel designer-workspace-panel designer-doc-page">
+      <DesignBookPanel>
+        <section className="panel designer-workspace-panel designer-doc-page">
         <div className="actions">
           <button type="button" className="secondary" onClick={onExitDesignBook}>
             返回设计页
@@ -1435,79 +1130,30 @@ export const DesignerPage = ({
             <span>Alt：显示网格并启用网格吸附</span>
           </div>
         </section>
-      </section>
+        </section>
+      </DesignBookPanel>
     );
   }
 
   return (
     <section className="panel designer-workspace-panel">
-      {onBack ? (
-        <div className="actions">
-          <button type="button" className="secondary" onClick={onBack}>
-            返回设计师主页
-          </button>
-        </div>
-      ) : null}
-      <h2>Designer</h2>
-      <p className="panel-copy">Create a simple level payload and submit it for admin review.</p>
-      <div className="designer-phase-panel">
-        <div className="card-header">
-          <strong>设计阶段</strong>
-          <span>{designerPhase === "ground" ? "第一阶段：创造地面" : "第二阶段：构建物体"}</span>
-        </div>
-        <div className="actions">
-          <button type="button" className="secondary" onClick={onOpenSettingsPage}>
-            设置
-          </button>
-          <button type="button" className="secondary" onClick={onOpenDesignBook}>
-            设计指导
-          </button>
-          <button
-            type="button"
-            className={designerPhase === "ground" ? "" : "secondary"}
-            onClick={() => switchDesignerPhase("ground")}
-          >
-            第一阶段：创造地面
-          </button>
-          <button
-            type="button"
-            className={designerPhase === "entities" ? "" : "secondary"}
-            onClick={() => switchDesignerPhase("entities")}
-          >
-            第二阶段：构建物体
-          </button>
-        </div>
-      </div>
+      <DesignerHeader
+        designerPhase={designerPhase}
+        onBack={onBack}
+        onOpenSettingsPage={onOpenSettingsPage}
+        onOpenDesignBook={onOpenDesignBook}
+        onPhaseChange={switchDesignerPhase}
+      />
 
-      <label>
-        <span>Title</span>
-        <input value={title} onChange={(event) => setTitle(event.target.value)} />
-      </label>
-
-      <label>
-        <span>Description</span>
-        <textarea
-          rows={3}
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-      </label>
-
-      <fieldset className="tag-picker">
-        <legend>Tags</legend>
-        <div className="tag-list">
-          {availableTags.map((tag) => (
-            <label key={tag} className="tag-option">
-              <input
-                type="checkbox"
-                checked={selectedTags.includes(tag)}
-                onChange={() => toggleTag(tag)}
-              />
-              <span>{tag}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <LevelFormPanel
+        title={title}
+        description={description}
+        selectedTags={selectedTags}
+        availableTags={availableTags}
+        onTitleChange={setTitle}
+        onDescriptionChange={setDescription}
+        onToggleTag={toggleTag}
+      />
 
       {designerPhase === "entities" ? (
         <div className="designer-toolbar-row">
@@ -1896,8 +1542,7 @@ export const DesignerPage = ({
         ))}
       </section>
 
-      <div className="designer-layout">
-        <div className="designer-main-column">
+      <DesignerWorkspace>
           <LevelEditorCanvas
             activeTool={activeTool}
             levelData={levelData}
@@ -1937,8 +1582,7 @@ export const DesignerPage = ({
               primarySelectedEntityId={primarySelectedEntityId}
             />
           ) : null}
-        </div>
-      </div>
+      </DesignerWorkspace>
 
       <section className="comment-section">
         <div className="card-header">

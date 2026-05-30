@@ -5,7 +5,7 @@ import { LevelPreviewCard } from "./game/LevelPreviewCard.js";
 import { AdminCommunityPage } from "../pages/AdminCommunityPage.js";
 import { AdminPage } from "../pages/AdminPage.js";
 import { DesignerBirdLabPage } from "../pages/DesignerBirdLabPage.js";
-import { DesignerPage } from "../pages/DesignerPage.js";
+import { DesignerPage } from "../pages/DesignerPage/index.js";
 import { PlayerPage } from "../pages/PlayerPage.js";
 import { PlayerCommunityPage } from "../pages/PlayerCommunityPage.js";
 import { UserProfilePage } from "../pages/UserProfilePage.js";
