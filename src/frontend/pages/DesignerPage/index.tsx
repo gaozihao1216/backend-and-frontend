@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { EditorToolbar } from "../../components/designer/EditorToolbar.js";
 import { LevelEditorCanvas } from "../../components/designer/LevelEditorCanvas.js";
 import { RotationKnob } from "../../components/designer/RotationKnob.js";
@@ -25,16 +25,11 @@ import {
   getEntitySnapshots,
   getEntitySnapshot,
   getGroupTransformSnapshot,
-  getMinimumAreaSelectionFrame,
-  getSelectionBounds,
   getSelectionFrame,
   pasteClipboardSelection,
   removeEntity,
   rotateEntitiesAroundSelectionCenter,
-  selectSingleEntity,
   updateObstacleAngle,
-  type EditorClipboardSelection,
-  type EditorTool,
 } from "../../lib/designer-level.js";
 import type { Level, LevelData, LevelTag, Submission } from "../../../shared/types.js";
 import { useDesignerDraft, availableTags } from "./hooks/useDesignerDraft.js";
@@ -42,6 +37,7 @@ import { MAX_UNDO_STEPS, useDesignerHistory } from "./hooks/useDesignerHistory.j
 import { MAX_DESIGNER_BACKUPS, useDesignerBackups } from "./hooks/useDesignerBackups.js";
 import { useDesignerGroundTuning } from "./hooks/useDesignerGroundTuning.js";
 import { isEditableTarget, useDesignerKeyboardShortcuts } from "./hooks/useDesignerKeyboardShortcuts.js";
+import { useDesignerEditor } from "./hooks/useDesignerEditor.js";
 import { cloneLevelData, formatArchiveTimestamp, serializeDraft } from "./functions/draft-functions.js";
 import { GROUND_TUNING_LIMITS, normalizeAngle } from "./functions/ground-tuning-functions.js";
 import type { DesignerBackup, DesignerPageProps, DesignerPhase } from "./objects/designer-page-types.js";
@@ -95,16 +91,7 @@ export const DesignerPage = ({
     error,
     setError,
   } = useDesignerDraft();
-  const [activeTool, setActiveTool] = useState<EditorTool>("select");
-  const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>([]);
-  const [primarySelectedEntityId, setPrimarySelectedEntityId] = useState<string | null>(null);
-  const [clipboardSelection, setClipboardSelection] = useState<EditorClipboardSelection | null>(null);
-  const [canvasPointer, setCanvasPointer] = useState<{ x: number; y: number } | null>(null);
-  const [gridSize, setGridSize] = useState(16);
-  const [isAltPressed, setIsAltPressed] = useState(false);
-  const [groupRotationAngle, setGroupRotationAngle] = useState(0);
-  const [groupSelectionCenter, setGroupSelectionCenter] = useState<{ x: number; y: number } | null>(null);
-  const [groupSelectionSize, setGroupSelectionSize] = useState<{ width: number; height: number } | null>(null);
+  const editor = useDesignerEditor({ levelData });
   const { undoHistory, setUndoHistory, redoHistory, setRedoHistory, clearHistory } = useDesignerHistory();
   const { designerBackups, setDesignerBackups } = useDesignerBackups();
   const {
@@ -125,7 +112,6 @@ export const DesignerPage = ({
   const [selectedGroundPointIndex, setSelectedGroundPointIndex] = useState<number | null>(null);
   const [selectedVoidSpanId, setSelectedVoidSpanId] = useState<string | null>(null);
   const isTitleMissing = title.trim().length === 0;
-  const selectedObstacle = levelData.obstacles.find((obstacle) => obstacle.id === primarySelectedEntityId) ?? null;
   const draftPreviewLevel = createDraftLevelSource({
     title,
     description,
@@ -141,24 +127,19 @@ export const DesignerPage = ({
   const activeBoundary = activeBoundaryKind === "ceiling" ? terrain.ceilingBoundary ?? null : terrain.groundBoundary;
 
   const resetEditorSelection = () => {
-    setSelectedEntityIds([]);
-    setPrimarySelectedEntityId(null);
+    editor.resetEditorSelection();
     setSelectedGroundPointIndex(null);
     setSelectedVoidSpanId(null);
-    setActiveTool("select");
-    setGroupRotationAngle(0);
-    setGroupSelectionCenter(null);
-    setGroupSelectionSize(null);
   };
 
   const switchDesignerPhase = (nextPhase: DesignerPhase) => {
     setDesignerPhase(nextPhase);
-    setSelectedEntityIds([]);
-    setPrimarySelectedEntityId(null);
+    editor.setSelectedEntityIds([]);
+    editor.setPrimarySelectedEntityId(null);
     setSelectedGroundPointIndex(null);
     setSelectedVoidSpanId(null);
     setGroundEditorEnabled(nextPhase === "ground");
-    setActiveTool("select");
+    editor.setActiveTool("select");
   };
 
   const restoreDraft = (draft: {
@@ -265,15 +246,15 @@ export const DesignerPage = ({
   };
 
   const handleDeleteSelected = () => {
-    if (selectedEntityIds.length === 0) {
+    if (editor.selectedEntityIds.length === 0) {
       return;
     }
 
     applyLevelDataUpdate((current) =>
-      selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
+      editor.selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
     );
-    setSelectedEntityIds([]);
-    setPrimarySelectedEntityId(null);
+    editor.setSelectedEntityIds([]);
+    editor.setPrimarySelectedEntityId(null);
   };
 
   useDesignerKeyboardShortcuts(() => {
@@ -283,8 +264,8 @@ export const DesignerPage = ({
       }
 
       const modifierPressed = event.ctrlKey || event.metaKey;
-      const snapshot = primarySelectedEntityId ? getEntitySnapshot(levelData, primarySelectedEntityId) : null;
-      const snapshots = getEntitySnapshots(levelData, selectedEntityIds);
+      const snapshot = editor.primarySelectedEntityId ? getEntitySnapshot(levelData, editor.primarySelectedEntityId) : null;
+      const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
 
       if (modifierPressed && !event.shiftKey && event.key.toLowerCase() === "z") {
         if (undoHistory.length === 0) {
@@ -318,47 +299,47 @@ export const DesignerPage = ({
         }
 
         event.preventDefault();
-        setClipboardSelection({
+        editor.setClipboardSelection({
           entities: snapshots,
-          primaryEntityId: primarySelectedEntityId,
+          primaryEntityId: editor.primarySelectedEntityId,
         });
         return;
       }
 
       if (modifierPressed && event.key.toLowerCase() === "x") {
-        if (!primarySelectedEntityId || !snapshot) {
+        if (!editor.primarySelectedEntityId || !snapshot) {
           return;
         }
 
         event.preventDefault();
-        setClipboardSelection({
+        editor.setClipboardSelection({
           entities: snapshots,
-          primaryEntityId: primarySelectedEntityId,
+          primaryEntityId: editor.primarySelectedEntityId,
         });
         applyLevelDataUpdate((current) =>
-          selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
+          editor.selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
         );
-        setSelectedEntityIds([]);
-        setPrimarySelectedEntityId(null);
-        setActiveTool("select");
+        editor.setSelectedEntityIds([]);
+        editor.setPrimarySelectedEntityId(null);
+        editor.setActiveTool("select");
         return;
       }
 
       if (modifierPressed && event.key.toLowerCase() === "v") {
-        if (!clipboardSelection || !canvasPointer) {
+        if (!editor.clipboardSelection || !editor.canvasPointer) {
           return;
         }
 
         event.preventDefault();
-        const pasted = pasteClipboardSelection(levelData, clipboardSelection, canvasPointer);
+        const pasted = pasteClipboardSelection(levelData, editor.clipboardSelection, editor.canvasPointer);
         if (!pasted) {
           return;
         }
 
         applyLevelDataUpdate(pasted.levelData);
-        setSelectedEntityIds(pasted.entityIds);
-        setPrimarySelectedEntityId(pasted.primaryEntityId);
-        setActiveTool("select");
+        editor.setSelectedEntityIds(pasted.entityIds);
+        editor.setPrimarySelectedEntityId(pasted.primaryEntityId);
+        editor.setActiveTool("select");
         return;
       }
 
@@ -378,65 +359,32 @@ export const DesignerPage = ({
       }
 
       // 设计器支持 Delete 快捷删除，行为与图形编辑工具保持一致。
-      if (event.key !== "Delete" || selectedEntityIds.length === 0) {
+      if (event.key !== "Delete" || editor.selectedEntityIds.length === 0) {
         return;
       }
 
       event.preventDefault();
       applyLevelDataUpdate((current) =>
-        selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
+        editor.selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
       );
-      setSelectedEntityIds([]);
-      setPrimarySelectedEntityId(null);
+      editor.setSelectedEntityIds([]);
+      editor.setPrimarySelectedEntityId(null);
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Alt") {
-        setIsAltPressed(false);
+        editor.setIsAltPressed(false);
       }
     };
 
     const handleModifierState = (event: KeyboardEvent) => {
       if (event.key === "Alt") {
-        setIsAltPressed(event.type === "keydown");
+        editor.setIsAltPressed(event.type === "keydown");
       }
     };
 
     return { handleKeyDown, handleKeyUp, handleModifierState };
-  }, [activeBoundaryKind, canvasPointer, clipboardSelection, groundEditorEnabled, levelData, primarySelectedEntityId, redoHistory, selectedEntityIds, selectedGroundPointIndex, selectedVoidSpanId, terrainEditMode, undoHistory]);
-
-  useEffect(() => {
-    if (selectedEntityIds.length > 1) {
-      const frame = getMinimumAreaSelectionFrame(levelData, selectedEntityIds);
-      setGroupRotationAngle(frame?.rotation ?? 0);
-      setGroupSelectionCenter(frame ? { x: frame.centerX, y: frame.centerY } : null);
-      setGroupSelectionSize(frame ? { width: frame.width, height: frame.height } : null);
-      return;
-    }
-
-    setGroupRotationAngle(0);
-    setGroupSelectionCenter(null);
-    setGroupSelectionSize(null);
-  }, [selectedEntityIds, primarySelectedEntityId]);
-
-  useEffect(() => {
-    if (selectedEntityIds.length === 0) {
-      return;
-    }
-
-    const nextSelectedIds = selectedEntityIds.filter((entityId) =>
-      levelData.obstacles.some((obstacle) => obstacle.id === entityId)
-      || levelData.enemies.some((enemy) => enemy.id === entityId),
-    );
-    if (nextSelectedIds.length !== selectedEntityIds.length) {
-      setSelectedEntityIds(nextSelectedIds);
-      setPrimarySelectedEntityId(
-        primarySelectedEntityId && nextSelectedIds.includes(primarySelectedEntityId)
-          ? primarySelectedEntityId
-          : nextSelectedIds.at(-1) ?? null,
-      );
-    }
-  }, [levelData, primarySelectedEntityId, selectedEntityIds]);
+  }, [activeBoundaryKind, editor.canvasPointer, editor.clipboardSelection, groundEditorEnabled, levelData, editor.primarySelectedEntityId, redoHistory, editor.selectedEntityIds, selectedGroundPointIndex, selectedVoidSpanId, terrainEditMode, undoHistory]);
 
   const handleJsonTextChange = (nextJsonText: string) => {
     setJsonText(nextJsonText);
@@ -1157,37 +1105,37 @@ export const DesignerPage = ({
 
       {designerPhase === "entities" ? (
         <div className="designer-toolbar-row">
-          <EditorToolbar activeTool={activeTool} onToolChange={setActiveTool} />
+          <EditorToolbar activeTool={editor.activeTool} onToolChange={editor.setActiveTool} />
           <div className="rotation-controls-panel">
             <div className="rotation-controls">
               <RotationKnob
                 label="粗调"
-                angle={selectedEntityIds.length > 1 ? groupRotationAngle : selectedObstacle?.angle ?? 0}
-                disabled={activeTool !== "rotate" || (selectedEntityIds.length === 1 ? !selectedObstacle : selectedEntityIds.length === 0)}
+                angle={editor.selectedEntityIds.length > 1 ? editor.groupRotationAngle : editor.selectedObstacle?.angle ?? 0}
+                disabled={editor.activeTool !== "rotate" || (editor.selectedEntityIds.length === 1 ? !editor.selectedObstacle : editor.selectedEntityIds.length === 0)}
                 precisionMultiplier={1}
                 variant="coarse"
                 onChange={(angle) => {
-                  if (selectedEntityIds.length > 1) {
-                    const snapshot = getGroupTransformSnapshot(levelData, selectedEntityIds);
-                    const frame = groupSelectionCenter && groupSelectionSize
+                  if (editor.selectedEntityIds.length > 1) {
+                    const snapshot = getGroupTransformSnapshot(levelData, editor.selectedEntityIds);
+                    const frame = editor.groupSelectionCenter && editor.groupSelectionSize
                       ? {
-                          centerX: groupSelectionCenter.x,
-                          centerY: groupSelectionCenter.y,
-                          width: groupSelectionSize.width,
-                          height: groupSelectionSize.height,
-                          rotation: groupRotationAngle,
+                          centerX: editor.groupSelectionCenter.x,
+                          centerY: editor.groupSelectionCenter.y,
+                          width: editor.groupSelectionSize.width,
+                          height: editor.groupSelectionSize.height,
+                          rotation: editor.groupRotationAngle,
                         }
                       : getSelectionFrame(
                           levelData,
-                          selectedEntityIds,
-                          groupRotationAngle,
-                          groupSelectionCenter ?? undefined,
+                          editor.selectedEntityIds,
+                          editor.groupRotationAngle,
+                          editor.groupSelectionCenter ?? undefined,
                         );
                     if (!snapshot || !frame) {
                       return;
                     }
 
-                    const deltaAngle = normalizeAngle(angle - groupRotationAngle);
+                    const deltaAngle = normalizeAngle(angle - editor.groupRotationAngle);
                     const nextLevelData = rotateEntitiesAroundSelectionCenter(
                       levelData,
                       snapshot,
@@ -1196,46 +1144,46 @@ export const DesignerPage = ({
                     );
                     if (nextLevelData !== levelData) {
                       applyLevelDataUpdate(nextLevelData);
-                      setGroupRotationAngle(angle);
+                      editor.setGroupRotationAngle(angle);
                     }
                     return;
                   }
 
-                  if (!selectedObstacle) {
+                  if (!editor.selectedObstacle) {
                     return;
                   }
 
-                  applyLevelDataUpdate((current) => updateObstacleAngle(current, selectedObstacle.id, angle));
+                  applyLevelDataUpdate((current) => updateObstacleAngle(current, editor.selectedObstacle!.id, angle));
                 }}
               />
               <RotationKnob
                 label="微调"
-                angle={selectedEntityIds.length > 1 ? groupRotationAngle : selectedObstacle?.angle ?? 0}
-                disabled={activeTool !== "rotate" || (selectedEntityIds.length === 1 ? !selectedObstacle : selectedEntityIds.length === 0)}
+                angle={editor.selectedEntityIds.length > 1 ? editor.groupRotationAngle : editor.selectedObstacle?.angle ?? 0}
+                disabled={editor.activeTool !== "rotate" || (editor.selectedEntityIds.length === 1 ? !editor.selectedObstacle : editor.selectedEntityIds.length === 0)}
                 precisionMultiplier={10}
                 variant="fine"
                 onChange={(angle) => {
-                  if (selectedEntityIds.length > 1) {
-                    const snapshot = getGroupTransformSnapshot(levelData, selectedEntityIds);
-                    const frame = groupSelectionCenter && groupSelectionSize
+                  if (editor.selectedEntityIds.length > 1) {
+                    const snapshot = getGroupTransformSnapshot(levelData, editor.selectedEntityIds);
+                    const frame = editor.groupSelectionCenter && editor.groupSelectionSize
                       ? {
-                          centerX: groupSelectionCenter.x,
-                          centerY: groupSelectionCenter.y,
-                          width: groupSelectionSize.width,
-                          height: groupSelectionSize.height,
-                          rotation: groupRotationAngle,
+                          centerX: editor.groupSelectionCenter.x,
+                          centerY: editor.groupSelectionCenter.y,
+                          width: editor.groupSelectionSize.width,
+                          height: editor.groupSelectionSize.height,
+                          rotation: editor.groupRotationAngle,
                         }
                       : getSelectionFrame(
                           levelData,
-                          selectedEntityIds,
-                          groupRotationAngle,
-                          groupSelectionCenter ?? undefined,
+                          editor.selectedEntityIds,
+                          editor.groupRotationAngle,
+                          editor.groupSelectionCenter ?? undefined,
                         );
                     if (!snapshot || !frame) {
                       return;
                     }
 
-                    const deltaAngle = normalizeAngle(angle - groupRotationAngle);
+                    const deltaAngle = normalizeAngle(angle - editor.groupRotationAngle);
                     const nextLevelData = rotateEntitiesAroundSelectionCenter(
                       levelData,
                       snapshot,
@@ -1244,21 +1192,21 @@ export const DesignerPage = ({
                     );
                     if (nextLevelData !== levelData) {
                       applyLevelDataUpdate(nextLevelData);
-                      setGroupRotationAngle(angle);
+                      editor.setGroupRotationAngle(angle);
                     }
                     return;
                   }
 
-                  if (!selectedObstacle) {
+                  if (!editor.selectedObstacle) {
                     return;
                   }
 
-                  applyLevelDataUpdate((current) => updateObstacleAngle(current, selectedObstacle.id, angle));
+                  applyLevelDataUpdate((current) => updateObstacleAngle(current, editor.selectedObstacle!.id, angle));
                 }}
               />
             </div>
             <div className="rotation-angle-readout">
-              <strong>{Math.round((((selectedEntityIds.length > 1 ? groupRotationAngle : selectedObstacle?.angle ?? 0) * 180) / Math.PI))}°</strong>
+              <strong>{Math.round((((editor.selectedEntityIds.length > 1 ? editor.groupRotationAngle : editor.selectedObstacle?.angle ?? 0) * 180) / Math.PI))}°</strong>
             </div>
           </div>
         </div>
@@ -1266,7 +1214,7 @@ export const DesignerPage = ({
       <div className="designer-grid-controls">
         <label className="designer-grid-size">
           <span>网格间距</span>
-          <select value={gridSize} onChange={(event) => setGridSize(Number(event.target.value))}>
+          <select value={editor.gridSize} onChange={(event) => editor.setGridSize(Number(event.target.value))}>
             <option value={8}>8</option>
             <option value={16}>16</option>
             <option value={24}>24</option>
@@ -1505,7 +1453,7 @@ export const DesignerPage = ({
         <button
           type="button"
           className="secondary"
-          disabled={designerPhase !== "entities" || selectedEntityIds.length === 0}
+          disabled={designerPhase !== "entities" || editor.selectedEntityIds.length === 0}
           onClick={handleDeleteSelected}
         >
           删除选中对象
@@ -1544,28 +1492,28 @@ export const DesignerPage = ({
 
       <DesignerWorkspace>
           <LevelEditorCanvas
-            activeTool={activeTool}
+            activeTool={editor.activeTool}
             levelData={levelData}
             editorPhase={designerPhase}
-            selectedEntityIds={selectedEntityIds}
-            primarySelectedEntityId={primarySelectedEntityId}
+            selectedEntityIds={editor.selectedEntityIds}
+            primarySelectedEntityId={editor.primarySelectedEntityId}
             onChange={applyLevelDataUpdate}
             onSelectionChange={(entityIds, primaryEntityId) => {
-              setSelectedEntityIds(entityIds);
-              setPrimarySelectedEntityId(primaryEntityId);
+              editor.setSelectedEntityIds(entityIds);
+              editor.setPrimarySelectedEntityId(primaryEntityId);
             }}
-            onToolChange={setActiveTool}
-            onPointerWorldChange={setCanvasPointer}
-            gridVisible={isAltPressed}
-            gridSnapEnabled={isAltPressed}
-            gridSize={gridSize}
+            onToolChange={editor.setActiveTool}
+            onPointerWorldChange={editor.setCanvasPointer}
+            gridVisible={editor.isAltPressed}
+            gridSnapEnabled={editor.isAltPressed}
+            gridSize={editor.gridSize}
             isSnapTemporarilyDisabled={false}
-            groupSelectionRotationAngle={groupRotationAngle}
-            onGroupSelectionRotationAngleChange={setGroupRotationAngle}
-            groupSelectionCenter={groupSelectionCenter}
-            onGroupSelectionCenterChange={setGroupSelectionCenter}
-            groupSelectionSize={groupSelectionSize}
-            onGroupSelectionSizeChange={setGroupSelectionSize}
+            groupSelectionRotationAngle={editor.groupRotationAngle}
+            onGroupSelectionRotationAngleChange={editor.setGroupRotationAngle}
+            groupSelectionCenter={editor.groupSelectionCenter}
+            onGroupSelectionCenterChange={editor.setGroupSelectionCenter}
+            groupSelectionSize={editor.groupSelectionSize}
+            onGroupSelectionSizeChange={editor.setGroupSelectionSize}
             groundEditEnabled={groundEditorEnabled}
             terrainEditMode={terrainEditMode}
             groundStrokeSimplifyConfig={groundStrokeSimplifyConfig}
@@ -1578,8 +1526,8 @@ export const DesignerPage = ({
           {designerPhase === "entities" ? (
             <SelectedEntityPanel
               levelData={levelData}
-              selectedEntityIds={selectedEntityIds}
-              primarySelectedEntityId={primarySelectedEntityId}
+              selectedEntityIds={editor.selectedEntityIds}
+              primarySelectedEntityId={editor.primarySelectedEntityId}
             />
           ) : null}
       </DesignerWorkspace>
