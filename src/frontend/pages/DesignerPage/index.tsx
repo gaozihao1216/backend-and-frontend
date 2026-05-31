@@ -3,7 +3,6 @@ import { EditorToolbar } from "../../components/designer/EditorToolbar.js";
 import { LevelEditorCanvas } from "../../components/designer/LevelEditorCanvas.js";
 import { RotationKnob } from "../../components/designer/RotationKnob.js";
 import { SelectedEntityPanel } from "../../components/designer/SelectedEntityPanel.js";
-import { LevelPreviewCard } from "../../components/game/LevelPreviewCard.js";
 import { createLevel, submitLevel } from "../../lib/api.js";
 import { API_USERS } from "../../lib/config.js";
 import {
@@ -16,7 +15,7 @@ import {
   reorderTerrainBoundaryPoint,
   setTerrainBoundaryType,
 } from "../../lib/ground.js";
-import { createDraftLevelSource, createPublishedLevelSource } from "../../lib/level-repository.js";
+import { createDraftLevelSource } from "../../lib/level-repository.js";
 import {
   getEntitySnapshots,
   getEntitySnapshot,
@@ -46,6 +45,9 @@ import { DesignBookPage } from "./components/DesignBookPage/index.js";
 import { SettingsPage } from "./components/SettingsPage/index.js";
 import { JsonCheckPanel } from "./components/JsonCheckPanel.js";
 import { LevelFormPanel } from "./components/LevelFormPanel.js";
+import { DesignerBackupPanel } from "./components/DesignerBackupPanel.js";
+import { CreatedLevelsPanel } from "./components/CreatedLevelsPanel.js";
+import { DraftPreviewPanel } from "./components/DraftPreviewPanel.js";
 
 export const DesignerPage = ({
   userId = API_USERS.designer.id,
@@ -896,29 +898,12 @@ export const DesignerPage = ({
           查看或修改Json文件
         </button>
       </div>
-      <section className="designer-backup-panel">
-        <div className="card-header">
-          <strong>存档备份</strong>
-          <span>最多保留 {MAX_DESIGNER_BACKUPS} 份，超出后自动替换最早备份</span>
-        </div>
-        {designerBackups.length === 0 ? <p className="meta">当前还没有备份。</p> : null}
-        {designerBackups.map((backup) => (
-          <div key={backup.id} className="designer-backup-item">
-            <div>
-              <strong>{backup.title || "未命名草稿"}</strong>
-              <p className="meta">{new Date(backup.createdAt).toLocaleString("zh-CN")}</p>
-            </div>
-            <div className="designer-backup-actions">
-              <button type="button" className="secondary" onClick={() => onOpenArchive?.(backup.archiveId)}>
-                查看备份
-              </button>
-              <button type="button" className="secondary" onClick={() => handleRestoreBackup(backup.id)}>
-                恢复
-              </button>
-            </div>
-          </div>
-        ))}
-      </section>
+      <DesignerBackupPanel
+        backups={designerBackups}
+        maxBackups={MAX_DESIGNER_BACKUPS}
+        onOpenArchive={onOpenArchive}
+        onRestoreBackup={handleRestoreBackup}
+      />
 
       <DesignerWorkspace>
           <LevelEditorCanvas
@@ -962,24 +947,13 @@ export const DesignerPage = ({
           ) : null}
       </DesignerWorkspace>
 
-      <section className="comment-section">
-        <div className="card-header">
-          <strong>Draft Preview</strong>
-          <span>Shared runtime</span>
-        </div>
-        <p className="meta">
-          试玩预览改为按需打开。地面调整请优先直接看上方可视化编辑画布，避免频繁重建物理世界。
-        </p>
-        <LevelPreviewCard
-          source={createDraftLevelSource({
-            title,
-            description,
-            tags: selectedTags,
-            data: draftPreviewLevel.data,
-            authorId: userId,
-          })}
-        />
-      </section>
+      <DraftPreviewPanel
+        title={title}
+        description={description}
+        tags={selectedTags}
+        data={draftPreviewLevel.data}
+        authorId={userId}
+      />
 
       <div className="designer-create-actions">
         <button type="button" disabled={isTitleMissing} onClick={handleCreate}>
@@ -991,38 +965,11 @@ export const DesignerPage = ({
       {message ? <p className="feedback success">{message}</p> : null}
       {error ? <p className="feedback error">{error}</p> : null}
 
-      <div className="list">
-        <h3>Created In This Session</h3>
-        {createdLevels.length === 0 ? <p>No levels created yet.</p> : null}
-        {createdLevels.map((level) => {
-          const isSubmitted = submittedIds.includes(level.id);
-          return (
-            <article key={level.id} className="card">
-              <div className="card-header">
-                <strong>{level.title}</strong>
-                <span>{level.status}</span>
-              </div>
-              <p>{level.description || "No description"}</p>
-              <div className="tag-list">
-                {level.tags.map((tag) => (
-                  <span key={tag} className="tag-chip">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <p className="meta">Level ID: {level.id}</p>
-              <LevelPreviewCard source={createPublishedLevelSource(level)} />
-              <button
-                type="button"
-                disabled={isSubmitted}
-                onClick={() => handleSubmit(level.id)}
-              >
-                {isSubmitted ? "Submitted" : "Submit For Review"}
-              </button>
-            </article>
-          );
-        })}
-      </div>
+      <CreatedLevelsPanel
+        createdLevels={createdLevels}
+        submittedIds={submittedIds}
+        onSubmitLevel={handleSubmit}
+      />
     </section>
   );
 };
