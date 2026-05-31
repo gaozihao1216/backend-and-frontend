@@ -283,6 +283,42 @@ export const DesignerPage = ({
     return true;
   };
 
+  const handleUndoShortcut = (event: KeyboardEvent): boolean => {
+    const modifierPressed = event.ctrlKey || event.metaKey;
+    if (!modifierPressed || event.shiftKey || event.key.toLowerCase() !== "z") {
+      return false;
+    }
+
+    if (undoHistory.length === 0) {
+      return false;
+    }
+
+    event.preventDefault();
+    handleUndo();
+    return true;
+  };
+
+  const handleRedoShortcut = (event: KeyboardEvent): boolean => {
+    const modifierPressed = event.ctrlKey || event.metaKey;
+    if (
+      !modifierPressed
+      || (
+        event.key.toLowerCase() !== "y"
+        && (!event.shiftKey || event.key.toLowerCase() !== "z")
+      )
+    ) {
+      return false;
+    }
+
+    if (redoHistory.length === 0) {
+      return false;
+    }
+
+    event.preventDefault();
+    handleRedo();
+    return true;
+  };
+
   useDesignerKeyboardShortcuts(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) {
@@ -293,29 +329,11 @@ export const DesignerPage = ({
       const snapshot = editor.primarySelectedEntityId ? getEntitySnapshot(levelData, editor.primarySelectedEntityId) : null;
       const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
 
-      if (modifierPressed && !event.shiftKey && event.key.toLowerCase() === "z") {
-        if (undoHistory.length === 0) {
-          return;
-        }
-
-        event.preventDefault();
-        handleUndo();
+      if (handleUndoShortcut(event)) {
         return;
       }
 
-      if (
-        modifierPressed
-        && (
-          event.key.toLowerCase() === "y"
-          || (event.shiftKey && event.key.toLowerCase() === "z")
-        )
-      ) {
-        if (redoHistory.length === 0) {
-          return;
-        }
-
-        event.preventDefault();
-        handleRedo();
+      if (handleRedoShortcut(event)) {
         return;
       }
 
