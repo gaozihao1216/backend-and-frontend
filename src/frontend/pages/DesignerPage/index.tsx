@@ -321,6 +321,52 @@ export const DesignerPage = ({
     return true;
   };
 
+  const handleCopyShortcut = (
+    event: KeyboardEvent,
+  ): boolean => {
+    const modifierPressed = event.ctrlKey || event.metaKey;
+    if (!modifierPressed || event.key.toLowerCase() !== "c") {
+      return false;
+    }
+
+    const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
+    if (snapshots.length === 0) {
+      return false;
+    }
+
+    event.preventDefault();
+    editor.setClipboardSelection({
+      entities: snapshots,
+      primaryEntityId: editor.primarySelectedEntityId,
+    });
+    return true;
+  };
+
+  const handlePasteShortcut = (
+    event: KeyboardEvent,
+  ): boolean => {
+    const modifierPressed = event.ctrlKey || event.metaKey;
+    if (!modifierPressed || event.key.toLowerCase() !== "v") {
+      return false;
+    }
+
+    if (!editor.clipboardSelection || !editor.canvasPointer) {
+      return false;
+    }
+
+    event.preventDefault();
+    const pasted = pasteClipboardSelection(levelData, editor.clipboardSelection, editor.canvasPointer);
+    if (!pasted) {
+      return true;
+    }
+
+    applyLevelDataUpdate(pasted.levelData);
+    editor.setSelectedEntityIds(pasted.entityIds);
+    editor.setPrimarySelectedEntityId(pasted.primaryEntityId);
+    editor.setActiveTool("select");
+    return true;
+  };
+
   useDesignerKeyboardShortcuts(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) {
@@ -339,16 +385,7 @@ export const DesignerPage = ({
         return;
       }
 
-      if (modifierPressed && event.key.toLowerCase() === "c") {
-        if (snapshots.length === 0) {
-          return;
-        }
-
-        event.preventDefault();
-        editor.setClipboardSelection({
-          entities: snapshots,
-          primaryEntityId: editor.primarySelectedEntityId,
-        });
+      if (handleCopyShortcut(event)) {
         return;
       }
 
@@ -371,21 +408,7 @@ export const DesignerPage = ({
         return;
       }
 
-      if (modifierPressed && event.key.toLowerCase() === "v") {
-        if (!editor.clipboardSelection || !editor.canvasPointer) {
-          return;
-        }
-
-        event.preventDefault();
-        const pasted = pasteClipboardSelection(levelData, editor.clipboardSelection, editor.canvasPointer);
-        if (!pasted) {
-          return;
-        }
-
-        applyLevelDataUpdate(pasted.levelData);
-        editor.setSelectedEntityIds(pasted.entityIds);
-        editor.setPrimarySelectedEntityId(pasted.primaryEntityId);
-        editor.setActiveTool("select");
+      if (handlePasteShortcut(event)) {
         return;
       }
 
