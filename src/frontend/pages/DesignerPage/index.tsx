@@ -52,6 +52,8 @@ import { GroundEditorToggleControls } from "./components/GroundEditorToggleContr
 import { CeilingControls } from "./components/CeilingControls.js";
 import { VoidSpanControls } from "./components/VoidSpanControls.js";
 import { GroundPointControls } from "./components/GroundPointControls.js";
+import { DesignerActionBar } from "./components/DesignerActionBar.js";
+import { DesignerGridControls } from "./components/DesignerGridControls.js";
 
 export const DesignerPage = ({
   userId = API_USERS.designer.id,
@@ -719,16 +721,10 @@ export const DesignerPage = ({
           </div>
         </div>
       ) : null}
-      <div className="designer-grid-controls">
-        <label className="designer-grid-size">
-          <span>网格间距</span>
-          <select value={editor.gridSize} onChange={(event) => editor.setGridSize(Number(event.target.value))}>
-            <option value={8}>8</option>
-            <option value={16}>16</option>
-            <option value={24}>24</option>
-          </select>
-        </label>
-      </div>
+      <DesignerGridControls
+        gridSize={editor.gridSize}
+        onGridSizeChange={editor.setGridSize}
+      />
       {groundEditor.designerPhase === "ground" ? (
       <>
       <GroundEditorToggleControls
@@ -776,46 +772,16 @@ export const DesignerPage = ({
       />
       </>
       ) : null}
-      <div className="actions">
-        <button
-          type="button"
-          className="secondary"
-          disabled={undoHistory.length === 0}
-          onClick={handleUndo}
-        >
-          撤销
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          disabled={redoHistory.length === 0}
-          onClick={handleRedo}
-        >
-          恢复
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={handleCreateBackup}
-        >
-          保存备份
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          disabled={groundEditor.designerPhase !== "entities" || editor.selectedEntityIds.length === 0}
-          onClick={handleDeleteSelected}
-        >
-          删除选中对象
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={onOpenJsonCheck}
-        >
-          查看或修改Json文件
-        </button>
-      </div>
+      <DesignerActionBar
+        undoDisabled={undoHistory.length === 0}
+        redoDisabled={redoHistory.length === 0}
+        deleteSelectedDisabled={groundEditor.designerPhase !== "entities" || editor.selectedEntityIds.length === 0}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onCreateBackup={handleCreateBackup}
+        onDeleteSelected={handleDeleteSelected}
+        onOpenJsonCheck={onOpenJsonCheck}
+      />
       <DesignerBackupPanel
         backups={designerBackups}
         maxBackups={MAX_DESIGNER_BACKUPS}
