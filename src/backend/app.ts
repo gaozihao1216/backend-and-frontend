@@ -21,6 +21,10 @@ export const createApp = () => {
     res.json(success({ status: "ok" as const }));
   });
 
+  // Deprecated: legacy auth aliases.
+  // Use GET /auth/backend-users instead of GET /users.
+  // Use POST /auth/bind instead of POST /users/bind.
+  // Keep these aliases temporarily for backward compatibility.
   app.get("/users", getBackendUsersHandler);
   app.post("/users/bind", bindBackendUserHandler);
 
