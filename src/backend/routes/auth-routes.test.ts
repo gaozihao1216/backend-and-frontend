@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import test, { beforeEach } from "node:test";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
+import {
+  BindBackendUserResponseSchema,
+  GetBackendUsersResponseSchema,
+} from "../../shared/types.js";
+
+process.env.NODE_ENV = "test";
+
+const { bindBackendUserHandler, getBackendUsersHandler } = await import("./auth-routes.js");
+const { resetStore } = await import("../data/store.js");
+
+beforeEach(() => {
+  resetStore();
+});
+
+const runHandler = (
+  handler: RequestHandler,
+  request: Pick<Request, "body" | "query">,
+) => {
+  const captured: { statusCode: number; body: unknown } = {
+    statusCode: 200,
+    body: undefined,
+  };
+
+  const response = {
+    status: (statusCode: number) => {
+      captured.statusCode = statusCode;
+      return response;
+    },
+    json: (body: unknown) => {
+      captured.body = body;
+      return response;
+    },
+  } as Response;
+
+  const next: NextFunction = (error?: unknown) => {
+    if (error) {
+      throw error;
+    }
+  };
+
+  handler(request as Request, response, next);
+  assert.notEqual(captured.body, undefined);
+  return captured;
+};
+
+test("GET /auth/backend-users returns available backend users", async () => {
+  const response = runHandler(getBackendUsersHandler, {
+    body: {},
+    query: {},
+  });
+  assert.equal(response.statusCode, 200);
+
+  const body = GetBackendUsersResponseSchema.parse(response.body);
+  assert.ok(body.data.length > 0);
+
+  const roles = new Set(body.data.map((user) => user.role));
+  assert.ok(roles.has("player"));
+  assert.ok(roles.has("designer"));
+  assert.ok(roles.has("admin"));
+});
+
+test("POST /auth/bind binds a local auth user to a backend user", async () => {
+  const response = runHandler(bindBackendUserHandler, {
+    query: {},
+    body: {
+      localUserId: "auth-route-test-user",
+      nickname: "Route Tester",
+      role: "designer",
+    },
+  });
+
+  assert.equal(response.statusCode, 201);
+
+  const body = BindBackendUserResponseSchema.parse(response.body);
+  assert.equal(body.data.role, "designer");
+  assert.equal(body.data.displayName, "Route Tester");
+  assert.match(body.data.id, /^designer-/);
+});
