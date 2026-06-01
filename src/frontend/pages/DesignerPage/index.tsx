@@ -27,7 +27,6 @@ import {
 } from "../../lib/designer-level.js";
 import type { Level, LevelData, LevelTag, Submission } from "../../../shared/types.js";
 import { useDesignerDraft, availableTags } from "./hooks/useDesignerDraft.js";
-import { MAX_UNDO_STEPS, useDesignerHistory } from "./hooks/useDesignerHistory.js";
 import { MAX_DESIGNER_BACKUPS, useDesignerBackups } from "./hooks/useDesignerBackups.js";
 import { useDesignerGroundTuning } from "./hooks/useDesignerGroundTuning.js";
 import { isEditableTarget, useDesignerKeyboardShortcuts } from "./hooks/useDesignerKeyboardShortcuts.js";
@@ -101,11 +100,19 @@ export const DesignerPage = ({
     setJsonText,
     jsonError,
     setJsonError,
+    undoHistory,
+    redoHistory,
+    clearHistory,
     setLevelDataAndSyncJson,
+    applyLevelDataUpdate,
+    handleUndo,
+    handleRedo,
     tryApplyJsonText,
-  } = useDesignerLevelDataController({ initialLevelData: initialDesignerLevelData });
+  } = useDesignerLevelDataController({
+    initialLevelData: initialDesignerLevelData,
+    onLevelDataReplaced: () => resetEditorSelection(),
+  });
   const editor = useDesignerEditor({ levelData });
-  const { undoHistory, setUndoHistory, redoHistory, setRedoHistory, clearHistory } = useDesignerHistory();
   const { designerBackups, setDesignerBackups } = useDesignerBackups();
   const {
     groundStrokeSimplifyConfig,
@@ -166,50 +173,6 @@ export const DesignerPage = ({
   }) => {
     restoreDraft(draft);
     clearHistory();
-  };
-
-  const applyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => {
-    // 所有对 levelData 的修改都走这一层，确保 JSON 面板与画布视图始终同步。
-    setLevelData((current) => {
-      const nextLevelData = typeof updater === "function" ? updater(current) : updater;
-      if (nextLevelData === current) {
-        return current;
-      }
-
-      setUndoHistory((history) => [cloneLevelData(current), ...history].slice(0, MAX_UNDO_STEPS));
-      setRedoHistory([]);
-      setJsonText(JSON.stringify(nextLevelData, null, 2));
-      setJsonError("");
-      return nextLevelData;
-    });
-  };
-
-  const handleUndo = () => {
-    setUndoHistory((history) => {
-      const previousLevelData = history[0];
-      if (!previousLevelData) {
-        return history;
-      }
-
-      setLevelDataAndSyncJson(previousLevelData);
-      setRedoHistory((redo) => [cloneLevelData(levelData), ...redo].slice(0, MAX_UNDO_STEPS));
-      resetEditorSelection();
-      return history.slice(1);
-    });
-  };
-
-  const handleRedo = () => {
-    setRedoHistory((history) => {
-      const nextLevelData = history[0];
-      if (!nextLevelData) {
-        return history;
-      }
-
-      setUndoHistory((undo) => [cloneLevelData(levelData), ...undo].slice(0, MAX_UNDO_STEPS));
-      setLevelDataAndSyncJson(nextLevelData);
-      resetEditorSelection();
-      return history.slice(1);
-    });
   };
 
   const handleCreateBackup = () => {
