@@ -2,11 +2,7 @@ import { createDefaultLevelInput } from "../../lib/api.js";
 import { API_USERS } from "../../lib/config.js";
 import { createDraftLevelSource } from "../../lib/level-repository.js";
 import {
-  getGroupTransformSnapshot,
-  getSelectionFrame,
   removeEntity,
-  rotateEntitiesAroundSelectionCenter,
-  updateObstacleAngle,
 } from "../../lib/designer-level.js";
 import type { LevelData, LevelTag } from "../../../shared/types.js";
 import { useDesignerDraft, availableTags } from "./hooks/useDesignerDraft.js";
@@ -20,7 +16,7 @@ import { useDesignerFeedback } from "./hooks/useDesignerFeedback.js";
 import { useDesignerLevelSubmission } from "./hooks/useDesignerLevelSubmission.js";
 import { useDesignerKeyboardActions } from "./hooks/useDesignerKeyboardActions.js";
 import { useDesignerGroundActions } from "./hooks/useDesignerGroundActions.js";
-import { normalizeAngle } from "./functions/ground-tuning-functions.js";
+import { useDesignerRotationActions } from "./hooks/useDesignerRotationActions.js";
 import type { DesignerPageProps, DesignerPhase } from "./objects/designer-page-types.js";
 import { ArchivePanel } from "./components/ArchivePanel.js";
 import { DesignerHeader } from "./components/DesignerHeader.js";
@@ -205,6 +201,16 @@ export const DesignerPage = ({
     : editor.selectedObstacle?.angle ?? 0;
   const rotationDisabled = editor.activeTool !== "rotate"
     || (editor.selectedEntityIds.length === 1 ? !editor.selectedObstacle : editor.selectedEntityIds.length === 0);
+  const { handleRotationAngleChange } = useDesignerRotationActions({
+    levelData,
+    selectedEntityIds: editor.selectedEntityIds,
+    groupRotationAngle: editor.groupRotationAngle,
+    groupSelectionCenter: editor.groupSelectionCenter,
+    groupSelectionSize: editor.groupSelectionSize,
+    selectedObstacle: editor.selectedObstacle,
+    applyLevelDataUpdate,
+    setGroupRotationAngle: editor.setGroupRotationAngle,
+  });
   const handleDeleteSelected = () => {
     if (editor.selectedEntityIds.length === 0) {
       return;
@@ -299,48 +305,6 @@ export const DesignerPage = ({
     if (tryApplyJsonText()) {
       onExitJsonCheck?.();
     }
-  };
-
-  const handleRotationAngleChange = (angle: number) => {
-    if (editor.selectedEntityIds.length > 1) {
-      const snapshot = getGroupTransformSnapshot(levelData, editor.selectedEntityIds);
-      const frame = editor.groupSelectionCenter && editor.groupSelectionSize
-        ? {
-            centerX: editor.groupSelectionCenter.x,
-            centerY: editor.groupSelectionCenter.y,
-            width: editor.groupSelectionSize.width,
-            height: editor.groupSelectionSize.height,
-            rotation: editor.groupRotationAngle,
-          }
-        : getSelectionFrame(
-            levelData,
-            editor.selectedEntityIds,
-            editor.groupRotationAngle,
-            editor.groupSelectionCenter ?? undefined,
-          );
-      if (!snapshot || !frame) {
-        return;
-      }
-
-      const deltaAngle = normalizeAngle(angle - editor.groupRotationAngle);
-      const nextLevelData = rotateEntitiesAroundSelectionCenter(
-        levelData,
-        snapshot,
-        { x: frame.centerX, y: frame.centerY },
-        deltaAngle,
-      );
-      if (nextLevelData !== levelData) {
-        applyLevelDataUpdate(nextLevelData);
-        editor.setGroupRotationAngle(angle);
-      }
-      return;
-    }
-
-    if (!editor.selectedObstacle) {
-      return;
-    }
-
-    applyLevelDataUpdate((current) => updateObstacleAngle(current, editor.selectedObstacle!.id, angle));
   };
 
   if (mode === "archive_json_check") {
