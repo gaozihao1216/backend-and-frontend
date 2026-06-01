@@ -5,6 +5,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/health": "http://localhost:3000",
+      "/auth": "http://localhost:3000",
       "/users": "http://localhost:3000",
       "/designer/levels": "http://localhost:3000",
       "/designer/submissions": "http://localhost:3000",
