@@ -1,42 +1,27 @@
-import type { ChangeEvent } from "react";
-import { EditorToolbar } from "../../components/designer/EditorToolbar.js";
-import { RotationKnob } from "../../components/designer/RotationKnob.js";
-import { createDefaultLevelInput, createLevel, submitLevel } from "../../lib/api.js";
+import { createDefaultLevelInput } from "../../lib/api.js";
 import { API_USERS } from "../../lib/config.js";
-import {
-  clearTerrainCeilingBoundary,
-  createBottomBoundaryFromTop,
-  ensureTerrainCeilingBoundary,
-  getLevelTerrain,
-  removeTerrainBoundaryPoint,
-  removeTerrainVoidSpan,
-  reorderTerrainBoundaryPoint,
-  setTerrainBoundaryType,
-  type TerrainEditMode,
-} from "../../lib/ground.js";
 import { createDraftLevelSource } from "../../lib/level-repository.js";
 import {
-  getEntitySnapshots,
-  getEntitySnapshot,
   getGroupTransformSnapshot,
   getSelectionFrame,
-  pasteClipboardSelection,
   removeEntity,
   rotateEntitiesAroundSelectionCenter,
   updateObstacleAngle,
 } from "../../lib/designer-level.js";
-import type { Level, LevelData, LevelTag, Submission } from "../../../shared/types.js";
+import type { LevelData, LevelTag } from "../../../shared/types.js";
 import { useDesignerDraft, availableTags } from "./hooks/useDesignerDraft.js";
-import { MAX_DESIGNER_BACKUPS, useDesignerBackups } from "./hooks/useDesignerBackups.js";
+import { MAX_DESIGNER_BACKUPS, useDesignerBackupActions } from "./hooks/useDesignerBackupActions.js";
 import { useDesignerGroundTuning } from "./hooks/useDesignerGroundTuning.js";
 import { isEditableTarget, useDesignerKeyboardShortcuts } from "./hooks/useDesignerKeyboardShortcuts.js";
 import { useDesignerEditor } from "./hooks/useDesignerEditor.js";
 import { useDesignerGroundEditor } from "./hooks/useDesignerGroundEditor.js";
 import { useDesignerLevelDataController } from "./hooks/useDesignerLevelDataController.js";
-import { cloneLevelData, formatArchiveTimestamp, serializeDraft } from "./functions/draft-functions.js";
-import { handleGroundEditorDelete } from "./functions/ground-editor-actions.js";
+import { useDesignerFeedback } from "./hooks/useDesignerFeedback.js";
+import { useDesignerLevelSubmission } from "./hooks/useDesignerLevelSubmission.js";
+import { useDesignerKeyboardActions } from "./hooks/useDesignerKeyboardActions.js";
+import { useDesignerGroundActions } from "./hooks/useDesignerGroundActions.js";
 import { normalizeAngle } from "./functions/ground-tuning-functions.js";
-import type { DesignerBackup, DesignerPageProps, DesignerPhase } from "./objects/designer-page-types.js";
+import type { DesignerPageProps, DesignerPhase } from "./objects/designer-page-types.js";
 import { ArchivePanel } from "./components/ArchivePanel.js";
 import { DesignerHeader } from "./components/DesignerHeader.js";
 import { DesignBookPage } from "./components/DesignBookPage/index.js";
@@ -54,6 +39,7 @@ import { VoidSpanControls } from "./components/VoidSpanControls.js";
 import { GroundPointControls } from "./components/GroundPointControls.js";
 import { DesignerActionBar } from "./components/DesignerActionBar.js";
 import { DesignerGridControls } from "./components/DesignerGridControls.js";
+import { DesignerEntityControls } from "./components/DesignerEntityControls.js";
 
 const initialDesignerLevelData = createDefaultLevelInput().data;
 
@@ -84,22 +70,13 @@ export const DesignerPage = ({
     setDescription,
     selectedTags,
     setSelectedTags,
-    createdLevels,
-    setCreatedLevels,
-    submittedIds,
-    setSubmittedIds,
-    message,
-    setMessage,
-    error,
-    setError,
+    toggleTag,
   } = useDesignerDraft();
+  const { message, setMessage, error, setError } = useDesignerFeedback();
   const {
     levelData,
-    setLevelData,
     jsonText,
-    setJsonText,
     jsonError,
-    setJsonError,
     undoHistory,
     redoHistory,
     clearHistory,
@@ -107,13 +84,13 @@ export const DesignerPage = ({
     applyLevelDataUpdate,
     handleUndo,
     handleRedo,
+    handleJsonTextChange,
     tryApplyJsonText,
   } = useDesignerLevelDataController({
     initialLevelData: initialDesignerLevelData,
     onLevelDataReplaced: () => resetEditorSelection(),
   });
   const editor = useDesignerEditor({ levelData });
-  const { designerBackups, setDesignerBackups } = useDesignerBackups();
   const {
     groundStrokeSimplifyConfig,
     setGroundStrokeSimplifyConfig,
@@ -127,6 +104,21 @@ export const DesignerPage = ({
   } = useDesignerGroundTuning();
   const groundEditor = useDesignerGroundEditor({ levelData });
   const isTitleMissing = title.trim().length === 0;
+  const {
+    createdLevels,
+    submittedIds,
+    handleCreate,
+    handleSubmit,
+  } = useDesignerLevelSubmission({
+    userId,
+    title,
+    description,
+    selectedTags,
+    levelData,
+    isTitleMissing,
+    setMessage,
+    setError,
+  });
   const draftPreviewLevel = createDraftLevelSource({
     title,
     description,
@@ -134,9 +126,6 @@ export const DesignerPage = ({
     data: levelData,
     authorId: userId,
   }).level;
-  const archiveBackup = archiveBackupId
-    ? designerBackups.find((backup) => backup.archiveId === archiveBackupId) ?? null
-    : null;
 
   const resetEditorSelection = () => {
     editor.resetEditorSelection();
@@ -175,44 +164,47 @@ export const DesignerPage = ({
     clearHistory();
   };
 
-  const handleCreateBackup = () => {
-    const draft = {
-      title,
-      description,
-      selectedTags: [...selectedTags],
-      levelData: cloneLevelData(levelData),
-    };
-    const draftSignature = serializeDraft(draft);
-    if (designerBackups.some((backup) => serializeDraft(backup) === draftSignature)) {
-      setMessage("当前内容与已有备份一致，已跳过重复备份");
-      setError("");
-      return;
-    }
+  const { designerBackups, handleCreateBackup, handleRestoreBackup } = useDesignerBackupActions({
+    title,
+    description,
+    selectedTags,
+    levelData,
+    restoreDraftAndClearHistory,
+    setMessage,
+    setError,
+  });
 
-    const createdAtDate = new Date();
-    const backup: DesignerBackup = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      archiveId: formatArchiveTimestamp(createdAtDate),
-      createdAt: createdAtDate.toISOString(),
-      ...draft,
-    };
-
-    setDesignerBackups((current) => [backup, ...current].slice(0, MAX_DESIGNER_BACKUPS));
-    setMessage(`已保存备份 ${new Date(backup.createdAt).toLocaleString("zh-CN")}`);
-    setError("");
-  };
-
-  const handleRestoreBackup = (backupId: string) => {
-    const backup = designerBackups.find((item) => item.id === backupId);
-    if (!backup) {
-      return;
-    }
-
-    restoreDraftAndClearHistory(backup);
-    setMessage(`已恢复备份 ${new Date(backup.createdAt).toLocaleString("zh-CN")}`);
-    setError("");
-  };
-
+  const archiveBackup = archiveBackupId
+    ? designerBackups.find((backup) => backup.archiveId === archiveBackupId) ?? null
+    : null;
+  const {
+    handleTerrainBoundaryTypeChange,
+    handleTerrainEditModeChange,
+    handleToggleGroundEditor,
+    handleCreateCeilingBoundary,
+    handleDeleteCeilingBoundary,
+    handleGenerateGroundFromCeiling,
+    handleMoveGroundPointForward,
+    handleMoveGroundPointBackward,
+    handleRemoveGroundPoint,
+    handleRemoveVoidSpan,
+  } = useDesignerGroundActions({
+    activeBoundaryKind: groundEditor.activeBoundaryKind,
+    applyLevelDataUpdate,
+    bottomThickness: groundEditor.bottomThickness,
+    levelData,
+    selectedGroundPointIndex: groundEditor.selectedGroundPointIndex,
+    selectedVoidSpanId: groundEditor.selectedVoidSpanId,
+    setGroundEditorEnabled: groundEditor.setGroundEditorEnabled,
+    setTerrainEditMode: groundEditor.setTerrainEditMode,
+    setSelectedGroundPointIndex: groundEditor.setSelectedGroundPointIndex,
+    setSelectedVoidSpanId: groundEditor.setSelectedVoidSpanId,
+  });
+  const rotationAngle = editor.selectedEntityIds.length > 1
+    ? editor.groupRotationAngle
+    : editor.selectedObstacle?.angle ?? 0;
+  const rotationDisabled = editor.activeTool !== "rotate"
+    || (editor.selectedEntityIds.length === 1 ? !editor.selectedObstacle : editor.selectedEntityIds.length === 0);
   const handleDeleteSelected = () => {
     if (editor.selectedEntityIds.length === 0) {
       return;
@@ -225,151 +217,37 @@ export const DesignerPage = ({
     editor.setPrimarySelectedEntityId(null);
   };
 
-  const handleDeleteShortcut = (
-    event: KeyboardEvent,
-  ): boolean => {
-    if (event.key !== "Delete") {
-      return false;
-    }
-
-    if (handleGroundEditorDelete({
-      groundEditorEnabled: groundEditor.groundEditorEnabled,
-      terrainEditMode: groundEditor.terrainEditMode,
-      selectedVoidSpanId: groundEditor.selectedVoidSpanId,
-      selectedGroundPointIndex: groundEditor.selectedGroundPointIndex,
-      activeBoundaryKind: groundEditor.activeBoundaryKind,
-      levelData,
-      applyLevelDataUpdate,
-      setSelectedVoidSpanId: groundEditor.setSelectedVoidSpanId,
-      setSelectedGroundPointIndex: groundEditor.setSelectedGroundPointIndex,
-    })) {
-      event.preventDefault();
-      return true;
-    }
-
-    // 设计器支持 Delete 快捷删除，行为与图形编辑工具保持一致。
-    if (editor.selectedEntityIds.length === 0) {
-      return false;
-    }
-
-    event.preventDefault();
-    handleDeleteSelected();
-    return true;
-  };
-
-  const handleUndoShortcut = (event: KeyboardEvent): boolean => {
-    const modifierPressed = event.ctrlKey || event.metaKey;
-    if (!modifierPressed || event.shiftKey || event.key.toLowerCase() !== "z") {
-      return false;
-    }
-
-    if (undoHistory.length === 0) {
-      return false;
-    }
-
-    event.preventDefault();
-    handleUndo();
-    return true;
-  };
-
-  const handleRedoShortcut = (event: KeyboardEvent): boolean => {
-    const modifierPressed = event.ctrlKey || event.metaKey;
-    if (
-      !modifierPressed
-      || (
-        event.key.toLowerCase() !== "y"
-        && (!event.shiftKey || event.key.toLowerCase() !== "z")
-      )
-    ) {
-      return false;
-    }
-
-    if (redoHistory.length === 0) {
-      return false;
-    }
-
-    event.preventDefault();
-    handleRedo();
-    return true;
-  };
-
-  const handleCopyShortcut = (
-    event: KeyboardEvent,
-  ): boolean => {
-    const modifierPressed = event.ctrlKey || event.metaKey;
-    if (!modifierPressed || event.key.toLowerCase() !== "c") {
-      return false;
-    }
-
-    const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
-    if (snapshots.length === 0) {
-      return false;
-    }
-
-    event.preventDefault();
-    editor.setClipboardSelection({
-      entities: snapshots,
-      primaryEntityId: editor.primarySelectedEntityId,
-    });
-    return true;
-  };
-
-  const handlePasteShortcut = (
-    event: KeyboardEvent,
-  ): boolean => {
-    const modifierPressed = event.ctrlKey || event.metaKey;
-    if (!modifierPressed || event.key.toLowerCase() !== "v") {
-      return false;
-    }
-
-    if (!editor.clipboardSelection || !editor.canvasPointer) {
-      return false;
-    }
-
-    event.preventDefault();
-    const pasted = pasteClipboardSelection(levelData, editor.clipboardSelection, editor.canvasPointer);
-    if (!pasted) {
-      return true;
-    }
-
-    applyLevelDataUpdate(pasted.levelData);
-    editor.setSelectedEntityIds(pasted.entityIds);
-    editor.setPrimarySelectedEntityId(pasted.primaryEntityId);
-    editor.setActiveTool("select");
-    return true;
-  };
-
-  const handleCutShortcut = (
-    event: KeyboardEvent,
-  ): boolean => {
-    const modifierPressed = event.ctrlKey || event.metaKey;
-    if (!modifierPressed || event.key.toLowerCase() !== "x") {
-      return false;
-    }
-
-    if (!editor.primarySelectedEntityId) {
-      return false;
-    }
-
-    const snapshot = getEntitySnapshot(levelData, editor.primarySelectedEntityId);
-    if (!snapshot) {
-      return false;
-    }
-
-    const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
-    event.preventDefault();
-    editor.setClipboardSelection({
-      entities: snapshots,
-      primaryEntityId: editor.primarySelectedEntityId,
-    });
-    applyLevelDataUpdate((current) =>
-      editor.selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
-    );
-    editor.setSelectedEntityIds([]);
-    editor.setPrimarySelectedEntityId(null);
-    editor.setActiveTool("select");
-    return true;
-  };
+  const {
+    handleUndoShortcut,
+    handleRedoShortcut,
+    handleCopyShortcut,
+    handlePasteShortcut,
+    handleCutShortcut,
+    handleDeleteShortcut,
+  } = useDesignerKeyboardActions({
+    undoHistoryLength: undoHistory.length,
+    redoHistoryLength: redoHistory.length,
+    handleUndo,
+    handleRedo,
+    levelData,
+    selectedEntityIds: editor.selectedEntityIds,
+    primarySelectedEntityId: editor.primarySelectedEntityId,
+    setClipboardSelection: editor.setClipboardSelection,
+    clipboardSelection: editor.clipboardSelection,
+    canvasPointer: editor.canvasPointer,
+    applyLevelDataUpdate,
+    setSelectedEntityIds: editor.setSelectedEntityIds,
+    setPrimarySelectedEntityId: editor.setPrimarySelectedEntityId,
+    setActiveTool: editor.setActiveTool,
+    groundEditorEnabled: groundEditor.groundEditorEnabled,
+    terrainEditMode: groundEditor.terrainEditMode,
+    selectedVoidSpanId: groundEditor.selectedVoidSpanId,
+    selectedGroundPointIndex: groundEditor.selectedGroundPointIndex,
+    activeBoundaryKind: groundEditor.activeBoundaryKind,
+    setSelectedVoidSpanId: groundEditor.setSelectedVoidSpanId,
+    setSelectedGroundPointIndex: groundEditor.setSelectedGroundPointIndex,
+    handleDeleteSelected,
+  });
 
   useDesignerKeyboardShortcuts(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -417,139 +295,10 @@ export const DesignerPage = ({
     return { handleKeyDown, handleKeyUp, handleModifierState };
   }, [groundEditor.activeBoundaryKind, editor.canvasPointer, editor.clipboardSelection, groundEditor.groundEditorEnabled, levelData, editor.primarySelectedEntityId, redoHistory, editor.selectedEntityIds, groundEditor.selectedGroundPointIndex, groundEditor.selectedVoidSpanId, groundEditor.terrainEditMode, undoHistory]);
 
-  const handleJsonTextChange = (nextJsonText: string) => {
-    setJsonText(nextJsonText);
-    setJsonError("");
-  };
-
   const handleConfirmJsonChange = () => {
-    if (tryApplyJsonText(applyLevelDataUpdate)) {
+    if (tryApplyJsonText()) {
       onExitJsonCheck?.();
     }
-  };
-
-  const handleCreate = async () => {
-    setError("");
-    setMessage("");
-
-    if (isTitleMissing) {
-      setError("请先填写 Title，再创建关卡。");
-      return;
-    }
-
-    try {
-      // create 只负责保存草稿关卡，不会自动进入审核流程。
-      const level = await createLevel(userId, {
-        title,
-        description,
-        tags: selectedTags,
-        data: levelData,
-      });
-      setCreatedLevels((current) => [level, ...current]);
-      setMessage(`Created level ${level.id}`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to create level");
-    }
-  };
-
-  const toggleTag = (tag: LevelTag) => {
-    setSelectedTags((current) =>
-      current.includes(tag) ? current.filter((candidate) => candidate !== tag) : [...current, tag],
-    );
-  };
-
-  const handleSubmit = async (levelId: string) => {
-    setError("");
-    setMessage("");
-
-    try {
-      // submit 针对已经创建到后端的 levelId，而不是当前本地草稿。
-      const submission: Submission = await submitLevel(userId, levelId);
-      setSubmittedIds((current) => [...current, submission.levelId]);
-      setMessage(`Submitted ${submission.levelId} for review`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to submit level");
-    }
-  };
-
-  const handleTerrainBoundaryTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextType = event.target.value as "line" | "bezier";
-    applyLevelDataUpdate((current) => setTerrainBoundaryType(current, groundEditor.activeBoundaryKind, nextType));
-  };
-
-  const handleTerrainEditModeChange = (nextTerrainEditMode: TerrainEditMode) => {
-    groundEditor.setTerrainEditMode(nextTerrainEditMode);
-    groundEditor.resetGroundSelection();
-  };
-
-  const handleToggleGroundEditor = () => {
-    groundEditor.setGroundEditorEnabled((current) => !current);
-    groundEditor.resetGroundSelection();
-  };
-
-  const updateCeilingBoundary = (updater: (current: LevelData) => LevelData) => {
-    applyLevelDataUpdate((current) => updater(current));
-    groundEditor.setSelectedGroundPointIndex(null);
-  };
-
-  const handleCreateCeilingBoundary = () => {
-    updateCeilingBoundary(ensureTerrainCeilingBoundary);
-  };
-
-  const handleDeleteCeilingBoundary = () => {
-    updateCeilingBoundary(clearTerrainCeilingBoundary);
-  };
-
-  const handleGenerateGroundFromCeiling = () => {
-    applyLevelDataUpdate((current) => {
-      const currentTerrain = getLevelTerrain(current);
-      if (!currentTerrain.ceilingBoundary) {
-        return current;
-      }
-      return {
-        ...current,
-        ground: currentTerrain.groundBoundary,
-        terrain: {
-          ...currentTerrain,
-          groundBoundary: createBottomBoundaryFromTop(current, currentTerrain.ceilingBoundary, groundEditor.bottomThickness),
-        },
-      };
-    });
-  };
-
-  const moveGroundPoint = (direction: "left" | "right") => {
-    if (groundEditor.selectedGroundPointIndex === null) {
-      return;
-    }
-    const reordered = reorderTerrainBoundaryPoint(levelData, groundEditor.activeBoundaryKind, groundEditor.selectedGroundPointIndex, direction);
-    applyLevelDataUpdate(reordered.levelData);
-    groundEditor.setSelectedGroundPointIndex(reordered.pointIndex);
-  };
-
-  const handleMoveGroundPointForward = () => {
-    moveGroundPoint("left");
-  };
-
-  const handleMoveGroundPointBackward = () => {
-    moveGroundPoint("right");
-  };
-
-  const handleRemoveGroundPoint = () => {
-    if (groundEditor.selectedGroundPointIndex === null) {
-      return;
-    }
-    const removed = removeTerrainBoundaryPoint(levelData, groundEditor.activeBoundaryKind, groundEditor.selectedGroundPointIndex);
-    applyLevelDataUpdate(removed.levelData);
-    groundEditor.setSelectedGroundPointIndex(removed.nextSelectedPointIndex);
-  };
-
-  const handleRemoveVoidSpan = () => {
-    if (!groundEditor.selectedVoidSpanId) {
-      return;
-    }
-    const voidSpanId = groundEditor.selectedVoidSpanId;
-    applyLevelDataUpdate((current) => removeTerrainVoidSpan(current, voidSpanId));
-    groundEditor.setSelectedVoidSpanId(null);
   };
 
   const handleRotationAngleChange = (angle: number) => {
@@ -696,32 +445,13 @@ export const DesignerPage = ({
       />
 
       {groundEditor.designerPhase === "entities" ? (
-        <div className="designer-toolbar-row">
-          <EditorToolbar activeTool={editor.activeTool} onToolChange={editor.setActiveTool} />
-          <div className="rotation-controls-panel">
-            <div className="rotation-controls">
-              <RotationKnob
-                label="粗调"
-                angle={editor.selectedEntityIds.length > 1 ? editor.groupRotationAngle : editor.selectedObstacle?.angle ?? 0}
-                disabled={editor.activeTool !== "rotate" || (editor.selectedEntityIds.length === 1 ? !editor.selectedObstacle : editor.selectedEntityIds.length === 0)}
-                precisionMultiplier={1}
-                variant="coarse"
-                onChange={handleRotationAngleChange}
-              />
-              <RotationKnob
-                label="微调"
-                angle={editor.selectedEntityIds.length > 1 ? editor.groupRotationAngle : editor.selectedObstacle?.angle ?? 0}
-                disabled={editor.activeTool !== "rotate" || (editor.selectedEntityIds.length === 1 ? !editor.selectedObstacle : editor.selectedEntityIds.length === 0)}
-                precisionMultiplier={10}
-                variant="fine"
-                onChange={handleRotationAngleChange}
-              />
-            </div>
-            <div className="rotation-angle-readout">
-              <strong>{Math.round((((editor.selectedEntityIds.length > 1 ? editor.groupRotationAngle : editor.selectedObstacle?.angle ?? 0) * 180) / Math.PI))}°</strong>
-            </div>
-          </div>
-        </div>
+        <DesignerEntityControls
+          activeTool={editor.activeTool}
+          rotationAngle={rotationAngle}
+          rotationDisabled={rotationDisabled}
+          onToolChange={editor.setActiveTool}
+          onRotationAngleChange={handleRotationAngleChange}
+        />
       ) : null}
       <DesignerGridControls
         gridSize={editor.gridSize}

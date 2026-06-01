@@ -78,7 +78,7 @@ export const useDesignerLevelDataController = ({
     });
   };
 
-  const tryApplyJsonText = (applyLevelDataUpdate: ApplyLevelDataUpdate): boolean => {
+  const tryApplyJsonText = (): boolean => {
     try {
       const parsedLevelData = JSON.parse(jsonText) as LevelData;
       applyLevelDataUpdate(parsedLevelData);
@@ -90,13 +90,15 @@ export const useDesignerLevelDataController = ({
     }
   };
 
+  const handleJsonTextChange = (nextJsonText: string) => {
+    setJsonText(nextJsonText);
+    setJsonError("");
+  };
+
   return {
     levelData,
-    setLevelData,
     jsonText,
-    setJsonText,
     jsonError,
-    setJsonError,
     undoHistory,
     redoHistory,
     clearHistory,
@@ -104,6 +106,7 @@ export const useDesignerLevelDataController = ({
     applyLevelDataUpdate,
     handleUndo,
     handleRedo,
+    handleJsonTextChange,
     tryApplyJsonText,
   };
 };
