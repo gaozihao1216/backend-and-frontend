@@ -367,15 +367,43 @@ export const DesignerPage = ({
     return true;
   };
 
+  const handleCutShortcut = (
+    event: KeyboardEvent,
+  ): boolean => {
+    const modifierPressed = event.ctrlKey || event.metaKey;
+    if (!modifierPressed || event.key.toLowerCase() !== "x") {
+      return false;
+    }
+
+    if (!editor.primarySelectedEntityId) {
+      return false;
+    }
+
+    const snapshot = getEntitySnapshot(levelData, editor.primarySelectedEntityId);
+    if (!snapshot) {
+      return false;
+    }
+
+    const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
+    event.preventDefault();
+    editor.setClipboardSelection({
+      entities: snapshots,
+      primaryEntityId: editor.primarySelectedEntityId,
+    });
+    applyLevelDataUpdate((current) =>
+      editor.selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
+    );
+    editor.setSelectedEntityIds([]);
+    editor.setPrimarySelectedEntityId(null);
+    editor.setActiveTool("select");
+    return true;
+  };
+
   useDesignerKeyboardShortcuts(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) {
         return;
       }
-
-      const modifierPressed = event.ctrlKey || event.metaKey;
-      const snapshot = editor.primarySelectedEntityId ? getEntitySnapshot(levelData, editor.primarySelectedEntityId) : null;
-      const snapshots = getEntitySnapshots(levelData, editor.selectedEntityIds);
 
       if (handleUndoShortcut(event)) {
         return;
@@ -389,22 +417,7 @@ export const DesignerPage = ({
         return;
       }
 
-      if (modifierPressed && event.key.toLowerCase() === "x") {
-        if (!editor.primarySelectedEntityId || !snapshot) {
-          return;
-        }
-
-        event.preventDefault();
-        editor.setClipboardSelection({
-          entities: snapshots,
-          primaryEntityId: editor.primarySelectedEntityId,
-        });
-        applyLevelDataUpdate((current) =>
-          editor.selectedEntityIds.reduce((nextLevelData, entityId) => removeEntity(nextLevelData, entityId), current),
-        );
-        editor.setSelectedEntityIds([]);
-        editor.setPrimarySelectedEntityId(null);
-        editor.setActiveTool("select");
+      if (handleCutShortcut(event)) {
         return;
       }
 
