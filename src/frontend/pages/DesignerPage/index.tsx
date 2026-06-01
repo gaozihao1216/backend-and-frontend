@@ -1,7 +1,7 @@
-import { useState, type ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { EditorToolbar } from "../../components/designer/EditorToolbar.js";
 import { RotationKnob } from "../../components/designer/RotationKnob.js";
-import { createLevel, submitLevel } from "../../lib/api.js";
+import { createDefaultLevelInput, createLevel, submitLevel } from "../../lib/api.js";
 import { API_USERS } from "../../lib/config.js";
 import {
   clearTerrainCeilingBoundary,
@@ -33,6 +33,7 @@ import { useDesignerGroundTuning } from "./hooks/useDesignerGroundTuning.js";
 import { isEditableTarget, useDesignerKeyboardShortcuts } from "./hooks/useDesignerKeyboardShortcuts.js";
 import { useDesignerEditor } from "./hooks/useDesignerEditor.js";
 import { useDesignerGroundEditor } from "./hooks/useDesignerGroundEditor.js";
+import { useDesignerLevelDataController } from "./hooks/useDesignerLevelDataController.js";
 import { cloneLevelData, formatArchiveTimestamp, serializeDraft } from "./functions/draft-functions.js";
 import { handleGroundEditorDelete } from "./functions/ground-editor-actions.js";
 import { normalizeAngle } from "./functions/ground-tuning-functions.js";
@@ -54,6 +55,8 @@ import { VoidSpanControls } from "./components/VoidSpanControls.js";
 import { GroundPointControls } from "./components/GroundPointControls.js";
 import { DesignerActionBar } from "./components/DesignerActionBar.js";
 import { DesignerGridControls } from "./components/DesignerGridControls.js";
+
+const initialDesignerLevelData = createDefaultLevelInput().data;
 
 export const DesignerPage = ({
   userId = API_USERS.designer.id,
@@ -82,12 +85,6 @@ export const DesignerPage = ({
     setDescription,
     selectedTags,
     setSelectedTags,
-    levelData,
-    setLevelData,
-    jsonText,
-    setJsonText,
-    jsonError,
-    setJsonError,
     createdLevels,
     setCreatedLevels,
     submittedIds,
@@ -97,6 +94,16 @@ export const DesignerPage = ({
     error,
     setError,
   } = useDesignerDraft();
+  const {
+    levelData,
+    setLevelData,
+    jsonText,
+    setJsonText,
+    jsonError,
+    setJsonError,
+    setLevelDataAndSyncJson,
+    tryApplyJsonText,
+  } = useDesignerLevelDataController({ initialLevelData: initialDesignerLevelData });
   const editor = useDesignerEditor({ levelData });
   const { undoHistory, setUndoHistory, redoHistory, setRedoHistory, clearHistory } = useDesignerHistory();
   const { designerBackups, setDesignerBackups } = useDesignerBackups();
@@ -147,10 +154,18 @@ export const DesignerPage = ({
     setTitle(draft.title);
     setDescription(draft.description);
     setSelectedTags(draft.selectedTags);
-    setLevelData(cloneLevelData(draft.levelData));
-    setJsonText(JSON.stringify(draft.levelData, null, 2));
-    setJsonError("");
+    setLevelDataAndSyncJson(draft.levelData);
     resetEditorSelection();
+  };
+
+  const restoreDraftAndClearHistory = (draft: {
+    title: string;
+    description: string;
+    selectedTags: LevelTag[];
+    levelData: LevelData;
+  }) => {
+    restoreDraft(draft);
+    clearHistory();
   };
 
   const applyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => {
@@ -176,9 +191,7 @@ export const DesignerPage = ({
         return history;
       }
 
-      setLevelData(cloneLevelData(previousLevelData));
-      setJsonText(JSON.stringify(previousLevelData, null, 2));
-      setJsonError("");
+      setLevelDataAndSyncJson(previousLevelData);
       setRedoHistory((redo) => [cloneLevelData(levelData), ...redo].slice(0, MAX_UNDO_STEPS));
       resetEditorSelection();
       return history.slice(1);
@@ -193,9 +206,7 @@ export const DesignerPage = ({
       }
 
       setUndoHistory((undo) => [cloneLevelData(levelData), ...undo].slice(0, MAX_UNDO_STEPS));
-      setLevelData(cloneLevelData(nextLevelData));
-      setJsonText(JSON.stringify(nextLevelData, null, 2));
-      setJsonError("");
+      setLevelDataAndSyncJson(nextLevelData);
       resetEditorSelection();
       return history.slice(1);
     });
@@ -234,9 +245,7 @@ export const DesignerPage = ({
       return;
     }
 
-    restoreDraft(backup);
-    setUndoHistory([]);
-    setRedoHistory([]);
+    restoreDraftAndClearHistory(backup);
     setMessage(`已恢复备份 ${new Date(backup.createdAt).toLocaleString("zh-CN")}`);
     setError("");
   };
@@ -451,13 +460,8 @@ export const DesignerPage = ({
   };
 
   const handleConfirmJsonChange = () => {
-    try {
-      const parsedLevelData = JSON.parse(jsonText) as LevelData;
-      applyLevelDataUpdate(parsedLevelData);
-      setJsonError("");
+    if (tryApplyJsonText(applyLevelDataUpdate)) {
       onExitJsonCheck?.();
-    } catch (caught) {
-      setJsonError(caught instanceof Error ? caught.message : "Invalid JSON");
     }
   };
 
@@ -664,8 +668,7 @@ export const DesignerPage = ({
         onExitArchive={onExitArchive}
         onOpenArchiveJsonCheck={onOpenArchiveJsonCheck}
         onRestore={(backup) => {
-          restoreDraft(backup);
-          clearHistory();
+          restoreDraftAndClearHistory(backup);
           onExitArchive?.();
         }}
       />
