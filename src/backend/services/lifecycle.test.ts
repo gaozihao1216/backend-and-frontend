@@ -1,13 +1,19 @@
-import test from "node:test";
+import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { UserSchema } from "../../shared/types.js";
-import { comments, favorites, levels, ratings, submissions, users } from "../data/store.js";
+import { comments, favorites, levels, ratings, resetStore, submissions, users } from "../data/store.js";
 import { commentService } from "./comment-service.js";
 import { favoriteService } from "./favorite-service.js";
 import { levelService } from "./level-service.js";
 import { ratingService } from "./rating-service.js";
 import { submissionService } from "./submission-service.js";
 import { userService } from "./user-service.js";
+
+process.env.NODE_ENV = "test";
+
+beforeEach(() => {
+  resetStore();
+});
 
 test("level lifecycle reaches published and becomes visible to players", () => {
   const initialLevelCount = levels.length;
