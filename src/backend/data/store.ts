@@ -24,10 +24,13 @@ import {
 
 const now = () => new Date().toISOString();
 const STORE_DIR = path.join(process.cwd(), "data");
-const STORE_FILE = path.join(STORE_DIR, "backend-store.json");
+const SEED_STORE_FILE = path.join(STORE_DIR, "backend-store.json");
+const LOCAL_STORE_FILE = path.join(STORE_DIR, "backend-store.local.json");
 
 const isTestEnvironment = () =>
-  process.env.NODE_ENV === "test" || process.execArgv.includes("--test");
+  process.env.NODE_ENV === "test"
+  || process.execArgv.includes("--test")
+  || process.argv.some((argument) => /\.test\.[cm]?[jt]sx?$/.test(argument));
 
 type StoreState = {
   users: User[];
@@ -107,10 +110,16 @@ const loadStoreState = (): StoreState => {
   }
 
   try {
-    const raw = fs.readFileSync(STORE_FILE, "utf8");
+    const raw = fs.readFileSync(LOCAL_STORE_FILE, "utf8");
     return parseStoreState(JSON.parse(raw) as unknown);
   } catch {
-    const initialState = createDefaultState();
+    let initialState: StoreState;
+    try {
+      const raw = fs.readFileSync(SEED_STORE_FILE, "utf8");
+      initialState = parseStoreState(JSON.parse(raw) as unknown);
+    } catch {
+      initialState = createDefaultState();
+    }
     persistStoreState(initialState);
     return initialState;
   }
@@ -122,7 +131,7 @@ const persistStoreState = (state: StoreState) => {
   }
 
   fs.mkdirSync(STORE_DIR, { recursive: true });
-  fs.writeFileSync(STORE_FILE, JSON.stringify(state, null, 2));
+  fs.writeFileSync(LOCAL_STORE_FILE, JSON.stringify(state, null, 2));
 };
 
 const replaceContents = <T>(target: T[], next: T[]) => {
