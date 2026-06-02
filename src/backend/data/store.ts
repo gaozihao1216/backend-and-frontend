@@ -2,25 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   LevelSchema,
+  STARTER_LEVEL_DATA,
+  STARTER_LEVEL_DESCRIPTION,
+  STARTER_LEVEL_ID,
+  STARTER_LEVEL_TAGS,
+  STARTER_LEVEL_TITLE,
   type Comment,
   type Favorite,
   type Level,
   type Rating,
   type Submission,
   type User,
-} from "../../shared/types.js";
-import { CommentSchema } from "../../shared/schemas/comment.js";
-import { FavoriteSchema } from "../../shared/schemas/favorite.js";
-import { RatingSchema } from "../../shared/schemas/rating.js";
-import { SubmissionSchema } from "../../shared/schemas/submission.js";
-import { UserSchema } from "../../shared/schemas/user.js";
-import {
-  STARTER_LEVEL_DATA,
-  STARTER_LEVEL_DESCRIPTION,
-  STARTER_LEVEL_ID,
-  STARTER_LEVEL_TAGS,
-  STARTER_LEVEL_TITLE,
-} from "../../shared/levels/index.js";
+  UserSchema,
+} from "./store-contracts.js";
 
 const now = () => new Date().toISOString();
 const STORE_DIR = path.join(process.cwd(), "data");

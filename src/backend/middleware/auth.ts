@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import type { UserRole } from "../../shared/types.js";
+import type { UserRole } from "../data/store-contracts.js";
 import { users } from "../data/store.js";
 import { HttpError, parseOrThrow } from "../lib/http.js";
 

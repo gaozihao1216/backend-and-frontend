@@ -1,4 +1,4 @@
-import type { User } from "../../shared/types.js";
+import type { User } from "../data/store-contracts.js";
 
 declare global {
   namespace Express {
