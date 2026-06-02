@@ -13,5 +13,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["backend/**/*.ts", "frontend/**/*.ts", "frontend/**/*.tsx", "frontend/**/*.d.ts"]
+  "include": ["backend/**/*.ts", "frontend/src/**/*.ts", "frontend/src/**/*.tsx", "frontend/src/**/*.d.ts"]
 }

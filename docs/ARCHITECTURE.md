@@ -17,7 +17,7 @@
 
 ## 2. 顶层目录结构
 
-- `src/frontend`：React 前端入口、页面、组件、API client、auth、本地编辑器逻辑和 Matter.js 游戏运行时。
+- `frontend/src`：React 前端入口、页面、组件、API client、auth、本地编辑器逻辑和 Matter.js 游戏运行时。
 - `src/backend`：Express app、routes、services、middleware、store 和 HTTP helper。
 - `src/shared`：前后端共享 schema/type/API 契约和 starter level data。
 - `src/main/scala/microservice`：Scala/http4s 微服务结构草稿，按 auth/user/level/admin/system 分模块。
@@ -30,13 +30,13 @@
 
 ## 3. 前端架构
 
-`src/frontend` 主要分为：
+`frontend/src` 主要分为：
 
 - `main.tsx`：React root 入口。
 - `App.tsx`：轻量 pathname-based routing，没有引入 router library。
-- `pages/`：页面级入口，例如 `DesignerPage`、`PlayerPage`、`AdminPage`、`UserProfilePage`、社区页和 Designer home。
-- `components/`：跨页面组件，包括 auth、role home/settings、game canvas、designer canvas/editor toolbar 等。
-- `lib/api/`：前端 API 封装。
+- `page/`：页面级入口，例如 `DesignerPage`、`PlayerPage`、`AdminPage`、`UserProfilePage`、社区页和 Designer home。
+- `component/`：跨页面组件，包括 auth、role home/settings、game canvas、designer canvas/editor toolbar 等。
+- `api/`：前端 API 封装。
 - `lib/auth.ts`：localStorage/mock auth 模型。
 - `lib/designer-level.ts`：设计器实体编辑纯逻辑。
 - `lib/ground.ts`：地形/terrain 编辑、采样和碰撞相关纯逻辑。
@@ -51,7 +51,7 @@
 - `PlayerPage.tsx` / `PlayerCommunityPage.tsx`：玩家关卡列表、游玩、社区相关入口。
 - `AdminPage.tsx` / `AdminCommunityPage.tsx`：管理员审核与社区管理。
 - `UserProfilePage.tsx`：用户资料页。
-- `AuthLandingPage.tsx`：登录/注册入口，位于 `components/auth`。
+- `AuthLandingPage.tsx`：登录/注册入口，位于 `component/auth`。
 
 页面层主要负责：
 
@@ -63,7 +63,7 @@
 
 ### 3.2 API client 层
 
-`src/frontend/lib/api` 集中封装前端 API：
+`frontend/src/src/api` 集中封装前端 API：
 
 - `client.ts`：统一 `request(path, init, responseSchema)`，负责 fetch、超时、空响应/非 JSON 错误处理、成功响应 schema 校验。
 - `auth-api.ts`：`/auth/backend-users`、`/auth/bind`。
@@ -75,7 +75,7 @@
 
 `API_BASE_URL` 来自 `VITE_API_BASE_URL`，默认是空字符串。开发环境通常请求相对路径，例如 `/auth/bind`，再由 Vite proxy 转发到 backend `localhost:3000`。
 
-当前已有 `src/frontend/lib/api/proxy-coverage.test.ts`，会扫描前端 API request path，并断言它们被 `vite.config.ts` 的 proxy prefix 覆盖，避免再次出现 `/auth/bind` 打到 Vite dev server 返回 404 的问题。
+当前已有 `frontend/src/src/api/proxy-coverage.test.ts`，会扫描前端 API request path，并断言它们被 `vite.config.ts` 的 proxy prefix 覆盖，避免再次出现 `/auth/bind` 打到 Vite dev server 返回 404 的问题。
 
 ### 3.3 Auth 前端模型
 
@@ -272,7 +272,7 @@ index.tsx 页面协调层
   + functions/objects 页面私有工具和类型
 ```
 
-更详细说明见 `src/frontend/pages/DesignerPage/ARCHITECTURE.md`。
+更详细说明见 `frontend/src/page/DesignerPage/ARCHITECTURE.md`。
 
 ### 8.1 index.tsx 保留职责
 
@@ -355,7 +355,7 @@ index.tsx 页面协调层
 
 之前 `/auth` proxy 缺失，导致登录/注册页的 `/auth/bind` 请求落到 Vite dev server，返回 404。现在已补齐 `/auth`。
 
-`src/frontend/lib/api/proxy-coverage.test.ts` 会扫描 `src/frontend/lib/api` 中的 request path，并断言每个前端 API path 都被某个 Vite proxy prefix 覆盖。
+`frontend/src/src/api/proxy-coverage.test.ts` 会扫描 `frontend/src/src/api` 中的 request path，并断言每个前端 API path 都被某个 Vite proxy prefix 覆盖。
 
 ## 10. 测试体系
 
@@ -369,7 +369,7 @@ index.tsx 页面协调层
 
 - 后端 service 测试：`src/backend/services/lifecycle.test.ts`。
 - 后端 auth route handler 测试：`src/backend/routes/auth-routes.test.ts`。
-- 前端 API proxy coverage：`src/frontend/lib/api/proxy-coverage.test.ts`。
+- 前端 API proxy coverage：`frontend/src/src/api/proxy-coverage.test.ts`。
 - 前端纯逻辑测试：`designer-level.test.ts`、`ground.test.ts`、`terrain.test.ts`。
 - 游戏逻辑测试：`fracture-model.test.ts`。
 

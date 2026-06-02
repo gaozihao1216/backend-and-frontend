@@ -4,7 +4,7 @@ import type { NextFunction, Request, RequestHandler, Response } from "express";
 import {
   BindBackendUserResponseDataSchema,
   GetBackendUsersResponseDataSchema,
-} from "../../../frontend/lib/api/api-contracts.js";
+} from "../../../frontend/src/api/api-contracts.js";
 
 process.env.NODE_ENV = "test";
 

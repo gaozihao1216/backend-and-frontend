@@ -109,17 +109,17 @@
 
 ## 4. Frontend and Backend API Alignment
 
-当前项目前端的 API 调用主要集中在 `src/frontend/lib/api`。Scala 后端则按照这些真实存在的调用路径，在 `src/main/scala/microservice/<module>/api` 和 `src/main/scala/microservice/<module>/routes` 中建立对应关系。
+当前项目前端的 API 调用主要集中在 `frontend/src/src/api`。Scala 后端则按照这些真实存在的调用路径，在 `src/main/scala/microservice/<module>/api` 和 `src/main/scala/microservice/<module>/routes` 中建立对应关系。
 
 ### 4.1 对齐关系总表
 
 | Frontend API file | Scala API file | Scala router file | HTTP method | Path | Business purpose |
 | --- | --- | --- | --- | --- | --- |
-| `src/frontend/lib/api/auth-api.ts` | `src/main/scala/microservice/auth/api/AuthApi.scala` | `src/main/scala/microservice/auth/routes/AuthRouter.scala` | `POST` | `/auth/bind` | 绑定前端本地身份与后端用户 |
-| `src/frontend/lib/api/user-api.ts` | `src/main/scala/microservice/user/api/GetUserProfileApi.scala` | `src/main/scala/microservice/user/routes/UserRouter.scala` | `GET` | `/users/:userId/profile` | 查询用户资料页所需的公开信息 |
-| `src/frontend/lib/api/designer-api.ts` | `src/main/scala/microservice/level/api/CreateLevelApi.scala` | `src/main/scala/microservice/level/routes/DesignerLevelRouter.scala` | `POST` | `/designer/levels` | 设计师创建关卡 |
-| `src/frontend/lib/api/player-api.ts` | `src/main/scala/microservice/level/api/RateLevelApi.scala` | `src/main/scala/microservice/level/routes/PlayerLevelRouter.scala` | `POST` | `/player/levels/:levelId/ratings` | 玩家对已发布关卡评分 |
-| `src/frontend/lib/api/admin-api.ts` | `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala` | `src/main/scala/microservice/admin/routes/AdminRouter.scala` | `POST` | `/admin/submissions/:submissionId/review` | 管理员审核投稿并推进状态流转 |
+| `frontend/src/src/api/auth-api.ts` | `src/main/scala/microservice/auth/api/AuthApi.scala` | `src/main/scala/microservice/auth/routes/AuthRouter.scala` | `POST` | `/auth/bind` | 绑定前端本地身份与后端用户 |
+| `frontend/src/src/api/user-api.ts` | `src/main/scala/microservice/user/api/GetUserProfileApi.scala` | `src/main/scala/microservice/user/routes/UserRouter.scala` | `GET` | `/users/:userId/profile` | 查询用户资料页所需的公开信息 |
+| `frontend/src/src/api/designer-api.ts` | `src/main/scala/microservice/level/api/CreateLevelApi.scala` | `src/main/scala/microservice/level/routes/DesignerLevelRouter.scala` | `POST` | `/designer/levels` | 设计师创建关卡 |
+| `frontend/src/src/api/player-api.ts` | `src/main/scala/microservice/level/api/RateLevelApi.scala` | `src/main/scala/microservice/level/routes/PlayerLevelRouter.scala` | `POST` | `/player/levels/:levelId/ratings` | 玩家对已发布关卡评分 |
+| `frontend/src/src/api/admin-api.ts` | `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala` | `src/main/scala/microservice/admin/routes/AdminRouter.scala` | `POST` | `/admin/submissions/:submissionId/review` | 管理员审核投稿并推进状态流转 |
 
 ### 4.2 对齐原则
 
@@ -138,7 +138,7 @@
 ### 5.1 POST /auth/bind
 
 - Frontend file:
-  `src/frontend/lib/api/auth-api.ts`
+  `frontend/src/src/api/auth-api.ts`
 - Scala API file:
   `src/main/scala/microservice/auth/api/AuthApi.scala`
 - Scala route file:
@@ -157,7 +157,7 @@
 ### 5.2 GET /users/:userId/profile
 
 - Frontend file:
-  `src/frontend/lib/api/user-api.ts`
+  `frontend/src/src/api/user-api.ts`
 - Scala API file:
   `src/main/scala/microservice/user/api/GetUserProfileApi.scala`
 - Scala route file:
@@ -176,7 +176,7 @@
 ### 5.3 POST /designer/levels
 
 - Frontend file:
-  `src/frontend/lib/api/designer-api.ts`
+  `frontend/src/src/api/designer-api.ts`
 - Scala API file:
   `src/main/scala/microservice/level/api/CreateLevelApi.scala`
 - Scala route file:
@@ -195,7 +195,7 @@
 ### 5.4 POST /player/levels/:levelId/ratings
 
 - Frontend file:
-  `src/frontend/lib/api/player-api.ts`
+  `frontend/src/src/api/player-api.ts`
 - Scala API file:
   `src/main/scala/microservice/level/api/RateLevelApi.scala`
 - Scala route file:
@@ -214,7 +214,7 @@
 ### 5.5 POST /admin/submissions/:submissionId/review
 
 - Frontend file:
-  `src/frontend/lib/api/admin-api.ts`
+  `frontend/src/src/api/admin-api.ts`
 - Scala API file:
   `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala`
 - Scala route file:

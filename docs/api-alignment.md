@@ -8,9 +8,9 @@
   - `src/backend` 下的 TypeScript + Express 运行时
   - `src/main/scala/microservice` 下的旧 Scala API 契约草稿
 - 前端目录主要是：
-  - `src/frontend/lib/api`
-  - `src/frontend/components`
-  - `src/frontend/pages`
+  - `frontend/src/src/api`
+  - `frontend/src/component`
+  - `frontend/src/page`
 - 共享类型主要在：
   - `src/shared/api`
   - `src/shared/schemas`
@@ -25,9 +25,9 @@
 
 ### 与老师 `frontend-sample` 的主要差异
 
-- 当前前端 API 调用在 `src/frontend/lib/api`，老师样例是 `src/apis`。
-- 当前路由入口仍主要由 `src/frontend/App.tsx` 组织，尚未抽成老师样例风格的 `router.tsx`。
-- 当前共享对象更多放在 `src/shared/api` 和 `src/shared/schemas`，而不是单独的 `src/frontend/objects`。
+- 当前前端 API 调用在 `frontend/src/src/api`，老师样例是 `src/apis`。
+- 当前路由入口仍主要由 `frontend/src/App.tsx` 组织，尚未抽成老师样例风格的 `router.tsx`。
+- 当前共享对象更多放在 `src/shared/api` 和 `src/shared/schemas`，而不是单独的 `frontend/src/objects`。
 
 ### 本次调整后的对齐方式
 
@@ -86,7 +86,7 @@
 ### 认证
 
 - 前端调用：
-  - `src/frontend/lib/api/auth-api.ts`
+  - `frontend/src/src/api/auth-api.ts`
 - Scala 契约：
   - `src/main/scala/services/auth/api/AuthApi.scala`
 - Scala objects：
@@ -99,7 +99,7 @@
 ### 用户资料
 
 - 前端调用：
-  - `src/frontend/lib/api/user-api.ts`
+  - `frontend/src/src/api/user-api.ts`
 - Scala 契约：
   - `src/main/scala/services/user/api/GetUserProfileApi.scala`
 - Scala objects：
@@ -112,8 +112,8 @@
 ### 关卡相关
 
 - 前端调用：
-  - `src/frontend/lib/api/designer-api.ts`
-  - `src/frontend/lib/api/player-api.ts`
+  - `frontend/src/src/api/designer-api.ts`
+  - `frontend/src/src/api/player-api.ts`
 - Scala 契约：
   - `src/main/scala/services/level/api/CreateLevelApi.scala`
   - `src/main/scala/services/level/api/RateLevelApi.scala`
@@ -128,7 +128,7 @@
 ### 管理审核
 
 - 前端调用：
-  - `src/frontend/lib/api/admin-api.ts`
+  - `frontend/src/src/api/admin-api.ts`
 - Scala 契约：
   - `src/main/scala/services/admin/api/ReviewSubmissionApi.scala`
 - Scala objects：
@@ -184,16 +184,16 @@ Scala 侧对应的类型安全点：
 
 ## 5. 前端页面如何调用 API
 
-- `src/frontend/pages/UserProfilePage.tsx`
-  - 调用 `src/frontend/lib/api/user-api.ts`
-- `src/frontend/pages/DesignerPage/index.tsx`
-  - 调用 `src/frontend/lib/api/designer-api.ts`
-- `src/frontend/pages/PlayerPage.tsx`
-  - 调用 `src/frontend/lib/api/player-api.ts`
-- `src/frontend/pages/AdminPage.tsx`
-  - 调用 `src/frontend/lib/api/admin-api.ts`
-- `src/frontend/components/auth/AuthLandingPage.tsx`
-  - 调用 `src/frontend/lib/api/auth-api.ts`
+- `frontend/src/page/UserProfilePage.tsx`
+  - 调用 `frontend/src/src/api/user-api.ts`
+- `frontend/src/page/DesignerPage/index.tsx`
+  - 调用 `frontend/src/src/api/designer-api.ts`
+- `frontend/src/page/PlayerPage.tsx`
+  - 调用 `frontend/src/src/api/player-api.ts`
+- `frontend/src/page/AdminPage.tsx`
+  - 调用 `frontend/src/src/api/admin-api.ts`
+- `frontend/src/component/auth/AuthLandingPage.tsx`
+  - 调用 `frontend/src/src/api/auth-api.ts`
 
 ## 6. ApiRouter 挂载关系
 
@@ -215,7 +215,7 @@ Scala 侧对应的类型安全点：
 ### 1. `POST /auth/bind`
 
 - 前端文件：
-  - `src/frontend/lib/api/auth-api.ts`
+  - `frontend/src/src/api/auth-api.ts`
 - Scala API：
   - `services/auth/api/AuthApi.scala`
 - Request：
@@ -231,7 +231,7 @@ Scala 侧对应的类型安全点：
 ### 2. `GET /users/:userId/profile`
 
 - 前端文件：
-  - `src/frontend/lib/api/user-api.ts`
+  - `frontend/src/src/api/user-api.ts`
 - Scala API：
   - `services/user/api/GetUserProfileApi.scala`
 - Request：
@@ -247,7 +247,7 @@ Scala 侧对应的类型安全点：
 ### 3. `POST /designer/levels`
 
 - 前端文件：
-  - `src/frontend/lib/api/designer-api.ts`
+  - `frontend/src/src/api/designer-api.ts`
 - Scala API：
   - `services/level/api/CreateLevelApi.scala`
 - Scala route：
@@ -265,7 +265,7 @@ Scala 侧对应的类型安全点：
 ### 4. `POST /player/levels/:levelId/ratings`
 
 - 前端文件：
-  - `src/frontend/lib/api/player-api.ts`
+  - `frontend/src/src/api/player-api.ts`
 - Scala API：
   - `services/level/api/RateLevelApi.scala`
 - Scala route：
@@ -285,7 +285,7 @@ Scala 侧对应的类型安全点：
 ### 5. `POST /admin/submissions/:submissionId/review`
 
 - 前端文件：
-  - `src/frontend/lib/api/admin-api.ts`
+  - `frontend/src/src/api/admin-api.ts`
 - Scala API：
   - `services/admin/api/ReviewSubmissionApi.scala`
 - Scala route：

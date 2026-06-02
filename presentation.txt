@@ -1,7 +1,7 @@
  下面这份可以直接照着讲。
 
   一、1 分钟项目架构介绍
-  这个项目是一个 UGC 关卡平台，前端在 src/frontend，主要通过 src/frontend/lib/api 里的接口文件发请求。前端按角色
+  这个项目是一个 UGC 关卡平台，前端在 frontend/src，主要通过 frontend/src/src/api 里的接口文件发请求。前端按角色
   分成 player、designer、admin 三类页面，调用的 API 也分别落在 auth-api.ts、user-api.ts、designer-api.ts、player-
   api.ts、admin-api.ts。
 
@@ -48,7 +48,7 @@
 
   - API 名称：绑定前端本地用户到后端用户
   - Scala 文件：src/main/scala/microservice/auth/AuthApi.scala:1
-  - 前端对应文件：src/frontend/lib/api/auth-api.ts:1
+  - 前端对应文件：frontend/src/src/api/auth-api.ts:1
   - Request 类型：BindBackendUserRequest
   - Response 类型：BindBackendUserResponse
   - Error 类型：AuthApiError，具体有 BindBackendUserValidationError
@@ -63,8 +63,8 @@
     为什么这里不用直接返回 User，而下面这份讲稿可以直接照着讲，按你现在项目的实际结构来组织。
 
   一、1 分钟项目架构介绍
-  这个项目是一个 UGC 关卡平台，分成 player、designer、admin 三类角色。前端代码在 src/frontend，前端发请求的入口主
-  要在 src/frontend/lib/api，这里把每个模块的 API 调用单独拆开了，比如 auth-api.ts、designer-api.ts、player-
+  这个项目是一个 UGC 关卡平台，分成 player、designer、admin 三类角色。前端代码在 frontend/src，前端发请求的入口主
+  要在 frontend/src/src/api，这里把每个模块的 API 调用单独拆开了，比如 auth-api.ts、designer-api.ts、player-
   api.ts、admin-api.ts。
 
   课程要求后端必须使用 Scala，所以我在 src/main/scala/microservice 增加了一层 Scala 的类型安全 API 定义层。它的作
@@ -130,7 +130,7 @@
   - Scala 文件：
       - src/main/scala/microservice/auth/AuthApi.scala:1
   - 前端对应文件：
-      - src/frontend/lib/api/auth-api.ts:1
+      - frontend/src/src/api/auth-api.ts:1
   - Request 类型：
       - BindBackendUserRequest
   - Response 类型：
@@ -160,7 +160,7 @@
   - Scala 文件：
       - src/main/scala/microservice/user/UserApi.scala:1
   - 前端对应文件：
-      - src/frontend/lib/api/user-api.ts:1
+      - frontend/src/src/api/user-api.ts:1
   - Request 类型：
       - GetUserProfileRequest
   - Response 类型：
@@ -189,7 +189,7 @@
   - Scala 文件：
       - src/main/scala/microservice/level/DesignerLevelApi.scala:1
   - 前端对应文件：
-      - src/frontend/lib/api/designer-api.ts:1
+      - frontend/src/src/api/designer-api.ts:1
   - Request 类型：
       - CreateLevelRequest
   - Response 类型：
@@ -219,7 +219,7 @@
   - Scala 文件：
       - src/main/scala/microservice/level/PlayerRatingApi.scala:1
   - 前端对应文件：
-      - src/frontend/lib/api/player-api.ts:1
+      - frontend/src/src/api/player-api.ts:1
   - Request 类型：
       - RateLevelRequest
   - Response 类型：
@@ -250,7 +250,7 @@
   - Scala 文件：
       - src/main/scala/microservice/admin/AdminReviewApi.scala:1
   - 前端对应文件：
-      - src/frontend/lib/api/admin-api.ts:1
+      - frontend/src/src/api/admin-api.ts:1
   - Request 类型：
       - ReviewSubmissionRequest
   - Response 类型：
@@ -285,7 +285,7 @@
   1:00-3:00 总体架构
   这一段讲三个目录：
 
-  - 前端在 src/frontend
+  - 前端在 frontend/src
   - 现有运行时后端在 src/backend/routes 和 src/backend/services
   - Scala API 定义层在 src/main/scala/microservice
     然后说明 shared schema 在 src/shared/api 和 src/shared/schemas，Scala 层按这些现有 API 语义做了对应建模。
@@ -315,7 +315,7 @@
   10:00-12:00 前后端对齐
   打开：
 
-  - src/frontend/lib/api/*.ts
+  - frontend/src/src/api/*.ts
   - src/shared/api / src/shared/schemas
   - src/main/scala/microservice/*
   - src/backend/routes/*
@@ -332,8 +332,8 @@
   - 课程要求的 Scala API 层已经补齐
   - API 业务逻辑和契约都一、1 分钟项目架构介绍
 
-  这个项目是一个关卡社区平台，前端使用 React + TypeScript，代码主要在 src/frontend，前端实际发请求的封装集中在
-  src/frontend/lib/api。共享的前后端 TypeScript 契约在 src/shared/api 和 src/shared/schemas，这里用 Zod 定义
+  这个项目是一个关卡社区平台，前端使用 React + TypeScript，代码主要在 frontend/src，前端实际发请求的封装集中在
+  frontend/src/src/api。共享的前后端 TypeScript 契约在 src/shared/api 和 src/shared/schemas，这里用 Zod 定义
   request 和 response 的结构。
 
   为了满足课程要求，我新增了 Scala 的 API 定义层，放在 src/main/scala/microservice。如果老师特别强调字面上的
@@ -343,7 +343,7 @@
 
   现有的 TypeScript 后端代码还在 src/backend/routes 和 src/backend/services，它现在仍然是项目的实际运行时实现。可
   以把它理解成“当前可运行实现”，而 Scala microservice 是“课程要求下的类型安全 API 定义层”。两者之间不是冲突关系，
-  而是映射关系：前端通过 src/frontend/lib/api 调用，TS shared schema 定义结构，Scala 再把同一批核心 API 用 case
+  而是映射关系：前端通过 frontend/src/src/api 调用，TS shared schema 定义结构，Scala 再把同一批核心 API 用 case
   class、sealed trait、Either、trait 重新声明成类型安全契约。
 
   shared 类型和 Scala 类型的对应方式也比较清楚。比如前端的 BindBackendUserRequestBodySchema，在 Scala 里对应
@@ -403,7 +403,7 @@
 
   - API 名称：绑定前端本地身份到后端用户
   - Scala 文件：src/main/scala/microservice/auth/AuthApi.scala:1
-  - 前端对应文件：src/frontend/lib/api/auth-api.ts:1
+  - 前端对应文件：frontend/src/src/api/auth-api.ts:1
   - Request 类型：BindBackendUserRequest
   - Response 类型：BindBackendUserResponse
   - Error 类型：AuthApiError，当前主要实现了 BindBackendUserValidationError
@@ -425,7 +425,7 @@
 
   - API 名称：获取用户公开资料
   - Scala 文件：src/main/scala/microservice/user/UserApi.scala:1
-  - 前端对应文件：src/frontend/lib/api/user-api.ts:1
+  - 前端对应文件：frontend/src/src/api/user-api.ts:1
   - Request 类型：GetUserProfileRequest
   - Response 类型：GetUserProfileResponse
   - Error 类型：UserApiError，核心是 UserNotFound
@@ -447,7 +447,7 @@
 
   - API 名称：设计师创建关卡
   - Scala 文件：src/main/scala/microservice/level/DesignerLevelApi.scala:1
-  - 前端对应文件：src/frontend/lib/api/designer-api.ts:1
+  - 前端对应文件：frontend/src/src/api/designer-api.ts:1
   - Request 类型：CreateLevelRequest
   - Response 类型：CreateLevelResponse
   - Error 类型：DesignerLevelApiError，当前主要是 CreateLevelValidationError
@@ -469,7 +469,7 @@
 
   - API 名称：玩家评分关卡
   - Scala 文件：src/main/scala/microservice/level/PlayerRatingApi.scala:1
-  - 前端对应文件：src/frontend/lib/api/player-api.ts:1
+  - 前端对应文件：frontend/src/src/api/player-api.ts:1
   - Request 类型：RateLevelRequest
   - Response 类型：RateLevelResponse
   - Error 类型：PlayerRatingApiError，包括 PlayerLevelNotFound 和 LevelNotPublished
@@ -489,7 +489,7 @@
 
   - API 名称：管理员审核关卡投稿
   - Scala 文件：src/main/scala/microservice/admin/AdminReviewApi.scala:1
-  - 前端对应文件：src/frontend/lib/api/admin-api.ts:1
+  - 前端对应文件：frontend/src/src/api/admin-api.ts:1
   - Request 类型：ReviewSubmissionRequest
   - Response 类型：ReviewSubmissionResponse
   - Error 类型：AdminReviewApiError，包括 SubmissionNotFound 和 InvalidSubmissionStatus
@@ -521,7 +521,7 @@
 
   这一段讲项目的三层结构：
 
-  - 前端在 src/frontend
+  - 前端在 frontend/src
   - 现有运行时后端在 src/backend/routes 和 src/backend/services
   - 新增 Scala API 定义层在 src/main/scala/microservice
 
@@ -557,7 +557,7 @@
 
   这一段重点说明：
 
-  - 前端调用在 src/frontend/lib/api
+  - 前端调用在 frontend/src/src/api
   - TS 契约在 src/shared/api 和 src/shared/schemas
   - Scala 契约在 src/main/scala/microservice
   - 现有业务实现参考 src/backend/routes 和 src/backend/services
