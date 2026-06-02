@@ -13,14 +13,14 @@
 - `tests`：Node built-in test runner 覆盖后端 service/route、前端纯逻辑、API proxy 等。
 - `CI`：GitHub Actions 固化 `check` / `test` / `build`。
 
-仓库里还保留 Scala microservice 代码，位于 `src/main/scala/microservice`，用于课程/后续迁移讲解；当前 npm dev/test/build 主线不依赖它。
+仓库里还保留 Scala microservice 代码，位于 `backend/microservice/src`，用于课程/后续迁移讲解；当前 npm dev/test/build 主线不依赖它。
 
 ## 2. 顶层目录结构
 
 - `frontend/src`：React 前端入口、页面、组件、API client、auth、本地编辑器逻辑和 Matter.js 游戏运行时。
 - `src/backend`：Express app、routes、services、middleware、store 和 HTTP helper。
 - `src/shared`：前后端共享 schema/type/API 契约和 starter level data。
-- `src/main/scala/microservice`：Scala/http4s 微服务结构草稿，按 auth/user/level/admin/system 分模块。
+- `backend/microservice/src`：Scala/http4s 微服务结构草稿，按 auth/user/level/admin/system 分模块。
 - `scripts`：开发脚本，例如同时启动前后端的 `dev.mjs`。
 - `data`：`backend-store.json` seed/demo 数据；本地 runtime store 使用 ignored 的 `backend-store.local.json`。
 - `docs`：项目架构、API 对齐和 code review 说明文档。
@@ -63,7 +63,7 @@
 
 ### 3.2 API client 层
 
-`frontend/src/src/api` 集中封装前端 API：
+`frontend/src/api` 集中封装前端 API：
 
 - `client.ts`：统一 `request(path, init, responseSchema)`，负责 fetch、超时、空响应/非 JSON 错误处理、成功响应 schema 校验。
 - `auth-api.ts`：`/auth/backend-users`、`/auth/bind`。
@@ -75,7 +75,7 @@
 
 `API_BASE_URL` 来自 `VITE_API_BASE_URL`，默认是空字符串。开发环境通常请求相对路径，例如 `/auth/bind`，再由 Vite proxy 转发到 backend `localhost:3000`。
 
-当前已有 `frontend/src/src/api/proxy-coverage.test.ts`，会扫描前端 API request path，并断言它们被 `vite.config.ts` 的 proxy prefix 覆盖，避免再次出现 `/auth/bind` 打到 Vite dev server 返回 404 的问题。
+当前已有 `frontend/src/api/proxy-coverage.test.ts`，会扫描前端 API request path，并断言它们被 `vite.config.ts` 的 proxy prefix 覆盖，避免再次出现 `/auth/bind` 打到 Vite dev server 返回 404 的问题。
 
 ### 3.3 Auth 前端模型
 
@@ -355,7 +355,7 @@ index.tsx 页面协调层
 
 之前 `/auth` proxy 缺失，导致登录/注册页的 `/auth/bind` 请求落到 Vite dev server，返回 404。现在已补齐 `/auth`。
 
-`frontend/src/src/api/proxy-coverage.test.ts` 会扫描 `frontend/src/src/api` 中的 request path，并断言每个前端 API path 都被某个 Vite proxy prefix 覆盖。
+`frontend/src/api/proxy-coverage.test.ts` 会扫描 `frontend/src/api` 中的 request path，并断言每个前端 API path 都被某个 Vite proxy prefix 覆盖。
 
 ## 10. 测试体系
 
@@ -369,7 +369,7 @@ index.tsx 页面协调层
 
 - 后端 service 测试：`src/backend/services/lifecycle.test.ts`。
 - 后端 auth route handler 测试：`src/backend/routes/auth-routes.test.ts`。
-- 前端 API proxy coverage：`frontend/src/src/api/proxy-coverage.test.ts`。
+- 前端 API proxy coverage：`frontend/src/api/proxy-coverage.test.ts`。
 - 前端纯逻辑测试：`designer-level.test.ts`、`ground.test.ts`、`terrain.test.ts`。
 - 游戏逻辑测试：`fracture-model.test.ts`。
 

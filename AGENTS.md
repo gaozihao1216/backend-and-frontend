@@ -90,8 +90,8 @@ The core architectural pattern: **Zod schemas in `src/shared/schemas/` define al
 ### Frontend Patterns
 
 - **No router library**: `App.tsx` uses `window.location.pathname` with `history.pushState` for navigation
-- **API client**: `frontend/src/src/api/client.ts` — `request(path, init, responseSchema)` validates responses with Zod
-- **Game engine**: Matter.js-based physics in `frontend/src/src/lib/game-engine/`, with `GameSession` managing engine lifecycle
+- **API client**: `frontend/src/api/client.ts` — `request(path, init, responseSchema)` validates responses with Zod
+- **Game engine**: Matter.js-based physics in `frontend/src/lib/game-engine/`, with `GameSession` managing engine lifecycle
 - **Auth**: Mock auth with localStorage persistence; frontend-registered users bind to backend demo accounts (`player-1`, `designer-1`, `admin-1`)
 
 ### Key TypeScript Config

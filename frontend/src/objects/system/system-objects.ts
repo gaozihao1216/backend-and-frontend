@@ -13,3 +13,8 @@ export const LevelTagSchema = z.enum(["puzzle", "hard", "beginner", "funny", "st
 export type LevelTag = z.infer<typeof LevelTagSchema>;
 
 export type PublishedLevelsSort = "newest" | "highestRated" | "mostRated";
+
+export const HealthResponseSchema = z.object({
+  status: z.string(),
+});
+export type HealthResponse = z.infer<typeof HealthResponseSchema>;

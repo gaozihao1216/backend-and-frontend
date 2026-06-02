@@ -12,39 +12,39 @@
 
 ## 2. Backend Structure Alignment
 
-当前 Scala 后端已经整理为以 `src/main/scala/microservice` 为核心入口的标准 Scala 结构，并把真实 API、objects、routes、tables、core 代码全部落到课程要求的 `scala/microservice` 目录下。
+当前 Scala 后端已经整理为以 `backend/microservice/src` 为核心入口的标准 Scala 结构，并把真实 API、objects、routes、tables、core 代码全部落到课程要求的 `backend/microservice/src` 目录下。
 
 ### 2.1 当前 Scala 后端结构
 
-- `src/main/scala/microservice/Main.scala`
-- `src/main/scala/microservice/core/DatabaseConfig.scala`
-- `src/main/scala/microservice/core/DatabaseSession.scala`
-- `src/main/scala/microservice/core/HttpError.scala`
-- `src/main/scala/microservice/core/SystemDefaults.scala`
-- `src/main/scala/microservice/routes/ApiRouter.scala`
-- `src/main/scala/microservice/routes/HealthRouter.scala`
-- `src/main/scala/microservice/auth`
-- `src/main/scala/microservice/user`
-- `src/main/scala/microservice/level`
-- `src/main/scala/microservice/admin`
-- `src/main/scala/microservice/system`
+- `backend/microservice/src/Main.scala`
+- `backend/microservice/src/core/DatabaseConfig.scala`
+- `backend/microservice/src/core/DatabaseSession.scala`
+- `backend/microservice/src/core/HttpError.scala`
+- `backend/microservice/src/core/SystemDefaults.scala`
+- `backend/microservice/src/routes/ApiRouter.scala`
+- `backend/microservice/src/routes/HealthRouter.scala`
+- `backend/microservice/src/auth`
+- `backend/microservice/src/user`
+- `backend/microservice/src/level`
+- `backend/microservice/src/admin`
+- `backend/microservice/src/system`
 
 ### 2.2 与老师模板的对应关系
 
 | 老师模板结构 | 当前项目结构 | 对齐说明 |
 | --- | --- | --- |
-| `Main.scala` | `src/main/scala/microservice/Main.scala` | 统一的 Scala 后端启动入口 |
-| `DatabaseConfig.scala` | `src/main/scala/microservice/core/DatabaseConfig.scala` | 数据库配置对象 |
-| `DatabaseSession.scala` | `src/main/scala/microservice/core/DatabaseSession.scala` | 数据库 session 抽象 |
-| `HttpError.scala` | `src/main/scala/microservice/core/HttpError.scala` | 统一 HTTP 错误建模 |
-| `SystemDefaults.scala` | `src/main/scala/microservice/core/SystemDefaults.scala` | 默认数据、service 组装、系统初始化 |
-| `routes/ApiRouter.scala` | `src/main/scala/microservice/routes/ApiRouter.scala` | 统一挂载模块路由 |
-| `routes/HealthRouter.scala` | `src/main/scala/microservice/routes/HealthRouter.scala` | 健康检查路由 |
-| 示例业务模块 | `src/main/scala/microservice/level` | 结合当前项目真实业务，使用 `level` 承载关卡业务 |
-| 示例用户模块 | `src/main/scala/microservice/user` | 用户资料模块 |
-| 示例系统模块 | `src/main/scala/microservice/system` | 系统通用对象与健康检查 |
-| 样例未直接提供 `auth` | `src/main/scala/microservice/auth` | 当前项目存在真实认证绑定需求 |
-| 样例未直接提供 `admin` | `src/main/scala/microservice/admin` | 当前项目存在管理员审核业务 |
+| `Main.scala` | `backend/microservice/src/Main.scala` | 统一的 Scala 后端启动入口 |
+| `DatabaseConfig.scala` | `backend/microservice/src/core/DatabaseConfig.scala` | 数据库配置对象 |
+| `DatabaseSession.scala` | `backend/microservice/src/core/DatabaseSession.scala` | 数据库 session 抽象 |
+| `HttpError.scala` | `backend/microservice/src/core/HttpError.scala` | 统一 HTTP 错误建模 |
+| `SystemDefaults.scala` | `backend/microservice/src/core/SystemDefaults.scala` | 默认数据、service 组装、系统初始化 |
+| `routes/ApiRouter.scala` | `backend/microservice/src/routes/ApiRouter.scala` | 统一挂载模块路由 |
+| `routes/HealthRouter.scala` | `backend/microservice/src/routes/HealthRouter.scala` | 健康检查路由 |
+| 示例业务模块 | `backend/microservice/src/level` | 结合当前项目真实业务，使用 `level` 承载关卡业务 |
+| 示例用户模块 | `backend/microservice/src/user` | 用户资料模块 |
+| 示例系统模块 | `backend/microservice/src/system` | 系统通用对象与健康检查 |
+| 样例未直接提供 `auth` | `backend/microservice/src/auth` | 当前项目存在真实认证绑定需求 |
+| 样例未直接提供 `admin` | `backend/microservice/src/admin` | 当前项目存在管理员审核业务 |
 
 ### 2.3 结构调整的核心说明
 
@@ -55,29 +55,29 @@
 
 本次调整后的重点是：
 
-- 将 Scala 后端重组到 `src/main/scala/microservice`
+- 将 Scala 后端重组到 `backend/microservice/src`
 - 删除不再符合目标结构的旧 `services`、`routes` 和空草稿目录
 - 保留现有 TypeScript 后端作为业务逻辑对照和后续迁移参考
 
-因此，当前课程要求中的 `scala/microservice` 已经具体落地为：
+因此，当前课程要求中的 `backend/microservice/src` 已经具体落地为：
 
-- Scala 微服务入口：`src/main/scala/microservice/Main.scala`
-- API 定义：`src/main/scala/microservice/<module>/api`
-- routes 定义：`src/main/scala/microservice/<module>/routes`
-- 公共类型与默认组装：`src/main/scala/microservice/core`
+- Scala 微服务入口：`backend/microservice/src/Main.scala`
+- API 定义：`backend/microservice/src/<module>/api`
+- routes 定义：`backend/microservice/src/<module>/routes`
+- 公共类型与默认组装：`backend/microservice/src/core`
 
 ## 3. Service Module Layers
 
-当前各业务模块统一采用 `src/main/scala/microservice/<module>/{api,objects,routes,tables}` 的四层结构。这样拆分的目的，是让 API 契约、业务对象、HTTP 路由和数据层模型各自承担单一职责，避免代码全部堆在同一个文件中。
+当前各业务模块统一采用 `backend/microservice/src/<module>/{api,objects,routes,tables}` 的四层结构。这样拆分的目的，是让 API 契约、业务对象、HTTP 路由和数据层模型各自承担单一职责，避免代码全部堆在同一个文件中。
 
 ### 3.1 四层结构职责
 
 | 分层 | 位置示例 | 主要职责 |
 | --- | --- | --- |
-| `api` | `src/main/scala/microservice/level/api/CreateLevelApi.scala` | 定义 API 契约，包括 request、response、error、service trait、endpoint 说明 |
-| `objects` | `src/main/scala/microservice/level/objects/LevelObjects.scala` | 定义领域对象，例如 `Level`、`LevelData`、`Rating`、`Submission` |
-| `routes` | `src/main/scala/microservice/level/routes/DesignerLevelRouter.scala` | 定义 HTTP 入口、解析 header/path/body、调用 service、返回响应 |
-| `tables` | `src/main/scala/microservice/level/tables/LevelTables.scala` | 定义数据层模型，例如 `LevelRow`、`RatingRow`、`SubmissionRow` |
+| `api` | `backend/microservice/src/level/api/CreateLevelApi.scala` | 定义 API 契约，包括 request、response、error、service trait、endpoint 说明 |
+| `objects` | `backend/microservice/src/level/objects/LevelObjects.scala` | 定义领域对象，例如 `Level`、`LevelData`、`Rating`、`Submission` |
+| `routes` | `backend/microservice/src/level/routes/DesignerLevelRouter.scala` | 定义 HTTP 入口、解析 header/path/body、调用 service、返回响应 |
+| `tables` | `backend/microservice/src/level/tables/LevelTables.scala` | 定义数据层模型，例如 `LevelRow`、`RatingRow`、`SubmissionRow` |
 
 ### 3.2 为什么这样分层
 
@@ -109,17 +109,17 @@
 
 ## 4. Frontend and Backend API Alignment
 
-当前项目前端的 API 调用主要集中在 `frontend/src/src/api`。Scala 后端则按照这些真实存在的调用路径，在 `src/main/scala/microservice/<module>/api` 和 `src/main/scala/microservice/<module>/routes` 中建立对应关系。
+当前项目前端的 API 调用主要集中在 `frontend/src/api`。Scala 后端则按照这些真实存在的调用路径，在 `backend/microservice/src/<module>/api` 和 `backend/microservice/src/<module>/routes` 中建立对应关系。
 
 ### 4.1 对齐关系总表
 
 | Frontend API file | Scala API file | Scala router file | HTTP method | Path | Business purpose |
 | --- | --- | --- | --- | --- | --- |
-| `frontend/src/src/api/auth-api.ts` | `src/main/scala/microservice/auth/api/AuthApi.scala` | `src/main/scala/microservice/auth/routes/AuthRouter.scala` | `POST` | `/auth/bind` | 绑定前端本地身份与后端用户 |
-| `frontend/src/src/api/user-api.ts` | `src/main/scala/microservice/user/api/GetUserProfileApi.scala` | `src/main/scala/microservice/user/routes/UserRouter.scala` | `GET` | `/users/:userId/profile` | 查询用户资料页所需的公开信息 |
-| `frontend/src/src/api/designer-api.ts` | `src/main/scala/microservice/level/api/CreateLevelApi.scala` | `src/main/scala/microservice/level/routes/DesignerLevelRouter.scala` | `POST` | `/designer/levels` | 设计师创建关卡 |
-| `frontend/src/src/api/player-api.ts` | `src/main/scala/microservice/level/api/RateLevelApi.scala` | `src/main/scala/microservice/level/routes/PlayerLevelRouter.scala` | `POST` | `/player/levels/:levelId/ratings` | 玩家对已发布关卡评分 |
-| `frontend/src/src/api/admin-api.ts` | `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala` | `src/main/scala/microservice/admin/routes/AdminRouter.scala` | `POST` | `/admin/submissions/:submissionId/review` | 管理员审核投稿并推进状态流转 |
+| `frontend/src/api/auth-api.ts` | `backend/microservice/src/auth/api/AuthApi.scala` | `backend/microservice/src/auth/routes/AuthRouter.scala` | `POST` | `/auth/bind` | 绑定前端本地身份与后端用户 |
+| `frontend/src/api/user-api.ts` | `backend/microservice/src/user/api/GetUserProfileApi.scala` | `backend/microservice/src/user/routes/UserRouter.scala` | `GET` | `/users/:userId/profile` | 查询用户资料页所需的公开信息 |
+| `frontend/src/api/designer-api.ts` | `backend/microservice/src/level/api/CreateLevelApi.scala` | `backend/microservice/src/level/routes/DesignerLevelRouter.scala` | `POST` | `/designer/levels` | 设计师创建关卡 |
+| `frontend/src/api/player-api.ts` | `backend/microservice/src/level/api/RateLevelApi.scala` | `backend/microservice/src/level/routes/PlayerLevelRouter.scala` | `POST` | `/player/levels/:levelId/ratings` | 玩家对已发布关卡评分 |
+| `frontend/src/api/admin-api.ts` | `backend/microservice/src/admin/api/ReviewSubmissionApi.scala` | `backend/microservice/src/admin/routes/AdminRouter.scala` | `POST` | `/admin/submissions/:submissionId/review` | 管理员审核投稿并推进状态流转 |
 
 ### 4.2 对齐原则
 
@@ -138,11 +138,11 @@
 ### 5.1 POST /auth/bind
 
 - Frontend file:
-  `frontend/src/src/api/auth-api.ts`
+  `frontend/src/api/auth-api.ts`
 - Scala API file:
-  `src/main/scala/microservice/auth/api/AuthApi.scala`
+  `backend/microservice/src/auth/api/AuthApi.scala`
 - Scala route file:
-  `src/main/scala/microservice/auth/routes/AuthRouter.scala`
+  `backend/microservice/src/auth/routes/AuthRouter.scala`
 - Request type:
   `BindBackendUserRequest`
 - Response type:
@@ -157,11 +157,11 @@
 ### 5.2 GET /users/:userId/profile
 
 - Frontend file:
-  `frontend/src/src/api/user-api.ts`
+  `frontend/src/api/user-api.ts`
 - Scala API file:
-  `src/main/scala/microservice/user/api/GetUserProfileApi.scala`
+  `backend/microservice/src/user/api/GetUserProfileApi.scala`
 - Scala route file:
-  `src/main/scala/microservice/user/routes/UserRouter.scala`
+  `backend/microservice/src/user/routes/UserRouter.scala`
 - Request type:
   `GetUserProfileRequest`
 - Response type:
@@ -176,11 +176,11 @@
 ### 5.3 POST /designer/levels
 
 - Frontend file:
-  `frontend/src/src/api/designer-api.ts`
+  `frontend/src/api/designer-api.ts`
 - Scala API file:
-  `src/main/scala/microservice/level/api/CreateLevelApi.scala`
+  `backend/microservice/src/level/api/CreateLevelApi.scala`
 - Scala route file:
-  `src/main/scala/microservice/level/routes/DesignerLevelRouter.scala`
+  `backend/microservice/src/level/routes/DesignerLevelRouter.scala`
 - Request type:
   `CreateLevelRequest`
 - Response type:
@@ -195,11 +195,11 @@
 ### 5.4 POST /player/levels/:levelId/ratings
 
 - Frontend file:
-  `frontend/src/src/api/player-api.ts`
+  `frontend/src/api/player-api.ts`
 - Scala API file:
-  `src/main/scala/microservice/level/api/RateLevelApi.scala`
+  `backend/microservice/src/level/api/RateLevelApi.scala`
 - Scala route file:
-  `src/main/scala/microservice/level/routes/PlayerLevelRouter.scala`
+  `backend/microservice/src/level/routes/PlayerLevelRouter.scala`
 - Request type:
   `RateLevelRequest`
 - Response type:
@@ -214,11 +214,11 @@
 ### 5.5 POST /admin/submissions/:submissionId/review
 
 - Frontend file:
-  `frontend/src/src/api/admin-api.ts`
+  `frontend/src/api/admin-api.ts`
 - Scala API file:
-  `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala`
+  `backend/microservice/src/admin/api/ReviewSubmissionApi.scala`
 - Scala route file:
-  `src/main/scala/microservice/admin/routes/AdminRouter.scala`
+  `backend/microservice/src/admin/routes/AdminRouter.scala`
 - Request type:
   `ReviewSubmissionRequest`
 - Response type:
@@ -238,11 +238,11 @@
 
 例如：
 
-- `src/main/scala/microservice/auth/api/AuthApi.scala` 中的 `BindBackendUserRequest` / `BindBackendUserResponse`
-- `src/main/scala/microservice/user/api/GetUserProfileApi.scala` 中的 `GetUserProfileRequest` / `GetUserProfileResponse`
-- `src/main/scala/microservice/level/api/CreateLevelApi.scala` 中的 `CreateLevelRequest` / `CreateLevelResponse`
-- `src/main/scala/microservice/level/api/RateLevelApi.scala` 中的 `RateLevelRequest` / `RateLevelResponse`
-- `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala` 中的 `ReviewSubmissionRequest` / `ReviewSubmissionResponse`
+- `backend/microservice/src/auth/api/AuthApi.scala` 中的 `BindBackendUserRequest` / `BindBackendUserResponse`
+- `backend/microservice/src/user/api/GetUserProfileApi.scala` 中的 `GetUserProfileRequest` / `GetUserProfileResponse`
+- `backend/microservice/src/level/api/CreateLevelApi.scala` 中的 `CreateLevelRequest` / `CreateLevelResponse`
+- `backend/microservice/src/level/api/RateLevelApi.scala` 中的 `RateLevelRequest` / `RateLevelResponse`
+- `backend/microservice/src/admin/api/ReviewSubmissionApi.scala` 中的 `ReviewSubmissionRequest` / `ReviewSubmissionResponse`
 
 这意味着每个接口的输入输出都是显式类型，而不是零散地依赖未受约束的 JSON 字段。
 
@@ -250,12 +250,12 @@
 
 例如：
 
-- `src/main/scala/microservice/auth/api/AuthApi.scala` 中定义了 `AuthError`
-- `src/main/scala/microservice/user/api/GetUserProfileApi.scala` 中定义了 `UserApiError`
-- `src/main/scala/microservice/level/api/CreateLevelApi.scala` 中定义了 `DesignerLevelApiError`
-- `src/main/scala/microservice/level/api/RateLevelApi.scala` 中定义了 `PlayerRatingApiError`
-- `src/main/scala/microservice/admin/api/ReviewSubmissionApi.scala` 中定义了 `AdminReviewApiError`
-- `src/main/scala/microservice/core/HttpError.scala` 提供统一的 HTTP 错误表达
+- `backend/microservice/src/auth/api/AuthApi.scala` 中定义了 `AuthError`
+- `backend/microservice/src/user/api/GetUserProfileApi.scala` 中定义了 `UserApiError`
+- `backend/microservice/src/level/api/CreateLevelApi.scala` 中定义了 `DesignerLevelApiError`
+- `backend/microservice/src/level/api/RateLevelApi.scala` 中定义了 `PlayerRatingApiError`
+- `backend/microservice/src/admin/api/ReviewSubmissionApi.scala` 中定义了 `AdminReviewApiError`
+- `backend/microservice/src/core/HttpError.scala` 提供统一的 HTTP 错误表达
 
 这样做可以把错误建模成明确的类型，而不是依赖到处散落的字符串判断。
 
@@ -278,7 +278,7 @@
 
 ### 6.4 状态和角色被类型化
 
-在 `src/main/scala/microservice/system/objects/SystemObjects.scala` 中，当前项目将关键状态抽象为类型：
+在 `backend/microservice/src/system/objects/SystemObjects.scala` 中，当前项目将关键状态抽象为类型：
 
 - `UserRole`
 - `LevelStatus`
@@ -332,7 +332,7 @@
 
 推荐回答：
 
-因为设计师创建关卡和玩家评分，核心都围绕 `level` 这个领域对象展开。为了避免重复定义关卡相关对象，这里把共享领域对象集中在 `src/main/scala/microservice/level/objects` 中，再通过不同的 API 和 route 区分设计师视角和玩家视角。
+因为设计师创建关卡和玩家评分，核心都围绕 `level` 这个领域对象展开。为了避免重复定义关卡相关对象，这里把共享领域对象集中在 `backend/microservice/src/level/objects` 中，再通过不同的 API 和 route 区分设计师视角和玩家视角。
 
 ### 7.4 类型安全具体体现在哪里？
 
@@ -397,9 +397,9 @@
 
 明天 code review 建议按以下顺序展示：
 
-1. 先展示 `src/main/scala/microservice` 的目录结构
-2. 展示 `src/main/scala/microservice/routes/ApiRouter.scala`
-3. 展示 `src/main/scala/microservice/level` 的 `api/objects/routes/tables`
+1. 先展示 `backend/microservice/src` 的目录结构
+2. 展示 `backend/microservice/src/routes/ApiRouter.scala`
+3. 展示 `backend/microservice/src/level` 的 `api/objects/routes/tables`
 4. 展示 3 到 5 个核心 API
 5. 展示前后端 API 对齐表
 6. 最后讲函数式 / 类型安全设计
@@ -413,4 +413,4 @@
 
 ## 9. Final Summary
 
-这次改造的重点不是 UI，也不是凭空扩展业务，而是把现有项目整理为符合课程要求的 Scala 后端结构，使 API 契约、类型安全、业务逻辑边界，以及前后端对齐关系都能够在 code review 中被清楚地展示和解释。通过 `src/main/scala/microservice/Main.scala`、`src/main/scala/microservice/routes/ApiRouter.scala`、模块化 `microservice` 目录，以及 5 个核心 API 的 request/response/service 设计，当前项目已经具备了较完整的课堂展示基础。
+这次改造的重点不是 UI，也不是凭空扩展业务，而是把现有项目整理为符合课程要求的 Scala 后端结构，使 API 契约、类型安全、业务逻辑边界，以及前后端对齐关系都能够在 code review 中被清楚地展示和解释。通过 `backend/microservice/src/Main.scala`、`backend/microservice/src/routes/ApiRouter.scala`、模块化 `microservice` 目录，以及 5 个核心 API 的 request/response/service 设计，当前项目已经具备了较完整的课堂展示基础。

@@ -5,6 +5,7 @@ export * from "./user-api.js";
 export * from "./designer-api.js";
 export * from "./admin-api.js";
 export * from "./player-api.js";
+export * from "./system-api.js";
 
 export const parseLevelDataInput = (value: string): LevelData =>
   LevelDataSchema.parse(JSON.parse(value) as unknown);

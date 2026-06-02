@@ -28,13 +28,27 @@ const normalizeRequestPath = (rawPath: string): string | null => {
   return beforeQuery.replace(/\/$/, "") || "/";
 };
 
+const collectApiFiles = async (directory: string): Promise<string[]> => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      return collectApiFiles(entryPath);
+    }
+    if (entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+      return [entryPath];
+    }
+    return [];
+  }));
+  return files.flat();
+};
+
 const extractRequestPaths = async (): Promise<string[]> => {
-  const files = await readdir(apiDir);
-  const apiFiles = files.filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"));
+  const apiFiles = await collectApiFiles(apiDir);
   const paths = new Set<string>();
 
   for (const file of apiFiles) {
-    const source = await readFile(path.join(apiDir, file), "utf8");
+    const source = await readFile(file, "utf8");
     const requestCalls = source.matchAll(/request\s*\(\s*([`"'])([\s\S]*?)\1\s*,/g);
 
     for (const match of requestCalls) {

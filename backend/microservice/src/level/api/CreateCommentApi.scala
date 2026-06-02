@@ -6,11 +6,6 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-final case class GetLevelCommentsRequest(
-  playerId: String,
-  levelId: String
-)
-
 final case class CreateCommentBody(
   content: String
 )
@@ -26,14 +21,6 @@ final case class CreateCommentRequest(
   levelId: String,
   content: String
 )
-
-object GetLevelCommentsEndpoint {
-  val name: String = "GetLevelComments"
-  val method: String = "GET"
-  val path: String = "/player/levels/:levelId/comments"
-  val businessLogic: String =
-    "返回已发布关卡的评论，按创建时间倒序排列。"
-}
 
 object CreateCommentEndpoint {
   val name: String = "CreateComment"
