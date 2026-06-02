@@ -1,4 +1,4 @@
-import type { CreateRatingInput, Rating } from "../data/store-contracts.js";
+import type { CreateRatingInput, Rating } from "../system/object/store-contracts.js";
 import { ratings, saveStore } from "../system/object/store.js";
 import { HttpError } from "../system/api/http.js";
 import { levelService } from "./level-service.js";

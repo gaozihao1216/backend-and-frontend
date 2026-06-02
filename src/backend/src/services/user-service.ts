@@ -1,4 +1,4 @@
-import type { BindBackendUserInput, User, UserProfile } from "../data/store-contracts.js";
+import type { BindBackendUserInput, User, UserProfile } from "../system/object/store-contracts.js";
 import { comments, favorites, levels, ratings, saveStore, users } from "../system/object/store.js";
 import { HttpError } from "../system/api/http.js";
 

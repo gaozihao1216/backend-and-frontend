@@ -1,4 +1,4 @@
-import type { Comment, CreateCommentInput } from "../data/store-contracts.js";
+import type { Comment, CreateCommentInput } from "../system/object/store-contracts.js";
 import { comments, saveStore } from "../system/object/store.js";
 import { HttpError } from "../system/api/http.js";
 import { levelService } from "./level-service.js";

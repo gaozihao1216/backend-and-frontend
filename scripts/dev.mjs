@@ -47,5 +47,5 @@ const shutdown = (exitCode) => {
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
-startProcess("backend", "node", ["--import", "tsx", "src/backend/server.ts"]);
+startProcess("backend", "node", ["--import", "tsx", "src/backend/src/server.ts"]);
 startProcess("frontend", "node_modules/vite/bin/vite.js", []);

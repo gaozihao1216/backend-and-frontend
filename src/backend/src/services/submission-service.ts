@@ -1,4 +1,4 @@
-import type { ReviewSubmissionInput, Submission } from "../data/store-contracts.js";
+import type { ReviewSubmissionInput, Submission } from "../system/object/store-contracts.js";
 import { saveStore, submissions } from "../system/object/store.js";
 import { HttpError } from "../system/api/http.js";
 import { levelService } from "./level-service.js";

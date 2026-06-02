@@ -1,4 +1,4 @@
-import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../data/store-contracts.js";
+import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../system/object/store-contracts.js";
 import { levels, saveStore } from "../system/object/store.js";
 import { HttpError } from "../system/api/http.js";
 

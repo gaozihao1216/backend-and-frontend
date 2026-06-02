@@ -1,4 +1,4 @@
-import type { Favorite } from "../data/store-contracts.js";
+import type { Favorite } from "../system/object/store-contracts.js";
 import { favorites, saveStore } from "../system/object/store.js";
 import { HttpError } from "../system/api/http.js";
 import { levelService } from "./level-service.js";
