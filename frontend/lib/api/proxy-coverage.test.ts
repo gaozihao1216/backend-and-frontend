@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const apiDir = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(apiDir, "../../../..");
+const projectRoot = path.resolve(apiDir, "../../..");
 const viteConfigPath = path.join(projectRoot, "vite.config.ts");
 
 const extractProxyPrefixes = async (): Promise<string[]> => {
