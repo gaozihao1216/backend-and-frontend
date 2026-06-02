@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ErrorResponseSchema, createSuccessResponseSchema } from "../../../shared/types.js";
+import { ApiErrorSchema, createSuccessResponseSchema } from "./contracts.js";
 import { API_BASE_URL } from "../config.js";
 
 const JsonHeadersSchema = z.record(z.string(), z.string());
@@ -28,7 +28,10 @@ const parseApiResponse = async <T>(
   }
 
   if (!response.ok) {
-    const error = ErrorResponseSchema.safeParse(payload);
+    const error = z.object({
+      success: z.literal(false),
+      error: ApiErrorSchema,
+    }).safeParse(payload);
     if (error.success) {
       throw new Error(error.data.error.message);
     }

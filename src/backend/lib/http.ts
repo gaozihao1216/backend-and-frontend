@@ -1,11 +1,6 @@
 import type { Request } from "express";
 import { ZodError, type ZodType } from "zod";
-import type {
-  ApiError,
-  ApiResponse,
-  SuccessResponse,
-  User,
-} from "../../shared/types.js";
+import type { ApiError, SuccessResponse, User } from "./http-contract.js";
 
 export class HttpError extends Error {
   constructor(
