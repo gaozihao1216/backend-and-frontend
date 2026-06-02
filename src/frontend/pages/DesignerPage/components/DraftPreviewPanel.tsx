@@ -1,6 +1,6 @@
 import { LevelPreviewCard } from "../../../components/game/LevelPreviewCard.js";
 import { createDraftLevelSource } from "../../../lib/level-repository.js";
-import type { LevelData, LevelTag } from "../../../../shared/types.js";
+import type { LevelData, LevelTag } from "../../../../lib/level-contracts.js";
 
 type DraftPreviewPanelProps = {
   title: string;

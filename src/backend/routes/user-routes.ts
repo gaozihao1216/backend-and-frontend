@@ -3,7 +3,7 @@ import {
   GetUserProfileRequestQuerySchema,
   GetUserProfileRequestParamsSchema,
   GetUserProfileResponseDataSchema,
-} from "../../shared/types.js";
+} from "../lib/api-contracts.js";
 import { parseOrThrow, success } from "../lib/http.js";
 import { userService } from "../services/user-service.js";
 

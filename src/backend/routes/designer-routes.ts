@@ -4,7 +4,7 @@ import {
   CreateLevelResponseDataSchema,
   SubmitLevelRequestBodySchema,
   SubmitLevelResponseDataSchema,
-} from "../../shared/types.js";
+} from "../lib/api-contracts.js";
 import { getCurrentUser, parseOrThrow, success } from "../lib/http.js";
 import { requireRole } from "../middleware/auth.js";
 import { levelService } from "../services/level-service.js";

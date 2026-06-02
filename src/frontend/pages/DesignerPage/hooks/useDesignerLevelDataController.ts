@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LevelData } from "../../../../shared/types.js";
+import type { LevelData } from "../../../../lib/level-contracts.js";
 import { cloneLevelData } from "../functions/draft-functions.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;

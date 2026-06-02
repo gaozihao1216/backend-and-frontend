@@ -9,7 +9,7 @@ import {
   ReviewSubmissionRequestBodySchema,
   ReviewSubmissionRequestParamsSchema,
   ReviewSubmissionResponseDataSchema,
-} from "../../shared/types.js";
+} from "../lib/api-contracts.js";
 import { getCurrentUser, parseOrThrow, success } from "../lib/http.js";
 import { commentService } from "../services/comment-service.js";
 import { requireRole } from "../middleware/auth.js";

@@ -11,15 +11,14 @@ import {
 import { LevelPreviewCard } from "../components/game/LevelPreviewCard.js";
 import { API_USERS } from "../lib/config.js";
 import { createPublishedLevelSource } from "../lib/level-repository.js";
-import { STARTER_LEVEL_ID } from "../../shared/levels/index.js";
+import { STARTER_LEVEL_ID } from "../lib/level-contracts.js";
 import type {
   Comment,
   FavoriteWithLevel,
   Level,
-  LevelTag,
-  PublishedLevelsSort,
   RatingValue,
-} from "../../shared/types.js";
+} from "../lib/api/api-contracts.js";
+import type { LevelTag, PublishedLevelsSort } from "../lib/level-contracts.js";
 
 const availableTags: LevelTag[] = ["puzzle", "hard", "beginner", "funny", "strategy"];
 const availableSorts: PublishedLevelsSort[] = ["newest", "highestRated", "mostRated"];

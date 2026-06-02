@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Comment, Level } from "../../shared/types.js";
+import type { Comment, Level } from "../lib/api/api-contracts.js";
 import { createComment, getLevelComments, getPublishedLevels } from "../lib/api.js";
 
 type PlayerCommunityPageProps = {

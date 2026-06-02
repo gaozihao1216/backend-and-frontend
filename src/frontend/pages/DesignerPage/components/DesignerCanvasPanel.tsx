@@ -2,7 +2,7 @@ import { LevelEditorCanvas } from "../../../components/designer/LevelEditorCanva
 import { SelectedEntityPanel } from "../../../components/designer/SelectedEntityPanel.js";
 import type { EditorTool } from "../../../lib/designer-level.js";
 import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../lib/ground.js";
-import type { LevelData } from "../../../../shared/types.js";
+import type { LevelData } from "../../../../lib/level-contracts.js";
 import type { DesignerPhase } from "../objects/designer-page-types.js";
 import { DesignerWorkspace } from "./DesignerWorkspace.js";
 

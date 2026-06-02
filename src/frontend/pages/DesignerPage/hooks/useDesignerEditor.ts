@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMinimumAreaSelectionFrame } from "../../../lib/designer-level.js";
 import type { EditorClipboardSelection, EditorTool } from "../../../lib/designer-level.js";
-import type { LevelData, LevelObstacle } from "../../../../shared/types.js";
+import type { LevelData, LevelObstacle } from "../../../../lib/level-contracts.js";
 
 export type UseDesignerEditorParams = {
   levelData: LevelData;

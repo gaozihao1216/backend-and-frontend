@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getLevelTerrain, type TerrainEditMode, type TerrainBoundaryKind } from "../../../lib/ground.js";
-import type { LevelData, LevelGround, LevelTerrain } from "../../../../shared/types.js";
+import type { LevelData, LevelGround, LevelTerrain } from "../../../../lib/level-contracts.js";
 import type { DesignerPhase } from "../objects/designer-page-types.js";
 
 export type UseDesignerGroundEditorParams = {

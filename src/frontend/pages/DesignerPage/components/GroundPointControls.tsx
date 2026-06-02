@@ -1,4 +1,4 @@
-import type { LevelGround } from "../../../../shared/types.js";
+import type { LevelGround } from "../../../../lib/level-contracts.js";
 
 type GroundPointControlsProps = {
   visible: boolean;

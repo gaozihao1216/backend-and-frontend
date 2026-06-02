@@ -1,6 +1,6 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { UserSchema } from "../../shared/types.js";
+import { UserSchema } from "../data/store-contracts.js";
 import { comments, favorites, levels, ratings, resetStore, submissions, users } from "../data/store.js";
 import { commentService } from "./comment-service.js";
 import { favoriteService } from "./favorite-service.js";

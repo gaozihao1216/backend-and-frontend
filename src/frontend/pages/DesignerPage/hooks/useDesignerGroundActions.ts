@@ -10,7 +10,7 @@ import {
   setTerrainBoundaryType,
 } from "../../../lib/ground.js";
 import type { TerrainBoundaryKind, TerrainEditMode } from "../../../lib/ground.js";
-import type { LevelData } from "../../../../shared/types.js";
+import type { LevelData } from "../../../../lib/level-contracts.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;
 

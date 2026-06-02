@@ -1,5 +1,5 @@
 import type { Body, Engine } from "matter-js";
-import type { LevelGround, Position } from "../../shared/types.js";
+import type { LevelGround, Position } from "../lib/level-contracts.js";
 
 export type GameBodyKind = "ground" | "block" | "pig" | "bird";
 

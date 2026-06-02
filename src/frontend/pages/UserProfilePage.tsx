@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { UserProfile } from "../../shared/types.js";
+import type { UserProfile } from "../lib/api/api-contracts.js";
 import { getUserProfile } from "../lib/api.js";
 
 type UserProfilePageProps = {

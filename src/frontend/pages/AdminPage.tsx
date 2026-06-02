@@ -3,8 +3,8 @@ import { getPendingSubmissions, reviewSubmission } from "../lib/api.js";
 import { LevelPreviewCard } from "../components/game/LevelPreviewCard.js";
 import { API_USERS } from "../lib/config.js";
 import { createSubmissionLevelSource } from "../lib/level-repository.js";
-import { STARTER_LEVEL_ID } from "../../shared/levels/index.js";
-import type { SubmissionWithLevel } from "../../shared/types.js";
+import { STARTER_LEVEL_ID } from "../lib/level-contracts.js";
+import type { SubmissionWithLevel } from "../lib/api/api-contracts.js";
 
 type AdminPageProps = {
   userId?: string;

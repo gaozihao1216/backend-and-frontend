@@ -4,7 +4,7 @@ import {
   BindBackendUserRequestBodySchema,
   GetBackendUsersRequestQuerySchema,
   GetBackendUsersResponseDataSchema,
-} from "../../shared/types.js";
+} from "../lib/api-contracts.js";
 import { parseOrThrow, success } from "../lib/http.js";
 import { authService } from "../services/auth-service.js";
 

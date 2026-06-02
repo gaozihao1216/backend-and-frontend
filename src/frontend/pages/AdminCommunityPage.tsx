@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Comment } from "../../shared/types.js";
+import type { Comment } from "../lib/api/api-contracts.js";
 import { deleteComment, getAdminComments } from "../lib/api.js";
 
 type AdminCommunityPageProps = {
