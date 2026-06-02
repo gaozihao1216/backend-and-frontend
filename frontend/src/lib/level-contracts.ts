@@ -1,154 +1,23 @@
 import { z } from "zod";
+import { LevelTagSchema, type LevelTag, type PublishedLevelsSort } from "../objects/system/system-objects.js";
+import { type Position, PositionSchema } from "../objects/level/position.js";
+import { type LevelGround, LevelGroundSchema } from "../objects/level/level-ground.js";
+import { type LevelTerrain, type TerrainVoidSpan, LevelTerrainSchema, TerrainVoidSpanSchema } from "../objects/level/level-terrain.js";
+import { type LevelData, type LevelEnemy, type LevelObstacle, LevelDataSchema, LevelEnemySchema, LevelObstacleSchema } from "../objects/level/level-data.js";
+import { type Level, LevelSchema } from "../objects/level/level.js";
 
-export type LevelTag = "puzzle" | "hard" | "beginner" | "funny" | "strategy";
-
-export type Position = {
-  x: number;
-  y: number;
-};
-
-export type LevelGround =
-  | {
-      type: "line";
-      points: Position[];
-    }
-  | {
-      type: "bezier";
-      controlPoints: Position[];
-    };
-
-export type TerrainVoidSpan = {
-  id: string;
-  startX: number;
-  endX: number;
-};
-
-export type LevelTerrain = {
-  ceilingBoundary?: LevelGround | undefined;
-  groundBoundary: LevelGround;
-  voidSpans: TerrainVoidSpan[];
-};
-
-export type LevelObstacle = {
-  id: string;
-  material: "wood" | "stone" | "glass";
-  position: Position;
-  size: {
-    width: number;
-    height: number;
-  };
-  angle?: number | undefined;
-};
-
-export type LevelEnemy = {
-  id: string;
-  type: "pig";
-  position: Position;
-  size?: {
-    width: number;
-    height: number;
-  } | undefined;
-};
-
-export type LevelData = {
-  world: {
-    width: number;
-    height: number;
-    gravity: number;
-  };
-  ground?: LevelGround | undefined;
-  terrain?: LevelTerrain | undefined;
-  birdInventory: {
-    basic: number;
-  };
-  obstacles: LevelObstacle[];
-  enemies: LevelEnemy[];
-};
-
-export type LevelStatus = "draft" | "pending_review" | "published" | "rejected";
-export type PublishedLevelsSort = "newest" | "highestRated" | "mostRated";
-
-export type Level = {
-  id: string;
-  title: string;
-  description: string;
-  tags: LevelTag[];
-  data: LevelData;
-  authorId: string;
-  status: LevelStatus;
-  rejectionReason?: string | undefined;
-  averageRating: number;
-  ratingCount: number;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt?: string | undefined;
-};
-
-export const LevelTagSchema = z.enum(["puzzle", "hard", "beginner", "funny", "strategy"]);
-
-export const PositionSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-});
-
-export const LevelGroundSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("line"),
-    points: z.array(PositionSchema).min(2),
-  }),
-  z.object({
-    type: z.literal("bezier"),
-    controlPoints: z.array(PositionSchema).min(3),
-  }),
-]);
-
-export const TerrainVoidSpanSchema = z.object({
-  id: z.string().min(1),
-  startX: z.number(),
-  endX: z.number(),
-});
-
-export const LevelTerrainSchema = z.object({
-  ceilingBoundary: LevelGroundSchema.optional(),
-  groundBoundary: LevelGroundSchema,
-  voidSpans: z.array(TerrainVoidSpanSchema),
-});
-
-export const LevelObstacleSchema = z.object({
-  id: z.string().min(1),
-  material: z.enum(["wood", "stone", "glass"]),
-  position: PositionSchema,
-  size: z.object({
-    width: z.number().positive(),
-    height: z.number().positive(),
-  }),
-  angle: z.number().optional(),
-});
-
-export const LevelEnemySchema = z.object({
-  id: z.string().min(1),
-  type: z.literal("pig"),
-  position: PositionSchema,
-  size: z.object({
-    width: z.number().positive(),
-    height: z.number().positive(),
-  }).optional(),
-});
-
-export const LevelDataSchema = z.object({
-  world: z.object({
-    width: z.number().positive(),
-    height: z.number().positive(),
-    gravity: z.number().positive(),
-  }),
-  ground: LevelGroundSchema.optional(),
-  terrain: LevelTerrainSchema.optional(),
-  birdInventory: z.object({
-    basic: z.number().int().nonnegative(),
-  }),
-  obstacles: z.array(LevelObstacleSchema),
-  enemies: z.array(LevelEnemySchema),
-});
+export { LevelTagSchema } from "../objects/system/system-objects.js";
+export type { LevelTag, PublishedLevelsSort } from "../objects/system/system-objects.js";
+export { PositionSchema } from "../objects/level/position.js";
+export type { Position } from "../objects/level/position.js";
+export { LevelGroundSchema } from "../objects/level/level-ground.js";
+export type { LevelGround } from "../objects/level/level-ground.js";
+export { LevelTerrainSchema, TerrainVoidSpanSchema } from "../objects/level/level-terrain.js";
+export type { LevelTerrain, TerrainVoidSpan } from "../objects/level/level-terrain.js";
+export { LevelDataSchema, LevelEnemySchema, LevelObstacleSchema } from "../objects/level/level-data.js";
+export type { LevelData, LevelEnemy, LevelObstacle } from "../objects/level/level-data.js";
+export { LevelSchema } from "../objects/level/level.js";
+export type { Level } from "../objects/level/level.js";
 
 export const CreateLevelInputSchema = z.object({
   title: z.string().min(1).max(100),
@@ -157,22 +26,6 @@ export const CreateLevelInputSchema = z.object({
   data: LevelDataSchema,
 });
 export type CreateLevelInput = z.infer<typeof CreateLevelInputSchema>;
-
-export const LevelSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1).max(100),
-  description: z.string().max(1000),
-  tags: z.array(LevelTagSchema).max(5),
-  data: LevelDataSchema,
-  authorId: z.string().min(1),
-  status: z.enum(["draft", "pending_review", "published", "rejected"]),
-  rejectionReason: z.string().max(1000).optional(),
-  averageRating: z.number().min(0).max(5),
-  ratingCount: z.number().int().nonnegative(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  publishedAt: z.string().optional(),
-});
 
 export const STARTER_LEVEL_ID = "level-1";
 export const STARTER_LEVEL_TITLE = "Starter Level";
