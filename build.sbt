@@ -5,7 +5,7 @@ ThisBuild / organization := "com.example"
 lazy val root = (project in file("."))
   .settings(
     name := "UserService",
-    Compile / scalaSource := baseDirectory.value / "backend" / "microservice",
+    Compile / scalaSource := baseDirectory.value / "backend" / "microservice" / "src",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % "3.5.7",
       "org.http4s" %% "http4s-dsl" % "0.23.30",
