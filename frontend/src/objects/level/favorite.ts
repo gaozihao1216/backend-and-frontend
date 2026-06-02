@@ -8,5 +8,3 @@ export const FavoriteSchema = z.object({
 });
 
 export type Favorite = z.infer<typeof FavoriteSchema>;
-export { FavoriteWithLevelSchema } from "./favorite-with-level.js";
-export type { FavoriteWithLevel } from "./favorite-with-level.js";

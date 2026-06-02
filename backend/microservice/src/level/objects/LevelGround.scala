@@ -3,7 +3,7 @@ package microservice.level.objects
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 
-sealed trait LevelGround {
+trait LevelGround {
   def `type`: String
 }
 
