@@ -10,4 +10,4 @@
 - `functions/` 放纯函数，例如草稿序列化、备份时间戳、深拷贝、角度归一化和地形调参清洗。
 - `component/` 放业务区域组件，例如页头、关卡表单、JSON 校验、归档预览、设计手册、地形调参和编辑工作区。
 
-跨页面、跨端共享的 API 契约仍然保留在 `src/shared/api` 和 `src/shared/schemas`。本次没有强行拆分所有简单页面，因为 `AdminPage`、`UserProfilePage`、`DesignerHomePage` 等页面规模较小，状态和渲染仍然清楚，继续保留单文件更符合“不要为了形式硬拆”的要求。
+跨页面、跨端共享的 API 调用已经整理到 `frontend/src/api/<module>`，共享对象整理到 `frontend/src/objects/<module>`。本次没有强行拆分所有简单页面，因为 `AdminPage`、`UserProfilePage`、`DesignerHomePage` 等页面规模较小，状态和渲染仍然清楚，继续保留单文件更符合“不要为了形式硬拆”的要求。

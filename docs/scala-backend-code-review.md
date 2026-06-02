@@ -48,16 +48,11 @@
 
 ### 2.3 结构调整的核心说明
 
-原项目中存在两套后端相关代码：
-
-- `src/backend` 下的 TypeScript + Express 后端
-- `src/main/scala` 下早期未完全对齐课程要求的 Scala 草稿结构
-
-本次调整后的重点是：
+原项目中早期存在不符合当前目标的后端草稿结构。本次调整后的重点是：
 
 - 将 Scala 后端重组到 `backend/microservice/src`
 - 删除不再符合目标结构的旧 `services`、`routes` 和空草稿目录
-- 保留现有 TypeScript 后端作为业务逻辑对照和后续迁移参考
+- 原 TypeScript 后端已移除，当前后端主结构集中在 Scala `backend/microservice/src`
 
 因此，当前课程要求中的 `backend/microservice/src` 已经具体落地为：
 
@@ -68,16 +63,17 @@
 
 ## 3. Service Module Layers
 
-当前各业务模块统一采用 `backend/microservice/src/<module>/{api,objects,routes,tables}` 的四层结构。这样拆分的目的，是让 API 契约、业务对象、HTTP 路由和数据层模型各自承担单一职责，避免代码全部堆在同一个文件中。
+当前各业务模块统一采用 `backend/microservice/src/<module>/{api,objects,routes,tables,utils}` 的结构。这样拆分的目的，是让 API 契约、业务对象、HTTP 路由、数据层模型和模块工具各自承担单一职责，避免代码全部堆在同一个文件中。
 
 ### 3.1 四层结构职责
 
 | 分层 | 位置示例 | 主要职责 |
 | --- | --- | --- |
 | `api` | `backend/microservice/src/level/api/CreateLevelApi.scala` | 定义 API 契约，包括 request、response、error、service trait、endpoint 说明 |
-| `objects` | `backend/microservice/src/level/objects/LevelObjects.scala` | 定义领域对象，例如 `Level`、`LevelData`、`Rating`、`Submission` |
+| `objects` | `backend/microservice/src/level/objects/Level.scala` | 定义领域对象，例如 `Level`、`LevelData`、`Rating`、`Submission` |
 | `routes` | `backend/microservice/src/level/routes/DesignerLevelRouter.scala` | 定义 HTTP 入口、解析 header/path/body、调用 service、返回响应 |
 | `tables` | `backend/microservice/src/level/tables/LevelTables.scala` | 定义数据层模型，例如 `LevelRow`、`RatingRow`、`SubmissionRow` |
+| `utils` | `backend/microservice/src/auth/utils/AuthService.scala` | 定义模块内 service trait 或辅助逻辑 |
 
 ### 3.2 为什么这样分层
 
@@ -115,7 +111,7 @@
 
 | Frontend API file | Scala API file | Scala router file | HTTP method | Path | Business purpose |
 | --- | --- | --- | --- | --- | --- |
-| `frontend/src/api/auth-api.ts` | `backend/microservice/src/auth/api/AuthApi.scala` | `backend/microservice/src/auth/routes/AuthRouter.scala` | `POST` | `/auth/bind` | 绑定前端本地身份与后端用户 |
+| `frontend/src/api/auth/BindBackendUserApi.ts` | `backend/microservice/src/auth/api/BindBackendUserApi.scala` | `backend/microservice/src/auth/routes/AuthRouter.scala` | `POST` | `/auth/bind` | 绑定前端本地身份与后端用户 |
 | `frontend/src/api/user-api.ts` | `backend/microservice/src/user/api/GetUserProfileApi.scala` | `backend/microservice/src/user/routes/UserRouter.scala` | `GET` | `/users/:userId/profile` | 查询用户资料页所需的公开信息 |
 | `frontend/src/api/designer-api.ts` | `backend/microservice/src/level/api/CreateLevelApi.scala` | `backend/microservice/src/level/routes/DesignerLevelRouter.scala` | `POST` | `/designer/levels` | 设计师创建关卡 |
 | `frontend/src/api/player-api.ts` | `backend/microservice/src/level/api/RateLevelApi.scala` | `backend/microservice/src/level/routes/PlayerLevelRouter.scala` | `POST` | `/player/levels/:levelId/ratings` | 玩家对已发布关卡评分 |
@@ -138,9 +134,9 @@
 ### 5.1 POST /auth/bind
 
 - Frontend file:
-  `frontend/src/api/auth-api.ts`
+  `frontend/src/api/auth/BindBackendUserApi.ts`
 - Scala API file:
-  `backend/microservice/src/auth/api/AuthApi.scala`
+  `backend/microservice/src/auth/api/BindBackendUserApi.scala`
 - Scala route file:
   `backend/microservice/src/auth/routes/AuthRouter.scala`
 - Request type:
@@ -238,7 +234,7 @@
 
 例如：
 
-- `backend/microservice/src/auth/api/AuthApi.scala` 中的 `BindBackendUserRequest` / `BindBackendUserResponse`
+- `backend/microservice/src/auth/api/BindBackendUserApi.scala` 中的 `BindBackendUserRequest` / `BindBackendUserResponse`
 - `backend/microservice/src/user/api/GetUserProfileApi.scala` 中的 `GetUserProfileRequest` / `GetUserProfileResponse`
 - `backend/microservice/src/level/api/CreateLevelApi.scala` 中的 `CreateLevelRequest` / `CreateLevelResponse`
 - `backend/microservice/src/level/api/RateLevelApi.scala` 中的 `RateLevelRequest` / `RateLevelResponse`
@@ -250,7 +246,7 @@
 
 例如：
 
-- `backend/microservice/src/auth/api/AuthApi.scala` 中定义了 `AuthError`
+- `backend/microservice/src/auth/utils/AuthService.scala` 中定义了 `AuthError`
 - `backend/microservice/src/user/api/GetUserProfileApi.scala` 中定义了 `UserApiError`
 - `backend/microservice/src/level/api/CreateLevelApi.scala` 中定义了 `DesignerLevelApiError`
 - `backend/microservice/src/level/api/RateLevelApi.scala` 中定义了 `PlayerRatingApiError`
@@ -316,11 +312,11 @@
 
 ## 7. Possible Questions and Answers
 
-### 7.1 为什么还保留 TypeScript 后端，没有完全删掉？
+### 7.1 为什么后端现在是一个大服务，而不是多个独立微服务？
 
 推荐回答：
 
-当前项目原来可运行的业务逻辑主要还在 `src/backend` 中。这次改造的重点是先把课程要求最关键的 Scala 结构、类型安全 API 契约和前后端对齐关系建立起来，而不是一次性重写全部运行时。保留 TypeScript 后端可以保证原有业务语义不丢失，也方便后续按模块继续迁移。
+当前目标是让结构清楚、调用关系清楚，而不是拆成多个独立进程。后端仍然是一个 Scala/http4s 服务，只是在代码上按 `system/auth/user/level/admin` 做逻辑拆分。这样既能保持部署和启动简单，也能让每个业务模块的 `api/objects/routes/tables/utils` 边界清楚。
 
 ### 7.2 为什么模块是 `auth`、`user`、`level`、`admin`？
 
@@ -361,19 +357,23 @@
 
 `objects` 表达的是领域对象，是 API 和 service 主要操作的数据结构；`tables` 表达的是更靠近数据层的模型，例如 `LevelRow`、`RatingRow`。虽然当前实现还是轻量的 in-memory 风格，但提前分层后，后续接入真实数据库时不需要重新推翻 API 契约。
 
-### 7.7 为什么只迁移 5 个 API？
+### 7.7 为什么 API 要做到一个文件一个端点？
 
 推荐回答：
 
-这次优先选择了最适合课堂展示的 5 个核心 API，它们覆盖了认证、用户资料、设计师建关卡、玩家评分、管理员审核五类典型场景。这样可以在有限时间内完整展示结构设计和业务规则，剩余 API 则保留为后续迁移任务。
+一个端点一个文件可以直接从前端 `*Api.ts` 追到后端 `*Api.scala`，不会再出现一个文件里混放多个接口、调用边界不清的问题。当前后端 `api/*Api.scala` 与前端 `api/**/*Api.ts` 文件名已经保持一致，完整列表见 `docs/api-inventory.md`。
 
-### 7.8 哪些 API 还没迁移？
+### 7.8 当前已经对齐了哪些 API？
 
 推荐回答：
 
-尚未迁移到 Scala 的真实 API 主要包括：
+当前已对齐的 API 包括：
 
+- `GET /health`
 - `GET /auth/backend-users`
+- `POST /auth/bind`
+- `GET /users/:userId/profile`
+- `POST /designer/levels`
 - `POST /designer/submissions`
 - `GET /player/levels`
 - `GET /player/levels/:levelId`
@@ -382,16 +382,19 @@
 - `GET /player/favorites`
 - `POST /player/levels/:levelId/favorite`
 - `DELETE /player/levels/:levelId/favorite`
+- `POST /player/levels/:levelId/ratings`
 - `GET /admin/comments`
 - `DELETE /admin/comments/:commentId`
+- `GET /admin/submissions/pending`
+- `POST /admin/submissions/:submissionId/review`
 
-这些 API 目前仍保留在 TypeScript 后端中，后续可以按相同模式继续迁移。
+每个 API 的前端文件、后端文件、route 文件和对象文件都列在 `docs/api-inventory.md`。
 
 ### 7.9 为什么说这是贴近老师模板，而不是完全照搬？
 
 推荐回答：
 
-因为当前项目保留了自身真实业务边界，并没有生硬照搬 `books` 等与本项目无关的模块名；但在结构层面，已经严格对齐了老师模板最核心的设计原则：Scala 标准源码目录、统一入口、统一 router、模块化 `microservice` 业务目录，以及模块内 `api/objects/routes/tables` 的分层方式。
+因为当前项目保留了自身真实业务边界，并没有生硬照搬 `books` 等与本项目无关的模块名；但在结构层面，已经对齐了老师模板最核心的设计原则：统一入口、统一 router、模块化业务目录，以及模块内 `api/objects/routes/tables/utils` 的分层方式。
 
 ## 8. Recommended Presentation Order
 
