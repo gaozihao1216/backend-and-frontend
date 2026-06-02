@@ -3,6 +3,7 @@
 当前项目按一个 Scala 大服务组织后端，逻辑模块拆在 `backend/microservice/src/<module>` 下。前端 API 与对象按同样模块拆在 `frontend/src/api/<module>` 和 `frontend/src/objects/<module>`。
 
 完整 API 对照表见 `docs/api-inventory.md`。
+完整 object 对照表见 `docs/object-inventory.md`。
 
 ## Backend Layout
 

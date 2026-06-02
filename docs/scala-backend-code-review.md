@@ -274,7 +274,7 @@
 
 ### 6.4 状态和角色被类型化
 
-在 `backend/microservice/src/system/objects/SystemObjects.scala` 中，当前项目将关键状态抽象为类型：
+在 `backend/microservice/src/system/objects` 中，当前项目将关键状态拆成独立对象文件：
 
 - `UserRole`
 - `LevelStatus`
@@ -343,7 +343,7 @@
 - route 和 service 分离
 - API 契约与业务实现分离
 
-这些设计都可以直接在 `api`、`objects`、`HttpError.scala` 和 `SystemObjects.scala` 中看到。
+这些设计都可以直接在 `api`、`objects`、`HttpError.scala` 和 `system/objects/*.scala` 中看到。
 
 ### 7.5 为什么 route 里会读 header，比如 `x-user-id`？
 

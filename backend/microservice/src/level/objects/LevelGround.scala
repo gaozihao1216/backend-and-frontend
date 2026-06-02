@@ -1,29 +1,10 @@
 package microservice.level.objects
 
-import io.circe.generic.semiauto._
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 
 sealed trait LevelGround {
   def `type`: String
-}
-
-final case class GroundLine(points: List[Position]) extends LevelGround {
-  override val `type`: String = "line"
-}
-
-final case class GroundBezier(controlPoints: List[Position]) extends LevelGround {
-  override val `type`: String = "bezier"
-}
-
-object GroundLine {
-  implicit val encoder: Encoder[GroundLine] = deriveEncoder
-  implicit val decoder: Decoder[GroundLine] = deriveDecoder
-}
-
-object GroundBezier {
-  implicit val encoder: Encoder[GroundBezier] = deriveEncoder
-  implicit val decoder: Decoder[GroundBezier] = deriveDecoder
 }
 
 object LevelGround {

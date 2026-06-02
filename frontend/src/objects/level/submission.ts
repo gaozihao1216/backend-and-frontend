@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { SubmissionStatusSchema } from "../system/system-objects.js";
-import { LevelSchema } from "./level.js";
 
 export const SubmissionSchema = z.object({
   id: z.string().min(1),
@@ -14,9 +13,5 @@ export const SubmissionSchema = z.object({
 });
 
 export type Submission = z.infer<typeof SubmissionSchema>;
-
-export const SubmissionWithLevelSchema = SubmissionSchema.extend({
-  level: LevelSchema,
-});
-
-export type SubmissionWithLevel = z.infer<typeof SubmissionWithLevelSchema>;
+export { SubmissionWithLevelSchema } from "./submission-with-level.js";
+export type { SubmissionWithLevel } from "./submission-with-level.js";

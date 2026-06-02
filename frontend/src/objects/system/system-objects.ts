@@ -1,20 +1,9 @@
-import { z } from "zod";
-
-export const UserRoleSchema = z.enum(["player", "designer", "admin"]);
-export type UserRole = z.infer<typeof UserRoleSchema>;
-
-export const LevelStatusSchema = z.enum(["draft", "pending_review", "published", "rejected"]);
-export type LevelStatus = z.infer<typeof LevelStatusSchema>;
-
-export const SubmissionStatusSchema = z.enum(["pending_review", "approved", "rejected"]);
-export type SubmissionStatus = z.infer<typeof SubmissionStatusSchema>;
-
-export const LevelTagSchema = z.enum(["puzzle", "hard", "beginner", "funny", "strategy"]);
-export type LevelTag = z.infer<typeof LevelTagSchema>;
-
+export * from "./user-role.js";
+export * from "./level-status.js";
+export * from "./submission-status.js";
+export * from "./level-tag.js";
+export * from "./health-response.js";
+export * from "./error-body.js";
+export * from "./api-failure.js";
+export * from "./api-success.js";
 export type PublishedLevelsSort = "newest" | "highestRated" | "mostRated";
-
-export const HealthResponseSchema = z.object({
-  status: z.string(),
-});
-export type HealthResponse = z.infer<typeof HealthResponseSchema>;

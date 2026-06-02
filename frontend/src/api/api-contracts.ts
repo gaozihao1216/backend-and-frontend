@@ -16,78 +16,22 @@ import {
   type PublishedLevelsSort,
   type CreateLevelInput,
 } from "../lib/level-contracts.js";
+import { BackendUserSchema, type BackendUser } from "../objects/auth/backend-user.js";
+import { FavoriteSchema, type Favorite } from "../objects/level/favorite.js";
+import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/favorite-with-level.js";
+import { LevelCommentSchema, type LevelComment as LevelCommentObject } from "../objects/level/level-comment.js";
+import { RatingSchema, type Rating } from "../objects/level/rating.js";
+import { SubmissionSchema, type Submission as SubmissionObject } from "../objects/level/submission.js";
+import { SubmissionWithLevelSchema, type SubmissionWithLevel as SubmissionWithLevelObject } from "../objects/level/submission-with-level.js";
+import { UserProfileSchema, type UserProfile as UserProfileObject } from "../objects/user/user-profile.js";
+import { UserRoleSchema } from "../objects/system/user-role.js";
 
-export const UserRoleSchema = z.enum(["player", "designer", "admin"]);
-
-export const UserSchema = z.object({
-  id: z.string().min(1),
-  username: z.string().min(3).max(32),
-  displayName: z.string().min(1).max(50),
-  role: UserRoleSchema,
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-export type User = z.infer<typeof UserSchema>;
-
-export const UserProfileStatsSchema = z.object({
-  favoriteCount: z.number().int().nonnegative(),
-  ratingCount: z.number().int().nonnegative(),
-});
-
-export const CommentSchema = z.object({
-  id: z.string().min(1),
-  levelId: z.string().min(1),
-  userId: z.string().min(1),
-  content: z.string().min(1).max(500),
-  createdAt: z.string(),
-});
-export type Comment = z.infer<typeof CommentSchema>;
-
-export const FavoriteSchema = z.object({
-  id: z.string().min(1),
-  levelId: z.string().min(1),
-  userId: z.string().min(1),
-  createdAt: z.string(),
-});
-export type Favorite = z.infer<typeof FavoriteSchema>;
-
-export const FavoriteWithLevelSchema = FavoriteSchema.extend({
-  level: LevelSchema,
-});
-
-export const RatingSchema = z.object({
-  id: z.string().min(1),
-  levelId: z.string().min(1),
-  playerId: z.string().min(1),
-  score: z.number().int().min(1).max(5),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-export type Rating = z.infer<typeof RatingSchema>;
-
-export const SubmissionSchema = z.object({
-  id: z.string().min(1),
-  levelId: z.string().min(1),
-  submitterId: z.string().min(1),
-  status: z.enum(["pending_review", "approved", "rejected"]),
-  reviewerId: z.string().min(1).optional(),
-  reviewNote: z.string().max(1000).optional(),
-  submittedAt: z.string(),
-  reviewedAt: z.string().optional(),
-});
-export type Submission = z.infer<typeof SubmissionSchema>;
-
-export const SubmissionWithLevelSchema = SubmissionSchema.extend({
-  level: LevelSchema,
-});
-
-export const UserProfileSchema = z.object({
-  user: UserSchema,
-  publishedLevels: z.array(LevelSchema),
-  recentComments: z.array(CommentSchema),
-  stats: UserProfileStatsSchema,
-});
-export type UserProfile = z.infer<typeof UserProfileSchema>;
+export const UserSchema = BackendUserSchema;
+export type User = BackendUser;
+export const CommentSchema = LevelCommentSchema;
+export type Comment = LevelCommentObject;
+export type Submission = SubmissionObject;
+export type UserProfile = UserProfileObject;
 
 export type BoundBackendUser = User;
 export type Level = LevelContract;
@@ -96,19 +40,19 @@ export type LevelComment = Comment;
 export type LevelRating = Rating;
 export type RatingValue = 1 | 2 | 3 | 4 | 5;
 export type PlayerFavorite = Favorite;
-export type PlayerFavoriteWithLevel = z.infer<typeof FavoriteWithLevelSchema>;
-export type FavoriteWithLevel = PlayerFavoriteWithLevel;
+export type PlayerFavoriteWithLevel = FavoriteWithLevelObject;
+export type FavoriteWithLevel = FavoriteWithLevelObject;
 export type DesignerLevel = LevelContract;
-export type DesignerSubmission = Submission;
-export type PendingSubmission = z.infer<typeof SubmissionWithLevelSchema>;
-export type SubmissionWithLevel = PendingSubmission;
-export type ReviewedSubmission = Submission;
+export type DesignerSubmission = SubmissionObject;
+export type PendingSubmission = SubmissionWithLevelObject;
+export type SubmissionWithLevel = SubmissionWithLevelObject;
+export type ReviewedSubmission = SubmissionObject;
 export type AdminComment = Comment;
-export type ApiUserProfile = UserProfile;
+export type ApiUserProfile = UserProfileObject;
 
 export const GetBackendUsersRequestQuerySchema = z.object({});
 export type GetBackendUsersRequestQuery = z.infer<typeof GetBackendUsersRequestQuerySchema>;
-export const GetBackendUsersResponseDataSchema = z.array(UserSchema);
+export const GetBackendUsersResponseDataSchema = z.array(BackendUserSchema);
 
 export const BindBackendUserRequestBodySchema = z.object({
   localUserId: z.string().trim().min(1).max(64),
@@ -116,7 +60,7 @@ export const BindBackendUserRequestBodySchema = z.object({
   role: UserRoleSchema,
 });
 export type BindBackendUserRequestBody = z.infer<typeof BindBackendUserRequestBodySchema>;
-export const BindBackendUserResponseDataSchema = UserSchema;
+export const BindBackendUserResponseDataSchema = BackendUserSchema;
 
 export const GetUserProfileRequestQuerySchema = z.object({});
 export const GetUserProfileRequestParamsSchema = z.object({

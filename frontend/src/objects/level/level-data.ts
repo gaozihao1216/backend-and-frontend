@@ -1,41 +1,26 @@
 import { z } from "zod";
+import { BirdInventorySchema } from "./bird-inventory.js";
+import { GameWorldSchema } from "./game-world.js";
 import { LevelGroundSchema } from "./level-ground.js";
 import { LevelTerrainSchema } from "./level-terrain.js";
-import { PositionSchema } from "./position.js";
-import { SizeSchema } from "./size.js";
-
-export const LevelObstacleSchema = z.object({
-  id: z.string().min(1),
-  material: z.enum(["wood", "stone", "glass"]),
-  position: PositionSchema,
-  size: SizeSchema,
-  angle: z.number().optional(),
-});
-
-export type LevelObstacle = z.infer<typeof LevelObstacleSchema>;
-
-export const LevelEnemySchema = z.object({
-  id: z.string().min(1),
-  type: z.literal("pig"),
-  position: PositionSchema,
-  size: SizeSchema.optional(),
-});
-
-export type LevelEnemy = z.infer<typeof LevelEnemySchema>;
+import { LevelEnemySchema } from "./level-enemy.js";
+import { LevelObstacleSchema } from "./level-obstacle.js";
 
 export const LevelDataSchema = z.object({
-  world: z.object({
-    width: z.number().positive(),
-    height: z.number().positive(),
-    gravity: z.number().positive(),
-  }),
+  world: GameWorldSchema,
   ground: LevelGroundSchema.optional(),
   terrain: LevelTerrainSchema.optional(),
-  birdInventory: z.object({
-    basic: z.number().int().nonnegative(),
-  }),
+  birdInventory: BirdInventorySchema,
   obstacles: z.array(LevelObstacleSchema),
   enemies: z.array(LevelEnemySchema),
 });
 
 export type LevelData = z.infer<typeof LevelDataSchema>;
+export { BirdInventorySchema } from "./bird-inventory.js";
+export { GameWorldSchema } from "./game-world.js";
+export { LevelEnemySchema } from "./level-enemy.js";
+export { LevelObstacleSchema } from "./level-obstacle.js";
+export type { BirdInventory } from "./bird-inventory.js";
+export type { GameWorld } from "./game-world.js";
+export type { LevelEnemy } from "./level-enemy.js";
+export type { LevelObstacle } from "./level-obstacle.js";

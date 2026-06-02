@@ -52,4 +52,4 @@
 - `backend/microservice/src/routes`: 根路由挂载。
 - `backend/microservice/src/core`: 跨模块基础设施。
 
-完整 API 清单见 `docs/api-inventory.md`。
+完整 API 清单见 `docs/api-inventory.md`，完整对象清单见 `docs/object-inventory.md`。

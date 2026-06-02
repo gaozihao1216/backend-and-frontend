@@ -1,13 +1,6 @@
 import { z } from "zod";
 import { LevelGroundSchema } from "./level-ground.js";
-
-export const TerrainVoidSpanSchema = z.object({
-  id: z.string().min(1),
-  startX: z.number(),
-  endX: z.number(),
-});
-
-export type TerrainVoidSpan = z.infer<typeof TerrainVoidSpanSchema>;
+import { TerrainVoidSpanSchema } from "./terrain-void-span.js";
 
 export const LevelTerrainSchema = z.object({
   ceilingBoundary: LevelGroundSchema.optional(),
@@ -16,3 +9,5 @@ export const LevelTerrainSchema = z.object({
 });
 
 export type LevelTerrain = z.infer<typeof LevelTerrainSchema>;
+export { TerrainVoidSpanSchema } from "./terrain-void-span.js";
+export type { TerrainVoidSpan } from "./terrain-void-span.js";
