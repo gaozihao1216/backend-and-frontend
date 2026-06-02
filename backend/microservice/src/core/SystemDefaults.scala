@@ -3,8 +3,9 @@ package microservice.core
 import microservice.routes.ApiRouter
 import microservice.admin.api.{AdminReviewService, ReviewSubmissionRequest, ReviewSubmissionResponse}
 import microservice.admin.objects.ReviewedSubmission
-import microservice.auth.api.{AuthService, BindBackendUserRequest, BindBackendUserResponse}
+import microservice.auth.api.{BindBackendUserRequest, BindBackendUserResponse}
 import microservice.auth.objects.BackendUser
+import microservice.auth.utils.AuthService
 import microservice.auth.tables.UserRow
 import microservice.level.api._
 import microservice.level.objects._

@@ -3,7 +3,7 @@ package microservice.routes
 import cats.effect.IO
 import microservice.admin.api.AdminReviewService
 import microservice.admin.routes.AdminRouter
-import microservice.auth.api.AuthService
+import microservice.auth.utils.AuthService
 import microservice.auth.routes.AuthRouter
 import microservice.level.api.{DesignerLevelService, PlayerRatingService}
 import microservice.level.routes.{DesignerLevelRouter, PlayerLevelRouter}

@@ -1,5 +1,6 @@
-package microservice.auth.api
+package microservice.auth.utils
 
+import microservice.auth.api.{BindBackendUserRequest, BindBackendUserResponse}
 import microservice.auth.objects.BackendUser
 import microservice.core.HttpError
 

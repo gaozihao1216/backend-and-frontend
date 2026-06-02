@@ -2,7 +2,8 @@ package microservice.auth.routes
 
 import cats.effect.IO
 import microservice.core.HttpError
-import microservice.auth.api.{AuthService, BindBackendUserRequest}
+import microservice.auth.api.BindBackendUserRequest
+import microservice.auth.utils.AuthService
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.Status
