@@ -42,6 +42,7 @@ object AuthService {
 }
 
 trait AuthService {
+  def getBackendUsers: Either[HttpError, List[BackendUser]]
   def bindBackendUser(request: BindBackendUserRequest): Either[HttpError, BindBackendUserResponse]
 }
 

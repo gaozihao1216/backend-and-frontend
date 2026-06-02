@@ -2,7 +2,8 @@ package microservice.level.api
 
 import cats.effect.IO
 import microservice.core.HttpError
-import microservice.level.objects.Rating
+import microservice.level.objects.{Favorite, FavoriteWithLevel, Level, LevelComment, Rating}
+import microservice.system.objects.LevelTag
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
@@ -38,6 +39,47 @@ object RateLevelResponse {
   implicit val decoder: Decoder[RateLevelResponse] = deriveDecoder
 }
 
+final case class GetPublishedLevelsRequest(
+  playerId: String,
+  tag: Option[LevelTag],
+  sort: String
+)
+
+final case class GetPublishedLevelRequest(
+  playerId: String,
+  levelId: String
+)
+
+final case class GetLevelCommentsRequest(
+  playerId: String,
+  levelId: String
+)
+
+final case class CreateCommentBody(
+  content: String
+)
+
+object CreateCommentBody {
+  implicit val encoder: Encoder[CreateCommentBody] = deriveEncoder
+  implicit val decoder: Decoder[CreateCommentBody] = deriveDecoder
+  implicit val entityDecoder: EntityDecoder[IO, CreateCommentBody] = jsonOf
+}
+
+final case class CreateCommentRequest(
+  playerId: String,
+  levelId: String,
+  content: String
+)
+
+final case class FavoriteLevelRequest(
+  playerId: String,
+  levelId: String
+)
+
+final case class GetFavoriteLevelsRequest(
+  playerId: String
+)
+
 sealed trait PlayerRatingApiError {
   def toHttpError: HttpError
 }
@@ -60,6 +102,13 @@ object PlayerRatingService {
 }
 
 trait PlayerRatingService {
+  def getPublishedLevels(request: GetPublishedLevelsRequest): Either[HttpError, List[Level]]
+  def getPublishedLevel(request: GetPublishedLevelRequest): Either[HttpError, Level]
+  def getLevelComments(request: GetLevelCommentsRequest): Either[HttpError, List[LevelComment]]
+  def createComment(request: CreateCommentRequest): Either[HttpError, LevelComment]
+  def getFavoriteLevels(request: GetFavoriteLevelsRequest): Either[HttpError, List[FavoriteWithLevel]]
+  def favoriteLevel(request: FavoriteLevelRequest): Either[HttpError, Favorite]
+  def unfavoriteLevel(request: FavoriteLevelRequest): Either[HttpError, Favorite]
   def rateLevel(request: RateLevelRequest): Either[HttpError, RateLevelResponse]
 }
 

@@ -2,7 +2,7 @@ package microservice.level.api
 
 import cats.effect.IO
 import microservice.core.HttpError
-import microservice.level.objects.{Level, LevelData}
+import microservice.level.objects.{Level, LevelData, Submission}
 import microservice.system.objects.LevelTag
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -44,6 +44,35 @@ object CreateLevelResponse {
   implicit val decoder: Decoder[CreateLevelResponse] = deriveDecoder
 }
 
+final case class SubmitLevelBody(
+  levelId: String
+)
+
+object SubmitLevelBody {
+  implicit val encoder: Encoder[SubmitLevelBody] = deriveEncoder
+  implicit val decoder: Decoder[SubmitLevelBody] = deriveDecoder
+  implicit val entityDecoder: EntityDecoder[IO, SubmitLevelBody] = jsonOf
+}
+
+final case class SubmitLevelRequest(
+  designerId: String,
+  levelId: String
+)
+
+object SubmitLevelRequest {
+  implicit val encoder: Encoder[SubmitLevelRequest] = deriveEncoder
+  implicit val decoder: Decoder[SubmitLevelRequest] = deriveDecoder
+}
+
+final case class SubmitLevelResponse(
+  submission: Submission
+)
+
+object SubmitLevelResponse {
+  implicit val encoder: Encoder[SubmitLevelResponse] = deriveEncoder
+  implicit val decoder: Decoder[SubmitLevelResponse] = deriveDecoder
+}
+
 sealed trait DesignerLevelApiError {
   def toHttpError: HttpError
 }
@@ -57,6 +86,7 @@ object DesignerLevelService {
 
 trait DesignerLevelService {
   def createLevel(request: CreateLevelRequest): Either[HttpError, CreateLevelResponse]
+  def submitLevel(request: SubmitLevelRequest): Either[HttpError, SubmitLevelResponse]
 }
 
 object CreateLevelEndpoint {

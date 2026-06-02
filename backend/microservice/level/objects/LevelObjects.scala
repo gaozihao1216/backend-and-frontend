@@ -196,6 +196,18 @@ object Rating {
   implicit val decoder: Decoder[Rating] = deriveDecoder
 }
 
+final case class Favorite(
+  id: String,
+  levelId: String,
+  userId: String,
+  createdAt: String
+)
+
+object Favorite {
+  implicit val encoder: Encoder[Favorite] = deriveEncoder
+  implicit val decoder: Decoder[Favorite] = deriveDecoder
+}
+
 final case class Submission(
   id: String,
   levelId: String,
@@ -210,4 +222,50 @@ final case class Submission(
 object Submission {
   implicit val encoder: Encoder[Submission] = deriveEncoder
   implicit val decoder: Decoder[Submission] = deriveDecoder
+}
+
+final case class SubmissionWithLevel(
+  id: String,
+  levelId: String,
+  submitterId: String,
+  status: SubmissionStatus,
+  reviewerId: Option[String],
+  reviewNote: Option[String],
+  submittedAt: String,
+  reviewedAt: Option[String],
+  level: Level
+)
+
+object SubmissionWithLevel {
+  def from(submission: Submission, level: Level): SubmissionWithLevel =
+    SubmissionWithLevel(
+      submission.id,
+      submission.levelId,
+      submission.submitterId,
+      submission.status,
+      submission.reviewerId,
+      submission.reviewNote,
+      submission.submittedAt,
+      submission.reviewedAt,
+      level
+    )
+
+  implicit val encoder: Encoder[SubmissionWithLevel] = deriveEncoder
+  implicit val decoder: Decoder[SubmissionWithLevel] = deriveDecoder
+}
+
+final case class FavoriteWithLevel(
+  id: String,
+  levelId: String,
+  userId: String,
+  createdAt: String,
+  level: Level
+)
+
+object FavoriteWithLevel {
+  def from(favorite: Favorite, level: Level): FavoriteWithLevel =
+    FavoriteWithLevel(favorite.id, favorite.levelId, favorite.userId, favorite.createdAt, level)
+
+  implicit val encoder: Encoder[FavoriteWithLevel] = deriveEncoder
+  implicit val decoder: Decoder[FavoriteWithLevel] = deriveDecoder
 }

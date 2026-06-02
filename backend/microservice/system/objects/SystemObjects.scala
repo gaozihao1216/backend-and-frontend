@@ -13,6 +13,9 @@ object UserRole {
 
   private val byValue = List(Player, Designer, Admin).map(role => role.value -> role).toMap
 
+  def fromString(value: String): Option[UserRole] =
+    byValue.get(value)
+
   implicit val encoder: Encoder[UserRole] =
     Encoder.encodeString.contramap(_.value)
 
@@ -32,6 +35,9 @@ object LevelStatus {
 
   private val byValue = List(Draft, PendingReview, Published, Rejected).map(status => status.value -> status).toMap
 
+  def fromString(value: String): Option[LevelStatus] =
+    byValue.get(value)
+
   implicit val encoder: Encoder[LevelStatus] =
     Encoder.encodeString.contramap(_.value)
 
@@ -49,6 +55,9 @@ object SubmissionStatus {
   case object Rejected extends SubmissionStatus { override val value: String = "rejected" }
 
   private val byValue = List(PendingReview, Approved, Rejected).map(status => status.value -> status).toMap
+
+  def fromString(value: String): Option[SubmissionStatus] =
+    byValue.get(value)
 
   implicit val encoder: Encoder[SubmissionStatus] =
     Encoder.encodeString.contramap(_.value)
@@ -69,6 +78,9 @@ object LevelTag {
   case object Strategy extends LevelTag { override val value: String = "strategy" }
 
   private val byValue = List(Puzzle, Hard, Beginner, Funny, Strategy).map(tag => tag.value -> tag).toMap
+
+  def fromString(value: String): Option[LevelTag] =
+    byValue.get(value)
 
   implicit val encoder: Encoder[LevelTag] =
     Encoder.encodeString.contramap(_.value)

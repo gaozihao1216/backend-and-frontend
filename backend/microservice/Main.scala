@@ -10,7 +10,7 @@ object Main extends IOApp.Simple {
     EmberServerBuilder
       .default[IO]
       .withHost(Host.fromString("127.0.0.1").get)
-      .withPort(Port.fromInt(8080).get)
+      .withPort(Port.fromInt(3000).get)
       .withHttpApp(SystemDefaults.apiRoutes.orNotFound)
       .build
       .use(_ => IO.never)

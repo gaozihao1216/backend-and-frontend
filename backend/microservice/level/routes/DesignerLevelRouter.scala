@@ -2,7 +2,7 @@ package microservice.level.routes
 
 import cats.effect.IO
 import microservice.core.HttpError
-import microservice.level.api.{CreateLevelBody, CreateLevelRequest, DesignerLevelService}
+import microservice.level.api.{CreateLevelBody, CreateLevelRequest, DesignerLevelService, SubmitLevelBody, SubmitLevelRequest}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.Status
@@ -29,6 +29,22 @@ object DesignerLevelRouter {
                     )
                   )
                   .map(response => ApiSuccess(response.level)),
+                successStatus = Status.Created
+              )
+            }
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ POST -> Root / "submissions" =>
+        val designerId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        designerId match {
+          case Some(currentDesignerId) =>
+            req.as[SubmitLevelBody].flatMap { body =>
+              HttpError.fromEither(
+                designerLevelService
+                  .submitLevel(SubmitLevelRequest(currentDesignerId, body.levelId))
+                  .map(response => ApiSuccess(response.submission)),
                 successStatus = Status.Created
               )
             }

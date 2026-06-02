@@ -12,6 +12,9 @@ import org.http4s.dsl.io._
 object AuthRouter {
   def routes(authService: AuthService): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      case GET -> Root / "backend-users" =>
+        HttpError.fromEither(authService.getBackendUsers.map(users => ApiSuccess(users)))
+
       case req @ POST -> Root / "bind" =>
         req.as[BindBackendUserRequest].flatMap { input =>
           HttpError.fromEither(

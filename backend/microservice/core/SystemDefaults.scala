@@ -6,10 +6,10 @@ import microservice.admin.objects.ReviewedSubmission
 import microservice.auth.api.{AuthService, BindBackendUserRequest, BindBackendUserResponse}
 import microservice.auth.objects.BackendUser
 import microservice.auth.tables.UserRow
-import microservice.level.api.{DesignerLevelService, CreateLevelRequest, CreateLevelResponse, PlayerRatingService, RateLevelRequest, RateLevelResponse}
+import microservice.level.api._
 import microservice.level.objects._
 import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
-import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
+import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus, UserRole}
 import microservice.user.api.{GetUserProfileRequest, GetUserProfileResponse, UserService}
 import microservice.user.objects.{UserProfile, UserProfileStats}
 import org.http4s.HttpRoutes
@@ -68,6 +68,8 @@ object SystemDefaults {
   private var comments: Vector[CommentRow] = Vector(
     CommentRow("comment-1", "level-1", "player-1", "Solid tutorial pacing.", createdAt)
   )
+
+  private var favorites: Vector[Favorite] = Vector.empty
 
   private var submissions: Vector[SubmissionRow] = Vector(
     SubmissionRow(
@@ -131,6 +133,9 @@ object SystemDefaults {
   private def toRating(row: RatingRow): Rating =
     Rating(row.id, row.levelId, row.playerId, row.score, row.createdAt, row.updatedAt)
 
+  private def toComment(row: CommentRow): LevelComment =
+    LevelComment(row.id, row.levelId, row.userId, row.content, row.createdAt)
+
   private def toSubmission(row: SubmissionRow): Submission =
     Submission(
       row.id,
@@ -144,6 +149,9 @@ object SystemDefaults {
     )
 
   val authService: AuthService = new AuthService {
+    override def getBackendUsers: Either[HttpError, List[BackendUser]] =
+      Right(users.map(toBackendUser).toList)
+
     override def bindBackendUser(request: BindBackendUserRequest): Either[HttpError, BindBackendUserResponse] =
       if (request.localUserId.trim.isEmpty || request.nickname.trim.isEmpty) {
         Left(AuthService.BindBackendUserValidation(List("localUserId", "nickname")).toHttpError)
@@ -181,10 +189,10 @@ object SystemDefaults {
             user = toBackendUser(user),
             publishedLevels = levels.filter(level => level.authorId == user.id && level.status == LevelStatus.Published).map(toLevel).toList,
             recentComments = comments.filter(_.userId == user.id).sortBy(_.createdAt)(Ordering[String].reverse).take(5).map(row =>
-              LevelComment(row.id, row.levelId, row.userId, row.content, row.createdAt)
+              toComment(row)
             ).toList,
             stats = UserProfileStats(
-              favoriteCount = 0,
+              favoriteCount = favorites.count(_.userId == user.id),
               ratingCount = ratings.count(_.playerId == user.id)
             )
           )
@@ -216,9 +224,128 @@ object SystemDefaults {
         levels = levels :+ row
         Right(CreateLevelResponse(toLevel(row)))
       }
+
+    override def submitLevel(request: SubmitLevelRequest): Either[HttpError, SubmitLevelResponse] =
+      levels.indexWhere(_.id == request.levelId) match {
+        case -1 =>
+          Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: ${request.levelId}"))
+        case levelIndex =>
+          val level = levels(levelIndex)
+          if (level.authorId != request.designerId) {
+            Left(HttpError.forbidden("Cannot submit another designer's level"))
+          } else if (submissions.exists(submission => submission.levelId == request.levelId && submission.status == SubmissionStatus.PendingReview)) {
+            Left(HttpError.conflict("SUBMISSION_EXISTS", "Level already has a pending submission"))
+          } else if (level.status != LevelStatus.Draft && level.status != LevelStatus.Rejected) {
+            Left(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
+          } else {
+            val timestamp = "2026-05-26T12:30:00Z"
+            val updatedLevel = level.copy(status = LevelStatus.PendingReview, rejectionReason = None, updatedAt = timestamp)
+            levels = levels.updated(levelIndex, updatedLevel)
+
+            val row = SubmissionRow(
+              id = s"submission-${submissions.size + 1}",
+              levelId = request.levelId,
+              submitterId = request.designerId,
+              status = SubmissionStatus.PendingReview,
+              reviewerId = None,
+              reviewNote = None,
+              submittedAt = timestamp,
+              reviewedAt = None
+            )
+            submissions = submissions :+ row
+            Right(SubmitLevelResponse(toSubmission(row)))
+          }
+      }
   }
 
   val playerRatingService: PlayerRatingService = new PlayerRatingService {
+    private def publishedLevel(levelId: String): Either[HttpError, LevelRow] =
+      levels.find(_.id == levelId) match {
+        case Some(level) if level.status == LevelStatus.Published => Right(level)
+        case Some(_) => Left(HttpError.notFound("LEVEL_NOT_FOUND", "Published level not found"))
+        case None => Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
+      }
+
+    override def getPublishedLevels(request: GetPublishedLevelsRequest): Either[HttpError, List[Level]] = {
+      val filtered = levels.filter(level =>
+        level.status == LevelStatus.Published && request.tag.forall(tag => level.tags.contains(tag))
+      )
+      val sorted = request.sort match {
+        case "highestRated" =>
+          filtered.sortBy(level => (-level.averageRating, -level.ratingCount, level.createdAt))
+        case "mostRated" =>
+          filtered.sortBy(level => (-level.ratingCount, -level.averageRating, level.createdAt))
+        case _ =>
+          filtered.sortBy(_.createdAt)(Ordering[String].reverse)
+      }
+      Right(sorted.map(toLevel).toList)
+    }
+
+    override def getPublishedLevel(request: GetPublishedLevelRequest): Either[HttpError, Level] =
+      publishedLevel(request.levelId).map(toLevel)
+
+    override def getLevelComments(request: GetLevelCommentsRequest): Either[HttpError, List[LevelComment]] =
+      publishedLevel(request.levelId).map(_ =>
+        comments
+          .filter(_.levelId == request.levelId)
+          .sortBy(_.createdAt)(Ordering[String].reverse)
+          .map(toComment)
+          .toList
+      )
+
+    override def createComment(request: CreateCommentRequest): Either[HttpError, LevelComment] =
+      publishedLevel(request.levelId).map { _ =>
+        val timestamp = "2026-05-26T13:30:00Z"
+        val row = CommentRow(
+          id = s"comment-${comments.size + 1}",
+          levelId = request.levelId,
+          userId = request.playerId,
+          content = request.content.trim,
+          createdAt = timestamp
+        )
+        comments = comments :+ row
+        toComment(row)
+      }
+
+    override def getFavoriteLevels(request: GetFavoriteLevelsRequest): Either[HttpError, List[FavoriteWithLevel]] =
+      Right(
+        favorites
+          .filter(_.userId == request.playerId)
+          .sortBy(_.createdAt)(Ordering[String].reverse)
+          .flatMap(favorite => levels.find(level => level.id == favorite.levelId && level.status == LevelStatus.Published).map(level =>
+            FavoriteWithLevel.from(favorite, toLevel(level))
+          ))
+          .toList
+      )
+
+    override def favoriteLevel(request: FavoriteLevelRequest): Either[HttpError, Favorite] =
+      publishedLevel(request.levelId).map { _ =>
+        favorites.find(favorite => favorite.userId == request.playerId && favorite.levelId == request.levelId) match {
+          case Some(existing) => existing
+          case None =>
+            val favorite = Favorite(
+              id = s"favorite-${favorites.size + 1}",
+              levelId = request.levelId,
+              userId = request.playerId,
+              createdAt = "2026-05-26T13:40:00Z"
+            )
+            favorites = favorites :+ favorite
+            favorite
+        }
+      }
+
+    override def unfavoriteLevel(request: FavoriteLevelRequest): Either[HttpError, Favorite] =
+      publishedLevel(request.levelId).flatMap { _ =>
+        favorites.indexWhere(favorite => favorite.userId == request.playerId && favorite.levelId == request.levelId) match {
+          case -1 =>
+            Left(HttpError.notFound("FAVORITE_NOT_FOUND", "Favorite not found"))
+          case index =>
+            val deleted = favorites(index)
+            favorites = favorites.patch(index, Nil, 1)
+            Right(deleted)
+        }
+      }
+
     override def rateLevel(request: RateLevelRequest): Either[HttpError, RateLevelResponse] =
       levels.indexWhere(_.id == request.levelId) match {
         case -1 =>
@@ -268,6 +395,29 @@ object SystemDefaults {
   }
 
   val adminReviewService: AdminReviewService = new AdminReviewService {
+    override def getAdminComments(reviewerId: String): Either[HttpError, List[LevelComment]] =
+      Right(comments.sortBy(_.createdAt)(Ordering[String].reverse).map(toComment).toList)
+
+    override def deleteComment(reviewerId: String, commentId: String): Either[HttpError, LevelComment] =
+      comments.indexWhere(_.id == commentId) match {
+        case -1 =>
+          Left(HttpError.notFound("COMMENT_NOT_FOUND", "Comment not found"))
+        case index =>
+          val deleted = comments(index)
+          comments = comments.patch(index, Nil, 1)
+          Right(toComment(deleted))
+      }
+
+    override def getPendingSubmissions(reviewerId: String): Either[HttpError, List[SubmissionWithLevel]] =
+      Right(
+        submissions
+          .filter(_.status == SubmissionStatus.PendingReview)
+          .flatMap(submission => levels.find(_.id == submission.levelId).map(level =>
+            SubmissionWithLevel.from(toSubmission(submission), toLevel(level))
+          ))
+          .toList
+      )
+
     override def reviewSubmission(request: ReviewSubmissionRequest): Either[HttpError, ReviewSubmissionResponse] =
       submissions.indexWhere(_.id == request.submissionId) match {
         case -1 =>

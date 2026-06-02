@@ -3,6 +3,7 @@ package microservice.admin.api
 import cats.effect.IO
 import microservice.core.HttpError
 import microservice.admin.objects.ReviewedSubmission
+import microservice.level.objects.{LevelComment, SubmissionWithLevel}
 import microservice.system.objects.SubmissionStatus
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -63,6 +64,9 @@ object AdminReviewService {
 }
 
 trait AdminReviewService {
+  def getAdminComments(reviewerId: String): Either[HttpError, List[LevelComment]]
+  def deleteComment(reviewerId: String, commentId: String): Either[HttpError, LevelComment]
+  def getPendingSubmissions(reviewerId: String): Either[HttpError, List[SubmissionWithLevel]]
   def reviewSubmission(request: ReviewSubmissionRequest): Either[HttpError, ReviewSubmissionResponse]
 }
 
