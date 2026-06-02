@@ -1,6 +1,6 @@
-import type { CreateRatingInput, Rating } from "../system/object/store-contracts.js";
-import { ratings, saveStore } from "../system/object/store.js";
-import { HttpError } from "../system/api/http.js";
+import type { CreateRatingInput, Rating } from "../domain/store-contracts.js";
+import { ratings, saveStore } from "../domain/store.js";
+import { HttpError } from "../http/http.js";
 import { levelService } from "./level-service.js";
 
 const now = () => new Date().toISOString();

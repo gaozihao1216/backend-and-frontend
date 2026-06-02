@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { drawScene } from "../../game/draw-scene.js";
-import { createGameSession } from "../../game/game-session/index.js";
-import { WORLD_HEIGHT, WORLD_WIDTH } from "../../game/constants.js";
+import { drawScene } from "../../game-engine/draw-scene.js";
+import { createGameSession } from "../../game-engine/game-session/index.js";
+import { WORLD_HEIGHT, WORLD_WIDTH } from "../../game-engine/constants.js";
 import type { LevelData } from "../../lib/level-contracts.js";
 
 type GameCanvasProps = {

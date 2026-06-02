@@ -8,7 +8,7 @@ import {
   rateLevel,
   unfavoriteLevel,
 } from "../lib/api.js";
-import { LevelPreviewCard } from "../components/game/LevelPreviewCard.js";
+import { LevelPreviewCard } from "../components/level/LevelPreviewCard.js";
 import { API_USERS } from "../lib/config.js";
 import { createPublishedLevelSource } from "../lib/level-repository.js";
 import { STARTER_LEVEL_ID } from "../lib/level-contracts.js";

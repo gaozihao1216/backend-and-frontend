@@ -1,4 +1,4 @@
-import { LevelPreviewCard } from "../../../components/game/LevelPreviewCard.js";
+import { LevelPreviewCard } from "../../../components/level/LevelPreviewCard.js";
 import { createPublishedLevelSource } from "../../../lib/level-repository.js";
 import type { Level } from "../../../lib/api/api-contracts.js";
 

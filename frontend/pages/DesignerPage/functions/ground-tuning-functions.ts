@@ -1,7 +1,7 @@
 import {
   getDefaultGroundMaterialRenderConfig,
   type GroundMaterialRenderConfig,
-} from "../../../game/draw-scene.js";
+} from "../../../game-engine/draw-scene.js";
 import {
   DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG,
   getDefaultBoundaryBreakpointEpsilon,

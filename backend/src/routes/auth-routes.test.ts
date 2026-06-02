@@ -9,7 +9,7 @@ import {
 process.env.NODE_ENV = "test";
 
 const { bindBackendUserHandler, getBackendUsersHandler } = await import("./auth-routes.js");
-const { resetStore } = await import("../system/object/store.js");
+const { resetStore } = await import("../domain/store.js");
 
 beforeEach(() => {
   resetStore();

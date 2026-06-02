@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { type AuthRole, type AuthUser } from "../lib/auth.js";
 import { BackendBindingPanel } from "./BackendBindingPanel.js";
-import { LevelPreviewCard } from "./game/LevelPreviewCard.js";
+import { LevelPreviewCard } from "./level/LevelPreviewCard.js";
 import { AdminCommunityPage } from "../pages/AdminCommunityPage.js";
 import { AdminPage } from "../pages/AdminPage.js";
 import { DesignerBirdLabPage } from "../pages/DesignerBirdLabPage.js";

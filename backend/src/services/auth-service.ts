@@ -1,4 +1,4 @@
-import type { BindBackendUserInput, User } from "../system/object/store-contracts.js";
+import type { BindBackendUserInput, User } from "../domain/store-contracts.js";
 import { userService } from "./user-service.js";
 
 export class AuthService {

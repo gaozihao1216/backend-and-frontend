@@ -3,8 +3,8 @@ import {
   GetUserProfileRequestQuerySchema,
   GetUserProfileRequestParamsSchema,
   GetUserProfileResponseDataSchema,
-} from "../system/api/api-contracts.js";
-import { parseOrThrow, success } from "../system/api/http.js";
+} from "../http/api-contracts.js";
+import { parseOrThrow, success } from "../http/http.js";
 import { userService } from "../services/user-service.js";
 
 export const userRouter = Router();

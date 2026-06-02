@@ -1,6 +1,6 @@
-import type { Comment, CreateCommentInput } from "../system/object/store-contracts.js";
-import { comments, saveStore } from "../system/object/store.js";
-import { HttpError } from "../system/api/http.js";
+import type { Comment, CreateCommentInput } from "../domain/store-contracts.js";
+import { comments, saveStore } from "../domain/store.js";
+import { HttpError } from "../http/http.js";
 import { levelService } from "./level-service.js";
 
 const now = () => new Date().toISOString();

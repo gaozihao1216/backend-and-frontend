@@ -18,8 +18,8 @@ import {
   RateLevelResponseDataSchema,
   UnfavoriteLevelRequestParamsSchema,
   UnfavoriteLevelResponseDataSchema,
-} from "../system/api/api-contracts.js";
-import { HttpError, getCurrentUser, parseOrThrow, success } from "../system/api/http.js";
+} from "../http/api-contracts.js";
+import { HttpError, getCurrentUser, parseOrThrow, success } from "../http/http.js";
 import { requireRole } from "../system/middleware/auth.js";
 import { commentService } from "../services/comment-service.js";
 import { favoriteService } from "../services/favorite-service.js";

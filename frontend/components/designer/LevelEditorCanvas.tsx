@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { LevelData, LevelEnemy, LevelObstacle } from "../../lib/level-contracts.js";
-import { WORLD_HEIGHT, WORLD_WIDTH } from "../../game/constants.js";
+import { WORLD_HEIGHT, WORLD_WIDTH } from "../../game-engine/constants.js";
 import {
   addEntityToSelection,
   addObstacleFromCorners,

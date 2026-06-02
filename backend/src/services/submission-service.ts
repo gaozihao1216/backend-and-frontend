@@ -1,6 +1,6 @@
-import type { ReviewSubmissionInput, Submission } from "../system/object/store-contracts.js";
-import { saveStore, submissions } from "../system/object/store.js";
-import { HttpError } from "../system/api/http.js";
+import type { ReviewSubmissionInput, Submission } from "../domain/store-contracts.js";
+import { saveStore, submissions } from "../domain/store.js";
+import { HttpError } from "../http/http.js";
 import { levelService } from "./level-service.js";
 
 const now = () => new Date().toISOString();

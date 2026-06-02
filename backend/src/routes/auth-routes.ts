@@ -4,8 +4,8 @@ import {
   BindBackendUserRequestBodySchema,
   GetBackendUsersRequestQuerySchema,
   GetBackendUsersResponseDataSchema,
-} from "../system/api/api-contracts.js";
-import { parseOrThrow, success } from "../system/api/http.js";
+} from "../http/api-contracts.js";
+import { parseOrThrow, success } from "../http/http.js";
 import { authService } from "../services/auth-service.js";
 
 export const authRouter = Router();
