@@ -13,5 +13,3 @@ export const SubmissionSchema = z.object({
 });
 
 export type Submission = z.infer<typeof SubmissionSchema>;
-export { SubmissionWithLevelSchema } from "./submission-with-level.js";
-export type { SubmissionWithLevel } from "./submission-with-level.js";
