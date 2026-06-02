@@ -24,7 +24,7 @@ import {
   type UserProfile,
   type LevelTag,
   type PublishedLevelsSort,
-} from "../data/store-contracts.js";
+} from "../object/store-contracts.js";
 
 export const GetBackendUsersRequestQuerySchema = z.object({});
 export const GetBackendUsersResponseDataSchema = z.array(UserSchema);

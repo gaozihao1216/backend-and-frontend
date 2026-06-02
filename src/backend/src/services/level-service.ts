@@ -1,6 +1,6 @@
 import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../data/store-contracts.js";
-import { levels, saveStore } from "../data/store.js";
-import { HttpError } from "../lib/http.js";
+import { levels, saveStore } from "../system/object/store.js";
+import { HttpError } from "../system/api/http.js";
 
 const now = () => new Date().toISOString();
 

@@ -1,6 +1,6 @@
 import type { BindBackendUserInput, User, UserProfile } from "../data/store-contracts.js";
-import { comments, favorites, levels, ratings, saveStore, users } from "../data/store.js";
-import { HttpError } from "../lib/http.js";
+import { comments, favorites, levels, ratings, saveStore, users } from "../system/object/store.js";
+import { HttpError } from "../system/api/http.js";
 
 const now = () => new Date().toISOString();
 const USERNAME_HASH_RADIX = 36;

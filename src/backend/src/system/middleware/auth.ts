@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import type { UserRole } from "../data/store-contracts.js";
-import { users } from "../data/store.js";
-import { HttpError, parseOrThrow } from "../lib/http.js";
+import type { UserRole } from "../object/store-contracts.js";
+import { users } from "../object/store.js";
+import { HttpError, parseOrThrow } from "../api/http.js";
 
 const AuthHeadersSchema = z.object({
   "x-user-id": z.string().min(1),

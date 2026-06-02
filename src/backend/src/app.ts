@@ -8,8 +8,8 @@ import {
 import { designerRouter } from "./routes/designer-routes.js";
 import { playerRouter } from "./routes/player-routes.js";
 import { userRouter } from "./routes/user-routes.js";
-import { authenticate } from "./middleware/auth.js";
-import { HttpError, errorResponse, success } from "./lib/http.js";
+import { authenticate } from "./system/middleware/auth.js";
+import { HttpError, errorResponse, success } from "./system/api/http.js";
 
 export const createApp = () => {
   const app = express();

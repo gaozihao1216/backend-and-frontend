@@ -4,12 +4,12 @@ import type { NextFunction, Request, RequestHandler, Response } from "express";
 import {
   BindBackendUserResponseDataSchema,
   GetBackendUsersResponseDataSchema,
-} from "../../frontend/lib/api/api-contracts.js";
+} from "../../../frontend/lib/api/api-contracts.js";
 
 process.env.NODE_ENV = "test";
 
 const { bindBackendUserHandler, getBackendUsersHandler } = await import("./auth-routes.js");
-const { resetStore } = await import("../data/store.js");
+const { resetStore } = await import("../system/object/store.js");
 
 beforeEach(() => {
   resetStore();
