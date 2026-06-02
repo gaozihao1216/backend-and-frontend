@@ -17,8 +17,7 @@ import {
 } from "./store-contracts.js";
 
 const now = () => new Date().toISOString();
-const STORE_DIR = path.join(process.cwd(), "data");
-const SEED_STORE_FILE = path.join(STORE_DIR, "backend-store.json");
+const STORE_DIR = path.join(process.cwd(), "backend", "docker");
 const LOCAL_STORE_FILE = path.join(STORE_DIR, "backend-store.local.json");
 
 const isTestEnvironment = () =>
@@ -107,13 +106,7 @@ const loadStoreState = (): StoreState => {
     const raw = fs.readFileSync(LOCAL_STORE_FILE, "utf8");
     return parseStoreState(JSON.parse(raw) as unknown);
   } catch {
-    let initialState: StoreState;
-    try {
-      const raw = fs.readFileSync(SEED_STORE_FILE, "utf8");
-      initialState = parseStoreState(JSON.parse(raw) as unknown);
-    } catch {
-      initialState = createDefaultState();
-    }
+    const initialState = createDefaultState();
     persistStoreState(initialState);
     return initialState;
   }

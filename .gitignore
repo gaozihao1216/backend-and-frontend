@@ -7,4 +7,4 @@ project/target/
 coverage/
 *.log
 .vite/
-data/backend-store.local.json
+backend/docker/backend-store.local.json
