@@ -1,4 +1,4 @@
-import type { DesignerBackup } from "../../object/designer-page/designer-page-types.js";
+import type { DesignerBackup } from "../../objects/designer-page/designer-page-types.js";
 
 type DesignerBackupPanelProps = {
   backups: DesignerBackup[];

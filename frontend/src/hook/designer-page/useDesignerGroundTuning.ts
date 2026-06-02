@@ -15,7 +15,7 @@ import {
   sanitizeGroundMaterialRenderConfig,
   sanitizeGroundStrokeSimplifyConfig,
 } from "../../lib/designer-page/ground-tuning-functions.js";
-import type { DesignerGroundTuningStorage } from "../../object/designer-page/designer-page-types.js";
+import type { DesignerGroundTuningStorage } from "../../objects/designer-page/designer-page-types.js";
 
 export const DESIGNER_GROUND_TUNING_STORAGE_KEY = "ugc-level-platform.designer-ground-tuning.v1";
 

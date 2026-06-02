@@ -27,7 +27,7 @@
 
 - 当前前端 API 调用在 `frontend/src/src/api`，老师样例是 `src/apis`。
 - 当前路由入口仍主要由 `frontend/src/App.tsx` 组织，尚未抽成老师样例风格的 `router.tsx`。
-- 当前共享对象更多放在 `src/shared/api` 和 `src/shared/schemas`，而不是单独的 `frontend/src/objects`。
+- 当前共享对象更多放在 `src/shared/api` 和 `src/shared/schemas`，而不是单独的 `frontend/src/objectss`。
 
 ### 本次调整后的对齐方式
 

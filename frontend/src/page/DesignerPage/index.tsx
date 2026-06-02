@@ -17,7 +17,7 @@ import { useDesignerLevelSubmission } from "../../hook/designer-page/useDesigner
 import { useDesignerKeyboardActions } from "../../hook/designer-page/useDesignerKeyboardActions.js";
 import { useDesignerGroundActions } from "../../hook/designer-page/useDesignerGroundActions.js";
 import { useDesignerRotationActions } from "../../hook/designer-page/useDesignerRotationActions.js";
-import type { DesignerPageProps, DesignerPhase } from "../../object/designer-page/designer-page-types.js";
+import type { DesignerPageProps, DesignerPhase } from "../../objects/designer-page/designer-page-types.js";
 import { ArchivePanel } from "../../component/designer-page/ArchivePanel.js";
 import { DesignerHeader } from "../../component/designer-page/DesignerHeader.js";
 import { DesignBookPage } from "../../component/designer-page/DesignBookPage/index.js";

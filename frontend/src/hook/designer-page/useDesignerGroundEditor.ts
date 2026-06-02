@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getLevelTerrain, type TerrainEditMode, type TerrainBoundaryKind } from "../../lib/ground.js";
 import type { LevelData, LevelGround, LevelTerrain } from "../../lib/level-contracts.js";
-import type { DesignerPhase } from "../../object/designer-page/designer-page-types.js";
+import type { DesignerPhase } from "../../objects/designer-page/designer-page-types.js";
 
 export type UseDesignerGroundEditorParams = {
   levelData: LevelData;

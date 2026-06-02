@@ -1,4 +1,4 @@
-import type { DesignerPhase } from "../../object/designer-page/designer-page-types.js";
+import type { DesignerPhase } from "../../objects/designer-page/designer-page-types.js";
 
 type DesignerHeaderProps = {
   designerPhase: DesignerPhase;

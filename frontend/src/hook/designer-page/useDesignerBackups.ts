@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DesignerBackup } from "../../object/designer-page/designer-page-types.js";
+import type { DesignerBackup } from "../../objects/designer-page/designer-page-types.js";
 
 export const DESIGNER_BACKUPS_STORAGE_KEY = "ugc-level-platform.designer-backups.v1";
 export const MAX_DESIGNER_BACKUPS = 5;

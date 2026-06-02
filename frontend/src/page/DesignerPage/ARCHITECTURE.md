@@ -9,7 +9,7 @@
 - `index.tsx`：页面协调层，负责把各个领域 hook 和展示组件组装起来。
 - `frontend/src/hook/designer-page/`：领域状态与业务 actions，例如 level data、keyboard、ground、rotation、backup、submission。
 - `frontend/src/component/designer-page/`：纯展示或透传组件，主要负责 JSX 结构、布局和按钮绑定。
-- `frontend/src/object/designer-page/`：DesignerPage 专用类型对象。
+- `frontend/src/objects/designer-page/`：DesignerPage 专用类型对象。
 - `frontend/src/lib/designer-page/`：DesignerPage 专用纯函数。
 
 配套还补了测试和 CI，保证 API proxy、auth route、store 隔离、类型检查、测试和 build 都能在后续改动中被持续验证。
