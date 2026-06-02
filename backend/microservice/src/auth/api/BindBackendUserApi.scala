@@ -4,6 +4,7 @@ import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
+import java.time.Instant
 import microservice.auth.objects.BackendUser
 import microservice.auth.tables.{UserRow, UserTable}
 import microservice.auth.utils.AuthService
@@ -24,15 +25,6 @@ object BindBackendUserRequest {
   implicit val entityDecoder: EntityDecoder[IO, BindBackendUserRequest] = jsonOf
 }
 
-final case class BindBackendUserResponse(
-  user: BackendUser
-)
-
-object BindBackendUserResponse {
-  implicit val encoder: Encoder[BindBackendUserResponse] = deriveEncoder
-  implicit val decoder: Decoder[BindBackendUserResponse] = deriveDecoder
-}
-
 final case class BindBackendUserAPIMessage(
   request: BindBackendUserRequest
 ) extends APIMessage[BackendUser] {
@@ -44,11 +36,12 @@ final case class BindBackendUserAPIMessage(
         val normalizedNickname = request.nickname.trim
         val suffix = math.abs(request.localUserId.trim.hashCode).toString.take(7).reverse.padTo(7, '0').reverse
         val username = s"local-${request.role.value}-$suffix"
-        val resolvedUser = UserTable.findByUsername(username).getOrElse {
-          val timestamp = "2026-05-26T11:00:00Z"
+        val resolvedUser = UserTable.findByUsername(connection, username).getOrElse {
+          val timestamp = Instant.now().toString
           UserTable.insert(
+            connection,
             UserRow(
-              id = s"${request.role.value}-${UserTable.countByRole(request.role) + 1}",
+              id = s"${request.role.value}-${UserTable.countByRole(connection, request.role) + 1}",
               username = username,
               displayName = normalizedNickname,
               role = request.role,

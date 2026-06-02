@@ -8,7 +8,7 @@ import microservice.core.{APIMessage, HttpError, RowMappers}
 
 final case class GetBackendUsersAPIMessage() extends APIMessage[List[BackendUser]] {
   override def plan(connection: Connection): IO[Either[HttpError, List[BackendUser]]] =
-    IO.pure(Right(UserTable.all.map(RowMappers.toBackendUser).toList))
+    IO.pure(Right(UserTable.listAll(connection).map(RowMappers.toBackendUser).toList))
 }
 
 object GetBackendUsersEndpoint {

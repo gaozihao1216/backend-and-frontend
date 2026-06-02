@@ -10,11 +10,11 @@ import org.http4s.dsl.io._
 object UserRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
-      case req @ GET -> Root / userId / "profile" =>
+      case req @ GET -> Root / profileUserId / "profile" =>
         val viewerUserId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         viewerUserId match {
           case Some(currentUserId) =>
-            GetUserProfileAPIMessage(currentUserId, userId)
+            GetUserProfileAPIMessage(currentUserId, profileUserId)
               .run(databaseSession)
               .flatMap(result => HttpError.fromEither(result.map(profile => ApiSuccess(profile))))
           case None =>

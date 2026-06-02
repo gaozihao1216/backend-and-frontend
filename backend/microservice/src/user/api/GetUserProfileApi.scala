@@ -5,61 +5,37 @@ import java.sql.Connection
 import microservice.auth.tables.UserTable
 import microservice.core.{APIWithTokenMessage, HttpError, RowMappers}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable}
-import microservice.system.objects.LevelStatus
 import microservice.user.objects.UserProfile
 import microservice.user.objects.UserProfileStats
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
-
-final case class GetUserProfileRequest(
-  viewerUserId: String,
-  userId: String
-)
-
-object GetUserProfileRequest {
-  implicit val encoder: Encoder[GetUserProfileRequest] = deriveEncoder
-  implicit val decoder: Decoder[GetUserProfileRequest] = deriveDecoder
-}
-
-final case class GetUserProfileResponse(
-  profile: UserProfile
-)
-
-object GetUserProfileResponse {
-  implicit val encoder: Encoder[GetUserProfileResponse] = deriveEncoder
-  implicit val decoder: Decoder[GetUserProfileResponse] = deriveDecoder
-}
 
 final case class GetUserProfileAPIMessage(
-  token: String,
-  userId: String
+  viewerUserId: String,
+  profileUserId: String
 ) extends APIWithTokenMessage[UserProfile] {
+  override def token: String = viewerUserId
+
   override def plan(connection: Connection): IO[Either[HttpError, UserProfile]] =
     IO.pure {
-      UserTable.findById(token) match {
+      UserTable.findById(connection, viewerUserId) match {
         case None =>
           Left(HttpError.unauthorized("Unknown user"))
         case Some(_) =>
-          UserTable.findById(userId) match {
+          UserTable.findById(connection, profileUserId) match {
         case None =>
-          Left(UserService.UserMissing(userId).toHttpError)
+          Left(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
         case Some(user) =>
           Right(
             UserProfile(
               user = RowMappers.toBackendUser(user),
-              publishedLevels = LevelTable.all
-                .filter(level => level.authorId == user.id && level.status == LevelStatus.Published)
+              publishedLevels = LevelTable.listPublishedByAuthor(connection, user.id)
                 .map(RowMappers.toLevel)
                 .toList,
-              recentComments = CommentTable.all
-                .filter(_.userId == user.id)
-                .sortBy(_.createdAt)(Ordering[String].reverse)
-                .take(5)
+              recentComments = CommentTable.listRecentByUser(connection, user.id, limit = 5)
                 .map(RowMappers.toComment)
                 .toList,
               stats = UserProfileStats(
-                favoriteCount = FavoriteTable.all.count(_.userId == user.id),
-                ratingCount = RatingTable.all.count(_.playerId == user.id)
+                favoriteCount = FavoriteTable.countByUser(connection, user.id),
+                ratingCount = RatingTable.countByPlayer(connection, user.id)
               )
             )
           )
@@ -72,7 +48,7 @@ sealed trait UserApiError {
   def toHttpError: HttpError
 }
 
-object UserService {
+object GetUserProfileErrors {
   final case class UserMissing(userId: String) extends UserApiError {
     override def toHttpError: HttpError =
       HttpError.notFound("USER_NOT_FOUND", s"User not found: $userId")

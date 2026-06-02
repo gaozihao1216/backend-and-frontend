@@ -63,6 +63,9 @@ object LevelTable {
   def findById(connection: Connection, levelId: String): Option[LevelRow] =
     findById(levelId)
 
+  def listPublishedByAuthor(connection: Connection, authorId: String): Vector[LevelRow] =
+    InMemoryStore.levels.filter(level => level.authorId == authorId && level.status == LevelStatus.Published)
+
   def indexWhere(predicate: LevelRow => Boolean): Int =
     InMemoryStore.levels.indexWhere(predicate)
 
@@ -102,6 +105,9 @@ object RatingTable {
   def all: Vector[RatingRow] =
     InMemoryStore.ratings
 
+  def countByPlayer(connection: Connection, playerId: String): Int =
+    InMemoryStore.ratings.count(_.playerId == playerId)
+
   def count: Int =
     InMemoryStore.ratings.size
 
@@ -125,6 +131,12 @@ object CommentTable {
 
   def listAllForAdmin(connection: Connection): Vector[CommentRow] =
     InMemoryStore.comments.sortBy(_.createdAt)(Ordering[String].reverse)
+
+  def listRecentByUser(connection: Connection, userId: String, limit: Int): Vector[CommentRow] =
+    InMemoryStore.comments
+      .filter(_.userId == userId)
+      .sortBy(_.createdAt)(Ordering[String].reverse)
+      .take(limit)
 
   def count: Int =
     InMemoryStore.comments.size
@@ -201,6 +213,9 @@ object SubmissionTable {
 object FavoriteTable {
   def all: Vector[Favorite] =
     InMemoryStore.favorites
+
+  def countByUser(connection: Connection, userId: String): Int =
+    InMemoryStore.favorites.count(_.userId == userId)
 
   def count: Int =
     InMemoryStore.favorites.size
