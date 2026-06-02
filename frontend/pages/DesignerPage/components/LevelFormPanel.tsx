@@ -1,4 +1,4 @@
-import type { LevelTag } from "../../../../lib/level-contracts.js";
+import type { LevelTag } from "../../../lib/level-contracts.js";
 
 type LevelFormPanelProps = {
   title: string;

@@ -53,10 +53,10 @@ test("GET /auth/backend-users returns available backend users", async () => {
   });
   assert.equal(response.statusCode, 200);
 
-  const body = GetBackendUsersResponseDataSchema.parse((response.body as { data: unknown }).data);
-  assert.ok(body.data.length > 0);
+  const users = GetBackendUsersResponseDataSchema.parse((response.body as { data: unknown }).data);
+  assert.ok(users.length > 0);
 
-  const roles = new Set(body.data.map((user) => user.role));
+  const roles = new Set(users.map((user) => user.role));
   assert.ok(roles.has("player"));
   assert.ok(roles.has("designer"));
   assert.ok(roles.has("admin"));
@@ -74,8 +74,8 @@ test("POST /auth/bind binds a local auth user to a backend user", async () => {
 
   assert.equal(response.statusCode, 201);
 
-  const body = BindBackendUserResponseDataSchema.parse((response.body as { data: unknown }).data);
-  assert.equal(body.data.role, "designer");
-  assert.equal(body.data.displayName, "Route Tester");
-  assert.match(body.data.id, /^designer-/);
+  const user = BindBackendUserResponseDataSchema.parse((response.body as { data: unknown }).data);
+  assert.equal(user.role, "designer");
+  assert.equal(user.displayName, "Route Tester");
+  assert.match(user.id, /^designer-/);
 });

@@ -45,6 +45,12 @@ export const UserProfileSchema = z.object({
   recentComments: z.array(z.any()),
   stats: UserProfileStatsSchema,
 });
+export type UserProfile = {
+  user: User;
+  publishedLevels: Level[];
+  recentComments: Comment[];
+  stats: z.infer<typeof UserProfileStatsSchema>;
+};
 export type PublishedLevelsSort = "newest" | "highestRated" | "mostRated";
 
 export const BindBackendUserInputSchema = z.object({

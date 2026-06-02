@@ -24,7 +24,7 @@ export type TerrainVoidSpan = {
 };
 
 export type LevelTerrain = {
-  ceilingBoundary?: LevelGround;
+  ceilingBoundary?: LevelGround | undefined;
   groundBoundary: LevelGround;
   voidSpans: TerrainVoidSpan[];
 };
@@ -37,7 +37,7 @@ export type LevelObstacle = {
     width: number;
     height: number;
   };
-  angle?: number;
+  angle?: number | undefined;
 };
 
 export type LevelEnemy = {
@@ -47,7 +47,7 @@ export type LevelEnemy = {
   size?: {
     width: number;
     height: number;
-  };
+  } | undefined;
 };
 
 export type LevelData = {
@@ -56,8 +56,8 @@ export type LevelData = {
     height: number;
     gravity: number;
   };
-  ground?: LevelGround;
-  terrain?: LevelTerrain;
+  ground?: LevelGround | undefined;
+  terrain?: LevelTerrain | undefined;
   birdInventory: {
     basic: number;
   };
@@ -66,6 +66,7 @@ export type LevelData = {
 };
 
 export type LevelStatus = "draft" | "pending_review" | "published" | "rejected";
+export type PublishedLevelsSort = "newest" | "highestRated" | "mostRated";
 
 export type Level = {
   id: string;
@@ -75,12 +76,12 @@ export type Level = {
   data: LevelData;
   authorId: string;
   status: LevelStatus;
-  rejectionReason?: string;
+  rejectionReason?: string | undefined;
   averageRating: number;
   ratingCount: number;
   createdAt: string;
   updatedAt: string;
-  publishedAt?: string;
+  publishedAt?: string | undefined;
 };
 
 export const LevelTagSchema = z.enum(["puzzle", "hard", "beginner", "funny", "strategy"]);
@@ -154,6 +155,23 @@ export const CreateLevelInputSchema = z.object({
   description: z.string().max(1000).default(""),
   tags: z.array(LevelTagSchema).max(5).default([]),
   data: LevelDataSchema,
+});
+export type CreateLevelInput = z.infer<typeof CreateLevelInputSchema>;
+
+export const LevelSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(100),
+  description: z.string().max(1000),
+  tags: z.array(LevelTagSchema).max(5),
+  data: LevelDataSchema,
+  authorId: z.string().min(1),
+  status: z.enum(["draft", "pending_review", "published", "rejected"]),
+  rejectionReason: z.string().max(1000).optional(),
+  averageRating: z.number().min(0).max(5),
+  ratingCount: z.number().int().nonnegative(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  publishedAt: z.string().optional(),
 });
 
 export const STARTER_LEVEL_ID = "level-1";

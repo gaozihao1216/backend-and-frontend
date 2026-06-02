@@ -2,11 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   LevelSchema,
+  CommentSchema,
+  FavoriteSchema,
+  RatingSchema,
   STARTER_LEVEL_DATA,
   STARTER_LEVEL_DESCRIPTION,
   STARTER_LEVEL_ID,
   STARTER_LEVEL_TAGS,
   STARTER_LEVEL_TITLE,
+  SubmissionSchema,
   type Comment,
   type Favorite,
   type Level,

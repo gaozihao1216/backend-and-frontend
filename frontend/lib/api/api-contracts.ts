@@ -4,7 +4,7 @@ import {
   LevelDataSchema,
   LevelSchema,
   LevelTagSchema,
-  type Level,
+  type Level as LevelContract,
   type LevelData,
   type LevelTag,
   type LevelEnemy,
@@ -90,18 +90,16 @@ export const UserProfileSchema = z.object({
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
 export type BoundBackendUser = User;
-export type PublishedLevel = Level;
-export type Level = PublishedLevel;
+export type Level = LevelContract;
+export type PublishedLevel = LevelContract;
 export type LevelComment = Comment;
-export type Comment = LevelComment;
 export type LevelRating = Rating;
 export type RatingValue = 1 | 2 | 3 | 4 | 5;
 export type PlayerFavorite = Favorite;
 export type PlayerFavoriteWithLevel = z.infer<typeof FavoriteWithLevelSchema>;
 export type FavoriteWithLevel = PlayerFavoriteWithLevel;
-export type DesignerLevel = Level;
+export type DesignerLevel = LevelContract;
 export type DesignerSubmission = Submission;
-export type Submission = DesignerSubmission;
 export type PendingSubmission = z.infer<typeof SubmissionWithLevelSchema>;
 export type SubmissionWithLevel = PendingSubmission;
 export type ReviewedSubmission = Submission;
@@ -197,4 +195,3 @@ export const ReviewSubmissionRequestBodySchema = z.object({
 export type ReviewSubmissionRequestBody = z.infer<typeof ReviewSubmissionRequestBodySchema>;
 export const ReviewSubmissionResponseDataSchema = SubmissionSchema;
 
-export type SubmissionWithLevel = z.infer<typeof SubmissionWithLevelSchema>;

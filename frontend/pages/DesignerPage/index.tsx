@@ -4,7 +4,7 @@ import { createDraftLevelSource } from "../../lib/level-repository.js";
 import {
   removeEntity,
 } from "../../lib/designer-level.js";
-import type { LevelData, LevelTag } from "../../../lib/level-contracts.js";
+import type { LevelData, LevelTag } from "../../lib/level-contracts.js";
 import { useDesignerDraft, availableTags } from "./hooks/useDesignerDraft.js";
 import { MAX_DESIGNER_BACKUPS, useDesignerBackupActions } from "./hooks/useDesignerBackupActions.js";
 import { useDesignerGroundTuning } from "./hooks/useDesignerGroundTuning.js";

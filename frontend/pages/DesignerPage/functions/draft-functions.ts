@@ -1,4 +1,4 @@
-import type { LevelData, LevelTag } from "../../../../lib/level-contracts.js";
+import type { LevelData, LevelTag } from "../../../lib/level-contracts.js";
 
 export const cloneLevelData = (levelData: LevelData): LevelData =>
   JSON.parse(JSON.stringify(levelData)) as LevelData;
