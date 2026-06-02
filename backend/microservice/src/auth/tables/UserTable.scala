@@ -1,6 +1,8 @@
 package microservice.auth.tables
 
+import microservice.core.InMemoryStore
 import microservice.system.objects.UserRole
+import java.sql.Connection
 
 final case class UserRow(
   id: String,
@@ -10,3 +12,25 @@ final case class UserRow(
   createdAt: String,
   updatedAt: String
 )
+
+object UserTable {
+  def all: Vector[UserRow] =
+    InMemoryStore.users
+
+  def findById(userId: String): Option[UserRow] =
+    InMemoryStore.users.find(_.id == userId)
+
+  def findById(connection: Connection, userId: String): Option[UserRow] =
+    findById(userId)
+
+  def findByUsername(username: String): Option[UserRow] =
+    InMemoryStore.users.find(_.username == username)
+
+  def countByRole(role: UserRole): Int =
+    InMemoryStore.users.count(_.role == role)
+
+  def insert(row: UserRow): UserRow = {
+    InMemoryStore.users = InMemoryStore.users :+ row
+    row
+  }
+}

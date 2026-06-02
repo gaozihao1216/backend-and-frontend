@@ -1,9 +1,24 @@
 package microservice.level.api
 
+import cats.effect.IO
+import java.sql.Connection
+import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
+import microservice.level.objects.Level
+import microservice.level.utils.LevelApiSupport
+import microservice.system.objects.UserRole
+
 final case class GetPublishedLevelRequest(
   playerId: String,
   levelId: String
 )
+
+final case class GetPublishedLevelAPIMessage(
+  token: String,
+  levelId: String
+) extends APIWithTokenMessage[Level] {
+  override def plan(connection: Connection): IO[Either[HttpError, Level]] =
+    IO.pure(AccessControl.requireRole(token, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(levelId).map(RowMappers.toLevel)))
+}
 
 object GetPublishedLevelEndpoint {
   val name: String = "GetPublishedLevel"

@@ -1,23 +1,24 @@
 package microservice.user.routes
 
 import cats.effect.IO
-import microservice.core.HttpError
+import microservice.core.{DatabaseSession, HttpError}
 import microservice.system.objects.ApiSuccess
-import microservice.user.api.{GetUserProfileRequest, UserService}
+import microservice.user.api.GetUserProfileAPIMessage
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
 
 object UserRouter {
-  def routes(userService: UserService): HttpRoutes[IO] =
+  def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ GET -> Root / userId / "profile" =>
         val viewerUserId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
-        val result = viewerUserId match {
+        viewerUserId match {
           case Some(currentUserId) =>
-            userService.getUserProfile(GetUserProfileRequest(currentUserId, userId)).map(response => ApiSuccess(response.profile))
+            GetUserProfileAPIMessage(currentUserId, userId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(profile => ApiSuccess(profile))))
           case None =>
-            Left(HttpError.unauthorized("Missing x-user-id header"))
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
-        HttpError.fromEither(result)
     }
 }

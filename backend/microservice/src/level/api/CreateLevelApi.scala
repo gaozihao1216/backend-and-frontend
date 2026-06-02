@@ -1,9 +1,13 @@
 package microservice.level.api
 
 import cats.effect.IO
-import microservice.core.HttpError
+import java.sql.Connection
+import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.{Level, LevelData}
+import microservice.level.tables.{LevelRow, LevelTable}
+import microservice.system.objects.LevelStatus
 import microservice.system.objects.LevelTag
+import microservice.system.objects.UserRole
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
@@ -44,6 +48,40 @@ object CreateLevelResponse {
   implicit val decoder: Decoder[CreateLevelResponse] = deriveDecoder
 }
 
+final case class CreateLevelAPIMessage(
+  token: String,
+  body: CreateLevelBody
+) extends APIWithTokenMessage[Level] {
+  override def plan(connection: Connection): IO[Either[HttpError, Level]] =
+    IO.pure {
+      AccessControl.requireRole(token, UserRole.Designer).flatMap { _ =>
+        if (body.title.trim.isEmpty) {
+          Left(DesignerLevelService.CreateLevelValidation(List("title")).toHttpError)
+        } else {
+        val timestamp = "2026-05-26T12:00:00Z"
+        val row = LevelTable.insert(
+          LevelRow(
+            id = s"level-${LevelTable.count + 1}",
+            title = body.title.trim,
+            description = body.description,
+            tags = body.tags,
+            data = body.data,
+            authorId = token,
+            status = LevelStatus.Draft,
+            rejectionReason = None,
+            averageRating = 0,
+            ratingCount = 0,
+            createdAt = timestamp,
+            updatedAt = timestamp,
+            publishedAt = None
+          )
+        )
+        Right(RowMappers.toLevel(row))
+        }
+      }
+    }
+}
+
 sealed trait DesignerLevelApiError {
   def toHttpError: HttpError
 }
@@ -53,11 +91,6 @@ object DesignerLevelService {
     override def toHttpError: HttpError =
       HttpError.badRequest("CREATE_LEVEL_INVALID", "title is required", Some(fields.mkString(",")))
   }
-}
-
-trait DesignerLevelService {
-  def createLevel(request: CreateLevelRequest): Either[HttpError, CreateLevelResponse]
-  def submitLevel(request: SubmitLevelRequest): Either[HttpError, SubmitLevelResponse]
 }
 
 object CreateLevelEndpoint {

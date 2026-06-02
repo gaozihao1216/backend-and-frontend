@@ -1,7 +1,7 @@
 package microservice.level.routes
 
 import cats.effect.IO
-import microservice.core.HttpError
+import microservice.core.{DatabaseSession, HttpError}
 import microservice.level.api._
 import microservice.system.objects.LevelTag
 import microservice.system.objects.ApiSuccess
@@ -26,15 +26,19 @@ object PlayerLevelRouter {
         )
     }
 
-  def routes(playerRatingService: PlayerRatingService): HttpRoutes[IO] =
+  def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ GET -> Root / "levels" =>
         currentUserId(req) match {
           case Some(playerId) =>
-            val result = tagParam(req).flatMap(tag =>
-              playerRatingService.getPublishedLevels(GetPublishedLevelsRequest(playerId, tag, sortParam(req)))
-            )
-            HttpError.fromEither(result.map(levels => ApiSuccess(levels)))
+            tagParam(req) match {
+              case Right(tag) =>
+                GetPublishedLevelsAPIMessage(playerId, tag, sortParam(req))
+                  .run(databaseSession)
+                  .flatMap(result => HttpError.fromEither(result.map(levels => ApiSuccess(levels))))
+              case Left(error) =>
+                HttpError.toResponse(error)
+            }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -42,9 +46,9 @@ object PlayerLevelRouter {
       case req @ GET -> Root / "levels" / levelId =>
         currentUserId(req) match {
           case Some(playerId) =>
-            HttpError.fromEither(
-              playerRatingService.getPublishedLevel(GetPublishedLevelRequest(playerId, levelId)).map(level => ApiSuccess(level))
-            )
+            GetPublishedLevelAPIMessage(playerId, levelId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(level => ApiSuccess(level))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -52,9 +56,9 @@ object PlayerLevelRouter {
       case req @ GET -> Root / "levels" / levelId / "comments" =>
         currentUserId(req) match {
           case Some(playerId) =>
-            HttpError.fromEither(
-              playerRatingService.getLevelComments(GetLevelCommentsRequest(playerId, levelId)).map(comments => ApiSuccess(comments))
-            )
+            GetLevelCommentsAPIMessage(playerId, levelId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(comments => ApiSuccess(comments))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -63,12 +67,9 @@ object PlayerLevelRouter {
         currentUserId(req) match {
           case Some(playerId) =>
             req.as[CreateCommentBody].flatMap { body =>
-              HttpError.fromEither(
-                playerRatingService
-                  .createComment(CreateCommentRequest(playerId, levelId, body.content))
-                  .map(comment => ApiSuccess(comment)),
-                successStatus = Status.Created
-              )
+              CreateCommentAPIMessage(playerId, levelId, body)
+                .run(databaseSession)
+                .flatMap(result => HttpError.fromEither(result.map(comment => ApiSuccess(comment)), successStatus = Status.Created))
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
@@ -77,9 +78,9 @@ object PlayerLevelRouter {
       case req @ GET -> Root / "favorites" =>
         currentUserId(req) match {
           case Some(playerId) =>
-            HttpError.fromEither(
-              playerRatingService.getFavoriteLevels(GetFavoriteLevelsRequest(playerId)).map(favorites => ApiSuccess(favorites))
-            )
+            GetFavoriteLevelsAPIMessage(playerId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(favorites => ApiSuccess(favorites))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -87,10 +88,9 @@ object PlayerLevelRouter {
       case req @ POST -> Root / "levels" / levelId / "favorite" =>
         currentUserId(req) match {
           case Some(playerId) =>
-            HttpError.fromEither(
-              playerRatingService.favoriteLevel(FavoriteLevelRequest(playerId, levelId)).map(favorite => ApiSuccess(favorite)),
-              successStatus = Status.Created
-            )
+            FavoriteLevelAPIMessage(playerId, levelId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(favorite => ApiSuccess(favorite)), successStatus = Status.Created))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -98,9 +98,9 @@ object PlayerLevelRouter {
       case req @ DELETE -> Root / "levels" / levelId / "favorite" =>
         currentUserId(req) match {
           case Some(playerId) =>
-            HttpError.fromEither(
-              playerRatingService.unfavoriteLevel(FavoriteLevelRequest(playerId, levelId)).map(favorite => ApiSuccess(favorite))
-            )
+            UnfavoriteLevelAPIMessage(playerId, levelId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(favorite => ApiSuccess(favorite))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -110,12 +110,9 @@ object PlayerLevelRouter {
         playerId match {
           case Some(currentPlayerId) =>
             req.as[RateLevelBody].flatMap { body =>
-              HttpError.fromEither(
-                playerRatingService
-                  .rateLevel(RateLevelRequest(currentPlayerId, levelId, body.score))
-                  .map(response => ApiSuccess(response.rating)),
-                successStatus = Status.Created
-              )
+              RateLevelAPIMessage(currentPlayerId, levelId, body)
+                .run(databaseSession)
+                .flatMap(result => HttpError.fromEither(result.map(rating => ApiSuccess(rating)), successStatus = Status.Created))
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))

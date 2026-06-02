@@ -1,8 +1,12 @@
 package microservice.level.api
 
 import cats.effect.IO
-import microservice.core.HttpError
+import java.sql.Connection
+import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.{Favorite, FavoriteWithLevel, Level, LevelComment, Rating}
+import microservice.level.tables.{LevelTable, RatingRow, RatingTable}
+import microservice.system.objects.LevelStatus
+import microservice.system.objects.UserRole
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
@@ -38,6 +42,55 @@ object RateLevelResponse {
   implicit val decoder: Decoder[RateLevelResponse] = deriveDecoder
 }
 
+final case class RateLevelAPIMessage(
+  token: String,
+  levelId: String,
+  body: RateLevelBody
+) extends APIWithTokenMessage[Rating] {
+  override def plan(connection: Connection): IO[Either[HttpError, Rating]] =
+    IO.pure {
+      AccessControl.requireRole(token, UserRole.Player).flatMap { _ =>
+        LevelTable.indexWhere(_.id == levelId) match {
+        case -1 =>
+          Left(PlayerRatingService.LevelMissing(levelId).toHttpError)
+        case levelIndex =>
+          val level = LevelTable.all(levelIndex)
+          if (level.status != LevelStatus.Published) {
+            Left(PlayerRatingService.LevelNotPublished(levelId).toHttpError)
+          } else if (body.score < 1 || body.score > 5) {
+            Left(PlayerRatingService.InvalidScore(body.score).toHttpError)
+          } else {
+            val timestamp = "2026-05-26T13:00:00Z"
+            val existingIndex = RatingTable.indexWhere(rating => rating.levelId == levelId && rating.playerId == token)
+            val ratingRow =
+              if (existingIndex >= 0) {
+                RatingTable.update(existingIndex, RatingTable.all(existingIndex).copy(score = body.score, updatedAt = timestamp))
+              } else {
+                RatingTable.insert(
+                  RatingRow(
+                    id = s"rating-${RatingTable.count + 1}",
+                    levelId = levelId,
+                    playerId = token,
+                    score = body.score,
+                    createdAt = timestamp,
+                    updatedAt = timestamp
+                  )
+                )
+              }
+
+            val levelRatings = RatingTable.all.filter(_.levelId == levelId)
+            val average =
+              if (levelRatings.isEmpty) 0.0
+              else BigDecimal(levelRatings.map(_.score).sum.toDouble / levelRatings.size).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+            LevelTable.update(levelIndex, level.copy(averageRating = average, ratingCount = levelRatings.size, updatedAt = timestamp))
+
+            Right(RowMappers.toRating(ratingRow))
+          }
+        }
+      }
+    }
+}
+
 sealed trait PlayerRatingApiError {
   def toHttpError: HttpError
 }
@@ -57,17 +110,6 @@ object PlayerRatingService {
     override def toHttpError: HttpError =
       HttpError.badRequest("INVALID_RATING_SCORE", s"score must be between 1 and 5, got $score")
   }
-}
-
-trait PlayerRatingService {
-  def getPublishedLevels(request: GetPublishedLevelsRequest): Either[HttpError, List[Level]]
-  def getPublishedLevel(request: GetPublishedLevelRequest): Either[HttpError, Level]
-  def getLevelComments(request: GetLevelCommentsRequest): Either[HttpError, List[LevelComment]]
-  def createComment(request: CreateCommentRequest): Either[HttpError, LevelComment]
-  def getFavoriteLevels(request: GetFavoriteLevelsRequest): Either[HttpError, List[FavoriteWithLevel]]
-  def favoriteLevel(request: FavoriteLevelRequest): Either[HttpError, Favorite]
-  def unfavoriteLevel(request: FavoriteLevelRequest): Either[HttpError, Favorite]
-  def rateLevel(request: RateLevelRequest): Either[HttpError, RateLevelResponse]
 }
 
 object RateLevelEndpoint {

@@ -50,8 +50,24 @@ const extractRequestPaths = async (): Promise<string[]> => {
   for (const file of apiFiles) {
     const source = await readFile(file, "utf8");
     const requestCalls = source.matchAll(/request\s*\(\s*([`"'])([\s\S]*?)\1\s*,/g);
+    const pathConstants = source.matchAll(/const\s+\w+\s*=\s*([`"'])([\s\S]*?)\1\s*(?:as const)?/g);
+    const pathHelpers = source.matchAll(/=>\s*([`"'])([\s\S]*?)\1\s*(?:as const)?/g);
 
     for (const match of requestCalls) {
+      const requestPath = normalizeRequestPath(match[2] ?? "");
+      if (requestPath) {
+        paths.add(requestPath);
+      }
+    }
+
+    for (const match of pathConstants) {
+      const requestPath = normalizeRequestPath(match[2] ?? "");
+      if (requestPath) {
+        paths.add(requestPath);
+      }
+    }
+
+    for (const match of pathHelpers) {
       const requestPath = normalizeRequestPath(match[2] ?? "");
       if (requestPath) {
         paths.add(requestPath);

@@ -1,7 +1,13 @@
 package microservice.user.api
 
-import microservice.core.HttpError
+import cats.effect.IO
+import java.sql.Connection
+import microservice.auth.tables.UserTable
+import microservice.core.{APIWithTokenMessage, HttpError, RowMappers}
+import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable}
+import microservice.system.objects.LevelStatus
 import microservice.user.objects.UserProfile
+import microservice.user.objects.UserProfileStats
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
@@ -24,6 +30,44 @@ object GetUserProfileResponse {
   implicit val decoder: Decoder[GetUserProfileResponse] = deriveDecoder
 }
 
+final case class GetUserProfileAPIMessage(
+  token: String,
+  userId: String
+) extends APIWithTokenMessage[UserProfile] {
+  override def plan(connection: Connection): IO[Either[HttpError, UserProfile]] =
+    IO.pure {
+      UserTable.findById(token) match {
+        case None =>
+          Left(HttpError.unauthorized("Unknown user"))
+        case Some(_) =>
+          UserTable.findById(userId) match {
+        case None =>
+          Left(UserService.UserMissing(userId).toHttpError)
+        case Some(user) =>
+          Right(
+            UserProfile(
+              user = RowMappers.toBackendUser(user),
+              publishedLevels = LevelTable.all
+                .filter(level => level.authorId == user.id && level.status == LevelStatus.Published)
+                .map(RowMappers.toLevel)
+                .toList,
+              recentComments = CommentTable.all
+                .filter(_.userId == user.id)
+                .sortBy(_.createdAt)(Ordering[String].reverse)
+                .take(5)
+                .map(RowMappers.toComment)
+                .toList,
+              stats = UserProfileStats(
+                favoriteCount = FavoriteTable.all.count(_.userId == user.id),
+                ratingCount = RatingTable.all.count(_.playerId == user.id)
+              )
+            )
+          )
+          }
+      }
+    }
+}
+
 sealed trait UserApiError {
   def toHttpError: HttpError
 }
@@ -33,10 +77,6 @@ object UserService {
     override def toHttpError: HttpError =
       HttpError.notFound("USER_NOT_FOUND", s"User not found: $userId")
   }
-}
-
-trait UserService {
-  def getUserProfile(request: GetUserProfileRequest): Either[HttpError, GetUserProfileResponse]
 }
 
 object GetUserProfileEndpoint {

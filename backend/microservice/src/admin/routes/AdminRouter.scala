@@ -1,39 +1,45 @@
 package microservice.admin.routes
 
 import cats.effect.IO
-import microservice.core.HttpError
-import microservice.admin.api.{AdminReviewService, ReviewSubmissionBody, ReviewSubmissionRequest}
+import microservice.core.{DatabaseSession, HttpError}
+import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
 object AdminRouter {
-  def routes(adminReviewService: AdminReviewService): HttpRoutes[IO] =
+  def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ GET -> Root / "comments" =>
-        val reviewerId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
-        reviewerId match {
-          case Some(currentReviewerId) =>
-            HttpError.fromEither(adminReviewService.getAdminComments(currentReviewerId).map(comments => ApiSuccess(comments)))
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            GetAdminCommentsAPIMessage(currentUserId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(comments => ApiSuccess(comments))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
       case req @ DELETE -> Root / "comments" / commentId =>
-        val reviewerId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
-        reviewerId match {
-          case Some(currentReviewerId) =>
-            HttpError.fromEither(adminReviewService.deleteComment(currentReviewerId, commentId).map(comment => ApiSuccess(comment)))
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            DeleteCommentAPIMessage(currentUserId, commentId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(comment => ApiSuccess(comment))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
       case req @ GET -> Root / "submissions" / "pending" =>
-        val reviewerId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
-        reviewerId match {
-          case Some(currentReviewerId) =>
-            HttpError.fromEither(adminReviewService.getPendingSubmissions(currentReviewerId).map(submissions => ApiSuccess(submissions)))
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            GetPendingSubmissionsAPIMessage(currentUserId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(submissions => ApiSuccess(submissions))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -43,18 +49,9 @@ object AdminRouter {
         reviewerId match {
           case Some(currentReviewerId) =>
             req.as[ReviewSubmissionBody].flatMap { body =>
-              HttpError.fromEither(
-                adminReviewService
-                  .reviewSubmission(
-                    ReviewSubmissionRequest(
-                      reviewerId = currentReviewerId,
-                      submissionId = submissionId,
-                      status = body.status,
-                      reviewNote = body.reviewNote
-                    )
-                  )
-                  .map(response => ApiSuccess(response.submission))
-              )
+              ReviewSubmissionAPIMessage(currentReviewerId, submissionId, body)
+                .run(databaseSession)
+                .flatMap(result => HttpError.fromEither(result.map(submission => ApiSuccess(submission))))
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
