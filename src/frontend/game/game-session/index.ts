@@ -55,7 +55,7 @@ import {
 } from "../fracture.js";
 import { MATERIAL_PARAMS } from "../materials.js";
 import type { GameBody, GameSession, GameSnapshot } from "../types.js";
-import type { LevelData } from "../../../shared/types.js";
+import type { LevelData } from "../../lib/level-contracts.js";
 import { MIN_DAMAGE_IMPULSE } from "../constants.js";
 import { getGroundSurfaceYAtX, getLevelGround, getLevelTerrain, sampleBoundaryPathSegments, sampleGroundPath } from "../../lib/ground.js";
 

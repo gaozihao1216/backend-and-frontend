@@ -1,4 +1,4 @@
-import type { LevelData } from "../../../shared/types.js";
+import type { LevelData } from "../../lib/level-contracts.js";
 
 type SelectedEntityPanelProps = {
   levelData: LevelData;

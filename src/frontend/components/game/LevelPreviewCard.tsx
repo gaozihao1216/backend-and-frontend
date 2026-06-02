@@ -1,4 +1,4 @@
-import type { Level } from "../../../shared/types.js";
+import type { Level } from "../../lib/level-contracts.js";
 import { createPublishedLevelSource, type LevelSource } from "../../lib/level-repository.js";
 import { PlayableLevelSurface } from "./PlayableLevelSurface.js";
 

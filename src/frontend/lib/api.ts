@@ -1,4 +1,4 @@
-import { LevelDataSchema, type CreateLevelInput, type LevelData } from "../../shared/types.js";
+import { LevelDataSchema, type CreateLevelInput, type LevelData } from "./level-contracts.js";
 
 export * from "./api/index.js";
 

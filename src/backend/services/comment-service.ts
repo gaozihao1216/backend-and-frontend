@@ -1,4 +1,4 @@
-import type { Comment, CreateCommentInput } from "../../shared/types.js";
+import type { Comment, CreateCommentInput } from "../data/store-contracts.js";
 import { comments, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 import { levelService } from "./level-service.js";

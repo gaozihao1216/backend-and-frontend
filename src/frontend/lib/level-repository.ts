@@ -1,8 +1,10 @@
 import {
   BUILTIN_LEVEL_DEFINITIONS,
   STARTER_LEVEL_ID,
-} from "../../shared/levels/index.js";
-import type { Level, LevelData, LevelTag } from "../../shared/types.js";
+  type Level,
+  type LevelData,
+  type LevelTag,
+} from "./level-contracts.js";
 
 export type LevelSourceKind = "builtin" | "published" | "submission" | "draft";
 

@@ -1,4 +1,4 @@
-import type { Favorite } from "../../shared/types.js";
+import type { Favorite } from "../data/store-contracts.js";
 import { favorites, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 import { levelService } from "./level-service.js";

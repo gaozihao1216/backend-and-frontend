@@ -1,4 +1,4 @@
-import type { CreateRatingInput, Rating } from "../../shared/types.js";
+import type { CreateRatingInput, Rating } from "../data/store-contracts.js";
 import { ratings, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 import { levelService } from "./level-service.js";

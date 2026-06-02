@@ -45,6 +45,7 @@ export const UserProfileSchema = z.object({
   recentComments: z.array(z.any()),
   stats: UserProfileStatsSchema,
 });
+export type PublishedLevelsSort = "newest" | "highestRated" | "mostRated";
 
 export const BindBackendUserInputSchema = z.object({
   localUserId: z.string().trim().min(1).max(64),

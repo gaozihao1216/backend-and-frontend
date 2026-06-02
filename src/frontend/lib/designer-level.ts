@@ -1,4 +1,4 @@
-import type { LevelData, LevelEnemy, LevelObstacle } from "../../shared/types.js";
+import type { LevelData, LevelEnemy, LevelObstacle } from "./level-contracts.js";
 
 export type EditorTool = "select" | "rotate" | "add-wood" | "add-stone" | "add-glass" | "add-pig";
 export type EditorClipboardEntity =

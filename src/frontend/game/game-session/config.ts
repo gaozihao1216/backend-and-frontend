@@ -20,7 +20,7 @@ import {
 import { createBlockDamageVisuals } from "../crack-generator.js";
 import { DEFAULT_BLOCK_MATERIAL, MATERIAL_PARAMS } from "../materials.js";
 import type { BlockGameEntity, GameBody, GameBodyKind, ObstacleMaterial } from "../types.js";
-import type { LevelData, LevelEnemy, LevelObstacle } from "../../../shared/types.js";
+import type { LevelData, LevelEnemy, LevelObstacle } from "../../lib/level-contracts.js";
 
 // Physics tuning constants
 export const PIG_DAMAGE_FACTOR = 3.6;

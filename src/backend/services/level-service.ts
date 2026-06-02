@@ -1,4 +1,4 @@
-import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../../shared/types.js";
+import type { CreateLevelInput, Level, LevelTag, PublishedLevelsSort } from "../data/store-contracts.js";
 import { levels, saveStore } from "../data/store.js";
 import { HttpError } from "../lib/http.js";
 
