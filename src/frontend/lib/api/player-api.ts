@@ -25,7 +25,7 @@ import {
   type PlayerFavoriteWithLevel,
   type PublishedLevel,
   type RateLevelRequestBody,
-} from "../../../shared/types.js";
+} from "./api-contracts.js";
 import { request } from "./client.js";
 
 export const getPublishedLevels = async (

@@ -5,7 +5,7 @@ import {
   GetBackendUsersResponseDataSchema,
   type BindBackendUserRequestBody,
   type BoundBackendUser,
-} from "../../../shared/types.js";
+} from "./api-contracts.js";
 import { request } from "./client.js";
 
 export const getBackendUsers = async (): Promise<BoundBackendUser[]> => {

@@ -6,7 +6,7 @@ import {
   type CreateLevelRequestBody,
   type DesignerLevel,
   type DesignerSubmission,
-} from "../../../shared/types.js";
+} from "./api-contracts.js";
 import { request } from "./client.js";
 
 export const createLevel = async (

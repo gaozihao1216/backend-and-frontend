@@ -12,7 +12,7 @@ import {
   type PendingSubmission,
   type ReviewSubmissionRequestBody,
   type ReviewedSubmission,
-} from "../../../shared/types.js";
+} from "./api-contracts.js";
 import { request } from "./client.js";
 
 export const getPendingSubmissions = async (userId: string): Promise<PendingSubmission[]> => {

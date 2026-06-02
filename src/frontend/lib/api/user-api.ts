@@ -3,7 +3,7 @@ import {
   GetUserProfileRequestQuerySchema,
   GetUserProfileResponseDataSchema,
   type ApiUserProfile,
-} from "../../../shared/types.js";
+} from "./api-contracts.js";
 import { request } from "./client.js";
 
 export const getUserProfile = async (
