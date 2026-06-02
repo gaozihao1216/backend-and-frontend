@@ -8,7 +8,7 @@ import {
 import { designerRouter } from "./routes/designer-routes.js";
 import { playerRouter } from "./routes/player-routes.js";
 import { userRouter } from "./routes/user-routes.js";
-import { authenticate } from "./system/middleware/auth.js";
+import { authenticate } from "./http/middleware/auth.js";
 import { HttpError, errorResponse, success } from "./http/http.js";
 
 export const createApp = () => {

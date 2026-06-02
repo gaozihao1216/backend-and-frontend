@@ -12,7 +12,7 @@ import {
 } from "../http/api-contracts.js";
 import { getCurrentUser, parseOrThrow, success } from "../http/http.js";
 import { commentService } from "../services/comment-service.js";
-import { requireRole } from "../system/middleware/auth.js";
+import { requireRole } from "../http/middleware/auth.js";
 import { levelService } from "../services/level-service.js";
 import { submissionService } from "../services/submission-service.js";
 

@@ -20,7 +20,7 @@ import {
   UnfavoriteLevelResponseDataSchema,
 } from "../http/api-contracts.js";
 import { HttpError, getCurrentUser, parseOrThrow, success } from "../http/http.js";
-import { requireRole } from "../system/middleware/auth.js";
+import { requireRole } from "../http/middleware/auth.js";
 import { commentService } from "../services/comment-service.js";
 import { favoriteService } from "../services/favorite-service.js";
 import { levelService } from "../services/level-service.js";
