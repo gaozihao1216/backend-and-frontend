@@ -74,10 +74,3 @@ final case class RateLevelAPIMessage(
     }
 }
 
-object RateLevelEndpoint {
-  val name: String = "RateLevel"
-  val method: String = "POST"
-  val path: String = "/player/levels/:levelId/ratings"
-  val businessLogic: String =
-    "玩家只能给已发布关卡评分，同一玩家重复评分会覆盖旧记录，并立即回写平均分和评分人数。"
-}

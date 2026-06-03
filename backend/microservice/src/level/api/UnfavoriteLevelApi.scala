@@ -22,10 +22,3 @@ final case class UnfavoriteLevelAPIMessage(
     )
 }
 
-object UnfavoriteLevelEndpoint {
-  val name: String = "UnfavoriteLevel"
-  val method: String = "DELETE"
-  val path: String = "/player/levels/:levelId/favorite"
-  val businessLogic: String =
-    "玩家取消收藏已发布关卡。"
-}

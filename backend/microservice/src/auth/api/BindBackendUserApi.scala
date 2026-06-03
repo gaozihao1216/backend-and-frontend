@@ -56,10 +56,3 @@ final case class BindBackendUserAPIMessage(
     }
 }
 
-object BindBackendUserEndpoint {
-  val name: String = "BindBackendUser"
-  val method: String = "POST"
-  val path: String = "/auth/bind"
-  val businessLogic: String =
-    "按 localUserId + role 生成稳定用户名，命中旧绑定则复用，否则创建新的后端用户。"
-}

@@ -23,10 +23,3 @@ final case class GetDirectorPermissionsAPIMessage(
     }
 }
 
-object GetDirectorPermissionsEndpoint {
-  val name: String = "GetDirectorPermissions"
-  val method: String = "GET"
-  val path: String = "/admin/director/permissions"
-  val businessLogic: String =
-    "总监管理员权限探测接口，用于验证当前 admin 账号是否具备 director 权限。"
-}

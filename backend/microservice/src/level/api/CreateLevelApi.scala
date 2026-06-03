@@ -64,10 +64,3 @@ final case class CreateLevelAPIMessage(
     }
 }
 
-object CreateLevelEndpoint {
-  val name: String = "CreateLevel"
-  val method: String = "POST"
-  val path: String = "/designer/levels"
-  val businessLogic: String =
-    "从认证上下文读取 designerId，新建关卡一律从 draft 状态起步，评分统计初始化为 0。"
-}

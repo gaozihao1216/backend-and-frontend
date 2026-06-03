@@ -48,10 +48,3 @@ final case class CreateCommentAPIMessage(
     )
 }
 
-object CreateCommentEndpoint {
-  val name: String = "CreateComment"
-  val method: String = "POST"
-  val path: String = "/player/levels/:levelId/comments"
-  val businessLogic: String =
-    "玩家只能给已发布关卡创建评论。"
-}

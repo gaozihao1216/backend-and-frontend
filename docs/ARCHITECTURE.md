@@ -46,6 +46,16 @@
 - `tables`: 数据库表/投影对象。
 - `utils`: 模块工具、service trait 或辅助逻辑。
 
+### 后端 API 文件约定
+
+`backend/microservice/src/**/api/*Api.scala` 只保留实际参与运行的内容：
+
+- request body case class 和 JSON codec。
+- `APIMessage` / `APIWithTokenMessage` 业务执行对象。
+- 当前 API 专用错误对象。
+
+接口名称、HTTP method、path 和业务说明不再写成未被运行时引用的 `*Endpoint` object。此类说明统一维护在文档中，例如 `docs/api-inventory.md`。真实路由以 `routes` 目录中的 http4s route 匹配为准，前端契约以 `frontend/src/api/api-contracts.ts` 和具体 API 文件为准。
+
 根级目录：
 
 - `backend/microservice/src/Main.scala`: 启动入口。

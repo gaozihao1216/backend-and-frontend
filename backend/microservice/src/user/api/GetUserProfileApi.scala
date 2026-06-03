@@ -55,10 +55,3 @@ object GetUserProfileErrors {
   }
 }
 
-object GetUserProfileEndpoint {
-  val name: String = "GetUserProfile"
-  val method: String = "GET"
-  val path: String = "/users/:userId/profile"
-  val businessLogic: String =
-    "返回公开资料页所需的用户信息、已发布关卡、最近评论和聚合统计，不暴露完整后台数据。"
-}

@@ -91,10 +91,3 @@ final case class ReviewSubmissionAPIMessage(
     }
 }
 
-object ReviewSubmissionEndpoint {
-  val name: String = "ReviewSubmission"
-  val method: String = "POST"
-  val path: String = "/admin/submissions/:submissionId/review"
-  val businessLogic: String =
-    "只有 pending_review 的送审记录允许审核；审核结果会同步更新 submission 和 level 状态。"
-}

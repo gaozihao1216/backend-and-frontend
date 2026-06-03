@@ -65,10 +65,3 @@ final case class SubmitLevelAPIMessage(
     }
 }
 
-object SubmitLevelEndpoint {
-  val name: String = "SubmitLevel"
-  val method: String = "POST"
-  val path: String = "/designer/submissions"
-  val businessLogic: String =
-    "设计师提交自己的 draft/rejected 关卡进入 pending_review 状态，并生成待审核 submission。"
-}
