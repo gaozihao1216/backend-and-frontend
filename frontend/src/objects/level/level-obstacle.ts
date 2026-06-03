@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nullishToUndefined } from "../system/schema-utils.js";
 import { PositionSchema } from "./position.js";
 import { SizeSchema } from "./size.js";
 
@@ -7,7 +8,7 @@ export const LevelObstacleSchema = z.object({
   material: z.enum(["wood", "stone", "glass"]),
   position: PositionSchema,
   size: SizeSchema,
-  angle: z.number().optional(),
+  angle: nullishToUndefined(z.number()),
 });
 
 export type LevelObstacle = z.infer<typeof LevelObstacleSchema>;

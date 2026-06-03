@@ -648,7 +648,7 @@ export const createDefaultTerrain = (
     return {
       ...(levelData.terrain.ceilingBoundary ? { ceilingBoundary: levelData.terrain.ceilingBoundary } : {}),
       groundBoundary: levelData.terrain.groundBoundary,
-      voidSpans: levelData.terrain.voidSpans.map((span) => ({ ...span })),
+      voidSpans: levelData.terrain.voidSpans.map((span: TerrainVoidSpan) => ({ ...span })),
     };
   }
 

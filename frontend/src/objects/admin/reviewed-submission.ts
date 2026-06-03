@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { SubmissionStatusSchema } from "../system/submission-status.js";
+import { nullishToUndefined } from "../system/schema-utils.js";
 
 export const ReviewedSubmissionSchema = z.object({
   id: z.string().min(1),
   levelId: z.string().min(1),
   submitterId: z.string().min(1),
   status: SubmissionStatusSchema,
-  reviewerId: z.string().min(1).optional(),
-  reviewNote: z.string().max(1000).optional(),
+  reviewerId: nullishToUndefined(z.string().min(1)),
+  reviewNote: nullishToUndefined(z.string().max(1000)),
   submittedAt: z.string(),
-  reviewedAt: z.string().optional(),
+  reviewedAt: nullishToUndefined(z.string()),
 });
 
 export type ReviewedSubmission = z.infer<typeof ReviewedSubmissionSchema>;

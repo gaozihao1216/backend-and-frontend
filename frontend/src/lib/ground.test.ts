@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { STARTER_LEVEL_DATA } from "./level-contracts.js";
+import type { Position } from "./level-contracts.js";
 import { createGroundFromStroke, getLevelGround, insertGroundPoint, removeGroundPoint, reorderGroundPoint, sampleGroundPath, setGroundType, updateGroundPoint } from "./ground.js";
 
 test("sampleGroundPath returns original points for line ground", () => {
@@ -154,7 +155,7 @@ test("createGroundFromStroke keeps the stored stroke points relatively sparse", 
     return;
   }
 
-  const replacedPoints = nextLevelData.ground.points.filter((point) => point.x >= 200 && point.x <= 420);
+  const replacedPoints = nextLevelData.ground.points.filter((point: Position) => point.x >= 200 && point.x <= 420);
   assert.ok(replacedPoints.length <= 5);
 });
 
@@ -172,7 +173,7 @@ test.skip("createGroundFromStroke infers endpoint height from interior points fo
     return;
   }
 
-  const replacedPoints = nextLevelData.ground.points.filter((point) => point.x >= 200 && point.x <= 680);
+  const replacedPoints = nextLevelData.ground.points.filter((point: Position) => point.x >= 200 && point.x <= 680);
   assert.equal(replacedPoints[0]?.x, 200);
   assert.equal(replacedPoints.at(-1)?.x, 680);
   assert.ok(Math.abs((replacedPoints[0]?.y ?? 0) - 720) < 1);
@@ -198,8 +199,8 @@ test("createGroundFromStroke keeps more points around a sharp bend than on flatt
     return;
   }
 
-  const bendPoints = nextLevelData.ground.points.filter((point) => point.x >= 400 && point.x <= 560);
-  const flatterPoints = nextLevelData.ground.points.filter((point) => point.x >= 120 && point.x <= 360);
+  const bendPoints = nextLevelData.ground.points.filter((point: Position) => point.x >= 400 && point.x <= 560);
+  const flatterPoints = nextLevelData.ground.points.filter((point: Position) => point.x >= 120 && point.x <= 360);
   assert.ok(bendPoints.length >= 3);
   assert.ok(bendPoints.length > flatterPoints.length);
 });
@@ -216,7 +217,7 @@ test("createGroundFromStroke keeps long straight strokes sparse even when many p
     return;
   }
 
-  const replacedPoints = nextLevelData.ground.points.filter((point) => point.x >= 100 && point.x <= 1066);
+  const replacedPoints = nextLevelData.ground.points.filter((point: Position) => point.x >= 100 && point.x <= 1066);
   assert.ok(replacedPoints.length <= 8);
 });
 
@@ -236,7 +237,7 @@ test("createGroundFromStroke keeps gentle curves relatively sparse", () => {
     return;
   }
 
-  const replacedPoints = nextLevelData.ground.points.filter((point) => point.x >= 120 && point.x <= 1065);
+  const replacedPoints = nextLevelData.ground.points.filter((point: Position) => point.x >= 120 && point.x <= 1065);
   assert.ok(replacedPoints.length <= 10);
-  assert.ok(replacedPoints.some((point) => point.x >= 540 && point.x <= 660));
+  assert.ok(replacedPoints.some((point: Position) => point.x >= 540 && point.x <= 660));
 });

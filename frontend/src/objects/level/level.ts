@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { LevelStatusSchema, LevelTagSchema } from "../system/system-objects.js";
+import { nullishToUndefined } from "../system/schema-utils.js";
 import { LevelDataSchema } from "./level-data.js";
 
 export const LevelSchema = z.object({
@@ -10,12 +11,12 @@ export const LevelSchema = z.object({
   data: LevelDataSchema,
   authorId: z.string().min(1),
   status: LevelStatusSchema,
-  rejectionReason: z.string().max(1000).optional(),
+  rejectionReason: nullishToUndefined(z.string().max(1000)),
   averageRating: z.number().min(0).max(5),
   ratingCount: z.number().int().nonnegative(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  publishedAt: z.string().optional(),
+  publishedAt: nullishToUndefined(z.string()),
 });
 
 export type Level = z.infer<typeof LevelSchema>;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nullishToUndefined } from "../system/schema-utils.js";
 import { BirdInventorySchema } from "./bird-inventory.js";
 import { GameWorldSchema } from "./game-world.js";
 import { LevelGroundSchema } from "./level-ground.js";
@@ -8,8 +9,8 @@ import { LevelObstacleSchema } from "./level-obstacle.js";
 
 export const LevelDataSchema = z.object({
   world: GameWorldSchema,
-  ground: LevelGroundSchema.optional(),
-  terrain: LevelTerrainSchema.optional(),
+  ground: nullishToUndefined(LevelGroundSchema),
+  terrain: nullishToUndefined(LevelTerrainSchema),
   birdInventory: BirdInventorySchema,
   obstacles: z.array(LevelObstacleSchema),
   enemies: z.array(LevelEnemySchema),
