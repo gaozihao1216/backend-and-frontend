@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import type { UserProfile } from "../api/api-contracts.js";
 import { getUserProfile } from "../api/index.js";
+import type { AdminLevel } from "../objects/system/system-objects.js";
 
 type UserProfilePageProps = {
   viewerUserId: string;
   profileUserId: string;
 };
+
+const adminLevelLabels = {
+  standard: "普通管理员",
+  director: "总监管理员",
+} as const;
+
+const getAdminLevelLabel = (adminLevel: AdminLevel) => adminLevelLabels[adminLevel];
 
 export const UserProfilePage = ({ viewerUserId, profileUserId }: UserProfilePageProps) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -51,6 +59,9 @@ export const UserProfilePage = ({ viewerUserId, profileUserId }: UserProfilePage
             <p className="meta">
               @{profile.user.username} · {profile.user.role}
             </p>
+            {profile.user.role === "admin" && profile.user.adminLevel ? (
+              <p className="meta">管理员权限：{getAdminLevelLabel(profile.user.adminLevel)}</p>
+            ) : null}
             <div className="feature-metrics">
               <article className="metric-card">
                 <strong>{profile.publishedLevels.length}</strong>

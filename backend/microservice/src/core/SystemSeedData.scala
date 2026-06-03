@@ -3,7 +3,7 @@ package microservice.core
 import microservice.auth.tables.UserRow
 import microservice.level.objects._
 import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
-import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
+import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus, UserRole}
 
 private[core] object SystemSeedData {
   def reset(createdAt: String, reviewedAt: String): Unit =
@@ -18,9 +18,10 @@ private[core] object SystemSeedData {
 
   private def users(createdAt: String): Vector[UserRow] =
     Vector(
-      UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, createdAt, createdAt),
-      UserRow("designer-1", "local-designer-0000002", "Designer One", UserRole.Designer, createdAt, createdAt),
-      UserRow("admin-1", "local-admin-0000003", "Admin One", UserRole.Admin, createdAt, createdAt)
+      UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, None, createdAt, createdAt),
+      UserRow("designer-1", "local-designer-0000002", "Designer One", UserRole.Designer, None, createdAt, createdAt),
+      UserRow("admin-1", "local-admin-0000003", "Admin One", UserRole.Admin, Some(AdminLevel.Standard), createdAt, createdAt),
+      UserRow("admin-director-1", "local-admin-director-0000004", "Director Admin", UserRole.Admin, Some(AdminLevel.Director), createdAt, createdAt)
     )
 
   private def levels(createdAt: String): Vector[LevelRow] =

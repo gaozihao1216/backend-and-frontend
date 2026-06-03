@@ -2,6 +2,7 @@ package microservice.auth.objects
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
+import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 
 final case class BackendUser(
@@ -9,6 +10,7 @@ final case class BackendUser(
   username: String,
   displayName: String,
   role: UserRole,
+  adminLevel: Option[AdminLevel],
   createdAt: String,
   updatedAt: String
 )

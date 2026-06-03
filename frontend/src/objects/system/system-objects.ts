@@ -1,4 +1,5 @@
 export * from "./user-role.js";
+export * from "./admin-level.js";
 export * from "./level-status.js";
 export * from "./submission-status.js";
 export * from "./level-tag.js";

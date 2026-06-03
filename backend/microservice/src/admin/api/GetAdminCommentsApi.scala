@@ -2,24 +2,20 @@ package microservice.admin.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.UserTable
-import microservice.core.{APIWithTokenMessage, HttpError, RowMappers}
+import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.LevelComment
 import microservice.level.tables.CommentTable
-import microservice.system.objects.UserRole
+import microservice.system.objects.AdminLevel
 
 final case class GetAdminCommentsAPIMessage(userId: String) extends APIWithTokenMessage[List[LevelComment]] {
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, List[LevelComment]]] =
-    IO.pure {
-      UserTable.findById(connection, userId) match {
-        case Some(user) if user.role == UserRole.Admin =>
-          Right(CommentTable.listAllForAdmin(connection).map(RowMappers.toComment).toList)
-        case Some(_) => Left(HttpError.forbidden("Admin role is required"))
-        case None => Left(HttpError.unauthorized("Unknown user"))
+    IO.pure(
+      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map { _ =>
+        CommentTable.listAllForAdmin(connection).map(RowMappers.toComment).toList
       }
-    }
+    )
 }
 
 object GetAdminCommentsEndpoint {

@@ -8,6 +8,7 @@ import java.time.Instant
 import microservice.auth.objects.BackendUser
 import microservice.auth.tables.{UserRow, UserTable}
 import microservice.core.{APIMessage, HttpError, RowMappers}
+import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
@@ -44,6 +45,7 @@ final case class BindBackendUserAPIMessage(
               username = username,
               displayName = normalizedNickname,
               role = request.role,
+              adminLevel = if (request.role == UserRole.Admin) Some(AdminLevel.Standard) else None,
               createdAt = timestamp,
               updatedAt = timestamp
             )

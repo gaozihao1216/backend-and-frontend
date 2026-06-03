@@ -12,6 +12,7 @@ export default defineConfig({
       "/designer/levels": "http://localhost:3000",
       "/designer/submissions": "http://localhost:3000",
       "/admin/comments": "http://localhost:3000",
+      "/admin/director": "http://localhost:3000",
       "/admin/submissions": "http://localhost:3000",
       "/player/levels": "http://localhost:3000",
       "/player/favorites": "http://localhost:3000",

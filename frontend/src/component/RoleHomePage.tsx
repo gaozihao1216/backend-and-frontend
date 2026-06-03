@@ -27,6 +27,7 @@ type DetailView =
   | "designer-birds"
   | "admin-community"
   | "admin-proposal"
+  | "admin-director"
   | null;
 
 type LevelStatus = "unlocked" | "current" | "locked";
@@ -52,6 +53,14 @@ const roleLabels: Record<AuthRole, string> = {
   designer: "设计师",
   admin: "管理员",
 };
+
+const adminLevelLabels = {
+  standard: "普通管理员",
+  director: "总监管理员",
+} as const;
+
+const getAdminLevelLabel = (user: AuthUser) =>
+  user.role === "admin" && user.adminLevel ? adminLevelLabels[user.adminLevel] : null;
 
 const chainLevels = [
   {
@@ -293,6 +302,12 @@ const getStatusContent = (user: AuthUser, wallet: PlayerWallet) => {
         <strong>{roleLabels[user.role]}</strong>
         <span>当前身份</span>
       </article>
+      {getAdminLevelLabel(user) ? (
+        <article className="stat-chip">
+          <strong>{getAdminLevelLabel(user)}</strong>
+          <span>管理员权限</span>
+        </article>
+      ) : null}
       <article className="stat-chip">
         <strong>{user.id}</strong>
         <span>10 位用户 ID</span>
@@ -312,8 +327,8 @@ const getActionButtonLabel = (role: AuthRole) => {
   }
 };
 
-const getActionOptions = (role: AuthRole) => {
-  switch (role) {
+const getActionOptions = (user: AuthUser) => {
+  switch (user.role) {
     case "player":
       return [
         { id: "user-profile" as const, label: "个人主页" },
@@ -328,6 +343,13 @@ const getActionOptions = (role: AuthRole) => {
         { id: "designer-birds" as const, label: "鸟类开发" },
       ];
     case "admin":
+      if (user.adminLevel === "director") {
+        return [
+          { id: "user-profile" as const, label: "个人主页" },
+          { id: "admin-director" as const, label: "总监工作台" },
+        ];
+      }
+
       return [
         { id: "user-profile" as const, label: "个人主页" },
         { id: "admin-community" as const, label: "社区管理" },
@@ -354,6 +376,8 @@ const getDetailTitle = (detailView: Exclude<DetailView, null>) => {
       return "社区管理";
     case "admin-proposal":
       return "提案处理";
+    case "admin-director":
+      return "总监工作台";
   }
 };
 
@@ -409,6 +433,15 @@ const renderDetailContent = (
         <AdminPage userId={user.apiUserId} />
       ) : (
         <BackendBindingPanel title="提案处理" user={user} onBound={onUserUpdated} />
+      );
+    case "admin-director":
+      return (
+        <section className="panel">
+          <h2>总监工作台</h2>
+          <p className="panel-copy">
+            当前账号权限为总监管理员。UI 美化、地图界面配置、游戏物体建模和设计师创作流程优化入口将在后续阶段接入。
+          </p>
+        </section>
       );
   }
 };
@@ -863,7 +896,7 @@ export const RoleHomePage = ({
                   </button>
                 </div>
                 <div className="floating-action-list">
-                  {getActionOptions(user.role).map((option) => (
+                  {getActionOptions(user).map((option) => (
                     <button
                       key={option.id}
                       type="button"

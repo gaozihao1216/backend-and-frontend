@@ -1,6 +1,8 @@
 package microservice.admin.routes
 
 import cats.effect.IO
+import cats.syntax.semigroupk._
+import microservice.admin.director.routes.DirectorRouter
 import microservice.core.{DatabaseSession, HttpError}
 import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody}
 import microservice.system.objects.ApiSuccess
@@ -10,6 +12,9 @@ import org.http4s.dsl.io._
 
 object AdminRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
+    coreRoutes(databaseSession) <+> DirectorRouter.routes(databaseSession)
+
+  private def coreRoutes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ GET -> Root / "comments" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)

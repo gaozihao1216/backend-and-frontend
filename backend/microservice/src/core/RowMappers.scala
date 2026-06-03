@@ -7,7 +7,7 @@ import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow
 
 object RowMappers {
   def toBackendUser(row: UserRow): BackendUser =
-    BackendUser(row.id, row.username, row.displayName, row.role, row.createdAt, row.updatedAt)
+    BackendUser(row.id, row.username, row.displayName, row.role, row.adminLevel, row.createdAt, row.updatedAt)
 
   def toLevel(row: LevelRow): Level =
     Level(

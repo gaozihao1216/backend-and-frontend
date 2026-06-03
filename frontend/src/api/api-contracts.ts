@@ -17,6 +17,7 @@ import {
   type CreateLevelInput,
 } from "../lib/level-contracts.js";
 import { BackendUserSchema, type BackendUser } from "../objects/auth/backend-user.js";
+import { DirectorPermissionSummarySchema, type DirectorPermissionSummary as DirectorPermissionSummaryObject } from "../objects/admin/director-permission-summary.js";
 import { FavoriteSchema, type Favorite } from "../objects/level/favorite.js";
 import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/favorite-with-level.js";
 import { LevelCommentSchema, type LevelComment as LevelCommentObject } from "../objects/level/level-comment.js";
@@ -48,6 +49,7 @@ export type PendingSubmission = SubmissionWithLevelObject;
 export type SubmissionWithLevel = SubmissionWithLevelObject;
 export type ReviewedSubmission = SubmissionObject;
 export type AdminComment = Comment;
+export type DirectorPermissionSummary = DirectorPermissionSummaryObject;
 export type ApiUserProfile = UserProfileObject;
 
 export const GetBackendUsersRequestQuerySchema = z.object({});
@@ -138,4 +140,7 @@ export const ReviewSubmissionRequestBodySchema = z.object({
 });
 export type ReviewSubmissionRequestBody = z.infer<typeof ReviewSubmissionRequestBodySchema>;
 export const ReviewSubmissionResponseDataSchema = SubmissionSchema;
+
+export const GetDirectorPermissionsRequestQuerySchema = z.object({});
+export const GetDirectorPermissionsResponseDataSchema = DirectorPermissionSummarySchema;
 

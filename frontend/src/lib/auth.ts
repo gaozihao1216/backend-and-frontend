@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { bindBackendUser, getBackendUsers } from "../api/index.js";
+import { AdminLevelSchema, type AdminLevel } from "../objects/system/system-objects.js";
 import type { FrontendRole } from "./config.js";
 
 export const INVITE_CODE = "66260696";
@@ -38,6 +39,7 @@ export type AuthUser = {
   id: string;
   nickname: string;
   role: AuthRole;
+  adminLevel?: AdminLevel | undefined;
   createdAt: string;
   apiUserId?: string | undefined;
 };
@@ -109,6 +111,7 @@ const StoredAuthUserSchema = z.object({
   id: z.string().regex(/^\d{10}$/),
   nickname: z.string().min(1),
   role: AuthRoleSchema,
+  adminLevel: AdminLevelSchema.optional(),
   createdAt: z.string().datetime({ offset: true }).optional(),
   apiUserId: z.string().min(1).optional(),
 });
@@ -145,6 +148,8 @@ const LEGACY_API_IDS = {
   admin: "admin-1",
 } as const;
 
+const DIRECTOR_ADMIN_API_ID = "admin-director-1";
+
 const createTenDigitId = () =>
   `${Math.floor(Math.random() * 1_000_000_0000)}`.padStart(10, "0");
 
@@ -166,6 +171,7 @@ const createSeedUsers = (): AuthUserRecord[] => {
     nickname: string,
     password: string,
     apiUserId: string,
+    adminLevel?: AdminLevel,
   ): AuthUserRecord => {
     const id = createUniqueUserId(existingIds);
     existingIds.add(id);
@@ -174,6 +180,7 @@ const createSeedUsers = (): AuthUserRecord[] => {
       nickname,
       password,
       role,
+      adminLevel,
       createdAt: timestamp,
       apiUserId,
     };
@@ -182,7 +189,8 @@ const createSeedUsers = (): AuthUserRecord[] => {
   return [
     createSeedUser("player", "player1", "player123", LEGACY_API_IDS.player),
     createSeedUser("designer", "designer1", "designer123", LEGACY_API_IDS.designer),
-    createSeedUser("admin", "admin1", "admin123", LEGACY_API_IDS.admin),
+    createSeedUser("admin", "admin1", "admin123", LEGACY_API_IDS.admin, "standard"),
+    createSeedUser("admin", "adminDirector1", "admin123", DIRECTOR_ADMIN_API_ID, "director"),
   ];
 };
 
@@ -202,6 +210,7 @@ const migrateUsers = (users: AuthUserRecord[]): AuthUserRecord[] => {
       ...user,
       id: nextId,
       createdAt,
+      adminLevel: user.role === "admin" ? user.adminLevel : undefined,
       apiUserId: user.apiUserId,
     };
   });
@@ -215,6 +224,7 @@ const toPublicUser = (user: AuthUserRecord): AuthUser => ({
   id: user.id,
   nickname: user.nickname,
   role: user.role,
+  adminLevel: user.adminLevel,
   createdAt: user.createdAt,
   apiUserId: user.apiUserId,
 });
@@ -309,7 +319,7 @@ export const getSeedAccountHint = (role: FrontendRole) => {
     case "designer":
       return "测试账号：designer1 / designer123";
     case "admin":
-      return "测试账号：admin1 / admin123";
+      return "测试账号：普通管理员 admin1 / admin123；总监管理员 adminDirector1 / admin123";
   }
 };
 
@@ -389,7 +399,11 @@ export const resolveStoredAuthUser = (user: AuthUser | null): AuthUser | null =>
   return matchedUser ? toPublicUser(matchedUser) : null;
 };
 
-export const attachApiUserIdToAuthUser = (userId: string, apiUserId: string): AuthUser | null => {
+export const attachApiUserIdToAuthUser = (
+  userId: string,
+  apiUserId: string,
+  adminLevel?: AdminLevel,
+): AuthUser | null => {
   let updatedUser: AuthUser | null = null;
 
   authUsers = authUsers.map((candidate) => {
@@ -400,6 +414,7 @@ export const attachApiUserIdToAuthUser = (userId: string, apiUserId: string): Au
     const nextUser = {
       ...candidate,
       apiUserId,
+      adminLevel: candidate.role === "admin" ? adminLevel ?? candidate.adminLevel : undefined,
     };
     updatedUser = toPublicUser(nextUser);
     return nextUser;
@@ -418,8 +433,10 @@ export const ensureBackendBoundAuthUser = async (user: AuthUser): Promise<AuthUs
   const boundApiUserId = getBoundApiUserId(user);
   if (boundApiUserId) {
     const backendUsers = await getBackendUsers();
-    if (backendUsers.some((candidate) => candidate.id === boundApiUserId && candidate.role === user.role)) {
-      return user;
+    const matchedBackendUser = backendUsers.find((candidate) => candidate.id === boundApiUserId && candidate.role === user.role);
+    if (matchedBackendUser) {
+      const updatedUser = attachApiUserIdToAuthUser(user.id, matchedBackendUser.id, matchedBackendUser.adminLevel);
+      return updatedUser ?? user;
     }
   }
 
@@ -429,7 +446,7 @@ export const ensureBackendBoundAuthUser = async (user: AuthUser): Promise<AuthUs
     role: user.role,
   });
 
-  const updatedUser = attachApiUserIdToAuthUser(user.id, backendUser.id);
+  const updatedUser = attachApiUserIdToAuthUser(user.id, backendUser.id, backendUser.adminLevel);
   if (!updatedUser) {
     throw new Error("Failed to update local auth session");
   }
@@ -522,6 +539,7 @@ export const registerWithLocalAuth = async (input: RegisterInput): Promise<Valid
     nickname: validated.data.nickname,
     password: validated.data.password,
     role: validated.data.role,
+    adminLevel: validated.data.role === "admin" ? "standard" : undefined,
     createdAt: new Date().toISOString(),
   };
 
@@ -535,7 +553,7 @@ export const registerWithLocalAuth = async (input: RegisterInput): Promise<Valid
         nickname: created.nickname,
         role: created.role,
       });
-      const boundUser = attachApiUserIdToAuthUser(created.id, backendUser.id);
+      const boundUser = attachApiUserIdToAuthUser(created.id, backendUser.id, backendUser.adminLevel);
 
       if (!boundUser) {
         throw new Error("Failed to attach backend account");

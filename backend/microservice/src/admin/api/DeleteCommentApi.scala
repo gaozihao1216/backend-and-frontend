@@ -3,11 +3,10 @@ package microservice.admin.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.UserTable
-import microservice.core.{APIWithTokenMessage, HttpError, RowMappers}
+import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.LevelComment
 import microservice.level.tables.CommentTable
-import microservice.system.objects.UserRole
+import microservice.system.objects.AdminLevel
 
 final case class DeleteCommentAPIMessage(
   userId: String,
@@ -16,16 +15,13 @@ final case class DeleteCommentAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, LevelComment]] =
-    IO.pure {
-      UserTable.findById(connection, userId) match {
-        case Some(user) if user.role == UserRole.Admin =>
-          CommentTable.deleteById(connection, commentId)
-            .map(RowMappers.toComment)
-            .toRight(HttpError.notFound("COMMENT_NOT_FOUND", "Comment not found"))
-        case Some(_) => Left(HttpError.forbidden("Admin role is required"))
-        case None => Left(HttpError.unauthorized("Unknown user"))
+    IO.pure(
+      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).flatMap { _ =>
+        CommentTable.deleteById(connection, commentId)
+          .map(RowMappers.toComment)
+          .toRight(HttpError.notFound("COMMENT_NOT_FOUND", "Comment not found"))
       }
-    }
+    )
 }
 
 object DeleteCommentEndpoint {

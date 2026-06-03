@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL,
   role TEXT NOT NULL,
+  admin_level TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -62,10 +63,11 @@ CREATE TABLE IF NOT EXISTS favorites (
 
 TRUNCATE TABLE favorites, comments, ratings, submissions, levels, users CASCADE;
 
-INSERT INTO users (id, username, display_name, role, created_at, updated_at) VALUES
-  ('player-1', 'local-player-0000001', 'Player One', 'player', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
-  ('designer-1', 'local-designer-0000002', 'Designer One', 'designer', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
-  ('admin-1', 'local-admin-0000003', 'Admin One', 'admin', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
+INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
+  ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('designer-1', 'local-designer-0000002', 'Designer One', 'designer', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('admin-1', 'local-admin-0000003', 'Admin One', 'admin', 'standard', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('admin-director-1', 'local-admin-director-0000004', 'Director Admin', 'admin', 'director', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
 
 INSERT INTO levels (
   id, title, description, tags, data, author_id, status, rejection_reason,

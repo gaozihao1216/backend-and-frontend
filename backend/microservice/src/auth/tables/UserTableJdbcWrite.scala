@@ -6,8 +6,8 @@ private[tables] object UserTableJdbcWrite {
   def insert(connection: Connection, row: UserRow): UserRow = {
     val statement = connection.prepareStatement(
       """
-        INSERT INTO users (id, username, display_name, role, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       """
     )
     try {
@@ -15,8 +15,12 @@ private[tables] object UserTableJdbcWrite {
       statement.setString(2, row.username)
       statement.setString(3, row.displayName)
       statement.setString(4, row.role.value)
-      statement.setString(5, row.createdAt)
-      statement.setString(6, row.updatedAt)
+      row.adminLevel match {
+        case Some(adminLevel) => statement.setString(5, adminLevel.value)
+        case None => statement.setNull(5, java.sql.Types.VARCHAR)
+      }
+      statement.setString(6, row.createdAt)
+      statement.setString(7, row.updatedAt)
       statement.executeUpdate()
       row
     } finally {

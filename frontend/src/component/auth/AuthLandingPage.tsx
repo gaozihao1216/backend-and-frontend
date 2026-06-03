@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API_USERS, type FrontendRole } from "../../lib/config.js";
 import {
   ensureBackendBoundAuthUser,
+  getSeedAccountHint,
   loginWithLocalAuth,
   registerWithLocalAuth,
   type AuthRole,
@@ -169,6 +170,7 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
             ? "设计师与管理员需输入验证码 66260696，注册成功后会自动开通对应后端账号"
             : "请输入昵称和密码完成登录"}
         </p>
+        {mode === "login" ? <p className="meta">{getSeedAccountHint(role)}</p> : null}
 
         <label>
           <span>昵称</span>
