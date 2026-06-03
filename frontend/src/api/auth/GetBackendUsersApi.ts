@@ -3,7 +3,16 @@ import { request } from "../client.js";
 
 export const GetBackendUsersApiPath = "/auth/backend-users" as const;
 
-export const getBackendUsers = async (): Promise<BoundBackendUser[]> => {
-  GetBackendUsersRequestQuerySchema.parse({});
-  return request(GetBackendUsersApiPath, { method: "GET" }, GetBackendUsersResponseDataSchema);
-};
+export class GetBackendUsersApi {
+  static readonly path = GetBackendUsersApiPath;
+
+  async execute(): Promise<BoundBackendUser[]> {
+    GetBackendUsersRequestQuerySchema.parse({});
+    return request(GetBackendUsersApi.path, { method: "GET" }, GetBackendUsersResponseDataSchema);
+  }
+}
+
+export const getBackendUsersApi = new GetBackendUsersApi();
+
+export const getBackendUsers = async (): Promise<BoundBackendUser[]> =>
+  getBackendUsersApi.execute();

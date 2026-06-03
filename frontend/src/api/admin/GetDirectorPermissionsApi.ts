@@ -3,7 +3,16 @@ import { request } from "../client.js";
 
 export const GetDirectorPermissionsApiPath = "/admin/director/permissions" as const;
 
-export const getDirectorPermissions = async (userId: string): Promise<DirectorPermissionSummary> => {
-  GetDirectorPermissionsRequestQuerySchema.parse({});
-  return request(GetDirectorPermissionsApiPath, { method: "GET", headers: { "x-user-id": userId } }, GetDirectorPermissionsResponseDataSchema);
-};
+export class GetDirectorPermissionsApi {
+  static readonly path = GetDirectorPermissionsApiPath;
+
+  async execute(userId: string): Promise<DirectorPermissionSummary> {
+    GetDirectorPermissionsRequestQuerySchema.parse({});
+    return request(GetDirectorPermissionsApi.path, { method: "GET", headers: { "x-user-id": userId } }, GetDirectorPermissionsResponseDataSchema);
+  }
+}
+
+export const getDirectorPermissionsApi = new GetDirectorPermissionsApi();
+
+export const getDirectorPermissions = async (userId: string): Promise<DirectorPermissionSummary> =>
+  getDirectorPermissionsApi.execute(userId);
