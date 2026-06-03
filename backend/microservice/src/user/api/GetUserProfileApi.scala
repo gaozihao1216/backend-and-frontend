@@ -6,8 +6,7 @@ import microservice.auth.tables.{UserRowMapper, UserTable}
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelRowMapper, LevelTable, RatingTable}
-import microservice.user.objects.UserProfile
-import microservice.user.objects.UserProfileStats
+import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfileStats}
 
 final case class GetUserProfileAPIMessage(
   viewerUserId: String,
@@ -43,16 +42,5 @@ final case class GetUserProfileAPIMessage(
           }
       }
     }
-}
-
-sealed trait UserApiError {
-  def toHttpError: HttpError
-}
-
-object GetUserProfileErrors {
-  final case class UserMissing(userId: String) extends UserApiError {
-    override def toHttpError: HttpError =
-      HttpError.notFound("USER_NOT_FOUND", s"User not found: $userId")
-  }
 }
 

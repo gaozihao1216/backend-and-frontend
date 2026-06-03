@@ -1,4 +1,4 @@
-package microservice.level.api
+package microservice.level.objects
 
 import microservice.infrastructure.http.HttpError
 

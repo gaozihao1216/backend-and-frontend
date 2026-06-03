@@ -7,7 +7,7 @@ import microservice.auth.tables.UserTable
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.level.tables.LevelRowMapper
-import microservice.admin.objects.ReviewedSubmission
+import microservice.admin.objects.{ReviewedSubmission, ReviewSubmissionErrors}
 import microservice.level.tables.{LevelTable, SubmissionTable}
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.SubmissionStatus
@@ -92,4 +92,3 @@ final case class ReviewSubmissionAPIMessage(
       }
     }
 }
-

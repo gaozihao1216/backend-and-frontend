@@ -5,7 +5,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
-import microservice.auth.objects.BackendUser
+import microservice.auth.objects.{BackendUser, BindBackendUserErrors}
 import microservice.auth.tables.{UserRow, UserTable}
 import microservice.infrastructure.api.{APIMessage}
 import microservice.infrastructure.http.{HttpError}
@@ -57,4 +57,3 @@ final case class BindBackendUserAPIMessage(
       }
     }
 }
-

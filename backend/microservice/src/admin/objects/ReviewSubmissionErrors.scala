@@ -1,4 +1,4 @@
-package microservice.admin.api
+package microservice.admin.objects
 
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.SubmissionStatus

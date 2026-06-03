@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
 import microservice.level.tables.LevelRowMapper
-import microservice.level.objects.Rating
+import microservice.level.objects.{RateLevelErrors, Rating}
 import microservice.level.tables.{LevelTable, RatingRow, RatingTable}
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
