@@ -2,13 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { type AuthRole, type AuthUser } from "../lib/auth.js";
 import { BackendBindingPanel } from "./BackendBindingPanel.js";
 import { LevelPreviewCard } from "./level/LevelPreviewCard.js";
-import { AdminCommunityPage } from "../page/AdminCommunityPage.js";
 import { AdminPage } from "../page/AdminPage.js";
 import { DesignerBirdLabPage } from "../page/DesignerBirdLabPage.js";
 import { DesignerPage } from "../page/DesignerPage/index.js";
+import { DirectorWorkbenchPage } from "../page/DirectorWorkbenchPage.js";
 import { PlayerPage } from "../page/PlayerPage.js";
-import { PlayerCommunityPage } from "../page/PlayerCommunityPage.js";
-import { UserProfilePage } from "../page/UserProfilePage.js";
 import { getStarterLevelSource } from "../lib/level-repository.js";
 
 type RoleHomePageProps = {
@@ -16,6 +14,7 @@ type RoleHomePageProps = {
   onOpenSettings: () => void;
   onUserUpdated: (user: AuthUser) => void;
   onOpenDesignerDesign?: () => void;
+  onNavigate: (path: string) => void;
 };
 
 type DetailView =
@@ -32,20 +31,10 @@ type DetailView =
 
 type LevelStatus = "unlocked" | "current" | "locked";
 
-type CurrencyType = "coins" | "gems";
-
 type PlayerWallet = {
   coins: number;
   gems: number;
   checkedIn: boolean;
-};
-
-type ShopItem = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  currency: CurrencyType;
 };
 
 const roleLabels: Record<AuthRole, string> = {
@@ -150,72 +139,9 @@ const CHECK_IN_REWARD = {
   gems: 10_000_000,
 } as const;
 
-const createShopInventory = (seed: number): ShopItem[] => {
-  const catalogs: ShopItem[][] = [
-    [
-      {
-        id: `scope-${seed}`,
-        name: "精准瞄准镜",
-        description: "下一次发射获得更稳定的落点辅助。",
-        price: 120,
-        currency: "coins",
-      },
-      {
-        id: `coupon-${seed}`,
-        name: "双倍奖励券",
-        description: "本日通关金币奖励翻倍一次。",
-        price: 8,
-        currency: "gems",
-      },
-      {
-        id: `steel-${seed}`,
-        name: "钢羽皮肤",
-        description: "为基础鸟解锁金属风格外观。",
-        price: 260,
-        currency: "coins",
-      },
-      {
-        id: `starter-${seed}`,
-        name: "新手补给包",
-        description: "包含金币、钻石和一次关卡复活机会。",
-        price: 18,
-        currency: "gems",
-      },
-    ],
-    [
-      {
-        id: `booster-${seed}`,
-        name: "爆裂推进器",
-        description: "短时间提升冲击力，适合拆高塔关卡。",
-        price: 420,
-        currency: "coins",
-      },
-      {
-        id: `feather-${seed}`,
-        name: "流光羽饰",
-        description: "稀有外观部件，提升测试服收藏感。",
-        price: 24,
-        currency: "gems",
-      },
-      {
-        id: `crate-${seed}`,
-        name: "工程物资箱",
-        description: "解锁更多练习素材和试验配置。",
-        price: 360,
-        currency: "coins",
-      },
-      {
-        id: `vip-${seed}`,
-        name: "测试员礼包",
-        description: "内含钻石、金币和限定称号。",
-        price: 32,
-        currency: "gems",
-      },
-    ],
-  ];
-
-  return catalogs[seed % catalogs.length] ?? catalogs[0] ?? [];
-};
+const OWN_PAGE_PATH = "/own_page";
+const COMMUNITY_HALL_PATH = "/community_hall";
+const PLAYER_SHOP_PATH = "/player_shop";
 
 const createChainLinks = () =>
   chainLevels.slice(0, -1).flatMap((level, index) => {
@@ -390,17 +316,9 @@ const renderDetailContent = (
 
   switch (detailView) {
     case "user-profile":
-      return hasBoundApiUser && user.apiUserId ? (
-        <UserProfilePage viewerUserId={user.apiUserId} profileUserId={user.apiUserId} />
-      ) : (
-        <BackendBindingPanel title="个人主页" user={user} onBound={onUserUpdated} />
-      );
     case "player-community":
-      return hasBoundApiUser && user.apiUserId ? (
-        <PlayerCommunityPage nickname={user.nickname} userId={user.apiUserId} />
-      ) : (
-        <BackendBindingPanel title="社区大厅" user={user} onBound={onUserUpdated} />
-      );
+    case "player-shop":
+      return null;
     case "player-levels":
       return hasBoundApiUser && user.apiUserId ? (
         <PlayerPage userId={user.apiUserId} />
@@ -423,11 +341,7 @@ const renderDetailContent = (
     case "designer-birds":
       return <DesignerBirdLabPage nickname={user.nickname} />;
     case "admin-community":
-      return hasBoundApiUser && user.apiUserId ? (
-        <AdminCommunityPage nickname={user.nickname} userId={user.apiUserId} />
-      ) : (
-        <BackendBindingPanel title="社区管理" user={user} onBound={onUserUpdated} />
-      );
+      return null;
     case "admin-proposal":
       return hasBoundApiUser && user.apiUserId ? (
         <AdminPage userId={user.apiUserId} />
@@ -435,13 +349,10 @@ const renderDetailContent = (
         <BackendBindingPanel title="提案处理" user={user} onBound={onUserUpdated} />
       );
     case "admin-director":
-      return (
-        <section className="panel">
-          <h2>总监工作台</h2>
-          <p className="panel-copy">
-            当前账号权限为总监管理员。UI 美化、地图界面配置、游戏物体建模和设计师创作流程优化入口将在后续阶段接入。
-          </p>
-        </section>
+      return hasBoundApiUser && user.apiUserId ? (
+        <DirectorWorkbenchPage userId={user.apiUserId} />
+      ) : (
+        <BackendBindingPanel title="总监工作台" user={user} onBound={onUserUpdated} />
       );
   }
 };
@@ -451,6 +362,7 @@ export const RoleHomePage = ({
   onOpenSettings,
   onUserUpdated,
   onOpenDesignerDesign,
+  onNavigate,
 }: RoleHomePageProps) => {
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{
@@ -474,12 +386,9 @@ export const RoleHomePage = ({
     gems: 96,
     checkedIn: false,
   });
-  const [shopSeed, setShopSeed] = useState(0);
-  const [shopItems, setShopItems] = useState<ShopItem[]>(() => createShopInventory(0));
   const [shopMessage, setShopMessage] = useState("");
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [playingLevelId, setPlayingLevelId] = useState<string | null>(null);
-  const isShopOverlayOpen = detailView === "player-shop";
   const selectedLevel = chainLevels.find((level) => level.id === selectedLevelId) ?? null;
   const playingLevel = chainLevels.find((level) => level.id === playingLevelId) ?? null;
 
@@ -494,6 +403,24 @@ export const RoleHomePage = ({
   }, []);
 
   const openDetail = (nextView: Exclude<DetailView, null>) => {
+    if (nextView === "user-profile") {
+      onNavigate(OWN_PAGE_PATH);
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "player-community" || nextView === "admin-community") {
+      onNavigate(COMMUNITY_HALL_PATH);
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "player-shop") {
+      onNavigate(PLAYER_SHOP_PATH);
+      setActionOpen(false);
+      return;
+    }
+
     if (nextView === "designer-map") {
       onOpenDesignerDesign?.();
       setActionOpen(false);
@@ -521,42 +448,6 @@ export const RoleHomePage = ({
     }));
     setShopMessage("签到成功，已发放测试期金币和钻石奖励");
     setStatusOpen(true);
-  };
-
-  const handleRefreshShop = () => {
-    setShopSeed((current) => {
-      const nextSeed = current + 1;
-      setShopItems(createShopInventory(nextSeed));
-      return nextSeed;
-    });
-    setShopMessage("商店货架已刷新");
-  };
-
-  const handleBuyItem = (item: ShopItem) => {
-    if (item.currency === "coins") {
-      if (wallet.coins < item.price) {
-        setShopMessage(`${item.name} 购买失败，金币不足`);
-        return;
-      }
-
-      setWallet((current) => ({
-        ...current,
-        coins: current.coins - item.price,
-      }));
-      setShopMessage(`已购买 ${item.name}`);
-      return;
-    }
-
-    if (wallet.gems < item.price) {
-      setShopMessage(`${item.name} 购买失败，钻石不足`);
-      return;
-    }
-
-    setWallet((current) => ({
-      ...current,
-      gems: current.gems - item.price,
-    }));
-    setShopMessage(`已购买 ${item.name}`);
   };
 
   const openLevelOverlay = (levelId: string) => {
@@ -637,7 +528,7 @@ export const RoleHomePage = ({
         </div>
 
         <div
-          className={`chain-stage-body ${isShopOverlayOpen ? "shop-overlay-open" : ""} ${selectedLevel ? "level-overlay-open" : ""}`}
+          className={`chain-stage-body ${selectedLevel ? "level-overlay-open" : ""}`}
         >
           <div className="corner-anchor top-left">
             <div className="top-left-actions">
@@ -646,7 +537,7 @@ export const RoleHomePage = ({
                   <button
                     type="button"
                     className="corner-button"
-                    onClick={() => openDetail("player-shop")}
+                    onClick={() => onNavigate(PLAYER_SHOP_PATH)}
                   >
                     商店
                   </button>
@@ -737,61 +628,6 @@ export const RoleHomePage = ({
               ))}
             </div>
           </div>
-
-          {isShopOverlayOpen ? (
-            <div className="shop-overlay-backdrop" role="presentation">
-              <section className="shop-overlay-panel" aria-label="商店">
-                <div className="shop-overlay-header">
-                  <div className="shop-title-group">
-                    <p className="eyebrow">Player Shop</p>
-                    <div className="shop-title-row">
-                      <h2>商店</h2>
-                      <div className="shop-balance-bar shop-balance-inline">
-                        <article className="shop-balance-chip">
-                          <strong>{wallet.coins}</strong>
-                          <span>金币</span>
-                        </article>
-                        <article className="shop-balance-chip">
-                          <strong>{wallet.gems}</strong>
-                          <span>钻石</span>
-                        </article>
-                      </div>
-                    </div>
-                    <p className="panel-copy">使用金币和钻石购买道具、皮肤与增益包，测试期支持快速刷新货架。</p>
-                  </div>
-                  <div className="shop-header-actions">
-                    <button type="button" className="secondary" onClick={handleRefreshShop}>
-                      刷新
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => setDetailView(null)}
-                    >
-                      关闭商店
-                    </button>
-                  </div>
-                </div>
-
-                {shopMessage ? <p className="feedback success">{shopMessage}</p> : null}
-
-                <div className="shop-grid">
-                  {shopItems.map((item) => (
-                    <article key={item.id} className="shop-item-card">
-                      <strong>{item.name}</strong>
-                      <p>{item.description}</p>
-                      <span>
-                        {item.price} {item.currency === "coins" ? "金币" : "钻石"}
-                      </span>
-                      <button type="button" onClick={() => handleBuyItem(item)}>
-                        购买
-                      </button>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            </div>
-          ) : null}
 
           {selectedLevel ? (
             <div className="level-overlay-backdrop" role="presentation">

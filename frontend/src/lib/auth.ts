@@ -142,13 +142,15 @@ const LegacyAuthUsersStorageSchema = z.object({
   nextUserIndex: z.number().int().positive(),
 });
 
-const LEGACY_API_IDS = {
-  player: "player-1",
-  designer: "designer-1",
-  admin: "admin-1",
-} as const;
-
 const DIRECTOR_ADMIN_API_ID = "admin-director-1";
+const DIRECTOR_ADMIN_SEED_NICKNAME = "001";
+const DIRECTOR_ADMIN_SEED_PASSWORD = "123456";
+const DEPRECATED_SEED_ACCOUNTS = [
+  { role: "player", nickname: "player1" },
+  { role: "designer", nickname: "designer1" },
+  { role: "admin", nickname: "admin1" },
+  { role: "admin", nickname: "adminDirector1" },
+] satisfies Array<{ role: AuthRole; nickname: string }>;
 
 const createTenDigitId = () =>
   `${Math.floor(Math.random() * 1_000_000_0000)}`.padStart(10, "0");
@@ -187,10 +189,7 @@ const createSeedUsers = (): AuthUserRecord[] => {
   };
 
   return [
-    createSeedUser("player", "player1", "player123", LEGACY_API_IDS.player),
-    createSeedUser("designer", "designer1", "designer123", LEGACY_API_IDS.designer),
-    createSeedUser("admin", "admin1", "admin123", LEGACY_API_IDS.admin, "standard"),
-    createSeedUser("admin", "adminDirector1", "admin123", DIRECTOR_ADMIN_API_ID, "director"),
+    createSeedUser("admin", DIRECTOR_ADMIN_SEED_NICKNAME, DIRECTOR_ADMIN_SEED_PASSWORD, DIRECTOR_ADMIN_API_ID, "director"),
   ];
 };
 
@@ -253,17 +252,34 @@ const createExportPayload = () =>
     2,
   );
 
+const removeDeprecatedSeedUsers = (users: AuthUserRecord[]) =>
+  users.filter((user) =>
+    !DEPRECATED_SEED_ACCOUNTS.some((deprecated) => deprecated.role === user.role && deprecated.nickname === user.nickname)
+  );
+
 const mergeSeedUsers = (users: AuthUserRecord[]) => {
-  const merged = [...users];
+  let merged = removeDeprecatedSeedUsers(users);
 
   seedUsers.forEach((seedUser) => {
-    const exists = merged.some(
+    const existingIndex = merged.findIndex(
       (candidate) =>
         candidate.apiUserId === seedUser.apiUserId ||
         (candidate.role === seedUser.role && candidate.nickname === seedUser.nickname),
     );
 
-    if (!exists) {
+    if (existingIndex >= 0) {
+      merged = merged.map((candidate, index) =>
+        index === existingIndex
+          ? {
+              ...candidate,
+              password: seedUser.password,
+              role: seedUser.role,
+              adminLevel: seedUser.adminLevel,
+              apiUserId: seedUser.apiUserId,
+            }
+          : candidate,
+      );
+    } else {
       merged.push(seedUser);
     }
   });
@@ -315,11 +331,11 @@ restoreAuthUsers();
 export const getSeedAccountHint = (role: FrontendRole) => {
   switch (role) {
     case "player":
-      return "测试账号：player1 / player123";
+      return "玩家请注册新账号";
     case "designer":
-      return "测试账号：designer1 / designer123";
+      return "设计师请使用邀请码注册";
     case "admin":
-      return "测试账号：普通管理员 admin1 / admin123；总监管理员 adminDirector1 / admin123";
+      return `总监管理员测试账号：${DIRECTOR_ADMIN_SEED_NICKNAME} / ${DIRECTOR_ADMIN_SEED_PASSWORD}`;
   }
 };
 
@@ -349,7 +365,12 @@ export const readPersistedAuthUser = (): AuthUser | null => {
   }
 
   const parsed = AuthUserSchema.safeParse(payload);
-  return parsed.success ? parsed.data : null;
+  if (!parsed.success) {
+    return null;
+  }
+
+  const matchedUser = authUsers.find((candidate) => candidate.id === parsed.data.id);
+  return matchedUser ? toPublicUser(matchedUser) : null;
 };
 
 export const persistAuthSession = (user: AuthUser | null) => {

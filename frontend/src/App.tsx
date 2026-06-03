@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { AuthLandingPage } from "./component/auth/AuthLandingPage.js";
 import { BackendBindingPanel } from "./component/BackendBindingPanel.js";
 import { RoleHomePage } from "./component/RoleHomePage.js";
 import { SettingsPanel } from "./component/SettingsPanel.js";
 import { DesignerHomePage } from "./page/DesignerHomePage.js";
 import { DesignerPage } from "./page/DesignerPage/index.js";
+import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
+import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
+import { PlayerShopPage } from "./page/PlayerShopPage.js";
+import { UserProfilePage } from "./page/UserProfilePage.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
@@ -16,6 +21,9 @@ const DESIGNER_GUIDE_PATH = "/designer/design/design_book";
 const DESIGNER_JSON_CHECK_PATH = "/designer/design/json_check";
 const DESIGNER_ARCHIVE_PATH_PREFIX = "/designer/design/archive_";
 const DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX = "/json_check";
+const OWN_PAGE_PATH = "/own_page";
+const COMMUNITY_HALL_PATH = "/community_hall";
+const PLAYER_SHOP_PATH = "/player_shop";
 
 const readPathname = () => window.location.pathname;
 
@@ -120,11 +128,94 @@ export const App = () => {
     // archive 页面沿用同一套设计器工作区壳子
   const isArchiveWorkspacePath = pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX);
 
+  const renderBoundPage = (
+    user: AuthUser,
+    title: string,
+    renderPage: (apiUserId: string) => ReactNode,
+  ) =>
+    user.apiUserId ? (
+      renderPage(user.apiUserId)
+    ) : (
+      <BackendBindingPanel title={title} user={user} onBound={setCurrentUser} />
+    );
+
+  const renderStandaloneRoute = (user: AuthUser) => {
+    if (pathname === OWN_PAGE_PATH) {
+      return renderBoundPage(user, "个人主页", (apiUserId) => (
+        <UserProfilePage viewerUserId={apiUserId} profileUserId={apiUserId} />
+      ));
+    }
+
+    if (pathname === COMMUNITY_HALL_PATH) {
+      if (user.role === "player") {
+        return renderBoundPage(user, "社区大厅", (apiUserId) => (
+          <PlayerCommunityPage nickname={user.nickname} userId={apiUserId} />
+        ));
+      }
+
+      if (user.role === "admin") {
+        return renderBoundPage(user, "社区管理", (apiUserId) => (
+          <AdminCommunityPage nickname={user.nickname} userId={apiUserId} />
+        ));
+      }
+
+      return (
+        <section className="panel">
+          <h2>社区大厅</h2>
+          <p className="panel-copy">当前身份暂未开放社区管理或社区大厅入口。</p>
+        </section>
+      );
+    }
+
+    if (pathname === PLAYER_SHOP_PATH) {
+      if (user.role !== "player") {
+        return (
+          <section className="panel">
+            <h2>玩家商店</h2>
+            <p className="panel-copy">当前账号不是玩家，无法访问玩家商店。</p>
+          </section>
+        );
+      }
+
+      return <PlayerShopPage />;
+    }
+
+    return null;
+  };
+
+  const standaloneRoute = currentUser ? renderStandaloneRoute(currentUser) : null;
+  const standaloneTitle =
+    pathname === OWN_PAGE_PATH
+      ? "个人主页"
+      : pathname === COMMUNITY_HALL_PATH
+        ? "社区"
+        : pathname === PLAYER_SHOP_PATH
+          ? "玩家商店"
+          : "";
+
   return (
     <main className={`app-shell ${isDesignerWorkspacePath || isArchiveWorkspacePath ? "designer-app-shell" : ""}`}>
       {currentUser ? (
         <>
-          {pathname === DESIGNER_HOME_PATH
+          {standaloneRoute ? (
+            <>
+              <div className="dashboard-topbar">
+                <div>
+                  <p className="eyebrow">Workspace</p>
+                  <h1>{standaloneTitle}</h1>
+                </div>
+                <div className="top-right-actions">
+                  <button type="button" className="secondary" onClick={() => navigate("/")}>
+                    返回主界面
+                  </button>
+                  <button type="button" className="secondary" onClick={() => setSettingsOpen(true)}>
+                    设置
+                  </button>
+                </div>
+              </div>
+              {standaloneRoute}
+            </>
+          ) : pathname === DESIGNER_HOME_PATH
           || pathname === DESIGNER_DESIGN_PATH
           || pathname === DESIGNER_SETTINGS_PATH
           || pathname === DESIGNER_GUIDE_PATH
@@ -137,6 +228,7 @@ export const App = () => {
               onOpenSettings={() => setSettingsOpen(true)}
               onUserUpdated={setCurrentUser}
               onOpenDesignerDesign={() => navigate(DESIGNER_DESIGN_PATH)}
+              onNavigate={navigate}
             />
           )}
           <SettingsPanel

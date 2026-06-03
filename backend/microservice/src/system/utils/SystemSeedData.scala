@@ -22,7 +22,7 @@ private[utils] object SystemSeedData {
       UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, None, createdAt, createdAt),
       UserRow("designer-1", "local-designer-0000002", "Designer One", UserRole.Designer, None, createdAt, createdAt),
       UserRow("admin-1", "local-admin-0000003", "Admin One", UserRole.Admin, Some(AdminLevel.Standard), createdAt, createdAt),
-      UserRow("admin-director-1", "local-admin-director-0000004", "Director Admin", UserRole.Admin, Some(AdminLevel.Director), createdAt, createdAt)
+      UserRow("admin-director-1", "001", "001", UserRole.Admin, Some(AdminLevel.Director), createdAt, createdAt)
     )
 
   private def levels(createdAt: String): Vector[LevelRow] =

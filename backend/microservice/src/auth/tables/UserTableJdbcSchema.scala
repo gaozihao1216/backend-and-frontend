@@ -23,17 +23,29 @@ private[tables] object UserTableJdbcSchema {
       statement.executeUpdate("UPDATE users SET admin_level = 'standard' WHERE role = 'admin' AND admin_level IS NULL")
       statement.executeUpdate(
         """
+          CREATE UNIQUE INDEX IF NOT EXISTS users_single_director_admin
+          ON users (admin_level)
+          WHERE role = 'admin' AND admin_level = 'director'
+        """
+      )
+      statement.executeUpdate(
+        """
           INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at)
           VALUES (
             'admin-director-1',
-            'local-admin-director-0000004',
-            'Director Admin',
+            '001',
+            '001',
             'admin',
             'director',
             '2026-06-03T00:00:00Z',
             '2026-06-03T00:00:00Z'
           )
-          ON CONFLICT (id) DO NOTHING
+          ON CONFLICT (id) DO UPDATE SET
+            username = EXCLUDED.username,
+            display_name = EXCLUDED.display_name,
+            role = EXCLUDED.role,
+            admin_level = EXCLUDED.admin_level,
+            updated_at = EXCLUDED.updated_at
         """
       )
     } finally {
