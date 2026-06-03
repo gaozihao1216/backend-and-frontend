@@ -1,6 +1,6 @@
 package microservice.level.tables
 
-import microservice.core.InMemoryStore
+import microservice.infrastructure.database.InMemoryStore
 import microservice.system.objects.{LevelStatus, LevelTag}
 
 private[tables] object LevelTableInMemory {

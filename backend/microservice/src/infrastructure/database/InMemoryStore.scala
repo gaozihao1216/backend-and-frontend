@@ -1,4 +1,4 @@
-package microservice.core
+package microservice.infrastructure.database
 
 import microservice.auth.tables.UserRow
 import microservice.level.objects.Favorite

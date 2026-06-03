@@ -6,7 +6,7 @@ import java.sql.Connection
 import microservice.auth.tables.UserTable
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{RowMappers}
+import microservice.level.tables.LevelRowMapper
 import microservice.admin.objects.ReviewedSubmission
 import microservice.level.tables.{LevelTable, SubmissionTable}
 import microservice.system.objects.LevelStatus
@@ -82,7 +82,7 @@ final case class ReviewSubmissionAPIMessage(
                       case None =>
                         Left(ReviewSubmissionErrors.LinkedLevelMissing(submission.levelId).toHttpError)
                       case Some(_) =>
-                        Right(ReviewedSubmission.fromSubmission(RowMappers.toSubmission(reviewedSubmission)))
+                        Right(ReviewedSubmission.fromSubmission(LevelRowMapper.toSubmission(reviewedSubmission)))
                     }
                 }
               }

@@ -2,7 +2,7 @@ package microservice
 
 import com.comcast.ip4s._
 import cats.effect.{IO, IOApp}
-import microservice.core.SystemDefaults
+import microservice.system.utils.SystemDefaults
 import org.http4s.ember.server.EmberServerBuilder
 
 object Main extends IOApp.Simple {

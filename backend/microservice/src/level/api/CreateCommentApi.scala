@@ -7,7 +7,8 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.LevelComment
 import microservice.level.tables.{CommentRow, CommentTable}
 import microservice.level.utils.LevelApiSupport
@@ -45,8 +46,7 @@ final case class CreateCommentAPIMessage(
             createdAt = Instant.now().toString
           )
         )
-        RowMappers.toComment(row)
+        LevelRowMapper.toComment(row)
       })
     )
 }
-

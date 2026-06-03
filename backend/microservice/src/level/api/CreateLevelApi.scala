@@ -5,7 +5,8 @@ import java.time.Instant
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.{Level, LevelData}
 import microservice.level.tables.{LevelRow, LevelTable}
 import microservice.system.objects.LevelStatus
@@ -60,9 +61,8 @@ final case class CreateLevelAPIMessage(
             publishedAt = None
           )
         )
-        Right(RowMappers.toLevel(row))
+        Right(LevelRowMapper.toLevel(row))
         }
       }
     }
 }
-

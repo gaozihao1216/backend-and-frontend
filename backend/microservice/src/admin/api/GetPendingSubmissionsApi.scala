@@ -5,7 +5,7 @@ import java.sql.Connection
 import microservice.auth.tables.UserTable
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{RowMappers}
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.SubmissionWithLevel
 import microservice.level.tables.{LevelTable, SubmissionTable}
 import microservice.system.objects.UserRole
@@ -21,7 +21,7 @@ final case class GetPendingSubmissionsAPIMessage(userId: String) extends APIWith
             SubmissionTable.listPending(connection)
               .flatMap(submission =>
                 LevelTable.findById(connection, submission.levelId)
-                  .map(level => SubmissionWithLevel.from(RowMappers.toSubmission(submission), RowMappers.toLevel(level)))
+                  .map(level => SubmissionWithLevel.from(LevelRowMapper.toSubmission(submission), LevelRowMapper.toLevel(level)))
               )
               .toList
           )

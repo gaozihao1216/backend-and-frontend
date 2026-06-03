@@ -1,6 +1,6 @@
 package microservice.level.tables
 
-import microservice.core.InMemoryStore
+import microservice.infrastructure.database.InMemoryStore
 
 private[tables] object CommentTableInMemory {
   def listAllForAdmin(): Vector[CommentRow] =

@@ -5,7 +5,8 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.LevelComment
 import microservice.level.tables.CommentTable
 import microservice.system.objects.AdminLevel
@@ -20,9 +21,8 @@ final case class DeleteCommentAPIMessage(
     IO.pure(
       AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).flatMap { _ =>
         CommentTable.deleteById(connection, commentId)
-          .map(RowMappers.toComment)
+          .map(LevelRowMapper.toComment)
           .toRight(HttpError.notFound("COMMENT_NOT_FOUND", "Comment not found"))
       }
     )
 }
-

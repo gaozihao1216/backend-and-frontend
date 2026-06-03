@@ -1,14 +1,8 @@
-package microservice.core
+package microservice.level.tables
 
-import microservice.auth.objects.BackendUser
-import microservice.auth.tables.UserRow
 import microservice.level.objects.{Level, LevelComment, Rating, Submission}
-import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
 
-object RowMappers {
-  def toBackendUser(row: UserRow): BackendUser =
-    BackendUser(row.id, row.username, row.displayName, row.role, row.adminLevel, row.createdAt, row.updatedAt)
-
+object LevelRowMapper {
   def toLevel(row: LevelRow): Level =
     Level(
       row.id,

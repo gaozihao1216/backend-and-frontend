@@ -5,7 +5,8 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.Rating
 import microservice.level.tables.{LevelTable, RatingRow, RatingTable}
 import microservice.system.objects.LevelStatus
@@ -69,10 +70,9 @@ final case class RateLevelAPIMessage(
               else BigDecimal(levelRatings.map(_.score).sum.toDouble / levelRatings.size).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
             LevelTable.updateRatingStats(connection, levelId, average, levelRatings.size, timestamp)
 
-            Right(RowMappers.toRating(ratingRow))
+            Right(LevelRowMapper.toRating(ratingRow))
           }
         }
       }
     }
 }
-

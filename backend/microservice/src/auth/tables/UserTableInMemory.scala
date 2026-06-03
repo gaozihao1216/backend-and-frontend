@@ -1,6 +1,6 @@
 package microservice.auth.tables
 
-import microservice.core.InMemoryStore
+import microservice.infrastructure.database.InMemoryStore
 import microservice.system.objects.UserRole
 
 private[tables] object UserTableInMemory {

@@ -1,4 +1,4 @@
-package microservice.core
+package microservice.system.utils
 
 import cats.effect.IO
 import java.time.Instant
@@ -20,8 +20,8 @@ object SystemDefaults {
 
   val databaseSession: DatabaseSession =
     sys.env.get("UGC_DATABASE_MODE") match {
-      case Some("jdbc") => DatabaseSession.jdbc(databaseConfig)
-      case _ => DatabaseSession.inMemory(databaseConfig)
+      case Some("in_memory") => DatabaseSession.inMemory(databaseConfig)
+      case _ => DatabaseSession.jdbc(databaseConfig)
     }
 
   private val createdAt = Instant.now().toString

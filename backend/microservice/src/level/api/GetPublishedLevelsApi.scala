@@ -4,7 +4,8 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.Level
 import microservice.level.tables.LevelTable
 import microservice.system.objects.LevelTag
@@ -20,8 +21,7 @@ final case class GetPublishedLevelsAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, List[Level]]] =
     IO.pure {
       AccessControl.requireRole(connection, playerId, UserRole.Player).map { _ =>
-        LevelTable.listPublished(connection, tag, sort).map(RowMappers.toLevel).toList
+        LevelTable.listPublished(connection, tag, sort).map(LevelRowMapper.toLevel).toList
       }
     }
 }
-

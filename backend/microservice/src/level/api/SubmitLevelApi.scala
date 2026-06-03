@@ -7,7 +7,8 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.Submission
 import microservice.level.tables.{LevelTable, SubmissionRow, SubmissionTable}
 import microservice.system.objects.{LevelStatus, SubmissionStatus}
@@ -60,10 +61,9 @@ final case class SubmitLevelAPIMessage(
                 reviewedAt = None
               )
             )
-            Right(RowMappers.toSubmission(row))
+            Right(LevelRowMapper.toSubmission(row))
           }
         }
       }
     }
 }
-

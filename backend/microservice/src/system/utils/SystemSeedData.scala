@@ -1,11 +1,12 @@
-package microservice.core
+package microservice.system.utils
 
 import microservice.auth.tables.UserRow
+import microservice.infrastructure.database.InMemoryStore
 import microservice.level.objects._
 import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
-import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus, UserRole}
+import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, SubmissionStatus, UserRole}
 
-private[core] object SystemSeedData {
+private[utils] object SystemSeedData {
   def reset(createdAt: String, reviewedAt: String): Unit =
     InMemoryStore.reset(
       nextUsers = users(createdAt),
@@ -30,7 +31,7 @@ private[core] object SystemSeedData {
         id = "level-1",
         title = "Starter Siege",
         description = "Published sample level for profile and rating demos.",
-        tags = List(microservice.system.objects.LevelTag.Beginner, microservice.system.objects.LevelTag.Puzzle),
+        tags = List(LevelTag.Beginner, LevelTag.Puzzle),
         data = demoLevelData,
         authorId = "designer-1",
         status = LevelStatus.Published,
@@ -45,7 +46,7 @@ private[core] object SystemSeedData {
         id = "level-2",
         title = "Pending Glass Tower",
         description = "Pending review sample for admin demo.",
-        tags = List(microservice.system.objects.LevelTag.Hard),
+        tags = List(LevelTag.Hard),
         data = demoLevelData,
         authorId = "designer-1",
         status = LevelStatus.PendingReview,

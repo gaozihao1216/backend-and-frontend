@@ -2,11 +2,10 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.UserTable
+import microservice.auth.tables.{UserRowMapper, UserTable}
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{RowMappers}
-import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable}
+import microservice.level.tables.{CommentTable, FavoriteTable, LevelRowMapper, LevelTable, RatingTable}
 import microservice.user.objects.UserProfile
 import microservice.user.objects.UserProfileStats
 
@@ -28,12 +27,12 @@ final case class GetUserProfileAPIMessage(
         case Some(user) =>
           Right(
             UserProfile(
-              user = RowMappers.toBackendUser(user),
+              user = UserRowMapper.toBackendUser(user),
               publishedLevels = LevelTable.listPublishedByAuthor(connection, user.id)
-                .map(RowMappers.toLevel)
+                .map(LevelRowMapper.toLevel)
                 .toList,
               recentComments = CommentTable.listRecentByUser(connection, user.id, limit = 5)
-                .map(RowMappers.toComment)
+                .map(LevelRowMapper.toComment)
                 .toList,
               stats = UserProfileStats(
                 favoriteCount = FavoriteTable.countByUser(connection, user.id),

@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl}
+import microservice.auth.utils.AccessControl
 import microservice.level.objects.Favorite
 import microservice.level.tables.FavoriteTable
 import microservice.level.utils.LevelApiSupport
@@ -23,4 +23,3 @@ final case class UnfavoriteLevelAPIMessage(
       })
     )
 }
-

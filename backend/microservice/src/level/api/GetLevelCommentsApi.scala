@@ -4,7 +4,8 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.core.{AccessControl, RowMappers}
+import microservice.auth.utils.AccessControl
+import microservice.level.tables.LevelRowMapper
 import microservice.level.objects.LevelComment
 import microservice.level.tables.CommentTable
 import microservice.level.utils.LevelApiSupport
@@ -21,9 +22,8 @@ final case class GetLevelCommentsAPIMessage(
       AccessControl.requireRole(connection, playerId, UserRole.Player)
         .flatMap(_ =>
           LevelApiSupport.publishedLevel(connection, levelId).map(_ =>
-            CommentTable.listByLevel(connection, levelId).map(RowMappers.toComment).toList
+            CommentTable.listByLevel(connection, levelId).map(LevelRowMapper.toComment).toList
           )
         )
     )
 }
-
