@@ -54,16 +54,17 @@ final case class XxxAPIMessage(
 
 ## Connection 当前阶段说明
 
-当前阶段没有实现真实 PostgreSQL/JDBC 查询，也没有改造复杂事务系统。
+当前阶段已经提供真实 PostgreSQL/JDBC session，并为主要业务表补齐 SQL table 实现；默认启动仍保持 in-memory，避免本地没有 PostgreSQL 时无法运行。
 
 - `DatabaseSession.inMemory` 仍使用 in-memory 模式。
-- `connection` 参数用于对齐 APIMessage 和 table 层接口形态。
+- `DatabaseSession.jdbc(config)` 使用真实 JDBC connection 和事务。
+- `connection` 参数用于 table 层在 in-memory/JDBC 实现之间分流。
 - `APIMessage.run` 通过 `DatabaseSession.withTransaction(plan)` 执行，事务边界已经集中在 session 层。
-- table 方法内部仍访问 `InMemoryStore`，不会 dereference 当前 connection。
 - table 对外数据访问方法已经统一为 connection-based 形态。
 - 当前 in-memory `withTransaction` 是 no-op，内部委托给 `withConnection`。
 - `DatabaseSession.jdbc(config)` 已提供真实 JDBC session，支持打开连接、关闭连接、事务 commit/rollback 和恢复 auto-commit。
-- 默认启动仍使用 `DatabaseSession.inMemory(databaseConfig)`，后续切换真实数据库时还需要把 table 层替换为 SQL 实现。
+- 默认启动使用 `DatabaseSession.inMemory(databaseConfig)`；设置 `UGC_DATABASE_MODE=jdbc` 后切换到 PostgreSQL。
+- 可通过 `UGC_DATABASE_URL`、`UGC_DATABASE_USERNAME`、`UGC_DATABASE_PASSWORD`、`UGC_DATABASE_DRIVER`、`UGC_DATABASE_SCHEMA` 覆盖数据库配置。
 
 ## Core 层
 
@@ -77,14 +78,14 @@ final case class XxxAPIMessage(
 
 ### `DatabaseSession.scala`
 
-当前提供 in-memory session。它负责给 APIMessage 提供一个 `Connection` 形态的参数，并提供统一的 `withTransaction` 事务边界。
+当前提供 in-memory 和 JDBC 两种 session。它负责给 APIMessage 提供一个 `Connection` 形态的参数，并提供统一的 `withTransaction` 事务边界。
 
 当前提供两个 session 工厂：
 
 - `DatabaseSession.inMemory(config)`：用于当前默认运行模式，`withTransaction` 是 no-op，内部委托给 `withConnection`。
 - `DatabaseSession.jdbc(config)`：用于真实 JDBC 连接，`withTransaction` 会关闭 auto-commit，业务成功时 commit，业务失败或 API 返回 `Left(HttpError)` 时 rollback，最后恢复原 auto-commit 并关闭连接。
 
-注意：真实 JDBC session 已具备事务边界，但 table 层当前仍是 `InMemoryStore` 实现；要真正持久化到 PostgreSQL，还需要继续替换 table 层 SQL。
+注意：默认仍是 in-memory 模式。真实持久化需要设置 `UGC_DATABASE_MODE=jdbc`，并确保 PostgreSQL 已按 `backend/docker/init-store.sql` 初始化。
 
 ### `AccessControl.scala`
 
@@ -109,7 +110,7 @@ final case class XxxAPIMessage(
 
 ### `SystemDefaults.scala`
 
-负责初始化 in-memory 默认数据、注册总路由，并提供 `initializeDatabase` 启动初始化入口，不承载 API 核心业务逻辑。
+负责读取数据库配置、初始化默认数据/数据库表、注册总路由，并提供 `initializeDatabase` 启动初始化入口，不承载 API 核心业务逻辑。
 
 ## Routes 层
 
@@ -728,6 +729,6 @@ curl -X POST http://127.0.0.1:3000/designer/levels \
 
 建议按以下顺序继续：
 
-1. 继续替换 `CommentTable`、`SubmissionTable`、`FavoriteTable`、`RatingTable`。
-2. 补齐所有表初始化逻辑。
-3. 将默认 session 从 `inMemory` 切换为 `jdbc`。
+1. 准备本地 PostgreSQL 启动脚本或 docker compose。
+2. 用 `backend/docker/init-store.sql` 初始化真实库。
+3. 设置 `UGC_DATABASE_MODE=jdbc` 后跑通完整接口回归。

@@ -1,35 +1,133 @@
-CREATE TABLE IF NOT EXISTS seed_store (
-  entity_type text NOT NULL,
-  entity_id text NOT NULL,
-  payload jsonb NOT NULL,
-  PRIMARY KEY (entity_type, entity_id)
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
-TRUNCATE TABLE seed_store;
+CREATE TABLE IF NOT EXISTS levels (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tags TEXT NOT NULL,
+  data TEXT NOT NULL,
+  author_id TEXT NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL,
+  rejection_reason TEXT,
+  average_rating DOUBLE PRECISION NOT NULL,
+  rating_count INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  published_at TEXT
+);
 
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('users', 'player-1', '{"id":"player-1","username":"player1","displayName":"Player One","role":"player","createdAt":"2026-04-20T17:35:03.286Z","updatedAt":"2026-04-20T17:35:03.286Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('users', 'designer-1', '{"id":"designer-1","username":"designer1","displayName":"Designer One","role":"designer","createdAt":"2026-04-20T17:35:03.286Z","updatedAt":"2026-04-20T17:35:03.286Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('users', 'admin-1', '{"id":"admin-1","username":"admin1","displayName":"Admin One","role":"admin","createdAt":"2026-04-20T17:35:03.286Z","updatedAt":"2026-04-20T17:35:03.286Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('users', 'designer-2', '{"id":"designer-2","username":"local-designer-1a1omur","displayName":"LongLocalUser","role":"designer","createdAt":"2026-04-20T17:35:03.311Z","updatedAt":"2026-04-20T17:35:03.311Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('users', 'player-2', '{"id":"player-2","username":"local-player-11247tn","displayName":"LocalPlayer","role":"player","createdAt":"2026-04-23T06:18:19.724Z","updatedAt":"2026-04-23T06:18:19.724Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('levels', 'level-1', '{"id":"level-1","title":"Starter Level","description":"预置示例关卡","tags":["beginner","puzzle"],"data":{"world":{"width":1200,"height":800,"gravity":9.8},"ground":{"type":"line","points":[{"x":0,"y":752},{"x":600,"y":752},{"x":1200,"y":752}]},"birdInventory":{"basic":3},"obstacles":[{"id":"obstacle-glass-panel","material":"glass","position":{"x":700,"y":640},"size":{"width":20,"height":140}},{"id":"obstacle-wood-panel","material":"wood","position":{"x":860,"y":630},"size":{"width":44,"height":150}},{"id":"obstacle-stone-block","material":"stone","position":{"x":1040,"y":640},"size":{"width":96,"height":96}},{"id":"obstacle-wood-ledge","material":"wood","position":{"x":900,"y":540},"size":{"width":180,"height":24}},{"id":"obstacle-glass-top","material":"glass","position":{"x":700,"y":518},"size":{"width":72,"height":20}}],"enemies":[{"id":"enemy-1","type":"pig","position":{"x":900,"y":470}},{"id":"enemy-2","type":"pig","position":{"x":1040,"y":565}}]},"authorId":"designer-1","status":"published","averageRating":0,"ratingCount":0,"createdAt":"2026-04-20T17:35:03.287Z","updatedAt":"2026-04-20T17:35:03.287Z","publishedAt":"2026-04-20T17:35:03.287Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('levels', 'level-2', '{"id":"level-2","title":"Profile Showcase Level","description":"Profile aggregation test","tags":["funny"],"data":{"world":{"width":1280,"height":720,"gravity":9.8},"birdInventory":{"basic":3},"obstacles":[],"enemies":[{"id":"enemy-profile-test","type":"pig","position":{"x":860,"y":140}}]},"authorId":"designer-1","status":"published","averageRating":5,"ratingCount":1,"createdAt":"2026-05-25T16:36:07.978Z","updatedAt":"2026-05-25T16:36:07.990Z","publishedAt":"2026-05-25T16:36:07.983Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('levels', 'level-3', '{"id":"level-3","title":"Profile Showcase Level","description":"Profile aggregation test","tags":["funny"],"data":{"world":{"width":1280,"height":720,"gravity":9.8},"birdInventory":{"basic":3},"obstacles":[],"enemies":[{"id":"enemy-profile-test","type":"pig","position":{"x":860,"y":140}}]},"authorId":"designer-1","status":"published","averageRating":5,"ratingCount":1,"createdAt":"2026-05-26T00:49:24.859Z","updatedAt":"2026-05-26T00:49:24.898Z","publishedAt":"2026-05-26T00:49:24.885Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('levels', 'level-4', '{"id":"level-4","title":"Profile Showcase Level","description":"Profile aggregation test","tags":["funny"],"data":{"world":{"width":1280,"height":720,"gravity":9.8},"birdInventory":{"basic":3},"obstacles":[],"enemies":[{"id":"enemy-profile-test","type":"pig","position":{"x":860,"y":140}}]},"authorId":"designer-1","status":"published","averageRating":5,"ratingCount":1,"createdAt":"2026-05-26T00:49:38.246Z","updatedAt":"2026-05-26T00:49:38.271Z","publishedAt":"2026-05-26T00:49:38.261Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('levels', 'level-5', '{"id":"level-5","title":"Profile Showcase Level","description":"Profile aggregation test","tags":["funny"],"data":{"world":{"width":1280,"height":720,"gravity":9.8},"birdInventory":{"basic":3},"obstacles":[],"enemies":[{"id":"enemy-profile-test","type":"pig","position":{"x":860,"y":140}}]},"authorId":"designer-1","status":"published","averageRating":5,"ratingCount":1,"createdAt":"2026-05-26T00:49:54.054Z","updatedAt":"2026-05-26T00:49:54.069Z","publishedAt":"2026-05-26T00:49:54.060Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('submissions', 'submission-1', '{"id":"submission-1","levelId":"level-2","submitterId":"designer-1","status":"approved","reviewerId":"admin-1","submittedAt":"2026-05-25T16:36:07.981Z","reviewedAt":"2026-05-25T16:36:07.983Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('submissions', 'submission-2', '{"id":"submission-2","levelId":"level-3","submitterId":"designer-1","status":"approved","reviewerId":"admin-1","submittedAt":"2026-05-26T00:49:24.874Z","reviewedAt":"2026-05-26T00:49:24.885Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('submissions', 'submission-3', '{"id":"submission-3","levelId":"level-4","submitterId":"designer-1","status":"approved","reviewerId":"admin-1","submittedAt":"2026-05-26T00:49:38.257Z","reviewedAt":"2026-05-26T00:49:38.261Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('submissions', 'submission-4', '{"id":"submission-4","levelId":"level-5","submitterId":"designer-1","status":"approved","submittedAt":"2026-05-26T00:49:54.059Z","reviewerId":"admin-1","reviewedAt":"2026-05-26T00:49:54.060Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('ratings', 'rating-1', '{"id":"rating-1","levelId":"level-2","playerId":"designer-1","score":5,"createdAt":"2026-05-25T16:36:07.990Z","updatedAt":"2026-05-25T16:36:07.990Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('ratings', 'rating-2', '{"id":"rating-2","levelId":"level-3","playerId":"designer-1","score":5,"createdAt":"2026-05-26T00:49:24.898Z","updatedAt":"2026-05-26T00:49:24.898Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('ratings', 'rating-3', '{"id":"rating-3","levelId":"level-4","playerId":"designer-1","score":5,"createdAt":"2026-05-26T00:49:38.270Z","updatedAt":"2026-05-26T00:49:38.270Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('ratings', 'rating-4', '{"id":"rating-4","levelId":"level-5","playerId":"designer-1","score":5,"createdAt":"2026-05-26T00:49:54.069Z","updatedAt":"2026-05-26T00:49:54.069Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('comments', 'comment-1', '{"id":"comment-1","levelId":"level-2","userId":"designer-1","content":"设计师自评：适合做首发展示。","createdAt":"2026-05-25T16:36:07.986Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('comments', 'comment-2', '{"id":"comment-2","levelId":"level-3","userId":"designer-1","content":"设计师自评：适合做首发展示。","createdAt":"2026-05-26T00:49:24.893Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('comments', 'comment-3', '{"id":"comment-3","levelId":"level-4","userId":"designer-1","content":"设计师自评：适合做首发展示。","createdAt":"2026-05-26T00:49:38.265Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('comments', 'comment-4', '{"id":"comment-4","levelId":"level-5","userId":"designer-1","content":"设计师自评：适合做首发展示。","createdAt":"2026-05-26T00:49:54.065Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('favorites', 'favorite-1', '{"id":"favorite-1","levelId":"level-2","userId":"designer-1","createdAt":"2026-05-25T16:36:07.988Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('favorites', 'favorite-2', '{"id":"favorite-2","levelId":"level-3","userId":"designer-1","createdAt":"2026-05-26T00:49:24.895Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('favorites', 'favorite-3', '{"id":"favorite-3","levelId":"level-4","userId":"designer-1","createdAt":"2026-05-26T00:49:38.268Z"}'::jsonb);
-INSERT INTO seed_store (entity_type, entity_id, payload) VALUES ('favorites', 'favorite-4', '{"id":"favorite-4","levelId":"level-5","userId":"designer-1","createdAt":"2026-05-26T00:49:54.067Z"}'::jsonb);
+CREATE TABLE IF NOT EXISTS submissions (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  submitter_id TEXT NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL,
+  reviewer_id TEXT REFERENCES users(id),
+  review_note TEXT,
+  submitted_at TEXT NOT NULL,
+  reviewed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ratings (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  player_id TEXT NOT NULL REFERENCES users(id),
+  score INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (level_id, player_id)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS favorites (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL,
+  UNIQUE (level_id, user_id)
+);
+
+TRUNCATE TABLE favorites, comments, ratings, submissions, levels, users CASCADE;
+
+INSERT INTO users (id, username, display_name, role, created_at, updated_at) VALUES
+  ('player-1', 'local-player-0000001', 'Player One', 'player', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('designer-1', 'local-designer-0000002', 'Designer One', 'designer', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('admin-1', 'local-admin-0000003', 'Admin One', 'admin', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
+
+INSERT INTO levels (
+  id, title, description, tags, data, author_id, status, rejection_reason,
+  average_rating, rating_count, created_at, updated_at, published_at
+) VALUES
+  (
+    'level-1',
+    'Starter Siege',
+    'Published sample level for profile and rating demos.',
+    'beginner,puzzle',
+    '{"world":{"width":1600.0,"height":900.0,"gravity":1.0},"ground":{"type":"line","points":[{"x":0.0,"y":760.0},{"x":1600.0,"y":760.0}]},"terrain":null,"birdInventory":{"basic":3},"obstacles":[{"id":"obstacle-1","material":"wood","position":{"x":960.0,"y":650.0},"size":{"width":120.0,"height":30.0},"angle":0.0}],"enemies":[{"id":"enemy-1","type":"pig","position":{"x":1020.0,"y":610.0},"size":{"width":48.0,"height":48.0}}]}',
+    'designer-1',
+    'published',
+    NULL,
+    4.0,
+    1,
+    '2026-06-03T00:00:00Z',
+    '2026-06-03T00:00:00Z',
+    '2026-06-03T00:00:00Z'
+  ),
+  (
+    'level-2',
+    'Pending Glass Tower',
+    'Pending review sample for admin demo.',
+    'hard',
+    '{"world":{"width":1600.0,"height":900.0,"gravity":1.0},"ground":{"type":"line","points":[{"x":0.0,"y":760.0},{"x":1600.0,"y":760.0}]},"terrain":null,"birdInventory":{"basic":3},"obstacles":[{"id":"obstacle-1","material":"wood","position":{"x":960.0,"y":650.0},"size":{"width":120.0,"height":30.0},"angle":0.0}],"enemies":[{"id":"enemy-1","type":"pig","position":{"x":1020.0,"y":610.0},"size":{"width":48.0,"height":48.0}}]}',
+    'designer-1',
+    'pending_review',
+    NULL,
+    0.0,
+    0,
+    '2026-06-03T00:00:00Z',
+    '2026-06-03T00:00:00Z',
+    NULL
+  );
+
+INSERT INTO submissions (
+  id, level_id, submitter_id, status, reviewer_id, review_note, submitted_at, reviewed_at
+) VALUES
+  (
+    'submission-1',
+    'level-1',
+    'designer-1',
+    'approved',
+    'admin-1',
+    'Published as baseline sample.',
+    '2026-06-03T00:00:00Z',
+    '2026-06-03T00:00:00Z'
+  ),
+  (
+    'submission-2',
+    'level-2',
+    'designer-1',
+    'pending_review',
+    NULL,
+    NULL,
+    '2026-06-03T00:00:00Z',
+    NULL
+  );
+
+INSERT INTO ratings (id, level_id, player_id, score, created_at, updated_at) VALUES
+  ('rating-1', 'level-1', 'player-1', 4, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
+
+INSERT INTO comments (id, level_id, user_id, content, created_at) VALUES
+  ('comment-1', 'level-1', 'player-1', 'Solid tutorial pacing.', '2026-06-03T00:00:00Z');

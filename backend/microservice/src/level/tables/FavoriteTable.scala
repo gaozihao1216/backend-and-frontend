@@ -1,41 +1,36 @@
 package microservice.level.tables
 
-import microservice.core.InMemoryStore
 import microservice.level.objects.Favorite
-import microservice.system.objects.LevelStatus
 import java.sql.Connection
 
 object FavoriteTable {
+  private def isInMemory(connection: Connection): Boolean =
+    connection == null
+
+  def initialize(connection: Connection): Unit =
+    if (!isInMemory(connection)) FavoriteTableJdbc.initialize(connection)
+
   def countByUser(connection: Connection, userId: String): Int =
-    InMemoryStore.favorites.count(_.userId == userId)
+    if (isInMemory(connection)) FavoriteTableInMemory.countByUser(userId)
+    else FavoriteTableJdbc.countByUser(connection, userId)
 
   def listPublishedByUser(connection: Connection, userId: String): Vector[(Favorite, LevelRow)] =
-    InMemoryStore.favorites
-      .filter(_.userId == userId)
-      .sortBy(_.createdAt)(Ordering[String].reverse)
-      .flatMap(favorite =>
-        InMemoryStore.levels
-          .find(level => level.id == favorite.levelId && level.status == LevelStatus.Published)
-          .map(level => favorite -> level)
-      )
+    if (isInMemory(connection)) FavoriteTableInMemory.listPublishedByUser(userId)
+    else FavoriteTableJdbc.listPublishedByUser(connection, userId)
 
   def find(connection: Connection, userId: String, levelId: String): Option[Favorite] =
-    InMemoryStore.favorites.find(favorite => favorite.userId == userId && favorite.levelId == levelId)
+    if (isInMemory(connection)) FavoriteTableInMemory.find(userId, levelId)
+    else FavoriteTableJdbc.find(connection, userId, levelId)
 
   def nextId(connection: Connection): String =
-    s"favorite-${InMemoryStore.favorites.size + 1}"
+    if (isInMemory(connection)) FavoriteTableInMemory.nextId()
+    else FavoriteTableJdbc.nextId(connection)
 
-  def insert(connection: Connection, favorite: Favorite): Favorite = {
-    InMemoryStore.favorites = InMemoryStore.favorites :+ favorite
-    favorite
-  }
+  def insert(connection: Connection, favorite: Favorite): Favorite =
+    if (isInMemory(connection)) FavoriteTableInMemory.insert(favorite)
+    else FavoriteTableJdbc.insert(connection, favorite)
 
   def delete(connection: Connection, userId: String, levelId: String): Option[Favorite] =
-    InMemoryStore.favorites.indexWhere(favorite => favorite.userId == userId && favorite.levelId == levelId) match {
-      case -1 => None
-      case index =>
-        val deleted = InMemoryStore.favorites(index)
-        InMemoryStore.favorites = InMemoryStore.favorites.patch(index, Nil, 1)
-        Some(deleted)
-    }
+    if (isInMemory(connection)) FavoriteTableInMemory.delete(userId, levelId)
+    else FavoriteTableJdbc.delete(connection, userId, levelId)
 }
