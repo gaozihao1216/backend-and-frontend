@@ -35,12 +35,12 @@ final case class RateLevelAPIMessage(
       AccessControl.requireRole(connection, playerId, UserRole.Player).flatMap { _ =>
         LevelTable.findById(connection, levelId) match {
         case None =>
-          Left(PlayerRatingService.LevelMissing(levelId).toHttpError)
+          Left(RateLevelErrors.LevelMissing(levelId).toHttpError)
         case Some(level) =>
           if (level.status != LevelStatus.Published) {
-            Left(PlayerRatingService.LevelNotPublished(levelId).toHttpError)
+            Left(RateLevelErrors.LevelNotPublished(levelId).toHttpError)
           } else if (body.score < 1 || body.score > 5) {
-            Left(PlayerRatingService.InvalidScore(body.score).toHttpError)
+            Left(RateLevelErrors.InvalidScore(body.score).toHttpError)
           } else {
             val timestamp = Instant.now().toString
             val ratingRow =
@@ -72,27 +72,6 @@ final case class RateLevelAPIMessage(
         }
       }
     }
-}
-
-sealed trait PlayerRatingApiError {
-  def toHttpError: HttpError
-}
-
-object PlayerRatingService {
-  final case class LevelMissing(levelId: String) extends PlayerRatingApiError {
-    override def toHttpError: HttpError =
-      HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId")
-  }
-
-  final case class LevelNotPublished(levelId: String) extends PlayerRatingApiError {
-    override def toHttpError: HttpError =
-      HttpError.conflict("LEVEL_NOT_PUBLISHED", s"Only published levels can be rated: $levelId")
-  }
-
-  final case class InvalidScore(score: Int) extends PlayerRatingApiError {
-    override def toHttpError: HttpError =
-      HttpError.badRequest("INVALID_RATING_SCORE", s"score must be between 1 and 5, got $score")
-  }
 }
 
 object RateLevelEndpoint {

@@ -1,13 +1,13 @@
-package microservice.auth.utils
+package microservice.auth.api
 
 import microservice.core.HttpError
 
-sealed trait AuthError {
+sealed trait BindBackendUserApiError {
   def toHttpError: HttpError
 }
 
-object AuthService {
-  final case class BindBackendUserValidation(fields: List[String]) extends AuthError {
+object BindBackendUserErrors {
+  final case class BindBackendUserValidation(fields: List[String]) extends BindBackendUserApiError {
     override def toHttpError: HttpError =
       HttpError.badRequest("BIND_BACKEND_USER_INVALID", "localUserId and nickname are required", Some(fields.mkString(",")))
   }

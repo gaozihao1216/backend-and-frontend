@@ -12,6 +12,7 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-ember-server" % "0.23.30",
       "org.http4s" %% "http4s-circe" % "0.23.30",
       "io.circe" %% "circe-generic" % "0.14.10",
+      "io.circe" %% "circe-parser" % "0.14.10",
       "org.postgresql" % "postgresql" % "42.7.5",
       "org.slf4j" % "slf4j-simple" % "2.0.16"
     )

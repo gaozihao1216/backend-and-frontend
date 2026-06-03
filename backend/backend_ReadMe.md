@@ -109,7 +109,7 @@ final case class XxxAPIMessage(
 
 ### `SystemDefaults.scala`
 
-负责初始化 in-memory 默认数据和注册总路由，不承载 API 核心业务逻辑。
+负责初始化 in-memory 默认数据、注册总路由，并提供 `initializeDatabase` 启动初始化入口，不承载 API 核心业务逻辑。
 
 ## Routes 层
 
@@ -168,6 +168,13 @@ final case class XxxAPIMessage(
 - `POST /player/levels/:levelId/ratings`
 
 从 `x-user-id` 读取 `playerId`，解析 path、query、body 后构造对应 APIMessage。
+
+该模块已拆分为：
+
+- `PlayerLevelRouter.scala`：对外入口，组合 read/action 路由。
+- `PlayerLevelReadRouter.scala`：玩家读取类路由。
+- `PlayerLevelActionRouter.scala`：评论、收藏、评分等动作路由。
+- `PlayerLevelRouteSupport.scala`：共享 header/query 解析。
 
 ### `admin/routes/AdminRouter.scala`
 
@@ -436,18 +443,215 @@ final case class XxxAPIMessage(
 
 ## Tables 层
 
-当前 table 层仍使用 `InMemoryStore`，但已提供 connection-based 外部接口。
+当前 table 层已提供 connection-based 外部接口。
 
 主要 table：
 
-- `UserTable`：用户查询、按 username 查询、按 role 计数、插入用户。
-- `LevelTable`：关卡查询、发布列表、创建、提交状态更新、审核状态更新、评分统计更新。
-- `SubmissionTable`：待审列表、按 ID 查询、待审重复检查、创建、审核更新。
-- `CommentTable`：评论列表、近期评论、按关卡评论、创建、删除。
+- `UserTable`：用户查询、按 username 查询、按 role 计数、插入用户；当前已支持真实 JDBC SQL 路径，并提供 `initialize(connection)` 创建 `users` 表。
+- `LevelTable`：关卡查询、发布列表、创建、提交状态更新、审核状态更新、评分统计更新；当前公开方法已支持真实 JDBC SQL 路径。
+- `SubmissionTable`：待审列表、按 ID 查询、待审重复检查、创建、审核更新；当前公开方法已支持真实 JDBC SQL 路径。
+- `CommentTable`：评论列表、近期评论、按关卡评论、创建、删除；当前公开方法已支持真实 JDBC SQL 路径。
 - `FavoriteTable`：收藏查询、收藏列表、创建、删除。
-- `RatingTable`：评分查询、按关卡列表、创建、更新分数、按玩家计数。
+- `RatingTable`：评分查询、按关卡列表、创建、更新分数、按玩家计数；当前公开方法已支持真实 JDBC SQL 路径。
 
-注意：table 对外方法已经清理为 connection-based 入口；当前内部仍使用 `InMemoryStore`。
+注意：table 对外方法已经清理为 connection-based 入口；`UserTable`、`LevelTable`、`SubmissionTable`、`RatingTable`、`CommentTable` 已有 JDBC SQL 路径，其他 table 当前内部仍使用 `InMemoryStore`。
+
+### `UserTable` JDBC 实现
+
+`auth/tables` 已按职责拆分：
+
+- `UserRow.scala`：保存 `UserRow`。
+- `UserTable.scala`：对外 facade，根据 connection 分发到 in-memory 或 JDBC 实现。
+- `UserTableInMemory.scala`：in-memory 用户数据访问。
+- `UserTableJdbc.scala`：JDBC facade。
+- `UserTableJdbcSchema.scala`：`users` 表初始化。
+- `UserTableJdbcRead.scala`：JDBC 查询。
+- `UserTableJdbcWrite.scala`：JDBC 写入。
+- `UserTableCodec.scala`：ResultSet 到 `UserRow` 的映射。
+
+`UserTable.initialize(connection)` 会执行：
+
+```sql
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+)
+```
+
+`UserTable` 当前所有公开方法都会根据 connection 类型选择执行路径：
+
+- `connection == null`：当前 in-memory session，继续访问 `InMemoryStore.users`。
+- 真实 JDBC connection：使用 `PreparedStatement` 执行 PostgreSQL SQL。
+
+已实现 SQL 的方法：
+
+- `listAll(connection)`
+- `findById(connection, userId)`
+- `findByUsername(connection, username)`
+- `countByRole(connection, role)`
+- `insert(connection, row)`
+
+### Level Tables 文件拆分
+
+`level/tables` 已按职责拆分：
+
+- `LevelRows.scala`：保存 `LevelRow`、`RatingRow`、`CommentRow`、`SubmissionRow`。
+- `LevelTable.scala`：关卡表对外 facade，根据 connection 分发到 in-memory 或 JDBC 实现。
+- `LevelTableInMemory.scala`：in-memory 关卡数据访问。
+- `LevelTableJdbc.scala`：JDBC facade。
+- `LevelTableJdbcSchema.scala`：`levels` 表初始化。
+- `LevelTableJdbcRead.scala`：JDBC 查询。
+- `LevelTableJdbcInsert.scala`：JDBC 插入。
+- `LevelTableJdbcUpdate.scala`：JDBC 状态与评分统计更新。
+- `LevelTableJdbcWrite.scala`：JDBC 写入 facade。
+- `LevelTableCodec.scala`：tag/data 编解码和 ResultSet 到 `LevelRow` 的映射。
+- `RatingTable.scala`：评分相关 table 方法。
+- `RatingTableInMemory.scala`：in-memory 评分数据访问。
+- `RatingTableJdbc.scala`：JDBC facade。
+- `RatingTableJdbcSchema.scala`：`ratings` 表初始化。
+- `RatingTableJdbcRead.scala`：JDBC 查询。
+- `RatingTableJdbcWrite.scala`：JDBC 插入和分数更新。
+- `RatingTableCodec.scala`：ResultSet 到 `RatingRow` 的映射。
+- `CommentTable.scala`：评论相关 table 方法。
+- `CommentTableInMemory.scala`：in-memory 评论数据访问。
+- `CommentTableJdbc.scala`：JDBC facade。
+- `CommentTableJdbcSchema.scala`：`comments` 表初始化。
+- `CommentTableJdbcRead.scala`：JDBC 查询。
+- `CommentTableJdbcWrite.scala`：JDBC 插入和删除。
+- `CommentTableCodec.scala`：ResultSet 到 `CommentRow` 的映射。
+- `SubmissionTable.scala`：投稿审核相关 table 方法。
+- `SubmissionTableInMemory.scala`：in-memory 投稿数据访问。
+- `SubmissionTableJdbc.scala`：JDBC facade。
+- `SubmissionTableJdbcSchema.scala`：`submissions` 表初始化。
+- `SubmissionTableJdbcRead.scala`：JDBC 查询。
+- `SubmissionTableJdbcWrite.scala`：JDBC 写入和审核更新。
+- `SubmissionTableCodec.scala`：ResultSet 到 `SubmissionRow` 的映射。
+- `FavoriteTable.scala`：收藏相关 table 方法。
+
+### `LevelTable` JDBC 实现
+
+`LevelTable.initialize(connection)` 会执行：
+
+```sql
+CREATE TABLE IF NOT EXISTS levels (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tags TEXT NOT NULL,
+  data TEXT NOT NULL,
+  author_id TEXT NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL,
+  rejection_reason TEXT,
+  average_rating DOUBLE PRECISION NOT NULL,
+  rating_count INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  published_at TEXT
+)
+```
+
+第一阶段存储约定：
+
+- `tags`：以逗号分隔的 `LevelTag.value` 字符串保存。
+- `data`：以 JSON 字符串保存，读取时通过 Circe parser 解码为 `LevelData`。
+- `status`：保存 `LevelStatus.value`。
+
+已实现 SQL 的方法：
+
+- `findById(connection, levelId)`
+- `listPublished(connection, tag, sort)`
+- `listPublishedByAuthor(connection, authorId)`
+- `nextId(connection)`
+- `insert(connection, row)`
+- `updateSubmissionStatus(connection, ...)`
+- `updateReviewStatus(connection, ...)`
+- `updateRatingStats(connection, ...)`
+
+这些方法仍保留 `connection == null` 的 in-memory fallback，默认启动模式不受影响。
+
+### `CommentTable` JDBC 实现
+
+`CommentTable.initialize(connection)` 会执行：
+
+```sql
+CREATE TABLE IF NOT EXISTS comments (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL
+)
+```
+
+已实现 SQL 的方法：
+
+- `listAllForAdmin(connection)`
+- `listRecentByUser(connection, userId, limit)`
+- `listByLevel(connection, levelId)`
+- `nextId(connection)`
+- `insert(connection, row)`
+- `deleteById(connection, commentId)`
+
+这些方法仍保留 `connection == null` 的 in-memory fallback，默认启动模式不受影响。
+
+### `RatingTable` JDBC 实现
+
+`RatingTable.initialize(connection)` 会执行：
+
+```sql
+CREATE TABLE IF NOT EXISTS ratings (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  player_id TEXT NOT NULL REFERENCES users(id),
+  score INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (level_id, player_id)
+)
+```
+
+已实现 SQL 的方法：
+
+- `countByPlayer(connection, playerId)`
+- `findByLevelAndPlayer(connection, levelId, playerId)`
+- `listByLevel(connection, levelId)`
+- `nextId(connection)`
+- `insert(connection, row)`
+- `updateScore(connection, ratingId, score, updatedAt)`
+
+这些方法仍保留 `connection == null` 的 in-memory fallback，默认启动模式不受影响。
+
+### `SubmissionTable` JDBC 实现
+
+`SubmissionTable.initialize(connection)` 会执行：
+
+```sql
+CREATE TABLE IF NOT EXISTS submissions (
+  id TEXT PRIMARY KEY,
+  level_id TEXT NOT NULL REFERENCES levels(id),
+  submitter_id TEXT NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL,
+  reviewer_id TEXT REFERENCES users(id),
+  review_note TEXT,
+  submitted_at TEXT NOT NULL,
+  reviewed_at TEXT
+)
+```
+
+已实现 SQL 的方法：
+
+- `listPending(connection)`
+- `hasPendingForLevel(connection, levelId)`
+- `nextId(connection)`
+- `insert(connection, row)`
+- `findById(connection, submissionId)`
+- `updateReview(connection, ...)`
+
+这些方法仍保留 `connection == null` 的 in-memory fallback，默认启动模式不受影响。
 
 ## Objects 层
 
@@ -524,6 +728,6 @@ curl -X POST http://127.0.0.1:3000/designer/levels \
 
 建议按以下顺序继续：
 
-1. 将 table 层替换为真实 JDBC/PostgreSQL SQL 实现。
-2. 增加数据库初始化和迁移逻辑。
+1. 继续替换 `CommentTable`、`SubmissionTable`、`FavoriteTable`、`RatingTable`。
+2. 补齐所有表初始化逻辑。
 3. 将默认 session 从 `inMemory` 切换为 `jdbc`。

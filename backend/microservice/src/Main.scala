@@ -7,11 +7,12 @@ import org.http4s.ember.server.EmberServerBuilder
 
 object Main extends IOApp.Simple {
   override def run: IO[Unit] =
-    EmberServerBuilder
-      .default[IO]
-      .withHost(Host.fromString("127.0.0.1").get)
-      .withPort(Port.fromInt(3000).get)
-      .withHttpApp(SystemDefaults.apiRoutes.orNotFound)
-      .build
-      .use(_ => IO.never)
+    SystemDefaults.initializeDatabase *>
+      EmberServerBuilder
+        .default[IO]
+        .withHost(Host.fromString("127.0.0.1").get)
+        .withPort(Port.fromInt(3000).get)
+        .withHttpApp(SystemDefaults.apiRoutes.orNotFound)
+        .build
+        .use(_ => IO.never)
 }

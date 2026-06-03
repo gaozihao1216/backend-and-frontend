@@ -7,7 +7,6 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.auth.objects.BackendUser
 import microservice.auth.tables.{UserRow, UserTable}
-import microservice.auth.utils.AuthService
 import microservice.core.{APIMessage, HttpError, RowMappers}
 import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder
@@ -31,7 +30,7 @@ final case class BindBackendUserAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, BackendUser]] =
     IO.pure {
       if (request.localUserId.trim.isEmpty || request.nickname.trim.isEmpty) {
-        Left(AuthService.BindBackendUserValidation(List("localUserId", "nickname")).toHttpError)
+        Left(BindBackendUserErrors.BindBackendUserValidation(List("localUserId", "nickname")).toHttpError)
       } else {
         val normalizedNickname = request.nickname.trim
         val suffix = math.abs(request.localUserId.trim.hashCode).toString.take(7).reverse.padTo(7, '0').reverse

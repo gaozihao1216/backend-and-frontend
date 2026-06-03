@@ -37,7 +37,7 @@ final case class CreateLevelAPIMessage(
     IO.pure {
       AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
         if (body.title.trim.isEmpty) {
-          Left(DesignerLevelService.CreateLevelValidation(List("title")).toHttpError)
+          Left(CreateLevelErrors.CreateLevelValidation(List("title")).toHttpError)
         } else {
         val timestamp = Instant.now().toString
         val row = LevelTable.insert(
@@ -62,17 +62,6 @@ final case class CreateLevelAPIMessage(
         }
       }
     }
-}
-
-sealed trait DesignerLevelApiError {
-  def toHttpError: HttpError
-}
-
-object DesignerLevelService {
-  final case class CreateLevelValidation(fields: List[String]) extends DesignerLevelApiError {
-    override def toHttpError: HttpError =
-      HttpError.badRequest("CREATE_LEVEL_INVALID", "title is required", Some(fields.mkString(",")))
-  }
 }
 
 object CreateLevelEndpoint {
