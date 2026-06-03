@@ -6,7 +6,6 @@ import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMapp
 import microservice.level.objects.Level
 import microservice.level.tables.LevelTable
 import microservice.system.objects.LevelTag
-import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
 
 final case class GetPublishedLevelsRequest(
@@ -16,22 +15,16 @@ final case class GetPublishedLevelsRequest(
 )
 
 final case class GetPublishedLevelsAPIMessage(
-  token: String,
+  playerId: String,
   tag: Option[LevelTag],
   sort: String
 ) extends APIWithTokenMessage[List[Level]] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, List[Level]]] =
     IO.pure {
-      AccessControl.requireRole(token, UserRole.Player).map { _ =>
-        val filtered = LevelTable.all.filter(level =>
-          level.status == LevelStatus.Published && tag.forall(level.tags.contains)
-        )
-        val sorted = sort match {
-          case "highestRated" => filtered.sortBy(level => (-level.averageRating, -level.ratingCount, level.createdAt))
-          case "mostRated" => filtered.sortBy(level => (-level.ratingCount, -level.averageRating, level.createdAt))
-          case _ => filtered.sortBy(_.createdAt)(Ordering[String].reverse)
-        }
-        sorted.map(RowMappers.toLevel).toList
+      AccessControl.requireRole(connection, playerId, UserRole.Player).map { _ =>
+        LevelTable.listPublished(connection, tag, sort).map(RowMappers.toLevel).toList
       }
     }
 }

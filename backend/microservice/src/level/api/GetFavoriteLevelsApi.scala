@@ -4,8 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.FavoriteWithLevel
-import microservice.level.tables.{FavoriteTable, LevelTable}
-import microservice.system.objects.LevelStatus
+import microservice.level.tables.FavoriteTable
 import microservice.system.objects.UserRole
 
 final case class GetFavoriteLevelsRequest(
@@ -13,19 +12,15 @@ final case class GetFavoriteLevelsRequest(
 )
 
 final case class GetFavoriteLevelsAPIMessage(
-  token: String
+  playerId: String
 ) extends APIWithTokenMessage[List[FavoriteWithLevel]] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, List[FavoriteWithLevel]]] =
     IO.pure(
-      AccessControl.requireRole(token, UserRole.Player).map(_ =>
-        FavoriteTable.all
-          .filter(_.userId == token)
-          .sortBy(_.createdAt)(Ordering[String].reverse)
-          .flatMap(favorite =>
-            LevelTable.findById(favorite.levelId)
-              .filter(_.status == LevelStatus.Published)
-              .map(level => FavoriteWithLevel.from(favorite, RowMappers.toLevel(level)))
-          )
+      AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ =>
+        FavoriteTable.listPublishedByUser(connection, playerId)
+          .map { case (favorite, level) => FavoriteWithLevel.from(favorite, RowMappers.toLevel(level)) }
           .toList
       )
     )

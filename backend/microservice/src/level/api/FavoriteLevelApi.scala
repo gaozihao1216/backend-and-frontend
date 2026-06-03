@@ -2,6 +2,7 @@ package microservice.level.api
 
 import cats.effect.IO
 import java.sql.Connection
+import java.time.Instant
 import microservice.core.{APIWithTokenMessage, AccessControl, HttpError}
 import microservice.level.objects.Favorite
 import microservice.level.tables.FavoriteTable
@@ -14,19 +15,22 @@ final case class FavoriteLevelRequest(
 )
 
 final case class FavoriteLevelAPIMessage(
-  token: String,
+  playerId: String,
   levelId: String
 ) extends APIWithTokenMessage[Favorite] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, Favorite]] =
     IO.pure(
-      AccessControl.requireRole(token, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(levelId).map { _ =>
-        FavoriteTable.find(token, levelId).getOrElse {
+      AccessControl.requireRole(connection, playerId, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(connection, levelId).map { _ =>
+        FavoriteTable.find(connection, playerId, levelId).getOrElse {
           FavoriteTable.insert(
+            connection,
             Favorite(
-              id = s"favorite-${FavoriteTable.count + 1}",
+              id = FavoriteTable.nextId(connection),
               levelId = levelId,
-              userId = token,
-              createdAt = "2026-05-26T13:40:00Z"
+              userId = playerId,
+              createdAt = Instant.now().toString
             )
           )
         }

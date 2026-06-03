@@ -1,6 +1,7 @@
 package microservice.level.api
 
 import cats.effect.IO
+import java.time.Instant
 import java.sql.Connection
 import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.{Level, LevelData}
@@ -49,24 +50,27 @@ object CreateLevelResponse {
 }
 
 final case class CreateLevelAPIMessage(
-  token: String,
+  designerId: String,
   body: CreateLevelBody
 ) extends APIWithTokenMessage[Level] {
+  override def token: String = designerId
+
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     IO.pure {
-      AccessControl.requireRole(token, UserRole.Designer).flatMap { _ =>
+      AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
         if (body.title.trim.isEmpty) {
           Left(DesignerLevelService.CreateLevelValidation(List("title")).toHttpError)
         } else {
-        val timestamp = "2026-05-26T12:00:00Z"
+        val timestamp = Instant.now().toString
         val row = LevelTable.insert(
+          connection,
           LevelRow(
-            id = s"level-${LevelTable.count + 1}",
+            id = LevelTable.nextId(connection),
             title = body.title.trim,
             description = body.description,
             tags = body.tags,
             data = body.data,
-            authorId = token,
+            authorId = designerId,
             status = LevelStatus.Draft,
             rejectionReason = None,
             averageRating = 0,

@@ -2,8 +2,9 @@ package microservice.level.api
 
 import cats.effect.IO
 import java.sql.Connection
+import java.time.Instant
 import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
-import microservice.level.objects.{Favorite, FavoriteWithLevel, Level, LevelComment, Rating}
+import microservice.level.objects.Rating
 import microservice.level.tables.{LevelTable, RatingRow, RatingTable}
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
@@ -43,34 +44,36 @@ object RateLevelResponse {
 }
 
 final case class RateLevelAPIMessage(
-  token: String,
+  playerId: String,
   levelId: String,
   body: RateLevelBody
 ) extends APIWithTokenMessage[Rating] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, Rating]] =
     IO.pure {
-      AccessControl.requireRole(token, UserRole.Player).flatMap { _ =>
-        LevelTable.indexWhere(_.id == levelId) match {
-        case -1 =>
+      AccessControl.requireRole(connection, playerId, UserRole.Player).flatMap { _ =>
+        LevelTable.findById(connection, levelId) match {
+        case None =>
           Left(PlayerRatingService.LevelMissing(levelId).toHttpError)
-        case levelIndex =>
-          val level = LevelTable.all(levelIndex)
+        case Some(level) =>
           if (level.status != LevelStatus.Published) {
             Left(PlayerRatingService.LevelNotPublished(levelId).toHttpError)
           } else if (body.score < 1 || body.score > 5) {
             Left(PlayerRatingService.InvalidScore(body.score).toHttpError)
           } else {
-            val timestamp = "2026-05-26T13:00:00Z"
-            val existingIndex = RatingTable.indexWhere(rating => rating.levelId == levelId && rating.playerId == token)
+            val timestamp = Instant.now().toString
             val ratingRow =
-              if (existingIndex >= 0) {
-                RatingTable.update(existingIndex, RatingTable.all(existingIndex).copy(score = body.score, updatedAt = timestamp))
-              } else {
-                RatingTable.insert(
+              RatingTable.findByLevelAndPlayer(connection, levelId, playerId) match {
+                case Some(existing) =>
+                  RatingTable.updateScore(connection, existing.id, body.score, timestamp).getOrElse(existing)
+                case None =>
+                  RatingTable.insert(
+                    connection,
                   RatingRow(
-                    id = s"rating-${RatingTable.count + 1}",
+                    id = RatingTable.nextId(connection),
                     levelId = levelId,
-                    playerId = token,
+                    playerId = playerId,
                     score = body.score,
                     createdAt = timestamp,
                     updatedAt = timestamp
@@ -78,11 +81,11 @@ final case class RateLevelAPIMessage(
                 )
               }
 
-            val levelRatings = RatingTable.all.filter(_.levelId == levelId)
+            val levelRatings = RatingTable.listByLevel(connection, levelId)
             val average =
               if (levelRatings.isEmpty) 0.0
               else BigDecimal(levelRatings.map(_.score).sum.toDouble / levelRatings.size).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-            LevelTable.update(levelIndex, level.copy(averageRating = average, ratingCount = levelRatings.size, updatedAt = timestamp))
+            LevelTable.updateRatingStats(connection, levelId, average, levelRatings.size, timestamp)
 
             Right(RowMappers.toRating(ratingRow))
           }

@@ -4,6 +4,7 @@ import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
+import java.time.Instant
 import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.Submission
 import microservice.level.tables.{LevelTable, SubmissionRow, SubmissionTable}
@@ -42,31 +43,33 @@ object SubmitLevelResponse {
 }
 
 final case class SubmitLevelAPIMessage(
-  token: String,
+  designerId: String,
   body: SubmitLevelBody
 ) extends APIWithTokenMessage[Submission] {
+  override def token: String = designerId
+
   override def plan(connection: Connection): IO[Either[HttpError, Submission]] =
     IO.pure {
-      AccessControl.requireRole(token, UserRole.Designer).flatMap { _ =>
-        LevelTable.indexWhere(_.id == body.levelId) match {
-        case -1 =>
+      AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
+        LevelTable.findById(connection, body.levelId) match {
+        case None =>
           Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: ${body.levelId}"))
-        case levelIndex =>
-          val level = LevelTable.all(levelIndex)
-          if (level.authorId != token) {
+        case Some(level) =>
+          if (level.authorId != designerId) {
             Left(HttpError.forbidden("Cannot submit another designer's level"))
-          } else if (SubmissionTable.exists(submission => submission.levelId == body.levelId && submission.status == SubmissionStatus.PendingReview)) {
+          } else if (SubmissionTable.hasPendingForLevel(connection, body.levelId)) {
             Left(HttpError.conflict("SUBMISSION_EXISTS", "Level already has a pending submission"))
           } else if (level.status != LevelStatus.Draft && level.status != LevelStatus.Rejected) {
             Left(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
           } else {
-            val timestamp = "2026-05-26T12:30:00Z"
-            LevelTable.update(levelIndex, level.copy(status = LevelStatus.PendingReview, rejectionReason = None, updatedAt = timestamp))
+            val timestamp = Instant.now().toString
+            LevelTable.updateSubmissionStatus(connection, body.levelId, LevelStatus.PendingReview, None, timestamp)
             val row = SubmissionTable.insert(
+              connection,
               SubmissionRow(
-                id = s"submission-${SubmissionTable.count + 1}",
+                id = SubmissionTable.nextId(connection),
                 levelId = body.levelId,
-                submitterId = token,
+                submitterId = designerId,
                 status = SubmissionStatus.PendingReview,
                 reviewerId = None,
                 reviewNote = None,

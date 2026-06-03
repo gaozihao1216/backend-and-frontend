@@ -4,6 +4,7 @@ import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
+import java.time.Instant
 import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
 import microservice.level.objects.LevelComment
 import microservice.level.tables.{CommentRow, CommentTable}
@@ -29,20 +30,23 @@ final case class CreateCommentRequest(
 )
 
 final case class CreateCommentAPIMessage(
-  token: String,
+  playerId: String,
   levelId: String,
   body: CreateCommentBody
 ) extends APIWithTokenMessage[LevelComment] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, LevelComment]] =
     IO.pure(
-      AccessControl.requireRole(token, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(levelId).map { _ =>
+      AccessControl.requireRole(connection, playerId, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(connection, levelId).map { _ =>
         val row = CommentTable.insert(
+          connection,
           CommentRow(
-            id = s"comment-${CommentTable.count + 1}",
+            id = CommentTable.nextId(connection),
             levelId = levelId,
-            userId = token,
+            userId = playerId,
             content = body.content.trim,
-            createdAt = "2026-05-26T13:30:00Z"
+            createdAt = Instant.now().toString
           )
         )
         RowMappers.toComment(row)

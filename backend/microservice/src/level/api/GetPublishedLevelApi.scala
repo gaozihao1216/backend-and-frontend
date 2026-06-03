@@ -13,11 +13,16 @@ final case class GetPublishedLevelRequest(
 )
 
 final case class GetPublishedLevelAPIMessage(
-  token: String,
+  playerId: String,
   levelId: String
 ) extends APIWithTokenMessage[Level] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
-    IO.pure(AccessControl.requireRole(token, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(levelId).map(RowMappers.toLevel)))
+    IO.pure(
+      AccessControl.requireRole(connection, playerId, UserRole.Player)
+        .flatMap(_ => LevelApiSupport.publishedLevel(connection, levelId).map(RowMappers.toLevel))
+    )
 }
 
 object GetPublishedLevelEndpoint {

@@ -1,5 +1,6 @@
 package microservice.core
 
+import java.time.Instant
 import microservice.auth.tables.UserRow
 import microservice.level.objects._
 import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
@@ -18,8 +19,8 @@ object SystemDefaults {
   val databaseSession: DatabaseSession =
     DatabaseSession.inMemory(databaseConfig)
 
-  private val createdAt = "2026-05-26T09:00:00Z"
-  private val reviewedAt = "2026-05-26T10:00:00Z"
+  private val createdAt = Instant.now().toString
+  private val reviewedAt = createdAt
 
   private val demoLevelData = LevelData(
     world = GameWorld(width = 1600, height = 900, gravity = 1.0),

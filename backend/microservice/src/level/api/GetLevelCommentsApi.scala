@@ -14,18 +14,19 @@ final case class GetLevelCommentsRequest(
 )
 
 final case class GetLevelCommentsAPIMessage(
-  token: String,
+  playerId: String,
   levelId: String
 ) extends APIWithTokenMessage[List[LevelComment]] {
+  override def token: String = playerId
+
   override def plan(connection: Connection): IO[Either[HttpError, List[LevelComment]]] =
     IO.pure(
-      AccessControl.requireRole(token, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(levelId).map(_ =>
-        CommentTable.all
-          .filter(_.levelId == levelId)
-          .sortBy(_.createdAt)(Ordering[String].reverse)
-          .map(RowMappers.toComment)
-          .toList
-      ))
+      AccessControl.requireRole(connection, playerId, UserRole.Player)
+        .flatMap(_ =>
+          LevelApiSupport.publishedLevel(connection, levelId).map(_ =>
+            CommentTable.listByLevel(connection, levelId).map(RowMappers.toComment).toList
+          )
+        )
     )
 }
 
