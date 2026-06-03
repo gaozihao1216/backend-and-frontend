@@ -87,6 +87,31 @@ final case class XxxAPIMessage(
 
 注意：默认仍是 in-memory 模式。真实持久化需要设置 `UGC_DATABASE_MODE=jdbc`，并确保 PostgreSQL 已按 `backend/docker/init-store.sql` 初始化。
 
+### PostgreSQL/JDBC 本地启动
+
+仓库根目录提供了 `docker-compose.yml`，用于启动本地 PostgreSQL 并在首次创建数据卷时执行 `backend/docker/init-store.sql`。
+
+```bash
+docker compose up -d postgres
+```
+
+使用 JDBC 模式运行 Scala 服务：
+
+```bash
+UGC_DATABASE_MODE=jdbc \
+UGC_DATABASE_URL=jdbc:postgresql://localhost:5432/ugc_level_platform \
+UGC_DATABASE_USERNAME=postgres \
+UGC_DATABASE_PASSWORD=postgres \
+sbt run
+```
+
+如果修改了 `backend/docker/init-store.sql` 并需要重新执行初始化脚本，需要删除旧数据卷后重启数据库：
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+```
+
 ### `AccessControl.scala`
 
 封装角色校验：
@@ -729,6 +754,6 @@ curl -X POST http://127.0.0.1:3000/designer/levels \
 
 建议按以下顺序继续：
 
-1. 准备本地 PostgreSQL 启动脚本或 docker compose。
-2. 用 `backend/docker/init-store.sql` 初始化真实库。
-3. 设置 `UGC_DATABASE_MODE=jdbc` 后跑通完整接口回归。
+1. 在有 Docker 的环境中启动 `docker compose up -d postgres`。
+2. 设置 `UGC_DATABASE_MODE=jdbc` 后跑通完整接口回归。
+3. 再按需要决定是否保留 in-memory 作为默认模式。
