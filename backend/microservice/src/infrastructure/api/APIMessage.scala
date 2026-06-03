@@ -1,7 +1,9 @@
-package microservice.core
+package microservice.infrastructure.api
 
 import cats.effect.IO
 import java.sql.Connection
+import microservice.infrastructure.database.DatabaseSession
+import microservice.infrastructure.http.HttpError
 
 trait APIMessage[A] {
   def plan(connection: Connection): IO[Either[HttpError, A]]

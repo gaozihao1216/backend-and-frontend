@@ -1,6 +1,6 @@
 package microservice.level.api
 
-import microservice.core.HttpError
+import microservice.infrastructure.http.HttpError
 
 sealed trait CreateLevelApiError {
   def toHttpError: HttpError

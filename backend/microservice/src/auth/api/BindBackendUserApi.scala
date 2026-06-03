@@ -7,7 +7,9 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.auth.objects.BackendUser
 import microservice.auth.tables.{UserRow, UserTable}
-import microservice.core.{APIMessage, HttpError, RowMappers}
+import microservice.infrastructure.api.{APIMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{RowMappers}
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder

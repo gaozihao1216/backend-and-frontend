@@ -3,7 +3,8 @@ package microservice.admin.routes
 import cats.effect.IO
 import cats.syntax.semigroupk._
 import microservice.admin.director.routes.DirectorRouter
-import microservice.core.{DatabaseSession, HttpError}
+import microservice.infrastructure.database.{DatabaseSession}
+import microservice.infrastructure.http.{HttpError}
 import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes

@@ -2,7 +2,7 @@ package microservice.level.routes
 
 import cats.effect.IO
 import cats.syntax.semigroupk._
-import microservice.core.DatabaseSession
+import microservice.infrastructure.database.DatabaseSession
 import org.http4s.HttpRoutes
 
 object PlayerLevelRouter {

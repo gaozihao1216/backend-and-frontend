@@ -1,7 +1,7 @@
 package microservice.level.routes
 
 import cats.effect.IO
-import microservice.core.HttpError
+import microservice.infrastructure.http.HttpError
 import microservice.system.objects.LevelTag
 
 private[routes] object PlayerLevelRouteSupport {

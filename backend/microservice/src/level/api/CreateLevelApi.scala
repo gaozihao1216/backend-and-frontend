@@ -3,7 +3,9 @@ package microservice.level.api
 import cats.effect.IO
 import java.time.Instant
 import java.sql.Connection
-import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{AccessControl, RowMappers}
 import microservice.level.objects.{Level, LevelData}
 import microservice.level.tables.{LevelRow, LevelTable}
 import microservice.system.objects.LevelStatus

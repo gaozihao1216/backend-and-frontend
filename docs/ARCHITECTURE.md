@@ -60,6 +60,27 @@
 
 - `backend/microservice/src/Main.scala`: 启动入口。
 - `backend/microservice/src/routes`: 根路由挂载。
-- `backend/microservice/src/core`: 跨模块基础设施。
+- `backend/microservice/src/infrastructure`: 纯技术基础设施。
+- `backend/microservice/src/core`: 仍待继续拆分的跨模块业务连接/装配代码。
+
+## Infrastructure
+
+纯技术基础设施已经从旧 `core` 中拆出：
+
+- `backend/microservice/src/infrastructure/api`: API 执行抽象，例如 `APIMessage`、`APIWithTokenMessage`。
+- `backend/microservice/src/infrastructure/database`: 数据库连接和事务基础设施，例如 `DatabaseConfig`、`DatabaseSession`。
+- `backend/microservice/src/infrastructure/http`: HTTP 错误和统一错误响应，例如 `HttpError`。
+
+这些文件不应包含具体业务对象、业务表或业务权限规则。
+
+当前 `core` 中仍保留：
+
+- `AccessControl`
+- `RowMappers`
+- `SystemDefaults`
+- `SystemSeedData`
+- `InMemoryStore`
+
+这些文件仍然带有跨模块业务知识或启动装配职责，不属于纯技术基础设施。后续模块化重构时，应继续把它们拆回 `auth`、`level`、`bootstrap` 或 persistence 相关目录。
 
 完整 API 清单见 `docs/api-inventory.md`，完整对象清单见 `docs/object-inventory.md`。

@@ -2,7 +2,9 @@ package microservice.level.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{AccessControl, RowMappers}
 import microservice.level.objects.Level
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole

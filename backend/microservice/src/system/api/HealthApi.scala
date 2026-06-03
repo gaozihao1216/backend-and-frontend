@@ -4,7 +4,8 @@ import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
-import microservice.core.{APIMessage, HttpError}
+import microservice.infrastructure.api.{APIMessage}
+import microservice.infrastructure.http.{HttpError}
 
 final case class HealthResponse(
   status: String

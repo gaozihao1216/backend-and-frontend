@@ -1,4 +1,4 @@
-package microservice.core
+package microservice.infrastructure.database
 
 final case class DatabaseConfig(
   driver: String,

@@ -3,7 +3,9 @@ package microservice.admin.director.api
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.director.objects.DirectorPermissionSummary
-import microservice.core.{APIWithTokenMessage, AccessControl, HttpError}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{AccessControl}
 import microservice.system.objects.AdminLevel
 
 final case class GetDirectorPermissionsAPIMessage(

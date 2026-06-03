@@ -2,7 +2,8 @@ package microservice.admin.director.routes
 
 import cats.effect.IO
 import microservice.admin.director.api.GetDirectorPermissionsAPIMessage
-import microservice.core.{DatabaseSession, HttpError}
+import microservice.infrastructure.database.{DatabaseSession}
+import microservice.infrastructure.http.{HttpError}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._

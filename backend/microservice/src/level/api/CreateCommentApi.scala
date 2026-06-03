@@ -5,7 +5,9 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
-import microservice.core.{APIWithTokenMessage, AccessControl, HttpError, RowMappers}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{AccessControl, RowMappers}
 import microservice.level.objects.LevelComment
 import microservice.level.tables.{CommentRow, CommentTable}
 import microservice.level.utils.LevelApiSupport

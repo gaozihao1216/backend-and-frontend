@@ -3,7 +3,9 @@ package microservice.admin.api
 import cats.effect.IO
 import java.sql.Connection
 import microservice.auth.tables.UserTable
-import microservice.core.{APIWithTokenMessage, HttpError, RowMappers}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{RowMappers}
 import microservice.level.objects.SubmissionWithLevel
 import microservice.level.tables.{LevelTable, SubmissionTable}
 import microservice.system.objects.UserRole

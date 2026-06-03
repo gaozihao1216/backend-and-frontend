@@ -1,6 +1,6 @@
 package microservice.admin.api
 
-import microservice.core.HttpError
+import microservice.infrastructure.http.HttpError
 import microservice.system.objects.SubmissionStatus
 
 sealed trait AdminReviewApiError {

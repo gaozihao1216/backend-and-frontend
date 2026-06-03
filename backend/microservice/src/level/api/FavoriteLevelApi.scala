@@ -3,7 +3,9 @@ package microservice.level.api
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.core.{APIWithTokenMessage, AccessControl, HttpError}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{AccessControl}
 import microservice.level.objects.Favorite
 import microservice.level.tables.FavoriteTable
 import microservice.level.utils.LevelApiSupport

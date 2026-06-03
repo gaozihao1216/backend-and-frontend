@@ -1,7 +1,8 @@
 package microservice.level.routes
 
 import cats.effect.IO
-import microservice.core.{DatabaseSession, HttpError}
+import microservice.infrastructure.database.{DatabaseSession}
+import microservice.infrastructure.http.{HttpError}
 import microservice.level.api._
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes

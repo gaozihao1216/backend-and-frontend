@@ -2,7 +2,7 @@ package microservice.routes
 
 import cats.effect.IO
 import microservice.admin.routes.AdminRouter
-import microservice.core.DatabaseSession
+import microservice.infrastructure.database.DatabaseSession
 import microservice.auth.routes.AuthRouter
 import microservice.level.routes.{DesignerLevelRouter, PlayerLevelRouter}
 import microservice.user.routes.UserRouter

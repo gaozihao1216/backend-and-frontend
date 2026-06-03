@@ -1,4 +1,4 @@
-package microservice.core
+package microservice.infrastructure.database
 
 import cats.effect.IO
 import java.sql.Connection

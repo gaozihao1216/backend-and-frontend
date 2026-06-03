@@ -1,6 +1,7 @@
 package microservice.core
 
 import microservice.auth.tables.{UserRow, UserTable}
+import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, UserRole}
 import java.sql.Connection
 

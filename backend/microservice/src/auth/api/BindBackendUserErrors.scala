@@ -1,6 +1,6 @@
 package microservice.auth.api
 
-import microservice.core.HttpError
+import microservice.infrastructure.http.HttpError
 
 sealed trait BindBackendUserApiError {
   def toHttpError: HttpError

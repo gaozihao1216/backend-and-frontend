@@ -1,4 +1,4 @@
-package microservice.core
+package microservice.infrastructure.http
 
 import cats.effect.IO
 import microservice.system.objects.{ApiFailure, ErrorBody}

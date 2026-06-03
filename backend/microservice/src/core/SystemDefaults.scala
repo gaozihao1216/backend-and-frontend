@@ -3,6 +3,7 @@ package microservice.core
 import cats.effect.IO
 import java.time.Instant
 import microservice.auth.tables.UserTable
+import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable, SubmissionTable}
 import microservice.routes.ApiRouter
 import org.http4s.HttpRoutes

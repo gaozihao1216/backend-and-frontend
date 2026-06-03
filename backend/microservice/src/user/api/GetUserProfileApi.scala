@@ -3,7 +3,9 @@ package microservice.user.api
 import cats.effect.IO
 import java.sql.Connection
 import microservice.auth.tables.UserTable
-import microservice.core.{APIWithTokenMessage, HttpError, RowMappers}
+import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.http.{HttpError}
+import microservice.core.{RowMappers}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable}
 import microservice.user.objects.UserProfile
 import microservice.user.objects.UserProfileStats
