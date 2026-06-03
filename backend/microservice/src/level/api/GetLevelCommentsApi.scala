@@ -8,11 +8,6 @@ import microservice.level.tables.CommentTable
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole
 
-final case class GetLevelCommentsRequest(
-  playerId: String,
-  levelId: String
-)
-
 final case class GetLevelCommentsAPIMessage(
   playerId: String,
   levelId: String

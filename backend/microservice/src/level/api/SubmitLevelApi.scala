@@ -23,25 +23,6 @@ object SubmitLevelBody {
   implicit val entityDecoder: EntityDecoder[IO, SubmitLevelBody] = jsonOf
 }
 
-final case class SubmitLevelRequest(
-  designerId: String,
-  levelId: String
-)
-
-object SubmitLevelRequest {
-  implicit val encoder: Encoder[SubmitLevelRequest] = deriveEncoder
-  implicit val decoder: Decoder[SubmitLevelRequest] = deriveDecoder
-}
-
-final case class SubmitLevelResponse(
-  submission: Submission
-)
-
-object SubmitLevelResponse {
-  implicit val encoder: Encoder[SubmitLevelResponse] = deriveEncoder
-  implicit val decoder: Decoder[SubmitLevelResponse] = deriveDecoder
-}
-
 final case class SubmitLevelAPIMessage(
   designerId: String,
   body: SubmitLevelBody

@@ -3,5 +3,7 @@ package microservice.core
 final case class DatabaseConfig(
   driver: String,
   url: String,
-  schema: String
+  schema: String,
+  username: Option[String] = None,
+  password: Option[String] = None
 )

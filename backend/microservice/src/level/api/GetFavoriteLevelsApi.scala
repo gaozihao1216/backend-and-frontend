@@ -7,10 +7,6 @@ import microservice.level.objects.FavoriteWithLevel
 import microservice.level.tables.FavoriteTable
 import microservice.system.objects.UserRole
 
-final case class GetFavoriteLevelsRequest(
-  playerId: String
-)
-
 final case class GetFavoriteLevelsAPIMessage(
   playerId: String
 ) extends APIWithTokenMessage[List[FavoriteWithLevel]] {

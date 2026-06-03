@@ -8,12 +8,6 @@ import microservice.level.tables.LevelTable
 import microservice.system.objects.LevelTag
 import microservice.system.objects.UserRole
 
-final case class GetPublishedLevelsRequest(
-  playerId: String,
-  tag: Option[LevelTag],
-  sort: String
-)
-
 final case class GetPublishedLevelsAPIMessage(
   playerId: String,
   tag: Option[LevelTag],

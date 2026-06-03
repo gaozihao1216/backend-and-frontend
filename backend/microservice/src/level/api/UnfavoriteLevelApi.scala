@@ -8,11 +8,6 @@ import microservice.level.tables.FavoriteTable
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole
 
-final case class UnfavoriteLevelRequest(
-  playerId: String,
-  levelId: String
-)
-
 final case class UnfavoriteLevelAPIMessage(
   playerId: String,
   levelId: String

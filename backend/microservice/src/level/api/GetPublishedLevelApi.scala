@@ -7,11 +7,6 @@ import microservice.level.objects.Level
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole
 
-final case class GetPublishedLevelRequest(
-  playerId: String,
-  levelId: String
-)
-
 final case class GetPublishedLevelAPIMessage(
   playerId: String,
   levelId: String

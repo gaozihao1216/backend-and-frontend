@@ -26,15 +26,6 @@ object ReviewSubmissionBody {
   implicit val entityDecoder: EntityDecoder[IO, ReviewSubmissionBody] = jsonOf
 }
 
-final case class ReviewSubmissionResponse(
-  submission: ReviewedSubmission
-)
-
-object ReviewSubmissionResponse {
-  implicit val encoder: Encoder[ReviewSubmissionResponse] = deriveEncoder
-  implicit val decoder: Decoder[ReviewSubmissionResponse] = deriveDecoder
-}
-
 final case class ReviewSubmissionAPIMessage(
   userId: String,
   submissionId: String,

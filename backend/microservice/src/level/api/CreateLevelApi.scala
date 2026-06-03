@@ -14,19 +14,6 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-final case class CreateLevelRequest(
-  designerId: String,
-  title: String,
-  description: String,
-  tags: List[LevelTag],
-  data: LevelData
-)
-
-object CreateLevelRequest {
-  implicit val encoder: Encoder[CreateLevelRequest] = deriveEncoder
-  implicit val decoder: Decoder[CreateLevelRequest] = deriveDecoder
-}
-
 final case class CreateLevelBody(
   title: String,
   description: String,
@@ -38,15 +25,6 @@ object CreateLevelBody {
   implicit val encoder: Encoder[CreateLevelBody] = deriveEncoder
   implicit val decoder: Decoder[CreateLevelBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, CreateLevelBody] = jsonOf
-}
-
-final case class CreateLevelResponse(
-  level: Level
-)
-
-object CreateLevelResponse {
-  implicit val encoder: Encoder[CreateLevelResponse] = deriveEncoder
-  implicit val decoder: Decoder[CreateLevelResponse] = deriveDecoder
 }
 
 final case class CreateLevelAPIMessage(

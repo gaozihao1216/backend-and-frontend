@@ -9,11 +9,6 @@ import microservice.level.tables.FavoriteTable
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole
 
-final case class FavoriteLevelRequest(
-  playerId: String,
-  levelId: String
-)
-
 final case class FavoriteLevelAPIMessage(
   playerId: String,
   levelId: String

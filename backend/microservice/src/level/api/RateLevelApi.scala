@@ -13,17 +13,6 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-final case class RateLevelRequest(
-  playerId: String,
-  levelId: String,
-  score: Int
-)
-
-object RateLevelRequest {
-  implicit val encoder: Encoder[RateLevelRequest] = deriveEncoder
-  implicit val decoder: Decoder[RateLevelRequest] = deriveDecoder
-}
-
 final case class RateLevelBody(
   score: Int
 )
@@ -32,15 +21,6 @@ object RateLevelBody {
   implicit val encoder: Encoder[RateLevelBody] = deriveEncoder
   implicit val decoder: Decoder[RateLevelBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, RateLevelBody] = jsonOf
-}
-
-final case class RateLevelResponse(
-  rating: Rating
-)
-
-object RateLevelResponse {
-  implicit val encoder: Encoder[RateLevelResponse] = deriveEncoder
-  implicit val decoder: Decoder[RateLevelResponse] = deriveDecoder
 }
 
 final case class RateLevelAPIMessage(

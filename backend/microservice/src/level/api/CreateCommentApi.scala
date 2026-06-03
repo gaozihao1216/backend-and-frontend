@@ -23,12 +23,6 @@ object CreateCommentBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateCommentBody] = jsonOf
 }
 
-final case class CreateCommentRequest(
-  playerId: String,
-  levelId: String,
-  content: String
-)
-
 final case class CreateCommentAPIMessage(
   playerId: String,
   levelId: String,
