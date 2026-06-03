@@ -1,11 +1,9 @@
 package microservice.admin.routes
 
 import cats.effect.IO
-import cats.syntax.semigroupk._
-import microservice.admin.director.routes.DirectorRouter
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{HttpError}
-import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody}
+import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetDirectorPermissionsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
@@ -13,9 +11,6 @@ import org.http4s.dsl.io._
 
 object AdminRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
-    coreRoutes(databaseSession) <+> DirectorRouter.routes(databaseSession)
-
-  private def coreRoutes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ GET -> Root / "comments" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
@@ -59,6 +54,17 @@ object AdminRouter {
                 .run(databaseSession)
                 .flatMap(result => HttpError.fromEither(result.map(submission => ApiSuccess(submission))))
             }
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ GET -> Root / "director" / "permissions" =>
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            GetDirectorPermissionsAPIMessage(currentUserId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(summary => ApiSuccess(summary))))
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }

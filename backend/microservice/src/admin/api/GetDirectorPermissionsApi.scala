@@ -1,8 +1,8 @@
-package microservice.admin.director.api
+package microservice.admin.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.admin.director.objects.DirectorPermissionSummary
+import microservice.admin.objects.DirectorPermissionSummary
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl

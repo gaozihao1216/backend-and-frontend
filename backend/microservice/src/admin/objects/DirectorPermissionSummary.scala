@@ -1,4 +1,4 @@
-package microservice.admin.director.objects
+package microservice.admin.objects
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
