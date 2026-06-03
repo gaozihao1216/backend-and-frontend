@@ -3,7 +3,7 @@ package microservice.admin.routes
 import cats.effect.IO
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{HttpError}
-import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetDirectorPermissionsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody}
+import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetDirectorPermissionsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody, TransferDirectorPermissionAPIMessage, TransferDirectorPermissionBody}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
@@ -65,6 +65,19 @@ object AdminRouter {
             GetDirectorPermissionsAPIMessage(currentUserId)
               .run(databaseSession)
               .flatMap(result => HttpError.fromEither(result.map(summary => ApiSuccess(summary))))
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ POST -> Root / "director" / "transfer" =>
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            req.as[TransferDirectorPermissionBody].flatMap { body =>
+              TransferDirectorPermissionAPIMessage(currentUserId, body)
+                .run(databaseSession)
+                .flatMap(result => HttpError.fromEither(result.map(transfer => ApiSuccess(transfer))))
+            }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }

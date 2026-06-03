@@ -1,6 +1,6 @@
 package microservice.auth.tables
 
-import microservice.system.objects.UserRole
+import microservice.system.objects.{AdminLevel, UserRole}
 import java.sql.Connection
 
 private[tables] object UserTableJdbc {
@@ -21,4 +21,7 @@ private[tables] object UserTableJdbc {
 
   def insert(connection: Connection, row: UserRow): UserRow =
     UserTableJdbcWrite.insert(connection, row)
+
+  def updateAdminLevel(connection: Connection, userId: String, adminLevel: Option[AdminLevel], updatedAt: String): Option[UserRow] =
+    UserTableJdbcWrite.updateAdminLevel(connection, userId, adminLevel, updatedAt)
 }

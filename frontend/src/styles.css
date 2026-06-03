@@ -1905,6 +1905,30 @@ fieldset {
   min-height: 100%;
 }
 
+.director-option-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.director-option-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.director-option-row h3,
+.director-option-row p {
+  margin: 0;
+}
+
+.director-transfer-panel {
+  margin-left: 1rem;
+  border-left: 4px solid rgba(127, 160, 79, 0.42);
+}
+
 .feature-stack,
 .feature-metrics {
   display: grid;

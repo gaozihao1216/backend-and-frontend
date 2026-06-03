@@ -22,6 +22,14 @@ const parseApiResponse = async <T>(
   try {
     payload = JSON.parse(rawBody) as unknown;
   } catch {
+    if (!response.ok) {
+      const responseUrl = response.url || "the request";
+      const bodyHint = rawBody.trim() ? ` Response body: ${rawBody.trim()}` : "";
+      throw new Error(
+        `Backend returned ${response.status} ${response.statusText} for ${responseUrl}. The route may be missing from the running backend; restart the backend and try again.${bodyHint}`,
+      );
+    }
+
     throw new Error(
       `Backend returned a non-JSON response (${response.status} ${response.statusText}, content-type: ${contentType}).`,
     );

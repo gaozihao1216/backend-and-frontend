@@ -27,4 +27,22 @@ private[tables] object UserTableInMemory {
     InMemoryStore.users = InMemoryStore.users :+ row
     row
   }
+
+  def updateAdminLevel(userId: String, adminLevel: Option[AdminLevel], updatedAt: String): Option[UserRow] = {
+    InMemoryStore.users.indexWhere(_.id == userId) match {
+      case -1 => None
+      case index =>
+        val existing = InMemoryStore.users(index)
+        if (
+          existing.role == UserRole.Admin &&
+          adminLevel.contains(AdminLevel.Director) &&
+          InMemoryStore.users.exists(user => user.id != userId && user.role == UserRole.Admin && user.adminLevel.contains(AdminLevel.Director))
+        ) {
+          throw new IllegalStateException("Only one director admin is allowed")
+        }
+        val updated = existing.copy(adminLevel = if (existing.role == UserRole.Admin) adminLevel else None, updatedAt = updatedAt)
+        InMemoryStore.users = InMemoryStore.users.updated(index, updated)
+        Some(updated)
+    }
+  }
 }

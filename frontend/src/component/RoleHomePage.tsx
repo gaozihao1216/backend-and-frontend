@@ -5,7 +5,6 @@ import { LevelPreviewCard } from "./level/LevelPreviewCard.js";
 import { AdminPage } from "../page/AdminPage.js";
 import { DesignerBirdLabPage } from "../page/DesignerBirdLabPage.js";
 import { DesignerPage } from "../page/DesignerPage/index.js";
-import { DirectorWorkbenchPage } from "../page/DirectorWorkbenchPage.js";
 import { PlayerPage } from "../page/PlayerPage.js";
 import { getStarterLevelSource } from "../lib/level-repository.js";
 
@@ -142,6 +141,7 @@ const CHECK_IN_REWARD = {
 const OWN_PAGE_PATH = "/own_page";
 const COMMUNITY_HALL_PATH = "/community_hall";
 const PLAYER_SHOP_PATH = "/player_shop";
+const DIRECTOR_CONSOLE_PATH = "/director_console";
 
 const createChainLinks = () =>
   chainLevels.slice(0, -1).flatMap((level, index) => {
@@ -349,11 +349,7 @@ const renderDetailContent = (
         <BackendBindingPanel title="提案处理" user={user} onBound={onUserUpdated} />
       );
     case "admin-director":
-      return hasBoundApiUser && user.apiUserId ? (
-        <DirectorWorkbenchPage userId={user.apiUserId} />
-      ) : (
-        <BackendBindingPanel title="总监工作台" user={user} onBound={onUserUpdated} />
-      );
+      return null;
   }
 };
 
@@ -417,6 +413,12 @@ export const RoleHomePage = ({
 
     if (nextView === "player-shop") {
       onNavigate(PLAYER_SHOP_PATH);
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "admin-director") {
+      onNavigate(DIRECTOR_CONSOLE_PATH);
       setActionOpen(false);
       return;
     }

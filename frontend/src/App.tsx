@@ -9,6 +9,7 @@ import { DesignerPage } from "./page/DesignerPage/index.js";
 import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
 import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
+import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { UserProfilePage } from "./page/UserProfilePage.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
 
@@ -24,6 +25,7 @@ const DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX = "/json_check";
 const OWN_PAGE_PATH = "/own_page";
 const COMMUNITY_HALL_PATH = "/community_hall";
 const PLAYER_SHOP_PATH = "/player_shop";
+const DIRECTOR_CONSOLE_PATH = "/director_console";
 
 const readPathname = () => window.location.pathname;
 
@@ -180,6 +182,21 @@ export const App = () => {
       return <PlayerShopPage />;
     }
 
+    if (pathname === DIRECTOR_CONSOLE_PATH) {
+      if (user.role !== "admin") {
+        return (
+          <section className="panel">
+            <h2>总监控制台</h2>
+            <p className="panel-copy">当前账号不是管理员，无法访问总监控制台。</p>
+          </section>
+        );
+      }
+
+      return renderBoundPage(user, "总监控制台", (apiUserId) => (
+        <DirectorWorkbenchPage userId={apiUserId} currentNickname={user.nickname} />
+      ));
+    }
+
     return null;
   };
 
@@ -189,8 +206,10 @@ export const App = () => {
       ? "个人主页"
       : pathname === COMMUNITY_HALL_PATH
         ? "社区"
-        : pathname === PLAYER_SHOP_PATH
+      : pathname === PLAYER_SHOP_PATH
           ? "玩家商店"
+          : pathname === DIRECTOR_CONSOLE_PATH
+            ? "总监控制台"
           : "";
 
   return (

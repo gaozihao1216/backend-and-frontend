@@ -18,6 +18,7 @@ import {
 } from "../lib/level-contracts.js";
 import { BackendUserSchema, type BackendUser } from "../objects/auth/backend-user.js";
 import { DirectorPermissionSummarySchema, type DirectorPermissionSummary as DirectorPermissionSummaryObject } from "../objects/admin/director-permission-summary.js";
+import { DirectorTransferResultSchema, type DirectorTransferResult as DirectorTransferResultObject } from "../objects/admin/director-transfer-result.js";
 import { ReviewedSubmissionSchema, type ReviewedSubmission as ReviewedSubmissionObject } from "../objects/admin/reviewed-submission.js";
 import { FavoriteSchema, type Favorite } from "../objects/level/favorite.js";
 import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/favorite-with-level.js";
@@ -51,6 +52,7 @@ export type SubmissionWithLevel = SubmissionWithLevelObject;
 export type ReviewedSubmission = ReviewedSubmissionObject;
 export type AdminComment = Comment;
 export type DirectorPermissionSummary = DirectorPermissionSummaryObject;
+export type DirectorTransferResult = DirectorTransferResultObject;
 export type ApiUserProfile = UserProfileObject;
 
 export const GetBackendUsersRequestQuerySchema = z.object({});
@@ -144,4 +146,10 @@ export const ReviewSubmissionResponseDataSchema = ReviewedSubmissionSchema;
 
 export const GetDirectorPermissionsRequestQuerySchema = z.object({});
 export const GetDirectorPermissionsResponseDataSchema = DirectorPermissionSummarySchema;
+
+export const TransferDirectorPermissionRequestBodySchema = z.object({
+  targetAdminId: z.string().min(1),
+});
+export type TransferDirectorPermissionRequestBody = z.infer<typeof TransferDirectorPermissionRequestBodySchema>;
+export const TransferDirectorPermissionResponseDataSchema = DirectorTransferResultSchema;
 

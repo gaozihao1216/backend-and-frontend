@@ -1,6 +1,6 @@
 package microservice.auth.tables
 
-import microservice.system.objects.UserRole
+import microservice.system.objects.{AdminLevel, UserRole}
 import java.sql.Connection
 
 object UserTable {
@@ -43,5 +43,12 @@ object UserTable {
       UserTableInMemory.insert(row)
     } else {
       UserTableJdbc.insert(connection, row)
+    }
+
+  def updateAdminLevel(connection: Connection, userId: String, adminLevel: Option[AdminLevel], updatedAt: String): Option[UserRow] =
+    if (isInMemory(connection)) {
+      UserTableInMemory.updateAdminLevel(userId, adminLevel, updatedAt)
+    } else {
+      UserTableJdbc.updateAdminLevel(connection, userId, adminLevel, updatedAt)
     }
 }
