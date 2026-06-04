@@ -1,5 +1,13 @@
 import { PageConfigSchema, type PageConfig, type UiEndpoint } from "./page-config.js";
 
+const buttonPosition = (rowIndex: number) => ({
+  unit: "percent" as const,
+  x: 4,
+  y: 4 + rowIndex * 9,
+  width: 20,
+  height: 7,
+});
+
 const createPageConfig = (
   id: string,
   name: string,
@@ -23,7 +31,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "个人主页",
       icon: "user",
-      position: { x: 24, y: 24, width: 144, height: 44 },
+      position: buttonPosition(0),
       action: { type: "navigate", targetPageId: "shared.profile", targetPath: "/own_page" },
     },
     {
@@ -31,7 +39,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "社区大厅",
       icon: "message-circle",
-      position: { x: 24, y: 80, width: 144, height: 44 },
+      position: buttonPosition(1),
       action: { type: "navigate", targetPageId: "player.community", targetPath: "/community_hall" },
     },
     {
@@ -39,7 +47,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "玩家商店",
       icon: "shopping-bag",
-      position: { x: 24, y: 136, width: 144, height: 44 },
+      position: buttonPosition(2),
       action: { type: "navigate", targetPageId: "player.shop", targetPath: "/player_shop" },
     },
   ]),
@@ -52,7 +60,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "个人主页",
       icon: "user",
-      position: { x: 24, y: 24, width: 144, height: 44 },
+      position: buttonPosition(0),
       action: { type: "navigate", targetPageId: "shared.profile", targetPath: "/own_page" },
     },
     {
@@ -60,7 +68,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "创造地图",
       icon: "map",
-      position: { x: 24, y: 80, width: 144, height: 44 },
+      position: buttonPosition(1),
       action: { type: "navigate", targetPageId: "designer.design", targetPath: "/designer/design" },
     },
   ]),
@@ -82,7 +90,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "个人主页",
       icon: "user",
-      position: { x: 24, y: 24, width: 144, height: 44 },
+      position: buttonPosition(0),
       action: { type: "navigate", targetPageId: "shared.profile", targetPath: "/own_page" },
     },
     {
@@ -90,7 +98,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "社区管理",
       icon: "messages-square",
-      position: { x: 24, y: 80, width: 144, height: 44 },
+      position: buttonPosition(1),
       action: { type: "navigate", targetPageId: "admin.community", targetPath: "/community_hall" },
     },
     {
@@ -98,7 +106,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "提案处理",
       icon: "clipboard-check",
-      position: { x: 24, y: 136, width: 144, height: 44 },
+      position: buttonPosition(2),
       action: { type: "navigate", targetPageId: "admin.proposals", targetPath: "/admin/proposals" },
     },
   ]),
@@ -111,7 +119,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "个人主页",
       icon: "user",
-      position: { x: 24, y: 24, width: 144, height: 44 },
+      position: buttonPosition(0),
       action: { type: "navigate", targetPageId: "shared.profile", targetPath: "/own_page" },
     },
     {
@@ -119,7 +127,7 @@ export const defaultPageConfigs = [
       type: "button",
       label: "总监工作台",
       icon: "settings",
-      position: { x: 24, y: 80, width: 144, height: 44 },
+      position: buttonPosition(1),
       action: { type: "navigate", targetPageId: "director.workbench", targetPath: "/director_console" },
     },
   ]),
