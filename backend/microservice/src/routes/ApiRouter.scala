@@ -6,6 +6,7 @@ import microservice.infrastructure.database.DatabaseSession
 import microservice.auth.routes.AuthRouter
 import microservice.level.routes.{DesignerLevelRouter, PlayerLevelRouter}
 import microservice.user.routes.UserRouter
+import microservice.ui.routes.UiCustomizationRouter
 import org.http4s.HttpRoutes
 import org.http4s.server.Router
 
@@ -17,6 +18,7 @@ object ApiRouter {
       "/users" -> UserRouter.routes(databaseSession),
       "/designer" -> DesignerLevelRouter.routes(databaseSession),
       "/player" -> PlayerLevelRouter.routes(databaseSession),
+      "/admin/director/ui" -> UiCustomizationRouter.routes(databaseSession),
       "/admin" -> AdminRouter.routes(databaseSession)
     )
 }

@@ -6,6 +6,7 @@ import microservice.auth.tables.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable, SubmissionTable}
 import microservice.routes.ApiRouter
+import microservice.ui.tables.UiPageTable
 import org.http4s.HttpRoutes
 
 object SystemDefaults {
@@ -41,6 +42,7 @@ object SystemDefaults {
         RatingTable.initialize(connection)
         CommentTable.initialize(connection)
         FavoriteTable.initialize(connection)
+        UiPageTable.initialize(connection)
       }
     }
 }
