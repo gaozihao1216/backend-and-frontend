@@ -142,6 +142,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
   const [selectedRoute, setSelectedRoute] = useState<SelectedRoute>(() => routeTrees.player);
   const [editingConfig, setEditingConfig] = useState<PageConfig | null>(() => getEditablePageConfig(routeTrees.player.pageId));
   const [saveMessage, setSaveMessage] = useState("");
+  const [optimizeError, setOptimizeError] = useState("");
   const [manualOpen, setManualOpen] = useState(false);
   const selectedTree = routeTrees[selectedEndpoint];
   const selectedRouteIsDynamic = isDynamicPath(selectedRoute.path);
@@ -151,6 +152,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
     setSelectedRoute(route);
     setEditingConfig(getEditablePageConfig(route.pageId));
     setSaveMessage("");
+    setOptimizeError("");
   };
 
   const handleEndpointChange = (endpoint: UiEndpoint) => {
@@ -183,6 +185,23 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
     const savedConfig = savePageConfig(editingConfig);
     setEditingConfig(structuredClone(savedConfig));
     setSaveMessage("配置已保存到本地。");
+  };
+
+  const handleOptimizeSelectedPage = () => {
+    setOptimizeError("");
+
+    if (!editingConfig) {
+      setOptimizeError("该页面还没有动态页面配置，无法优化。");
+      return;
+    }
+
+    if (selectedRouteIsDynamic) {
+      setOptimizeError("动态模板页面需要具体页面实例后才能优化。");
+      return;
+    }
+
+    const updateBasePath = selectedRoute.path === "/" ? "" : selectedRoute.path;
+    onNavigate(`${updateBasePath}/update?pageId=${encodeURIComponent(selectedRoute.pageId)}`);
   };
 
   return (
@@ -266,7 +285,15 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
           >
             进入该界面
           </button>
+          <button
+            type="button"
+            onClick={handleOptimizeSelectedPage}
+            disabled={selectedRouteIsDynamic}
+          >
+            优化所选界面
+          </button>
         </div>
+        {optimizeError ? <p className="feedback error">{optimizeError}</p> : null}
       </section>
 
       <section className="director-ui-config-panel">

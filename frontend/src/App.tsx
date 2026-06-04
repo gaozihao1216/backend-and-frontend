@@ -10,8 +10,10 @@ import { AdminPage } from "./page/AdminPage.js";
 import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
 import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
+import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
+import { DynamicPageHost } from "./page/DynamicPageHost.js";
 import { UserProfilePage } from "./page/UserProfilePage.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
 
@@ -30,14 +32,18 @@ const PLAYER_SHOP_PATH = "/player_shop";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
+const DYNAMIC_PAGE_PATH = "/dynamic_page";
+const PAGE_BUILDER_UPDATE_SUFFIX = "/update";
 
 const readPathname = () => window.location.pathname;
+const readSearch = () => window.location.search;
 
 export const App = () => {
   // 认证用户会缓存在本地存储里，刷新后尽量恢复会话。
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => readPersistedAuthUser());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pathname, setPathname] = useState(readPathname);
+  const [search, setSearch] = useState(readSearch);
 
   useEffect(() => {
     // 每次用户变化后立即持久化，避免刷新丢失当前登录角色。
@@ -45,7 +51,10 @@ export const App = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    const handlePopState = () => setPathname(readPathname());
+    const handlePopState = () => {
+      setPathname(readPathname());
+      setSearch(readSearch());
+    };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
@@ -57,7 +66,8 @@ export const App = () => {
     }
 
     window.history.pushState({}, "", nextPath);
-    setPathname(nextPath);
+    setPathname(readPathname());
+    setSearch(readSearch());
   };
 
   const renderDesignerRoute = (user: AuthUser) => {
@@ -146,6 +156,34 @@ export const App = () => {
     );
 
   const renderStandaloneRoute = (user: AuthUser) => {
+    if (pathname === DYNAMIC_PAGE_PATH) {
+      const searchParams = new URLSearchParams(search);
+      const pageId = searchParams.get("pageId") ?? "designer.home";
+      const useDefaultConfig = searchParams.get("source") === "default";
+      return <DynamicPageHost pageId={pageId} useDefaultConfig={useDefaultConfig} onNavigate={navigate} />;
+    }
+
+    if (pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)) {
+      if (user.role !== "admin" || user.adminLevel !== "director") {
+        return (
+          <section className="panel">
+            <h2>页面优化</h2>
+            <p className="panel-copy">当前账号不是总监管理员，无法访问页面可视化编辑器。</p>
+          </section>
+        );
+      }
+
+      const pageId = new URLSearchParams(search).get("pageId");
+      const targetPath = pathname.slice(0, -PAGE_BUILDER_UPDATE_SUFFIX.length) || "/";
+      return (
+        <DirectorPageBuilderPage
+          pageId={pageId}
+          targetPath={targetPath}
+          onBack={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
+        />
+      );
+    }
+
     if (pathname === OWN_PAGE_PATH) {
       return renderBoundPage(user, "个人主页", (apiUserId) => (
         <UserProfilePage viewerUserId={apiUserId} profileUserId={apiUserId} />
@@ -232,7 +270,11 @@ export const App = () => {
     && currentUser.adminLevel === "director"
     && pathname !== DIRECTOR_UI_CUSTOMIZATION_PATH;
   const standaloneTitle =
-    pathname === OWN_PAGE_PATH
+    pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)
+      ? "页面优化"
+      : pathname === DYNAMIC_PAGE_PATH
+        ? "动态页面"
+      : pathname === OWN_PAGE_PATH
       ? "个人主页"
       : pathname === COMMUNITY_HALL_PATH
         ? "社区"

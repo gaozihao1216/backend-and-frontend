@@ -2191,6 +2191,308 @@ fieldset {
   overflow-wrap: anywhere;
 }
 
+.dynamic-ui-page {
+  position: relative;
+  min-height: 460px;
+  overflow: hidden;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(18, 32, 47, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 32, 47, 0.035) 1px, transparent 1px),
+    #f7faf5;
+  background-size: 32px 32px;
+}
+
+.dynamic-ui-button {
+  display: inline-flex;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(18, 32, 47, 0.12);
+  border-radius: 10px;
+  padding: 0.35rem 0.5rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-shadow: none;
+  z-index: 5;
+}
+
+.dynamic-ui-button.active-panel-trigger {
+  z-index: 30;
+}
+
+.dynamic-ui-button.primary {
+  background: #12202f;
+  color: #fff8ef;
+}
+
+.dynamic-ui-button.secondary {
+  background: #eef5ef;
+  color: #446154;
+}
+
+.dynamic-ui-button.ghost {
+  background: rgba(255, 255, 255, 0.66);
+  color: #12202f;
+}
+
+.dynamic-ui-button-icon {
+  font-size: 0.78rem;
+  opacity: 0.76;
+}
+
+.dynamic-ui-text {
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 0.5rem;
+  color: #344944;
+}
+
+.dynamic-ui-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(18, 32, 47, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 253, 250, 0.92);
+  box-shadow: 0 14px 32px rgba(18, 32, 47, 0.08);
+}
+
+.dynamic-ui-panel.no-header {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.dynamic-ui-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(18, 32, 47, 0.08);
+  padding: 0.55rem 0.65rem;
+}
+
+.dynamic-ui-panel-header button {
+  padding: 0.32rem 0.58rem;
+}
+
+.dynamic-ui-panel-content {
+  position: relative;
+  height: 100%;
+  min-height: 100%;
+}
+
+.dynamic-ui-panel.floating {
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.dynamic-page-host {
+  display: grid;
+  gap: 1rem;
+}
+
+.dynamic-page-host-header {
+  align-items: flex-start;
+}
+
+.dynamic-page-host-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  color: #66867c;
+}
+
+.dynamic-page-host-meta span,
+.dynamic-page-host-meta code {
+  border-radius: 999px;
+  background: rgba(18, 32, 47, 0.06);
+  padding: 0.2rem 0.55rem;
+}
+
+.dynamic-page-host-canvas {
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 16px;
+  background: #eef5ef;
+  padding: 1rem;
+}
+
+.dynamic-page-host-canvas .dynamic-ui-page {
+  min-height: 520px;
+}
+
+.page-builder-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.page-builder-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.page-builder-toolbar h2,
+.page-builder-toolbar p,
+.page-builder-sidebar h3,
+.page-builder-inspector h3 {
+  margin: 0;
+}
+
+.page-builder-layout {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.page-builder-preview-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.page-builder-preview-meta > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 12px;
+  background: #fffdfa;
+  padding: 0.65rem 0.75rem;
+}
+
+.page-builder-preview-meta span {
+  flex: 0 0 auto;
+  color: #66867c;
+  font-size: 0.88rem;
+}
+
+.page-builder-preview-meta strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: #12202f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-builder-preview-meta code {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  padding: 0.18rem 0.4rem;
+  color: #3e544f;
+  overflow-wrap: anywhere;
+}
+
+.page-builder-canvas-panel {
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.page-builder-canvas-panel {
+  min-width: 0;
+}
+
+.page-builder-canvas {
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(18, 32, 47, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 32, 47, 0.04) 1px, transparent 1px),
+    #eef5ef;
+  background-size: 32px 32px;
+  padding: 2rem;
+}
+
+.page-builder-nested-page {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: min(920px, 100%);
+  overflow: hidden;
+  border: 2px solid rgba(18, 32, 47, 0.18);
+  border-radius: 18px;
+  background: #fffdfa;
+  box-shadow: 0 18px 44px rgba(18, 32, 47, 0.1);
+}
+
+.page-builder-render-surface {
+  aspect-ratio: var(--page-preview-aspect-ratio, 16 / 9);
+  min-height: 0;
+  padding: 1rem;
+}
+
+.page-builder-render-surface.page-builder-actual-preview-surface {
+  aspect-ratio: auto;
+}
+
+.page-builder-render-surface .dynamic-ui-page {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.page-builder-actual-page-frame {
+  pointer-events: none;
+}
+
+.page-builder-actual-page-frame .panel {
+  margin: 0;
+}
+
+.page-builder-preview-error {
+  border-style: dashed;
+}
+
+.page-builder-preview-error code {
+  display: inline-block;
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  padding: 0.25rem 0.45rem;
+}
+
+.page-builder-preview-note {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(18, 32, 47, 0.1);
+  padding: 0.75rem 1rem;
+  color: #66867c;
+  font-size: 0.9rem;
+}
+
+.page-builder-preview-note span {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .page-builder-toolbar {
+    flex-direction: column;
+  }
+
+  .page-builder-preview-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .director-ui-endpoint-grid,
   .director-ui-config-summary,

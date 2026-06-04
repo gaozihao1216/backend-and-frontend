@@ -55,6 +55,9 @@ export const listPageConfigsByEndpoint = (endpoint: UiEndpoint): PageConfig[] =>
 export const getPageConfig = (pageId: string): PageConfig | null =>
   listPageConfigs().find((config) => config.id === pageId) ?? null;
 
+export const getDefaultPageConfig = (pageId: string): PageConfig | null =>
+  getDefaultPageConfigs().find((config) => config.id === pageId) ?? null;
+
 export const savePageConfig = (config: PageConfig): PageConfig => {
   const parsedConfig = PageConfigSchema.parse(config);
   const storedConfigs = getStoredPageConfigs();

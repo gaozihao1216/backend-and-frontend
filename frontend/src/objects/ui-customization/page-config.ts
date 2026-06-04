@@ -32,6 +32,7 @@ export const ComponentStyleSchema = z.object({
   backgroundColor: nullishToUndefined(z.string().min(1)),
   textColor: nullishToUndefined(z.string().min(1)),
   borderRadius: nullishToUndefined(z.number().min(0)),
+  fontSize: nullishToUndefined(z.number().positive()),
 });
 export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
 
@@ -74,9 +75,13 @@ export const ButtonComponentSchema = z.object({
 });
 export type ButtonComponent = z.infer<typeof ButtonComponentSchema>;
 
+export const PanelKindSchema = z.enum(["container", "surface", "stage", "group", "overlay"]);
+export type PanelKind = z.infer<typeof PanelKindSchema>;
+
 export const PanelComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("panel"),
+  kind: nullishToUndefined(PanelKindSchema),
   title: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),

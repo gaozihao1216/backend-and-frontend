@@ -28,7 +28,8 @@ final case class ComponentStyle(
   variant: Option[ComponentVariant],
   backgroundColor: Option[String],
   textColor: Option[String],
-  borderRadius: Option[Double]
+  borderRadius: Option[Double],
+  fontSize: Option[Double]
 )
 
 object ComponentStyle {

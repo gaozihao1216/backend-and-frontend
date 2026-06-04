@@ -23,6 +23,7 @@ final case class ButtonComponent(
 
 final case class PanelComponent(
   id: String,
+  kind: Option[String],
   title: Option[String],
   position: ComponentPosition,
   style: Option[ComponentStyle],
@@ -56,6 +57,7 @@ object PageComponent {
       Json.obj(
         "id" -> component.id.asJson,
         "type" -> Json.fromString(component.`type`),
+        "kind" -> component.kind.asJson,
         "title" -> component.title.asJson,
         "position" -> component.position.asJson,
         "style" -> component.style.asJson,
@@ -85,11 +87,12 @@ object PageComponent {
       case "panel" =>
         for {
           id <- cursor.get[String]("id")
+          kind <- cursor.get[Option[String]]("kind")
           title <- cursor.get[Option[String]]("title")
           position <- cursor.get[ComponentPosition]("position")
           style <- cursor.get[Option[ComponentStyle]]("style")
           childComponentIds <- cursor.get[Option[List[String]]]("childComponentIds").map(_.getOrElse(Nil))
-        } yield PanelComponent(id, title, position, style, childComponentIds)
+        } yield PanelComponent(id, kind, title, position, style, childComponentIds)
       case "text" =>
         for {
           id <- cursor.get[String]("id")
