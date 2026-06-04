@@ -1954,6 +1954,50 @@ fieldset {
   cursor: pointer;
 }
 
+.director-ui-header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.director-ui-manual {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(220px, 0.72fr);
+  gap: 1rem;
+  border: 1px solid rgba(44, 104, 168, 0.2);
+  border-radius: 18px;
+  background: #f4f9ff;
+  padding: 1rem;
+}
+
+.director-ui-manual h3 {
+  margin: 0 0 0.6rem;
+}
+
+.director-ui-manual ol,
+.director-ui-manual dl,
+.director-ui-manual p {
+  margin: 0;
+}
+
+.director-ui-manual ol {
+  padding-left: 1.25rem;
+}
+
+.director-ui-manual li + li {
+  margin-top: 0.35rem;
+}
+
+.director-ui-manual dt {
+  color: #12385f;
+  font-weight: 800;
+}
+
+.director-ui-manual dd {
+  margin: 0.2rem 0 0.65rem;
+  color: #4d6b78;
+}
+
 .director-ui-tree-panel {
   border: 1px solid rgba(18, 32, 47, 0.1);
   border-radius: 18px;
@@ -1962,8 +2006,80 @@ fieldset {
 }
 
 .director-ui-tree-panel h3,
-.director-ui-tree-panel p {
+.director-ui-tree-panel p,
+.director-ui-config-panel h3,
+.director-ui-config-panel p {
   margin: 0;
+}
+
+.director-ui-config-panel {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.director-ui-config-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.director-ui-config-summary article {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid rgba(18, 32, 47, 0.08);
+  border-radius: 12px;
+  background: #f7faf5;
+  padding: 0.75rem;
+}
+
+.director-ui-config-summary span,
+.director-ui-button-row span {
+  color: #66867c;
+  font-size: 0.82rem;
+}
+
+.director-ui-config-summary strong {
+  overflow-wrap: anywhere;
+}
+
+.director-ui-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.director-ui-button-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.director-ui-button-editor h4 {
+  margin: 0;
+}
+
+.director-ui-button-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  border: 1px solid rgba(18, 32, 47, 0.08);
+  border-radius: 12px;
+  background: #f7faf5;
+  padding: 0.75rem;
+}
+
+.director-ui-button-row > div,
+.director-ui-button-row label {
+  min-width: 0;
+}
+
+.director-ui-button-row strong {
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .ui-route-tree,
@@ -2035,9 +2151,20 @@ fieldset {
   overflow-wrap: anywhere;
 }
 
+.ui-route-node small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #66867c;
+  font-size: 0.78rem;
+}
+
 .ui-route-node.selected code {
   background: rgba(18, 56, 95, 0.1);
   color: #12385f;
+}
+
+.ui-route-node.selected small {
+  color: #245f9c;
 }
 
 .director-ui-route-actions {
@@ -2065,13 +2192,20 @@ fieldset {
 }
 
 @media (max-width: 900px) {
-  .director-ui-endpoint-grid {
+  .director-ui-endpoint-grid,
+  .director-ui-config-summary,
+  .director-ui-button-row,
+  .director-ui-manual {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
   .director-ui-endpoint-grid,
+  .director-ui-manual,
+  .director-ui-config-summary,
+  .director-ui-form-grid,
+  .director-ui-button-row,
   .ui-route-node,
   .director-ui-route-actions {
     grid-template-columns: 1fr;
