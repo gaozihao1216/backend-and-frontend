@@ -1,4 +1,36 @@
 package microservice.ui.api
 
-// TODO: Delete a component from a UI page configuration.
-object DeletePageComponentApi
+import cats.effect.IO
+import java.sql.Connection
+import java.time.Instant
+import microservice.auth.utils.AccessControl
+import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.http.HttpError
+import microservice.system.objects.AdminLevel
+import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
+import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
+
+final case class DeletePageComponentAPIMessage(
+  userId: String,
+  pageId: String,
+  componentId: String
+) extends APIWithTokenMessage[PageConfig] {
+  override def token: String = userId
+
+  override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
+    IO.pure {
+      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
+        UiPageTable.findById(connection, pageId) match {
+          case None =>
+            Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
+          case Some(page) if !page.components.exists(_.id == componentId) =>
+            Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError)
+          case Some(_) =>
+            UiPageTable
+              .deleteComponent(connection, pageId, componentId, Instant.now().toString)
+              .map(row => Right(UiPageRowMapper.toPageConfig(row)))
+              .getOrElse(Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError))
+        }
+      }
+    }
+}

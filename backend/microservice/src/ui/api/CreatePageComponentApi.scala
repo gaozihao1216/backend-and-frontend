@@ -1,4 +1,50 @@
 package microservice.ui.api
 
-// TODO: Add a component to a UI page configuration.
-object CreatePageComponentApi
+import cats.effect.IO
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
+import java.sql.Connection
+import java.time.Instant
+import microservice.auth.utils.AccessControl
+import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.http.HttpError
+import microservice.system.objects.AdminLevel
+import microservice.ui.objects.{PageComponent, PageConfig, UiCustomizationErrors}
+import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
+import org.http4s.EntityDecoder
+import org.http4s.circe.jsonOf
+
+final case class CreatePageComponentBody(
+  component: PageComponent
+)
+
+object CreatePageComponentBody {
+  implicit val encoder: Encoder[CreatePageComponentBody] = deriveEncoder
+  implicit val decoder: Decoder[CreatePageComponentBody] = deriveDecoder
+  implicit val entityDecoder: EntityDecoder[IO, CreatePageComponentBody] = jsonOf
+}
+
+final case class CreatePageComponentAPIMessage(
+  userId: String,
+  pageId: String,
+  body: CreatePageComponentBody
+) extends APIWithTokenMessage[PageConfig] {
+  override def token: String = userId
+
+  override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
+    IO.pure {
+      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
+        UiPageTable.findById(connection, pageId) match {
+          case None =>
+            Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
+          case Some(page) if page.components.exists(_.id == body.component.id) =>
+            Left(UiCustomizationErrors.ComponentAlreadyExists(body.component.id).toHttpError)
+          case Some(_) =>
+            UiPageTable
+              .addComponent(connection, pageId, body.component, Instant.now().toString)
+              .map(row => Right(UiPageRowMapper.toPageConfig(row)))
+              .getOrElse(Left(UiCustomizationErrors.ComponentAlreadyExists(body.component.id).toHttpError))
+        }
+      }
+    }
+}

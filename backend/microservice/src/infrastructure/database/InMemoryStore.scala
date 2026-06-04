@@ -3,6 +3,7 @@ package microservice.infrastructure.database
 import microservice.auth.tables.UserRow
 import microservice.level.objects.Favorite
 import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
+import microservice.ui.tables.UiPageRow
 
 object InMemoryStore {
   var users: Vector[UserRow] = Vector.empty
@@ -11,6 +12,7 @@ object InMemoryStore {
   var comments: Vector[CommentRow] = Vector.empty
   var favorites: Vector[Favorite] = Vector.empty
   var submissions: Vector[SubmissionRow] = Vector.empty
+  var uiPages: Vector[UiPageRow] = Vector.empty
 
   def reset(
     nextUsers: Vector[UserRow],
@@ -18,7 +20,8 @@ object InMemoryStore {
     nextRatings: Vector[RatingRow],
     nextComments: Vector[CommentRow],
     nextFavorites: Vector[Favorite],
-    nextSubmissions: Vector[SubmissionRow]
+    nextSubmissions: Vector[SubmissionRow],
+    nextUiPages: Vector[UiPageRow] = Vector.empty
   ): Unit = {
     users = nextUsers
     levels = nextLevels
@@ -26,5 +29,6 @@ object InMemoryStore {
     comments = nextComments
     favorites = nextFavorites
     submissions = nextSubmissions
+    uiPages = nextUiPages
   }
 }
