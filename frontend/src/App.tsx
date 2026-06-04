@@ -6,10 +6,12 @@ import { RoleHomePage } from "./component/RoleHomePage.js";
 import { SettingsPanel } from "./component/SettingsPanel.js";
 import { DesignerHomePage } from "./page/DesignerHomePage.js";
 import { DesignerPage } from "./page/DesignerPage/index.js";
+import { AdminPage } from "./page/AdminPage.js";
 import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
 import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
+import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
 import { UserProfilePage } from "./page/UserProfilePage.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
 
@@ -25,7 +27,9 @@ const DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX = "/json_check";
 const OWN_PAGE_PATH = "/own_page";
 const COMMUNITY_HALL_PATH = "/community_hall";
 const PLAYER_SHOP_PATH = "/player_shop";
+const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
+const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
 
 const readPathname = () => window.location.pathname;
 
@@ -182,7 +186,20 @@ export const App = () => {
       return <PlayerShopPage />;
     }
 
-    if (pathname === DIRECTOR_CONSOLE_PATH) {
+    if (pathname === ADMIN_PROPOSALS_PATH) {
+      if (user.role !== "admin") {
+        return (
+          <section className="panel">
+            <h2>提案处理</h2>
+            <p className="panel-copy">当前账号不是管理员，无法访问提案处理页面。</p>
+          </section>
+        );
+      }
+
+      return renderBoundPage(user, "提案处理", (apiUserId) => <AdminPage userId={apiUserId} />);
+    }
+
+    if (pathname === DIRECTOR_CONSOLE_PATH || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
       if (user.role !== "admin") {
         return (
           <section className="panel">
@@ -192,8 +209,17 @@ export const App = () => {
         );
       }
 
+      if (pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
+        return renderBoundPage(user, "UI 美化配置", () => (
+          <DirectorUiCustomizationPage onNavigate={navigate} />
+        ));
+      }
+
       return renderBoundPage(user, "总监控制台", (apiUserId) => (
-        <DirectorWorkbenchPage userId={apiUserId} />
+        <DirectorWorkbenchPage
+          userId={apiUserId}
+          onOpenUiCustomization={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
+        />
       ));
     }
 
@@ -201,6 +227,10 @@ export const App = () => {
   };
 
   const standaloneRoute = currentUser ? renderStandaloneRoute(currentUser) : null;
+  const canReturnToDirectorUiCustomization =
+    currentUser?.role === "admin"
+    && currentUser.adminLevel === "director"
+    && pathname !== DIRECTOR_UI_CUSTOMIZATION_PATH;
   const standaloneTitle =
     pathname === OWN_PAGE_PATH
       ? "个人主页"
@@ -208,14 +238,24 @@ export const App = () => {
         ? "社区"
       : pathname === PLAYER_SHOP_PATH
           ? "玩家商店"
+          : pathname === ADMIN_PROPOSALS_PATH
+            ? "提案处理"
           : pathname === DIRECTOR_CONSOLE_PATH
-            ? "总监控制台"
+          || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
+            ? pathname === DIRECTOR_UI_CUSTOMIZATION_PATH ? "UI 美化配置" : "总监控制台"
           : "";
 
   return (
     <main className={`app-shell ${isDesignerWorkspacePath || isArchiveWorkspacePath ? "designer-app-shell" : ""}`}>
       {currentUser ? (
         <>
+          {canReturnToDirectorUiCustomization ? (
+            <div className="director-return-bar">
+              <button type="button" className="secondary" onClick={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}>
+                返回原界面
+              </button>
+            </div>
+          ) : null}
           {standaloneRoute ? (
             <>
               <div className="dashboard-topbar">

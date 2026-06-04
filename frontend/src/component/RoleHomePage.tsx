@@ -142,6 +142,7 @@ const OWN_PAGE_PATH = "/own_page";
 const COMMUNITY_HALL_PATH = "/community_hall";
 const PLAYER_SHOP_PATH = "/player_shop";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
+const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 
 const createChainLinks = () =>
   chainLevels.slice(0, -1).flatMap((level, index) => {
@@ -419,6 +420,12 @@ export const RoleHomePage = ({
 
     if (nextView === "admin-director") {
       onNavigate(DIRECTOR_CONSOLE_PATH);
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "admin-proposal") {
+      onNavigate(ADMIN_PROPOSALS_PATH);
       setActionOpen(false);
       return;
     }

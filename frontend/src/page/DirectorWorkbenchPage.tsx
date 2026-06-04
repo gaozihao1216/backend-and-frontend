@@ -5,12 +5,13 @@ import { syncLocalAdminLevelsFromBackend } from "../lib/auth.js";
 
 type DirectorWorkbenchPageProps = {
   userId: string;
+  onOpenUiCustomization: () => void;
 };
 
 const getTransferCandidateAdmins = (users: User[], currentUserId: string) =>
   users.filter((user) => user.role === "admin" && user.adminLevel === "standard" && user.id !== currentUserId);
 
-export const DirectorWorkbenchPage = ({ userId }: DirectorWorkbenchPageProps) => {
+export const DirectorWorkbenchPage = ({ userId, onOpenUiCustomization }: DirectorWorkbenchPageProps) => {
   const [permissions, setPermissions] = useState<DirectorPermissionSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
@@ -167,6 +168,11 @@ export const DirectorWorkbenchPage = ({ userId }: DirectorWorkbenchPageProps) =>
         <section className="feature-card director-option-row">
           <h3>UI 美化配置</h3>
           <p className="panel-copy">集中规划首页、工作台和关卡展示的视觉配置。</p>
+          <div className="actions">
+            <button type="button" onClick={onOpenUiCustomization}>
+              进入配置
+            </button>
+          </div>
         </section>
 
         <section className="feature-card director-option-row">

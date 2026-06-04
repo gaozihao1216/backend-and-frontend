@@ -122,6 +122,12 @@ fieldset {
   background: #12202f;
 }
 
+.director-return-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
 .role-cards,
 .auth-tabs,
 .quick-actions {
@@ -1927,6 +1933,154 @@ fieldset {
 .director-transfer-panel {
   margin-left: 1rem;
   border-left: 4px solid rgba(127, 160, 79, 0.42);
+}
+
+.director-ui-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.director-ui-endpoint-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.director-ui-endpoint {
+  width: 100%;
+  min-height: 112px;
+  border: 0;
+  cursor: pointer;
+}
+
+.director-ui-tree-panel {
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.director-ui-tree-panel h3,
+.director-ui-tree-panel p {
+  margin: 0;
+}
+
+.ui-route-tree,
+.ui-route-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-route-tree {
+  margin-top: 1rem;
+}
+
+.ui-route-tree ul {
+  margin-left: 1.15rem;
+  padding-left: 1.15rem;
+  border-left: 2px solid rgba(93, 129, 110, 0.22);
+}
+
+.ui-route-tree li {
+  position: relative;
+  padding: 0.35rem 0 0.35rem 0;
+}
+
+.ui-route-tree ul > li::before {
+  content: "";
+  position: absolute;
+  top: 1.25rem;
+  left: -1.15rem;
+  width: 0.85rem;
+  border-top: 2px solid rgba(93, 129, 110, 0.22);
+}
+
+.ui-route-node {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  border: 1px solid rgba(18, 32, 47, 0.08);
+  border-radius: 12px;
+  background: #f7faf5;
+  color: #12202f;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.ui-route-node:hover {
+  border-color: rgba(44, 104, 168, 0.38);
+  background: #eef6ff;
+}
+
+.ui-route-node.selected {
+  border-color: rgba(44, 104, 168, 0.56);
+  background: #dceeff;
+  color: #12385f;
+}
+
+.ui-route-node code {
+  justify-self: start;
+  max-width: 100%;
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  color: #3e544f;
+  padding: 0.25rem 0.45rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ui-route-node.selected code {
+  background: rgba(18, 56, 95, 0.1);
+  color: #12385f;
+}
+
+.director-ui-route-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(18, 32, 47, 0.08);
+  padding-top: 1rem;
+}
+
+.director-ui-route-actions p {
+  margin: 0;
+}
+
+.director-ui-route-actions code {
+  display: inline-block;
+  margin-top: 0.35rem;
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  color: #3e544f;
+  padding: 0.25rem 0.45rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .director-ui-endpoint-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .director-ui-endpoint-grid,
+  .ui-route-node,
+  .director-ui-route-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .director-ui-route-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .feature-stack,
