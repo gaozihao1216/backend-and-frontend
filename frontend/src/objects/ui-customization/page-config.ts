@@ -78,6 +78,12 @@ export type ButtonComponent = z.infer<typeof ButtonComponentSchema>;
 export const PanelKindSchema = z.enum(["container", "surface", "stage", "group", "overlay"]);
 export type PanelKind = z.infer<typeof PanelKindSchema>;
 
+export const PanelContentSizeSchema = z.object({
+  widthPercent: z.number().positive(),
+  heightPercent: z.number().positive(),
+});
+export type PanelContentSize = z.infer<typeof PanelContentSizeSchema>;
+
 export const PanelComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("panel"),
@@ -85,6 +91,7 @@ export const PanelComponentSchema = z.object({
   title: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
+  contentSize: nullishToUndefined(PanelContentSizeSchema),
   childComponentIds: z.array(z.string().min(1)).default([]),
 });
 export type PanelComponent = z.infer<typeof PanelComponentSchema>;

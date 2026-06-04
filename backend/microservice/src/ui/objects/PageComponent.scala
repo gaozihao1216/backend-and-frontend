@@ -10,6 +10,19 @@ sealed trait PageComponent {
   def style: Option[ComponentStyle]
 }
 
+final case class PanelContentSize(
+  widthPercent: Double,
+  heightPercent: Double
+)
+
+object PanelContentSize {
+  implicit val encoder: Encoder[PanelContentSize] =
+    Encoder.forProduct2("widthPercent", "heightPercent")(size => (size.widthPercent, size.heightPercent))
+
+  implicit val decoder: Decoder[PanelContentSize] =
+    Decoder.forProduct2("widthPercent", "heightPercent")(PanelContentSize.apply)
+}
+
 final case class ButtonComponent(
   id: String,
   label: String,
@@ -27,6 +40,7 @@ final case class PanelComponent(
   title: Option[String],
   position: ComponentPosition,
   style: Option[ComponentStyle],
+  contentSize: Option[PanelContentSize],
   childComponentIds: List[String]
 ) extends PageComponent {
   override val `type`: String = "panel"
@@ -61,6 +75,7 @@ object PageComponent {
         "title" -> component.title.asJson,
         "position" -> component.position.asJson,
         "style" -> component.style.asJson,
+        "contentSize" -> component.contentSize.asJson,
         "childComponentIds" -> component.childComponentIds.asJson
       )
     case component: TextComponent =>
@@ -91,8 +106,9 @@ object PageComponent {
           title <- cursor.get[Option[String]]("title")
           position <- cursor.get[ComponentPosition]("position")
           style <- cursor.get[Option[ComponentStyle]]("style")
+          contentSize <- cursor.get[Option[PanelContentSize]]("contentSize")
           childComponentIds <- cursor.get[Option[List[String]]]("childComponentIds").map(_.getOrElse(Nil))
-        } yield PanelComponent(id, kind, title, position, style, childComponentIds)
+        } yield PanelComponent(id, kind, title, position, style, contentSize, childComponentIds)
       case "text" =>
         for {
           id <- cursor.get[String]("id")

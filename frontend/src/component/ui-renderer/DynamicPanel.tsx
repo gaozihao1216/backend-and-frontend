@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { DynamicComponentRenderer } from "./DynamicComponentRenderer.js";
 import type { DynamicPanelProps } from "./ui-renderer-types.js";
 import { getComponentStyle, getPositionStyle } from "./ui-renderer-utils.js";
@@ -7,13 +8,72 @@ const isRenderableChild = (component: PageComponent | undefined): component is P
   Boolean(component);
 
 export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = false }: DynamicPanelProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+  }>({
+    active: false,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0,
+  });
   const nextVisitedComponentIds = new Set(visitedComponentIds);
   nextVisitedComponentIds.add(panel.id);
+  const contentSize = panel.contentSize;
   const childComponents = panel.childComponentIds
     .map((childId) => context.componentMap.get(childId))
     .filter(isRenderableChild)
     .filter((component) => !context.controlledPanelIds.has(component.id) || context.openPanelIds.has(component.id))
     .filter((component) => !nextVisitedComponentIds.has(component.id));
+  const canDragScroll = Boolean(contentSize);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!canDragScroll || event.button !== 0) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    if (target.closest("button, input, textarea, select, a")) {
+      return;
+    }
+
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    dragStateRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollLeft: container.scrollLeft,
+      startScrollTop: container.scrollTop,
+    };
+    container.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container || !dragStateRef.current.active) {
+      return;
+    }
+
+    container.scrollLeft = dragStateRef.current.startScrollLeft - (event.clientX - dragStateRef.current.startX);
+    container.scrollTop = dragStateRef.current.startScrollTop - (event.clientY - dragStateRef.current.startY);
+  };
+
+  const stopDragScroll = (event: React.PointerEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    dragStateRef.current.active = false;
+    if (container?.hasPointerCapture(event.pointerId)) {
+      container.releasePointerCapture(event.pointerId);
+    }
+  };
 
   return (
     <section
@@ -23,16 +83,36 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
         ...getComponentStyle(panel.style),
       }}
     >
-      <div className="dynamic-ui-panel-content">
-        {childComponents.map((component) => (
-          <DynamicComponentRenderer
-            key={component.id}
-            component={component}
-            context={context}
-            visitedComponentIds={nextVisitedComponentIds}
-            floating={context.controlledPanelIds.has(component.id)}
-          />
-        ))}
+      <div
+        ref={scrollContainerRef}
+        className={`dynamic-ui-panel-content ${contentSize ? "scrollable draggable" : ""}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={stopDragScroll}
+        onPointerCancel={stopDragScroll}
+        onPointerLeave={stopDragScroll}
+      >
+        <div
+          className="dynamic-ui-panel-content-canvas"
+          style={
+            contentSize
+              ? {
+                  width: `${contentSize.widthPercent}%`,
+                  height: `${contentSize.heightPercent}%`,
+                }
+              : undefined
+          }
+        >
+          {childComponents.map((component) => (
+            <DynamicComponentRenderer
+              key={component.id}
+              component={component}
+              context={context}
+              visitedComponentIds={nextVisitedComponentIds}
+              floating={context.controlledPanelIds.has(component.id)}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
