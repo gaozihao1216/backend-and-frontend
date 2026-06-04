@@ -1,38 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { getBackendUsers, getDirectorPermissions, transferDirectorPermission } from "../api/index.js";
 import type { DirectorPermissionSummary, User } from "../api/api-contracts.js";
+import { syncLocalAdminLevelsFromBackend } from "../lib/auth.js";
 
 type DirectorWorkbenchPageProps = {
   userId: string;
-  currentNickname?: string;
 };
 
-const DIRECTOR_SEED_IDENTIFIERS = new Set(["admin-director-1", "001"]);
+const getTransferCandidateAdmins = (users: User[], currentUserId: string) =>
+  users.filter((user) => user.role === "admin" && user.adminLevel === "standard" && user.id !== currentUserId);
 
-const getTransferCandidateAdmins = (users: User[], currentUserId: string, currentNickname = "") => {
-  const normalizedCurrentNickname = currentNickname.trim();
-
-  return users.filter((user) => {
-    if (user.role !== "admin" || user.adminLevel !== "standard" || user.id === currentUserId) {
-      return false;
-    }
-
-    if (
-      DIRECTOR_SEED_IDENTIFIERS.has(user.id) ||
-      DIRECTOR_SEED_IDENTIFIERS.has(user.username) ||
-      DIRECTOR_SEED_IDENTIFIERS.has(user.displayName)
-    ) {
-      return false;
-    }
-
-    return !normalizedCurrentNickname || (
-      user.username !== normalizedCurrentNickname &&
-      user.displayName !== normalizedCurrentNickname
-    );
-  });
-};
-
-export const DirectorWorkbenchPage = ({ userId, currentNickname = "" }: DirectorWorkbenchPageProps) => {
+export const DirectorWorkbenchPage = ({ userId }: DirectorWorkbenchPageProps) => {
   const [permissions, setPermissions] = useState<DirectorPermissionSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
@@ -43,13 +21,13 @@ export const DirectorWorkbenchPage = ({ userId, currentNickname = "" }: Director
 
   const loadAdminUsers = useCallback(async () => {
     const users = await getBackendUsers();
-    const admins = getTransferCandidateAdmins(users, userId, currentNickname);
+    const admins = getTransferCandidateAdmins(users, userId);
     setAdminUsers(admins);
     setSelectedAdminId((current) =>
       current && admins.some((admin) => admin.id === current) ? current : admins[0]?.id ?? "",
     );
     return admins;
-  }, [currentNickname, userId]);
+  }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +43,7 @@ export const DirectorWorkbenchPage = ({ userId, currentNickname = "" }: Director
         ]);
         if (!cancelled) {
           setPermissions(summary);
-          const admins = getTransferCandidateAdmins(users, userId, currentNickname);
+          const admins = getTransferCandidateAdmins(users, userId);
           setAdminUsers(admins);
           setSelectedAdminId(admins[0]?.id ?? "");
         }
@@ -85,7 +63,7 @@ export const DirectorWorkbenchPage = ({ userId, currentNickname = "" }: Director
     return () => {
       cancelled = true;
     };
-  }, [currentNickname, userId]);
+  }, [userId]);
 
   const handleTransferPermission = () => {
     setTransferOpen((current) => {
@@ -119,6 +97,7 @@ export const DirectorWorkbenchPage = ({ userId, currentNickname = "" }: Director
 
     try {
       const result = await transferDirectorPermission(userId, target.id);
+      await syncLocalAdminLevelsFromBackend();
       setMessage(`总监权限已转让给 昵称：${target.displayName} / 用户名：${target.username} / ID：${result.newDirectorId}。当前账号已不再是总监，请返回主界面或重新登录。`);
       setPermissions(null);
       await loadAdminUsers();

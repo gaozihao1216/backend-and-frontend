@@ -274,7 +274,7 @@ const mergeSeedUsers = (users: AuthUserRecord[]) => {
               ...candidate,
               password: seedUser.password,
               role: seedUser.role,
-              adminLevel: seedUser.adminLevel,
+              adminLevel: seedUser.role === "admin" ? candidate.adminLevel ?? seedUser.adminLevel : undefined,
               apiUserId: seedUser.apiUserId,
             }
           : candidate,
@@ -337,6 +337,68 @@ export const getSeedAccountHint = (role: FrontendRole) => {
     case "admin":
       return `总监管理员测试账号：${DIRECTOR_ADMIN_SEED_NICKNAME} / ${DIRECTOR_ADMIN_SEED_PASSWORD}`;
   }
+};
+
+export const syncLocalAdminLevelsFromBackend = async (): Promise<AuthUser | null> => {
+  const backendUsers = await getBackendUsers();
+  let sessionUser = readPersistedAuthUser();
+  let changed = false;
+
+  authUsers = authUsers.map((candidate) => {
+    if (candidate.role !== "admin" || !candidate.apiUserId) {
+      return candidate;
+    }
+
+    const backendUser = backendUsers.find(
+      (user) => user.id === candidate.apiUserId && user.role === "admin",
+    );
+    if (!backendUser || candidate.adminLevel === backendUser.adminLevel) {
+      return candidate;
+    }
+
+    changed = true;
+    const updated = {
+      ...candidate,
+      adminLevel: backendUser.adminLevel,
+    };
+
+    if (sessionUser?.id === updated.id) {
+      sessionUser = toPublicUser(updated);
+    }
+
+    return updated;
+  });
+
+  if (changed) {
+    persistAuthUsers();
+    if (sessionUser) {
+      persistAuthSession(sessionUser);
+    }
+  }
+
+  return sessionUser;
+};
+
+export const getCurrentDirectorAccountHint = async (): Promise<string> => {
+  const backendUsers = await getBackendUsers();
+  const currentDirector = backendUsers.find(
+    (candidate) => candidate.role === "admin" && candidate.adminLevel === "director",
+  );
+
+  if (!currentDirector) {
+    return "当前没有后端总监管理员账号";
+  }
+
+  const matchedLocalUser = authUsers.find(
+    (candidate) => candidate.role === "admin" && candidate.apiUserId === currentDirector.id,
+  );
+  const loginName = matchedLocalUser?.nickname ?? currentDirector.username;
+
+  if (!matchedLocalUser) {
+    return `当前总监管理员账号：${loginName}`;
+  }
+
+  return `当前总监管理员账号：${loginName} / ${matchedLocalUser.password}`;
 };
 
 export const isBuiltInApiUser = (apiUserId?: string) =>

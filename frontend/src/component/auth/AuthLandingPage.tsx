@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { API_USERS, type FrontendRole } from "../../lib/config.js";
 import {
   ensureBackendBoundAuthUser,
+  getCurrentDirectorAccountHint,
   getSeedAccountHint,
   loginWithLocalAuth,
   registerWithLocalAuth,
@@ -29,6 +30,9 @@ const roleNames: Record<FrontendRole, string> = {
   admin: "管理员",
 };
 
+const getInitialAccountHint = (role: FrontendRole, mode: AuthMode) =>
+  mode === "login" && role === "admin" ? "正在读取当前总监账号..." : getSeedAccountHint(role);
+
 export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
   const [role, setRole] = useState<FrontendRole>("player");
   const [mode, setMode] = useState<AuthMode>("login");
@@ -38,6 +42,34 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [accountHint, setAccountHint] = useState(getInitialAccountHint(role, mode));
+
+  useEffect(() => {
+    let cancelled = false;
+    setAccountHint(getInitialAccountHint(role, mode));
+
+    if (mode !== "login" || role !== "admin") {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void getCurrentDirectorAccountHint()
+      .then((hint) => {
+        if (!cancelled) {
+          setAccountHint(hint);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAccountHint("当前总监账号读取失败，请稍后重试");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, role]);
 
   const resetFeedback = () => {
     setMessage("");
@@ -170,7 +202,7 @@ export const AuthLandingPage = ({ onAuthenticated }: AuthLandingPageProps) => {
             ? "设计师与管理员需输入验证码 66260696，注册成功后会自动开通对应后端账号"
             : "请输入昵称和密码完成登录"}
         </p>
-        {mode === "login" ? <p className="meta">{getSeedAccountHint(role)}</p> : null}
+        {mode === "login" ? <p className="meta">{accountHint}</p> : null}
 
         <label>
           <span>昵称</span>

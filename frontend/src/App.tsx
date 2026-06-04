@@ -193,7 +193,7 @@ export const App = () => {
       }
 
       return renderBoundPage(user, "总监控制台", (apiUserId) => (
-        <DirectorWorkbenchPage userId={apiUserId} currentNickname={user.nickname} />
+        <DirectorWorkbenchPage userId={apiUserId} />
       ));
     }
 
