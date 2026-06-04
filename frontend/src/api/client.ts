@@ -7,7 +7,7 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 const parseApiResponse = async <T>(
   response: Response,
-  dataSchema: z.ZodType<T>,
+  dataSchema: z.ZodType<T, z.ZodTypeDef, unknown>,
 ): Promise<T> => {
   const rawBody = await response.text();
   const contentType = response.headers.get("content-type") ?? "unknown";
@@ -54,7 +54,7 @@ const parseApiResponse = async <T>(
 export const request = async <T>(
   path: string,
   init: RequestInit,
-  responseSchema: z.ZodType<T>,
+  responseSchema: z.ZodType<T, z.ZodTypeDef, unknown>,
 ): Promise<T> => {
   const headers = JsonHeadersSchema.parse({
     "content-type": "application/json",

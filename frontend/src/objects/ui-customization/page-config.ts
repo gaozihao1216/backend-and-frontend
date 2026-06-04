@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nullishToUndefined } from "../system/schema-utils.js";
 
 export const UiEndpointSchema = z.enum(["player", "designer", "admin", "director"]);
 export type UiEndpoint = z.infer<typeof UiEndpointSchema>;
@@ -8,9 +9,9 @@ export type PageLayoutType = z.infer<typeof PageLayoutTypeSchema>;
 
 export const PageLayoutSchema = z.object({
   type: PageLayoutTypeSchema,
-  columns: z.number().int().positive().optional(),
-  gap: z.number().min(0).optional(),
-  padding: z.number().min(0).optional(),
+  columns: nullishToUndefined(z.number().int().positive()),
+  gap: nullishToUndefined(z.number().min(0)),
+  padding: nullishToUndefined(z.number().min(0)),
 });
 export type PageLayout = z.infer<typeof PageLayoutSchema>;
 
@@ -23,10 +24,10 @@ export const ComponentPositionSchema = z.object({
 export type ComponentPosition = z.infer<typeof ComponentPositionSchema>;
 
 export const ComponentStyleSchema = z.object({
-  variant: z.enum(["primary", "secondary", "ghost"]).optional(),
-  backgroundColor: z.string().min(1).optional(),
-  textColor: z.string().min(1).optional(),
-  borderRadius: z.number().min(0).optional(),
+  variant: nullishToUndefined(z.enum(["primary", "secondary", "ghost"])),
+  backgroundColor: nullishToUndefined(z.string().min(1)),
+  textColor: nullishToUndefined(z.string().min(1)),
+  borderRadius: nullishToUndefined(z.number().min(0)),
 });
 export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
 
@@ -62,9 +63,9 @@ export const ButtonComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("button"),
   label: z.string().min(1),
-  icon: z.string().min(1).optional(),
+  icon: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
-  style: ComponentStyleSchema.optional(),
+  style: nullishToUndefined(ComponentStyleSchema),
   action: ComponentActionSchema,
 });
 export type ButtonComponent = z.infer<typeof ButtonComponentSchema>;
@@ -72,9 +73,9 @@ export type ButtonComponent = z.infer<typeof ButtonComponentSchema>;
 export const PanelComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("panel"),
-  title: z.string().min(1).optional(),
+  title: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
-  style: ComponentStyleSchema.optional(),
+  style: nullishToUndefined(ComponentStyleSchema),
   childComponentIds: z.array(z.string().min(1)).default([]),
 });
 export type PanelComponent = z.infer<typeof PanelComponentSchema>;
@@ -84,7 +85,7 @@ export const TextComponentSchema = z.object({
   type: z.literal("text"),
   text: z.string(),
   position: ComponentPositionSchema,
-  style: ComponentStyleSchema.optional(),
+  style: nullishToUndefined(ComponentStyleSchema),
 });
 export type TextComponent = z.infer<typeof TextComponentSchema>;
 

@@ -28,6 +28,14 @@ import { SubmissionSchema, type Submission as SubmissionObject } from "../object
 import { SubmissionWithLevelSchema, type SubmissionWithLevel as SubmissionWithLevelObject } from "../objects/level/submission-with-level.js";
 import { UserProfileSchema, type UserProfile as UserProfileObject } from "../objects/user/user-profile.js";
 import { UserRoleSchema } from "../objects/system/user-role.js";
+import {
+  PageComponentSchema,
+  PageConfigSchema,
+  UiEndpointSchema,
+  type PageConfig as PageConfigObject,
+  type PageComponent as PageComponentObject,
+  type UiEndpoint,
+} from "../objects/ui-customization/ui-customization-objects.js";
 
 export const UserSchema = BackendUserSchema;
 export type User = BackendUser;
@@ -54,6 +62,8 @@ export type AdminComment = Comment;
 export type DirectorPermissionSummary = DirectorPermissionSummaryObject;
 export type DirectorTransferResult = DirectorTransferResultObject;
 export type ApiUserProfile = UserProfileObject;
+export type UiPageConfig = PageConfigObject;
+export type UiPageComponent = PageComponentObject;
 
 export const GetBackendUsersRequestQuerySchema = z.object({});
 export type GetBackendUsersRequestQuery = z.infer<typeof GetBackendUsersRequestQuerySchema>;
@@ -152,4 +162,48 @@ export const TransferDirectorPermissionRequestBodySchema = z.object({
 });
 export type TransferDirectorPermissionRequestBody = z.infer<typeof TransferDirectorPermissionRequestBodySchema>;
 export const TransferDirectorPermissionResponseDataSchema = DirectorTransferResultSchema;
+
+export const ListUiPagesRequestQuerySchema = z.object({
+  endpoint: UiEndpointSchema.optional(),
+});
+export type ListUiPagesRequestQuery = z.infer<typeof ListUiPagesRequestQuerySchema>;
+export type UiPageEndpoint = UiEndpoint;
+export const ListUiPagesResponseDataSchema = z.array(PageConfigSchema);
+
+export const GetUiPageRequestParamsSchema = z.object({
+  pageId: z.string().min(1),
+});
+export const GetUiPageResponseDataSchema = PageConfigSchema;
+
+export const CreateUiPageRequestBodySchema = z.object({
+  page: PageConfigSchema,
+});
+export type CreateUiPageRequestBody = z.infer<typeof CreateUiPageRequestBodySchema>;
+export const CreateUiPageResponseDataSchema = PageConfigSchema;
+
+export const UpdateUiPageRequestParamsSchema = GetUiPageRequestParamsSchema;
+export const UpdateUiPageRequestBodySchema = CreateUiPageRequestBodySchema;
+export type UpdateUiPageRequestBody = z.infer<typeof UpdateUiPageRequestBodySchema>;
+export const UpdateUiPageResponseDataSchema = PageConfigSchema;
+
+export const DeleteUiPageRequestParamsSchema = GetUiPageRequestParamsSchema;
+export const DeleteUiPageResponseDataSchema = PageConfigSchema;
+
+export const CreatePageComponentRequestParamsSchema = GetUiPageRequestParamsSchema;
+export const CreatePageComponentRequestBodySchema = z.object({
+  component: PageComponentSchema,
+});
+export type CreatePageComponentRequestBody = z.infer<typeof CreatePageComponentRequestBodySchema>;
+export const CreatePageComponentResponseDataSchema = PageConfigSchema;
+
+export const UpdatePageComponentRequestParamsSchema = z.object({
+  pageId: z.string().min(1),
+  componentId: z.string().min(1),
+});
+export const UpdatePageComponentRequestBodySchema = CreatePageComponentRequestBodySchema;
+export type UpdatePageComponentRequestBody = z.infer<typeof UpdatePageComponentRequestBodySchema>;
+export const UpdatePageComponentResponseDataSchema = PageConfigSchema;
+
+export const DeletePageComponentRequestParamsSchema = UpdatePageComponentRequestParamsSchema;
+export const DeletePageComponentResponseDataSchema = PageConfigSchema;
 
