@@ -1,4 +1,5 @@
 import type {
+  ButtonBaseDesign,
   ButtonImageDesign,
   ComponentPosition,
   ComponentStyle,
@@ -112,6 +113,25 @@ export const getButtonImageDesignStyle = (imageDesign: ButtonImageDesign): React
     height: `${10000 / crop.height}%`,
     left: `${(-crop.x / crop.width) * 100}%`,
     top: `${(-crop.y / crop.height) * 100}%`,
+  };
+};
+
+export const getButtonBaseDesignStyle = (baseDesign: ButtonBaseDesign): React.CSSProperties => {
+  if (baseDesign.scalingMode === "nineSlice" && baseDesign.slice) {
+    const { top, right, bottom, left } = baseDesign.slice;
+    return {
+      inset: 0,
+      borderStyle: "solid",
+      borderWidth: `${top}px ${right}px ${bottom}px ${left}px`,
+      borderImageSource: `url("${baseDesign.sourceDataUrl}")`,
+      borderImageSlice: `${top} ${right} ${bottom} ${left} fill`,
+      borderImageRepeat: "stretch",
+      boxSizing: "border-box",
+    };
+  }
+
+  return {
+    inset: 0,
   };
 };
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { nullishToUndefined } from "../system/schema-utils.js";
+import { ButtonTemplateSliceSchema } from "./button-template.js";
 
 export const UiEndpointSchema = z.enum(["player", "designer", "admin", "director"]);
 export type UiEndpoint = z.infer<typeof UiEndpointSchema>;
@@ -65,6 +66,14 @@ export const ButtonImageDesignSchema = z.object({
 });
 export type ButtonImageDesign = z.infer<typeof ButtonImageDesignSchema>;
 
+export const ButtonBaseDesignSchema = z.object({
+  templateId: z.string().min(1),
+  sourceDataUrl: z.string().min(1),
+  scalingMode: z.enum(["fixedAspect", "nineSlice"]).default("fixedAspect"),
+  slice: ButtonTemplateSliceSchema.optional(),
+});
+export type ButtonBaseDesign = z.infer<typeof ButtonBaseDesignSchema>;
+
 export const NavigateActionSchema = z.object({
   type: z.literal("navigate"),
   targetPageId: z.string().min(1),
@@ -100,6 +109,7 @@ export const ButtonComponentSchema = z.object({
   icon: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
+  baseDesign: nullishToUndefined(ButtonBaseDesignSchema),
   imageDesign: nullishToUndefined(ButtonImageDesignSchema),
   action: ComponentActionSchema,
 });

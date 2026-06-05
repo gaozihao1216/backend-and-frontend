@@ -1,6 +1,7 @@
 import type { ButtonComponent } from "../../objects/ui-customization/ui-customization-objects.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
 import {
+  getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
   getButtonTextScaleStyle,
   getComponentStyle,
@@ -40,11 +41,21 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
         ...getPositionStyle(button.position),
         ...getComponentStyle(button.style),
         ...getButtonTextScaleStyle(button.position, button.style),
+        ...(button.baseDesign ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 } : {}),
       }}
       onClick={handleClick}
       disabled={button.action.type === "openModal"}
       title={button.action.type === "openModal" ? "openModal 暂未实现" : undefined}
     >
+      {button.baseDesign ? (
+        <span
+          className="dynamic-ui-button-base"
+          style={getButtonBaseDesignStyle(button.baseDesign)}
+          aria-hidden="true"
+        >
+          {button.baseDesign.scalingMode === "fixedAspect" ? <img src={button.baseDesign.sourceDataUrl} alt="" /> : null}
+        </span>
+      ) : null}
       {button.imageDesign ? (
         <span
           className="dynamic-ui-button-image"

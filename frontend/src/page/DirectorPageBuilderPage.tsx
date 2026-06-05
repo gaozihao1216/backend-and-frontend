@@ -7,6 +7,7 @@ import {
   type PanelComponent,
 } from "../objects/ui-customization/ui-customization-objects.js";
 import {
+  getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
   getButtonTextScaleStyle,
   getComponentStyle,
@@ -542,6 +543,7 @@ const PageBuilderComponentNode = ({
           ...getPositionStyle(component.position),
           ...getComponentStyle(component.style),
           ...getButtonTextScaleStyle(component.position, component.style),
+          ...(component.baseDesign ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 } : {}),
         }}
         tabIndex={-1}
         onClick={() => {
@@ -553,6 +555,15 @@ const PageBuilderComponentNode = ({
           }
         }}
       >
+        {component.baseDesign ? (
+          <span
+            className="dynamic-ui-button-base"
+            style={getButtonBaseDesignStyle(component.baseDesign)}
+            aria-hidden="true"
+          >
+            {component.baseDesign.scalingMode === "fixedAspect" ? <img src={component.baseDesign.sourceDataUrl} alt="" /> : null}
+          </span>
+        ) : null}
         {component.imageDesign ? (
           <span
             className="dynamic-ui-button-image"

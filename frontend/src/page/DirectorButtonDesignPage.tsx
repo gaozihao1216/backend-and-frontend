@@ -18,6 +18,7 @@ import type {
   PageConfig,
 } from "../objects/ui-customization/ui-customization-objects.js";
 import {
+  getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
   getButtonTextScaleStyle,
 } from "../component/ui-renderer/ui-renderer-utils.js";
@@ -314,7 +315,9 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
   const [draftTextScalePercent, setDraftTextScalePercent] = useState(
     () => selectedButton?.style?.textScalePercent ?? defaultTextScalePercent,
   );
-  const [templateChoice, setTemplateChoice] = useState<ButtonTemplateChoice>("custom");
+  const [templateChoice, setTemplateChoice] = useState<ButtonTemplateChoice>(
+    () => selectedButton?.baseDesign?.templateId ?? "custom",
+  );
   const [buttonAspectRatio, setButtonAspectRatio] = useState(
     () => getRenderedButtonAspectRatio(pageConfig, selectedButton),
   );
@@ -336,11 +339,21 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
   const [previewFrameDragState, setPreviewFrameDragState] = useState<PreviewFrameDragState | null>(null);
   const [skipNextStageClick, setSkipNextStageClick] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const isTemplateMode = templateChoice !== "custom";
-  const selectedTemplate = isTemplateMode
+  const hasBaseTemplate = templateChoice !== "custom";
+  const selectedTemplate = hasBaseTemplate
     ? buttonTemplates.find((template) => template.id === templateChoice) ?? null
     : null;
-  const isFixedAspectTemplate = selectedTemplate?.scalingMode === "fixedAspect";
+  const selectedBaseDesign = selectedTemplate
+    ? {
+        templateId: selectedTemplate.id,
+        sourceDataUrl: selectedTemplate.sourceDataUrl,
+        scalingMode: selectedTemplate.scalingMode,
+        slice: selectedTemplate.slice,
+      }
+    : hasBaseTemplate && selectedButton?.baseDesign?.templateId === templateChoice
+      ? selectedButton.baseDesign
+      : null;
+  const isFixedAspectTemplate = selectedBaseDesign?.scalingMode === "fixedAspect";
 
   useEffect(() => {
     let cancelled = false;
@@ -365,9 +378,29 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
   useEffect(() => {
     let cancelled = false;
 
-    if (isTemplateMode) {
+    if (!selectedBaseDesign || selectedBaseDesign.scalingMode !== "fixedAspect") {
       return;
     }
+
+    getImageAspectRatio(selectedBaseDesign.sourceDataUrl)
+      .then((aspectRatio) => {
+        if (!cancelled) {
+          setButtonAspectRatio(Math.min(8, Math.max(0.2, aspectRatio)));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setButtonAspectRatio(1);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBaseDesign?.sourceDataUrl, selectedBaseDesign?.scalingMode]);
+
+  useEffect(() => {
+    let cancelled = false;
 
     if (!imageSourceDataUrl || polygonPoints.length < 3) {
       setOutputDataUrl("");
@@ -390,7 +423,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
     return () => {
       cancelled = true;
     };
-  }, [imageSourceDataUrl, isTemplateMode, polygonPoints, scanArea]);
+  }, [imageSourceDataUrl, polygonPoints, scanArea]);
 
   const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -412,7 +445,6 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
       setOutputDataUrl("");
       setScanArea(defaultScanArea);
       setImageFrame(defaultImageFrame);
-      setTemplateChoice("custom");
       setFeedback("");
     });
     reader.readAsDataURL(file);
@@ -426,7 +458,6 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
     setScanArea(defaultScanArea);
     setImageFrame(defaultImageFrame);
     setPastedImageValue(sourceDataUrl.startsWith("data:image/") ? sourceDataUrl : "");
-    setTemplateChoice("custom");
     setFeedback("");
   };
 
@@ -444,21 +475,15 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
       return;
     }
 
-    setDesignType("image");
-    setImageSourceDataUrl(template.sourceDataUrl);
-    setImageSourceName(template.name);
-    setPolygonPoints([]);
-    setOutputDataUrl(template.sourceDataUrl);
-    setScanArea(defaultScanArea);
-    setImageFrame(defaultImageFrame);
-    setPastedImageValue("");
-    void getImageAspectRatio(template.sourceDataUrl)
-      .then((aspectRatio) => {
-        setButtonAspectRatio(Math.min(8, Math.max(0.2, aspectRatio)));
-      })
-      .catch(() => {
-        setButtonAspectRatio(1);
-      });
+    if (template.scalingMode === "fixedAspect") {
+      void getImageAspectRatio(template.sourceDataUrl)
+        .then((aspectRatio) => {
+          setButtonAspectRatio(Math.min(8, Math.max(0.2, aspectRatio)));
+        })
+        .catch(() => {
+          setButtonAspectRatio(1);
+        });
+    }
   };
 
   const handlePasteImage = (event: ClipboardEvent<HTMLTextAreaElement>) => {
@@ -707,15 +732,12 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
       setFeedback("文本按钮内容不能为空。");
       return;
     }
-    if (designType === "image" && !isTemplateMode && (!imageSourceDataUrl || polygonPoints.length < 3 || !outputDataUrl)) {
+    if (designType === "image" && (!imageSourceDataUrl || polygonPoints.length < 3 || !outputDataUrl)) {
       setFeedback("请先上传图片，并用至少 3 个点圈出图案。");
       return;
     }
-    if (designType === "image" && isTemplateMode && !outputDataUrl) {
-      setFeedback("请先选择一个有效的按钮模板。");
-      return;
-    }
 
+    const nextBaseDesign = selectedBaseDesign ?? undefined;
     const nextImageDesign: ButtonImageDesign | undefined =
       designType === "image"
         ? {
@@ -723,7 +745,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
             ...(imageSourceName ? { sourceName: imageSourceName } : {}),
             scanArea,
             imageFrame,
-            ...(isTemplateMode ? {} : { polygonPoints }),
+            polygonPoints,
             whiteTolerance: defaultWhiteTolerance,
             renderWhiteTolerance: defaultRenderWhiteTolerance,
             outputDataUrl,
@@ -739,8 +761,9 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
           ? {
               ...component,
               label: designType === "text" ? normalizedLabel : component.label,
+              baseDesign: nextBaseDesign,
               imageDesign: nextImageDesign,
-              position: designType === "image"
+              position: designType === "image" || isFixedAspectTemplate
                 ? {
                     ...component.position,
                     width: component.position.height * positionAspectRatio,
@@ -752,7 +775,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
                 textColor: draftTextColor,
                 fontSize: undefined,
                 textScalePercent: draftTextScalePercent,
-                lockAspectRatio: designType === "image" && (!isTemplateMode || isFixedAspectTemplate)
+                lockAspectRatio: isFixedAspectTemplate || (designType === "image" && !selectedBaseDesign)
                   ? positionAspectRatio
                   : undefined,
               },
@@ -795,7 +818,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
           <section className="button-design-controls">
             <h3>类型</h3>
             <label className="button-design-field">
-              <span>按钮类型</span>
+              <span>上层内容</span>
               <select
                 value={designType}
                 onChange={(event) => {
@@ -803,8 +826,8 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
                   setFeedback("");
                 }}
               >
-                <option value="text">文本按钮</option>
-                <option value="image">图案按钮</option>
+                <option value="text">文本</option>
+                <option value="image">图案</option>
               </select>
             </label>
           </section>
@@ -954,7 +977,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
           ) : null}
 
           <section className="button-design-color-panel">
-            <h3>纯色</h3>
+            <h3>纯色底座</h3>
             <label className="button-design-color-field">
               <span>按钮颜色</span>
               <input
@@ -982,16 +1005,16 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
           </section>
 
           <section className="button-design-template-panel">
-            <h3>按钮模板</h3>
+            <h3>底座模板</h3>
             <label className="button-design-field">
-              <span>模板选择</span>
+              <span>底座选择</span>
               <select
                 value={templateChoice}
                 onChange={(event) => {
                   handleTemplateChoiceChange(event.target.value as ButtonTemplateChoice);
                 }}
               >
-                <option value="custom">自定义</option>
+                <option value="custom">纯色底座</option>
                 {buttonTemplates.map((template) => (
                   <option key={template.id} value={template.id}>
                     {template.name}
@@ -999,9 +1022,9 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
                 ))}
               </select>
             </label>
-            {selectedTemplate ? (
+            {selectedBaseDesign ? (
               <p className="meta">
-                {selectedTemplate.scalingMode === "nineSlice" ? "当前模板为可压缩模板。" : "当前模板为不可压缩模板，按钮宽高比例由模板图片锁定。"}
+                {selectedBaseDesign.scalingMode === "nineSlice" ? "当前底座为可压缩模板。" : "当前底座为不可压缩模板，按钮宽高比例由底座图片锁定。"}
               </p>
             ) : null}
           </section>
@@ -1015,18 +1038,29 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
               onPointerUp={designType === "image" ? handlePreviewFramePointerEnd : undefined}
               onPointerCancel={designType === "image" ? handlePreviewFramePointerEnd : undefined}
               style={{
-                backgroundColor: draftBackgroundColor,
+                backgroundColor: selectedBaseDesign ? "#ffffff" : draftBackgroundColor,
                 color: draftTextColor,
-                ...(designType === "image" ? { width: `${buttonDesignPreviewHeightPx * buttonAspectRatio}px` } : {}),
+                ...(designType === "image" || isFixedAspectTemplate ? { width: `${buttonDesignPreviewHeightPx * buttonAspectRatio}px` } : {}),
                 ...getButtonTextScaleStyle(selectedButton.position, {
                   ...selectedButton.style,
                   textScalePercent: draftTextScalePercent,
                 }),
-                ...(typeof selectedButton.style?.borderRadius === "number"
+                ...(selectedBaseDesign
+                  ? { borderRadius: 0, borderColor: "transparent", padding: 0 }
+                  : typeof selectedButton.style?.borderRadius === "number"
                   ? { borderRadius: `${selectedButton.style.borderRadius}px` }
                   : {}),
               }}
             >
+              {selectedBaseDesign ? (
+                <span
+                  className="dynamic-ui-button-base"
+                  style={getButtonBaseDesignStyle(selectedBaseDesign)}
+                  aria-hidden="true"
+                >
+                  {selectedBaseDesign.scalingMode === "fixedAspect" ? <img src={selectedBaseDesign.sourceDataUrl} alt="" /> : null}
+                </span>
+              ) : null}
               {designType === "image" && outputDataUrl ? (
                 <span
                   className="dynamic-ui-button-image"
