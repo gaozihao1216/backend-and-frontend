@@ -11,6 +11,7 @@ import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
 import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
 import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
+import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
@@ -33,6 +34,7 @@ const PLAYER_SHOP_PATH = "/player_shop";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
+const DIRECTOR_BUTTON_TEMPLATES_PATH = "/director_console/ui_customization/button_templates";
 const DYNAMIC_PAGE_PATH = "/dynamic_page";
 const PAGE_BUILDER_UPDATE_SUFFIX = "/update";
 const BUTTON_DESIGN_SUFFIX = "/button_design";
@@ -179,13 +181,14 @@ export const App = () => {
       const searchParams = new URLSearchParams(search);
       if (pathname.endsWith(BUTTON_DESIGN_SUFFIX)) {
         const targetPath = pathname.slice(0, -BUTTON_DESIGN_SUFFIX.length) || "/";
-        return (
+        return renderBoundPage(user, "按钮美化", (apiUserId) => (
           <DirectorButtonDesignPage
+            userId={apiUserId}
             pageId={pageId}
             componentId={searchParams.get("componentId")}
             onBack={() => navigate(`${targetPath}${PAGE_BUILDER_UPDATE_SUFFIX}?pageId=${encodeURIComponent(pageId ?? "")}`)}
           />
-        );
+        ));
       }
 
       const targetPath = pathname.slice(0, -PAGE_BUILDER_UPDATE_SUFFIX.length) || "/";
@@ -252,7 +255,7 @@ export const App = () => {
       return renderBoundPage(user, "提案处理", (apiUserId) => <AdminPage userId={apiUserId} />);
     }
 
-    if (pathname === DIRECTOR_CONSOLE_PATH || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
+    if (pathname === DIRECTOR_CONSOLE_PATH || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH) {
       if (user.role !== "admin") {
         return (
           <section className="panel">
@@ -265,6 +268,15 @@ export const App = () => {
       if (pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
         return renderBoundPage(user, "UI 美化配置", () => (
           <DirectorUiCustomizationPage onNavigate={navigate} />
+        ));
+      }
+
+      if (pathname === DIRECTOR_BUTTON_TEMPLATES_PATH) {
+        return renderBoundPage(user, "按钮模板", (apiUserId) => (
+          <DirectorButtonTemplatesPage
+            userId={apiUserId}
+            onBack={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
+          />
         ));
       }
 
@@ -300,7 +312,10 @@ export const App = () => {
             ? "提案处理"
           : pathname === DIRECTOR_CONSOLE_PATH
           || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
-            ? pathname === DIRECTOR_UI_CUSTOMIZATION_PATH ? "UI 美化配置" : "总监控制台"
+          || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
+            ? pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
+              ? "按钮模板"
+              : pathname === DIRECTOR_UI_CUSTOMIZATION_PATH ? "UI 美化配置" : "总监控制台"
           : "";
 
   return (

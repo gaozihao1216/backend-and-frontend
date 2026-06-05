@@ -212,6 +212,9 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
           <p className="panel-copy">选择端侧后查看当前页面路径关系，后续可在这里继续挂接主题、布局和页面配置。</p>
         </div>
         <div className="director-ui-header-actions">
+          <button type="button" className="secondary" onClick={() => onNavigate("/director_console/ui_customization/button_templates")}>
+            查看按钮模板
+          </button>
           <button type="button" className="secondary" onClick={() => setManualOpen((current) => !current)}>
             说明书
           </button>

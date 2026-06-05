@@ -7,6 +7,8 @@ import {
   type MouseEvent,
   type PointerEvent,
 } from "react";
+import { listButtonTemplates } from "../api/index.js";
+import type { UiButtonTemplate } from "../api/api-contracts.js";
 import { getPageConfig, savePageConfig } from "../lib/ui-customization.js";
 import type {
   ButtonComponent,
@@ -21,13 +23,14 @@ import {
 } from "../component/ui-renderer/ui-renderer-utils.js";
 
 type DirectorButtonDesignPageProps = {
+  userId: string;
   pageId: string | null;
   componentId: string | null;
   onBack: () => void;
 };
 
 type ButtonDesignType = "text" | "image";
-type ButtonTemplateChoice = "custom";
+type ButtonTemplateChoice = "custom" | string;
 type ScanAreaDrawState = {
   startPoint: ImagePolygonPoint;
 };
@@ -66,6 +69,13 @@ const defaultImageFrame: ImageCrop = {
   y: 0,
   width: 100,
   height: 100,
+};
+
+const getImageAspectRatio = async (dataUrl: string): Promise<number> => {
+  const image = new Image();
+  image.src = dataUrl;
+  await image.decode();
+  return image.naturalHeight > 0 ? image.naturalWidth / image.naturalHeight : 1;
 };
 
 const findButton = (pageConfig: PageConfig | null, componentId: string | null): ButtonComponent | null => {
@@ -287,9 +297,10 @@ const generateRowBoundaryPolygon = async (
   return [...leftBoundary, ...rightBoundary.reverse()];
 };
 
-export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: DirectorButtonDesignPageProps) => {
+export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }: DirectorButtonDesignPageProps) => {
   const [pageConfig, setPageConfig] = useState<PageConfig | null>(() => pageId ? getPageConfig(pageId) : null);
   const selectedButton = useMemo(() => findButton(pageConfig, componentId), [componentId, pageConfig]);
+  const [buttonTemplates, setButtonTemplates] = useState<UiButtonTemplate[]>([]);
   const [designType, setDesignType] = useState<ButtonDesignType>(() =>
     selectedButton?.imageDesign?.outputDataUrl ? "image" : "text",
   );
@@ -325,9 +336,34 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
   const [previewFrameDragState, setPreviewFrameDragState] = useState<PreviewFrameDragState | null>(null);
   const [skipNextStageClick, setSkipNextStageClick] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const isTemplateMode = templateChoice !== "custom";
 
   useEffect(() => {
     let cancelled = false;
+
+    listButtonTemplates(userId)
+      .then((templates) => {
+        if (!cancelled) {
+          setButtonTemplates(templates);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setFeedback(error instanceof Error ? error.message : "按钮模板加载失败。");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (isTemplateMode) {
+      return;
+    }
 
     if (!imageSourceDataUrl || polygonPoints.length < 3) {
       setOutputDataUrl("");
@@ -350,7 +386,7 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
     return () => {
       cancelled = true;
     };
-  }, [imageSourceDataUrl, polygonPoints, scanArea]);
+  }, [imageSourceDataUrl, isTemplateMode, polygonPoints, scanArea]);
 
   const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -372,6 +408,7 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
       setOutputDataUrl("");
       setScanArea(defaultScanArea);
       setImageFrame(defaultImageFrame);
+      setTemplateChoice("custom");
       setFeedback("");
     });
     reader.readAsDataURL(file);
@@ -385,7 +422,39 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
     setScanArea(defaultScanArea);
     setImageFrame(defaultImageFrame);
     setPastedImageValue(sourceDataUrl.startsWith("data:image/") ? sourceDataUrl : "");
+    setTemplateChoice("custom");
     setFeedback("");
+  };
+
+  const handleTemplateChoiceChange = (choice: ButtonTemplateChoice) => {
+    setTemplateChoice(choice);
+    setFeedback("");
+
+    if (choice === "custom") {
+      return;
+    }
+
+    const template = buttonTemplates.find((candidate) => candidate.id === choice);
+    if (!template) {
+      setFeedback("未找到所选按钮模板。");
+      return;
+    }
+
+    setDesignType("image");
+    setImageSourceDataUrl(template.sourceDataUrl);
+    setImageSourceName(template.name);
+    setPolygonPoints([]);
+    setOutputDataUrl(template.sourceDataUrl);
+    setScanArea(defaultScanArea);
+    setImageFrame(defaultImageFrame);
+    setPastedImageValue("");
+    void getImageAspectRatio(template.sourceDataUrl)
+      .then((aspectRatio) => {
+        setButtonAspectRatio(Math.min(8, Math.max(0.2, aspectRatio)));
+      })
+      .catch(() => {
+        setButtonAspectRatio(1);
+      });
   };
 
   const handlePasteImage = (event: ClipboardEvent<HTMLTextAreaElement>) => {
@@ -557,6 +626,10 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
     (event: PointerEvent<HTMLSpanElement>) => {
       event.preventDefault();
       event.stopPropagation();
+      if (target === "button" && isTemplateMode) {
+        setFeedback("采用按钮模板后，按钮宽高比例由模板锁定。");
+        return;
+      }
       const previewButton = event.currentTarget.closest<HTMLButtonElement>(".button-design-live-preview");
       if (!previewButton) {
         return;
@@ -630,8 +703,12 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
       setFeedback("文本按钮内容不能为空。");
       return;
     }
-    if (designType === "image" && (!imageSourceDataUrl || polygonPoints.length < 3 || !outputDataUrl)) {
+    if (designType === "image" && !isTemplateMode && (!imageSourceDataUrl || polygonPoints.length < 3 || !outputDataUrl)) {
       setFeedback("请先上传图片，并用至少 3 个点圈出图案。");
+      return;
+    }
+    if (designType === "image" && isTemplateMode && !outputDataUrl) {
+      setFeedback("请先选择一个有效的按钮模板。");
       return;
     }
 
@@ -642,7 +719,7 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
             ...(imageSourceName ? { sourceName: imageSourceName } : {}),
             scanArea,
             imageFrame,
-            polygonPoints,
+            ...(isTemplateMode ? {} : { polygonPoints }),
             whiteTolerance: defaultWhiteTolerance,
             renderWhiteTolerance: defaultRenderWhiteTolerance,
             outputDataUrl,
@@ -905,13 +982,18 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
               <select
                 value={templateChoice}
                 onChange={(event) => {
-                  setTemplateChoice(event.target.value as ButtonTemplateChoice);
-                  setFeedback("");
+                  handleTemplateChoiceChange(event.target.value as ButtonTemplateChoice);
                 }}
               >
                 <option value="custom">自定义</option>
+                {buttonTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
               </select>
             </label>
+            {isTemplateMode ? <p className="meta">采用模板后，按钮宽高比例由模板图片锁定。</p> : null}
           </section>
 
           <section className="button-design-preview-panel">
@@ -957,13 +1039,15 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
               ) : null}
               {designType === "image" ? (
                 <span className="button-design-button-frame">
-                  {(["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((corner) => (
-                    <span
-                      key={corner}
-                      className={`button-design-frame-handle ${corner}`}
-                      onPointerDown={handlePreviewFramePointerDown("button", corner)}
-                    />
-                  ))}
+                  {isTemplateMode
+                    ? null
+                    : (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((corner) => (
+                        <span
+                          key={corner}
+                          className={`button-design-frame-handle ${corner}`}
+                          onPointerDown={handlePreviewFramePointerDown("button", corner)}
+                        />
+                      ))}
                 </span>
               ) : null}
               {designType === "image" ? (
@@ -987,7 +1071,9 @@ export const DirectorButtonDesignPage = ({ pageId, componentId, onBack }: Direct
               ) : null}
             </button>
             {designType === "image" ? (
-              <p className="meta">拖动外框角点调整按钮比例，拖动内框角点调整图案位置。</p>
+              <p className="meta">
+                {isTemplateMode ? "模板模式下按钮比例已锁定，可拖动内框角点调整图案位置。" : "拖动外框角点调整按钮比例，拖动内框角点调整图案位置。"}
+              </p>
             ) : null}
           </section>
         </div>
