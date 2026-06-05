@@ -6,8 +6,8 @@ private[tables] object ButtonTemplateTableJdbcWrite {
   def insert(connection: Connection, row: ButtonTemplateRow): ButtonTemplateRow = {
     val statement = connection.prepareStatement(
       """
-        INSERT INTO ui_button_templates (id, name, source_data_url, slice, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO ui_button_templates (id, name, source_data_url, scaling_mode, slice, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       """
     )
     try {
@@ -23,17 +23,18 @@ private[tables] object ButtonTemplateTableJdbcWrite {
     val statement = connection.prepareStatement(
       """
         UPDATE ui_button_templates
-        SET name = ?, source_data_url = ?, slice = ?, created_at = ?, updated_at = ?
+        SET name = ?, source_data_url = ?, scaling_mode = ?, slice = ?, created_at = ?, updated_at = ?
         WHERE id = ?
       """
     )
     try {
       statement.setString(1, row.name)
       statement.setString(2, row.sourceDataUrl)
-      statement.setString(3, ButtonTemplateTableCodec.sliceToDb(row.slice))
-      statement.setString(4, row.createdAt)
-      statement.setString(5, row.updatedAt)
-      statement.setString(6, row.id)
+      statement.setString(3, row.scalingMode.value)
+      statement.setString(4, ButtonTemplateTableCodec.sliceToDb(row.slice))
+      statement.setString(5, row.createdAt)
+      statement.setString(6, row.updatedAt)
+      statement.setString(7, row.id)
       if (statement.executeUpdate() == 0) None else Some(row)
     } finally {
       statement.close()

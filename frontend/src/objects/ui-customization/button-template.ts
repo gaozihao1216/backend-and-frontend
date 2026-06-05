@@ -8,10 +8,14 @@ export const ButtonTemplateSliceSchema = z.object({
 });
 export type ButtonTemplateSlice = z.infer<typeof ButtonTemplateSliceSchema>;
 
+export const ButtonTemplateScalingModeSchema = z.enum(["fixedAspect", "nineSlice"]).default("fixedAspect");
+export type ButtonTemplateScalingMode = z.infer<typeof ButtonTemplateScalingModeSchema>;
+
 export const ButtonTemplateSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   sourceDataUrl: z.string().min(1),
+  scalingMode: ButtonTemplateScalingModeSchema,
   slice: ButtonTemplateSliceSchema,
   createdAt: z.string().min(1).optional(),
   updatedAt: z.string().min(1).optional(),

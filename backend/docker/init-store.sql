@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS ui_button_templates (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   source_data_url TEXT NOT NULL,
+  scaling_mode TEXT NOT NULL DEFAULT 'fixedAspect',
   slice TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL

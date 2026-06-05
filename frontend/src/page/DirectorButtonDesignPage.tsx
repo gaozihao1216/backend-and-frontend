@@ -337,6 +337,10 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
   const [skipNextStageClick, setSkipNextStageClick] = useState(false);
   const [feedback, setFeedback] = useState("");
   const isTemplateMode = templateChoice !== "custom";
+  const selectedTemplate = isTemplateMode
+    ? buttonTemplates.find((template) => template.id === templateChoice) ?? null
+    : null;
+  const isFixedAspectTemplate = selectedTemplate?.scalingMode === "fixedAspect";
 
   useEffect(() => {
     let cancelled = false;
@@ -626,8 +630,8 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
     (event: PointerEvent<HTMLSpanElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      if (target === "button" && isTemplateMode) {
-        setFeedback("采用按钮模板后，按钮宽高比例由模板锁定。");
+      if (target === "button" && isFixedAspectTemplate) {
+        setFeedback("采用不可压缩模板后，按钮宽高比例由模板锁定。");
         return;
       }
       const previewButton = event.currentTarget.closest<HTMLButtonElement>(".button-design-live-preview");
@@ -748,7 +752,9 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
                 textColor: draftTextColor,
                 fontSize: undefined,
                 textScalePercent: draftTextScalePercent,
-                lockAspectRatio: designType === "image" ? positionAspectRatio : undefined,
+                lockAspectRatio: designType === "image" && (!isTemplateMode || isFixedAspectTemplate)
+                  ? positionAspectRatio
+                  : undefined,
               },
             }
           : component,
@@ -993,7 +999,11 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
                 ))}
               </select>
             </label>
-            {isTemplateMode ? <p className="meta">采用模板后，按钮宽高比例由模板图片锁定。</p> : null}
+            {selectedTemplate ? (
+              <p className="meta">
+                {selectedTemplate.scalingMode === "nineSlice" ? "当前模板为可压缩模板。" : "当前模板为不可压缩模板，按钮宽高比例由模板图片锁定。"}
+              </p>
+            ) : null}
           </section>
 
           <section className="button-design-preview-panel">
@@ -1039,7 +1049,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
               ) : null}
               {designType === "image" ? (
                 <span className="button-design-button-frame">
-                  {isTemplateMode
+                  {isFixedAspectTemplate
                     ? null
                     : (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((corner) => (
                         <span
@@ -1072,7 +1082,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
             </button>
             {designType === "image" ? (
               <p className="meta">
-                {isTemplateMode ? "模板模式下按钮比例已锁定，可拖动内框角点调整图案位置。" : "拖动外框角点调整按钮比例，拖动内框角点调整图案位置。"}
+                {isFixedAspectTemplate ? "不可压缩模板下按钮比例已锁定，可拖动内框角点调整图案位置。" : "拖动外框角点调整按钮比例，拖动内框角点调整图案位置。"}
               </p>
             ) : null}
           </section>

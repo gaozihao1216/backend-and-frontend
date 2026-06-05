@@ -8,6 +8,7 @@ object ButtonTemplateRowMapper {
       id = row.id,
       name = row.name,
       sourceDataUrl = row.sourceDataUrl,
+      scalingMode = row.scalingMode,
       slice = row.slice,
       createdAt = Some(row.createdAt),
       updatedAt = Some(row.updatedAt)
@@ -18,6 +19,7 @@ object ButtonTemplateRowMapper {
       id = template.id,
       name = template.name,
       sourceDataUrl = template.sourceDataUrl,
+      scalingMode = template.scalingMode,
       slice = template.slice,
       createdAt = createdAt,
       updatedAt = updatedAt

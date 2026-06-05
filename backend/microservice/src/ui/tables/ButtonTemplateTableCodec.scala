@@ -3,12 +3,12 @@ package microservice.ui.tables
 import io.circe.parser.decode
 import io.circe.syntax._
 import java.sql.{PreparedStatement, ResultSet, SQLException}
-import microservice.ui.objects.ButtonTemplateSlice
+import microservice.ui.objects.{ButtonTemplateScalingMode, ButtonTemplateSlice}
 
 private[tables] object ButtonTemplateTableCodec {
   val baseSelect: String =
     """
-      SELECT id, name, source_data_url, slice, created_at, updated_at
+      SELECT id, name, source_data_url, scaling_mode, slice, created_at, updated_at
       FROM ui_button_templates
     """
 
@@ -19,9 +19,10 @@ private[tables] object ButtonTemplateTableCodec {
     statement.setString(1, row.id)
     statement.setString(2, row.name)
     statement.setString(3, row.sourceDataUrl)
-    statement.setString(4, sliceToDb(row.slice))
-    statement.setString(5, row.createdAt)
-    statement.setString(6, row.updatedAt)
+    statement.setString(4, row.scalingMode.value)
+    statement.setString(5, sliceToDb(row.slice))
+    statement.setString(6, row.createdAt)
+    statement.setString(7, row.updatedAt)
   }
 
   def rowFromResultSet(resultSet: ResultSet): ButtonTemplateRow =
@@ -29,6 +30,7 @@ private[tables] object ButtonTemplateTableCodec {
       id = resultSet.getString("id"),
       name = resultSet.getString("name"),
       sourceDataUrl = resultSet.getString("source_data_url"),
+      scalingMode = ButtonTemplateScalingMode.fromString(resultSet.getString("scaling_mode")).getOrElse(ButtonTemplateScalingMode.FixedAspect),
       slice = sliceFromDb(resultSet.getString("slice")),
       createdAt = resultSet.getString("created_at"),
       updatedAt = resultSet.getString("updated_at")
