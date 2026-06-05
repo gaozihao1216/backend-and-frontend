@@ -1,6 +1,12 @@
 import type { ButtonComponent } from "../../objects/ui-customization/ui-customization-objects.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
-import { getComponentStyle, getPositionStyle, interpolatePreviewText } from "./ui-renderer-utils.js";
+import {
+  getButtonImageDesignStyle,
+  getButtonTextScaleStyle,
+  getComponentStyle,
+  getPositionStyle,
+  interpolatePreviewText,
+} from "./ui-renderer-utils.js";
 
 type DynamicButtonProps = {
   button: ButtonComponent;
@@ -10,6 +16,7 @@ type DynamicButtonProps = {
 export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   const label = interpolatePreviewText(button.label, context.previewUser);
   const isActivePanelTrigger = button.action.type === "openPanel" && context.openPanelIds.has(button.action.panelId);
+  const shouldShowContent = !button.imageDesign?.outputDataUrl;
 
   const handleClick = () => {
     switch (button.action.type) {
@@ -32,13 +39,25 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
       style={{
         ...getPositionStyle(button.position),
         ...getComponentStyle(button.style),
+        ...getButtonTextScaleStyle(button.position, button.style),
       }}
       onClick={handleClick}
       disabled={button.action.type === "openModal"}
       title={button.action.type === "openModal" ? "openModal 暂未实现" : undefined}
     >
-      {button.icon ? <span className="dynamic-ui-button-icon">{button.icon}</span> : null}
-      <span>{label}</span>
+      {button.imageDesign ? (
+        <span
+          className="dynamic-ui-button-image"
+          style={getButtonImageDesignStyle(button.imageDesign)}
+          aria-hidden="true"
+        />
+      ) : null}
+      {shouldShowContent ? (
+        <span className="dynamic-ui-button-content">
+          {button.icon ? <span className="dynamic-ui-button-icon">{button.icon}</span> : null}
+          <span>{label}</span>
+        </span>
+      ) : null}
     </button>
   );
 };

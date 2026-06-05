@@ -1,4 +1,5 @@
 import type {
+  ButtonImageDesign,
   ComponentPosition,
   ComponentStyle,
   PageComponent,
@@ -52,6 +53,67 @@ export const getComponentStyle = (style?: ComponentStyle): React.CSSProperties =
   ...(typeof style?.borderRadius === "number" ? { borderRadius: `${style.borderRadius}px` } : {}),
   ...(typeof style?.fontSize === "number" ? { fontSize: `${style.fontSize}px` } : {}),
 });
+
+export const getButtonTextScaleStyle = (
+  position: ComponentPosition,
+  style?: ComponentStyle,
+): React.CSSProperties => {
+  if (typeof style?.textScalePercent === "number") {
+    if (position.unit === "px") {
+      return {
+        fontSize: `${Math.max(8, (position.height * style.textScalePercent) / 100)}px`,
+      };
+    }
+
+    return {
+      fontSize: `clamp(8px, ${(position.height * style.textScalePercent) / 100}cqh, 42px)`,
+    };
+  }
+
+  return typeof style?.fontSize === "number" ? { fontSize: `${style.fontSize}px` } : {};
+};
+
+export const getButtonImageDesignStyle = (imageDesign: ButtonImageDesign): React.CSSProperties => {
+  const imageFrame = imageDesign.imageFrame ?? {
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+  };
+
+  if (imageDesign.outputDataUrl) {
+    return {
+      backgroundImage: `url("${imageDesign.outputDataUrl}")`,
+      backgroundPosition: "center",
+      backgroundSize: "contain",
+      width: `${imageFrame.width}%`,
+      height: `${imageFrame.height}%`,
+      left: `${imageFrame.x}%`,
+      top: `${imageFrame.y}%`,
+    };
+  }
+
+  if (!imageDesign.crop) {
+    return {
+      backgroundImage: `url("${imageDesign.sourceDataUrl}")`,
+      backgroundPosition: "center",
+      backgroundSize: "contain",
+      width: "100%",
+      height: "100%",
+      left: "0",
+      top: "0",
+    };
+  }
+
+  const crop = imageDesign.crop;
+  return {
+    backgroundImage: `url("${imageDesign.sourceDataUrl}")`,
+    width: `${10000 / crop.width}%`,
+    height: `${10000 / crop.height}%`,
+    left: `${(-crop.x / crop.width) * 100}%`,
+    top: `${(-crop.y / crop.height) * 100}%`,
+  };
+};
 
 export const interpolatePreviewText = (value: string, previewUser?: UiPreviewUser): string => {
   if (!previewUser) {

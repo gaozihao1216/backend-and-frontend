@@ -33,8 +33,37 @@ export const ComponentStyleSchema = z.object({
   textColor: nullishToUndefined(z.string().min(1)),
   borderRadius: nullishToUndefined(z.number().min(0)),
   fontSize: nullishToUndefined(z.number().positive()),
+  textScalePercent: nullishToUndefined(z.number().positive().max(100)),
+  lockAspectRatio: nullishToUndefined(z.number().positive()),
 });
 export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
+
+export const ImageCropSchema = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  width: z.number().positive().max(100),
+  height: z.number().positive().max(100),
+});
+export type ImageCrop = z.infer<typeof ImageCropSchema>;
+
+export const ImagePolygonPointSchema = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+});
+export type ImagePolygonPoint = z.infer<typeof ImagePolygonPointSchema>;
+
+export const ButtonImageDesignSchema = z.object({
+  sourceDataUrl: z.string().min(1),
+  sourceName: nullishToUndefined(z.string().min(1)),
+  crop: nullishToUndefined(ImageCropSchema),
+  scanArea: nullishToUndefined(ImageCropSchema),
+  imageFrame: nullishToUndefined(ImageCropSchema),
+  polygonPoints: nullishToUndefined(z.array(ImagePolygonPointSchema)),
+  whiteTolerance: nullishToUndefined(z.number().min(0).max(120)),
+  renderWhiteTolerance: nullishToUndefined(z.number().min(-1).max(120)),
+  outputDataUrl: nullishToUndefined(z.string().min(1)),
+});
+export type ButtonImageDesign = z.infer<typeof ButtonImageDesignSchema>;
 
 export const NavigateActionSchema = z.object({
   type: z.literal("navigate"),
@@ -71,6 +100,7 @@ export const ButtonComponentSchema = z.object({
   icon: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
+  imageDesign: nullishToUndefined(ButtonImageDesignSchema),
   action: ComponentActionSchema,
 });
 export type ButtonComponent = z.infer<typeof ButtonComponentSchema>;

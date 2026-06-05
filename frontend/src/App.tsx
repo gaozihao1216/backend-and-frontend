@@ -10,6 +10,7 @@ import { AdminPage } from "./page/AdminPage.js";
 import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
 import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
+import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
@@ -34,6 +35,7 @@ const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
 const DYNAMIC_PAGE_PATH = "/dynamic_page";
 const PAGE_BUILDER_UPDATE_SUFFIX = "/update";
+const BUTTON_DESIGN_SUFFIX = "/button_design";
 
 const readPathname = () => window.location.pathname;
 const readSearch = () => window.location.search;
@@ -163,7 +165,7 @@ export const App = () => {
       return <DynamicPageHost pageId={pageId} useDefaultConfig={useDefaultConfig} onNavigate={navigate} />;
     }
 
-    if (pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)) {
+    if (pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX) || pathname.endsWith(BUTTON_DESIGN_SUFFIX)) {
       if (user.role !== "admin" || user.adminLevel !== "director") {
         return (
           <section className="panel">
@@ -174,12 +176,25 @@ export const App = () => {
       }
 
       const pageId = new URLSearchParams(search).get("pageId");
+      const searchParams = new URLSearchParams(search);
+      if (pathname.endsWith(BUTTON_DESIGN_SUFFIX)) {
+        const targetPath = pathname.slice(0, -BUTTON_DESIGN_SUFFIX.length) || "/";
+        return (
+          <DirectorButtonDesignPage
+            pageId={pageId}
+            componentId={searchParams.get("componentId")}
+            onBack={() => navigate(`${targetPath}${PAGE_BUILDER_UPDATE_SUFFIX}?pageId=${encodeURIComponent(pageId ?? "")}`)}
+          />
+        );
+      }
+
       const targetPath = pathname.slice(0, -PAGE_BUILDER_UPDATE_SUFFIX.length) || "/";
       return (
         <DirectorPageBuilderPage
           pageId={pageId}
           targetPath={targetPath}
           onBack={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
+          onNavigate={navigate}
         />
       );
     }
@@ -271,7 +286,8 @@ export const App = () => {
     && pathname !== DIRECTOR_UI_CUSTOMIZATION_PATH;
   const standaloneTitle =
     pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)
-      ? "页面优化"
+    || pathname.endsWith(BUTTON_DESIGN_SUFFIX)
+      ? pathname.endsWith(BUTTON_DESIGN_SUFFIX) ? "按钮美化" : "页面优化"
       : pathname === DYNAMIC_PAGE_PATH
         ? "动态页面"
       : pathname === OWN_PAGE_PATH
