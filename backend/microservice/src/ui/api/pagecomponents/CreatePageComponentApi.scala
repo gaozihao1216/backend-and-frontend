@@ -1,4 +1,4 @@
-package microservice.ui.api
+package microservice.ui.api.pagecomponents
 
 import cats.effect.IO
 import io.circe.generic.semiauto._
@@ -14,21 +14,20 @@ import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-final case class UpdatePageComponentBody(
+final case class CreatePageComponentBody(
   component: PageComponent
 )
 
-object UpdatePageComponentBody {
-  implicit val encoder: Encoder[UpdatePageComponentBody] = deriveEncoder
-  implicit val decoder: Decoder[UpdatePageComponentBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, UpdatePageComponentBody] = jsonOf
+object CreatePageComponentBody {
+  implicit val encoder: Encoder[CreatePageComponentBody] = deriveEncoder
+  implicit val decoder: Decoder[CreatePageComponentBody] = deriveDecoder
+  implicit val entityDecoder: EntityDecoder[IO, CreatePageComponentBody] = jsonOf
 }
 
-final case class UpdatePageComponentAPIMessage(
+final case class CreatePageComponentAPIMessage(
   userId: String,
   pageId: String,
-  componentId: String,
-  body: UpdatePageComponentBody
+  body: CreatePageComponentBody
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 
@@ -38,18 +37,13 @@ final case class UpdatePageComponentAPIMessage(
         UiPageTable.findById(connection, pageId) match {
           case None =>
             Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-          case Some(page) if !page.components.exists(_.id == componentId) =>
-            Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError)
+          case Some(page) if page.components.exists(_.id == body.component.id) =>
+            Left(UiCustomizationErrors.ComponentAlreadyExists(body.component.id).toHttpError)
           case Some(_) =>
-            val component = body.component match {
-              case button: microservice.ui.objects.ButtonComponent => button.copy(id = componentId)
-              case panel: microservice.ui.objects.PanelComponent => panel.copy(id = componentId)
-              case text: microservice.ui.objects.TextComponent => text.copy(id = componentId)
-            }
             UiPageTable
-              .updateComponent(connection, pageId, componentId, component, Instant.now().toString)
+              .addComponent(connection, pageId, body.component, Instant.now().toString)
               .map(row => Right(UiPageRowMapper.toPageConfig(row)))
-              .getOrElse(Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError))
+              .getOrElse(Left(UiCustomizationErrors.ComponentAlreadyExists(body.component.id).toHttpError))
         }
       }
     }

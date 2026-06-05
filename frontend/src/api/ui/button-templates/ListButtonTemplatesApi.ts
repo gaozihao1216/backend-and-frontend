@@ -1,5 +1,5 @@
-import { ListButtonTemplatesResponseDataSchema, type UiButtonTemplate } from "../api-contracts.js";
-import { request } from "../client.js";
+import { ListButtonTemplatesResponseDataSchema, type UiButtonTemplate } from "../../api-contracts.js";
+import { request } from "../../client.js";
 
 export const ListButtonTemplatesApiPath = "/admin/director/ui/button-templates" as const;
 

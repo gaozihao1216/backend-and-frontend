@@ -1,5 +1,5 @@
-import { UpdateButtonTemplateRequestBodySchema, UpdateButtonTemplateRequestParamsSchema, UpdateButtonTemplateResponseDataSchema, type UiButtonTemplate } from "../api-contracts.js";
-import { request } from "../client.js";
+import { UpdateButtonTemplateRequestBodySchema, UpdateButtonTemplateRequestParamsSchema, UpdateButtonTemplateResponseDataSchema, type UiButtonTemplate } from "../../api-contracts.js";
+import { request } from "../../client.js";
 
 export const UpdateButtonTemplateApiPath = "/admin/director/ui/button-templates" as const;
 

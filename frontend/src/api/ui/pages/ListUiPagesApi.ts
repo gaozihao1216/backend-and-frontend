@@ -1,5 +1,5 @@
-import { ListUiPagesRequestQuerySchema, ListUiPagesResponseDataSchema, type UiPageConfig, type UiPageEndpoint } from "../api-contracts.js";
-import { request } from "../client.js";
+import { ListUiPagesRequestQuerySchema, ListUiPagesResponseDataSchema, type UiPageConfig, type UiPageEndpoint } from "../../api-contracts.js";
+import { request } from "../../client.js";
 
 export const ListUiPagesApiPath = "/admin/director/ui/pages" as const;
 

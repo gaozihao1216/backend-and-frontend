@@ -1,5 +1,5 @@
-import { DeleteButtonTemplateRequestParamsSchema, DeleteButtonTemplateResponseDataSchema, type UiButtonTemplate } from "../api-contracts.js";
-import { request } from "../client.js";
+import { DeleteButtonTemplateRequestParamsSchema, DeleteButtonTemplateResponseDataSchema, type UiButtonTemplate } from "../../api-contracts.js";
+import { request } from "../../client.js";
 
 export const DeleteButtonTemplateApiPath = "/admin/director/ui/button-templates" as const;
 

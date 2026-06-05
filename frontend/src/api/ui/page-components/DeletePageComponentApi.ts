@@ -1,5 +1,5 @@
-import { DeletePageComponentRequestParamsSchema, DeletePageComponentResponseDataSchema, type UiPageConfig } from "../api-contracts.js";
-import { request } from "../client.js";
+import { DeletePageComponentRequestParamsSchema, DeletePageComponentResponseDataSchema, type UiPageConfig } from "../../api-contracts.js";
+import { request } from "../../client.js";
 
 export const DeletePageComponentApiPath = "/admin/director/ui/pages" as const;
 

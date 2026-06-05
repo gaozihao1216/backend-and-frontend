@@ -1,5 +1,5 @@
-import { CreatePageComponentRequestBodySchema, CreatePageComponentRequestParamsSchema, CreatePageComponentResponseDataSchema, type UiPageComponent, type UiPageConfig } from "../api-contracts.js";
-import { request } from "../client.js";
+import { CreatePageComponentRequestBodySchema, CreatePageComponentRequestParamsSchema, CreatePageComponentResponseDataSchema, type UiPageComponent, type UiPageConfig } from "../../api-contracts.js";
+import { request } from "../../client.js";
 
 export const CreatePageComponentApiPath = "/admin/director/ui/pages" as const;
 

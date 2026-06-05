@@ -4,24 +4,28 @@ import cats.effect.IO
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.ApiSuccess
-import microservice.ui.api.{
+import microservice.ui.api.buttontemplates.{
   CreateButtonTemplateAPIMessage,
   CreateButtonTemplateBody,
+  DeleteButtonTemplateAPIMessage,
+  GetButtonTemplateAPIMessage,
+  ListButtonTemplatesAPIMessage,
+  UpdateButtonTemplateAPIMessage,
+  UpdateButtonTemplateBody
+}
+import microservice.ui.api.pagecomponents.{
   CreatePageComponentAPIMessage,
   CreatePageComponentBody,
+  DeletePageComponentAPIMessage,
+  UpdatePageComponentAPIMessage,
+  UpdatePageComponentBody
+}
+import microservice.ui.api.pages.{
   CreateUiPageAPIMessage,
   CreateUiPageBody,
-  DeleteButtonTemplateAPIMessage,
-  DeletePageComponentAPIMessage,
   DeleteUiPageAPIMessage,
-  GetButtonTemplateAPIMessage,
   GetUiPageAPIMessage,
-  ListButtonTemplatesAPIMessage,
   ListUiPagesAPIMessage,
-  UpdateButtonTemplateAPIMessage,
-  UpdateButtonTemplateBody,
-  UpdatePageComponentAPIMessage,
-  UpdatePageComponentBody,
   UpdateUiPageAPIMessage,
   UpdateUiPageBody
 }

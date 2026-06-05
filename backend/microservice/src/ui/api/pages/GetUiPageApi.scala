@@ -1,4 +1,4 @@
-package microservice.ui.api
+package microservice.ui.api.pages
 
 import cats.effect.IO
 import java.sql.Connection
@@ -9,7 +9,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
 
-final case class DeleteUiPageAPIMessage(
+final case class GetUiPageAPIMessage(
   userId: String,
   pageId: String
 ) extends APIWithTokenMessage[PageConfig] {
@@ -18,7 +18,7 @@ final case class DeleteUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     IO.pure {
       AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
-        UiPageTable.deleteById(connection, pageId)
+        UiPageTable.findById(connection, pageId)
           .map(UiPageRowMapper.toPageConfig)
           .toRight(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
       }

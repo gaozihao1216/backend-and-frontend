@@ -1,4 +1,4 @@
-package microservice.ui.api
+package microservice.ui.api.buttontemplates
 
 import cats.effect.IO
 import java.sql.Connection

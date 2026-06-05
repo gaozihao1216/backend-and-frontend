@@ -1,4 +1,4 @@
-package microservice.ui.api
+package microservice.ui.api.buttontemplates
 
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}

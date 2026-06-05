@@ -1,4 +1,4 @@
-package microservice.ui.api
+package microservice.ui.api.pages
 
 import cats.effect.IO
 import io.circe.generic.semiauto._
