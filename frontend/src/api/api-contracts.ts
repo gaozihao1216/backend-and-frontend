@@ -31,9 +31,11 @@ import { UserRoleSchema } from "../objects/system/user-role.js";
 import {
   PageComponentSchema,
   PageConfigSchema,
+  ButtonTemplateSchema,
   UiEndpointSchema,
   type PageConfig as PageConfigObject,
   type PageComponent as PageComponentObject,
+  type ButtonTemplate as ButtonTemplateObject,
   type UiEndpoint,
 } from "../objects/ui-customization/ui-customization-objects.js";
 
@@ -64,6 +66,7 @@ export type DirectorTransferResult = DirectorTransferResultObject;
 export type ApiUserProfile = UserProfileObject;
 export type UiPageConfig = PageConfigObject;
 export type UiPageComponent = PageComponentObject;
+export type UiButtonTemplate = ButtonTemplateObject;
 
 export const GetBackendUsersRequestQuerySchema = z.object({});
 export type GetBackendUsersRequestQuery = z.infer<typeof GetBackendUsersRequestQuerySchema>;
@@ -206,4 +209,26 @@ export const UpdatePageComponentResponseDataSchema = PageConfigSchema;
 
 export const DeletePageComponentRequestParamsSchema = UpdatePageComponentRequestParamsSchema;
 export const DeletePageComponentResponseDataSchema = PageConfigSchema;
+
+export const ListButtonTemplatesRequestQuerySchema = z.object({});
+export const ListButtonTemplatesResponseDataSchema = z.array(ButtonTemplateSchema);
+
+export const GetButtonTemplateRequestParamsSchema = z.object({
+  templateId: z.string().min(1),
+});
+export const GetButtonTemplateResponseDataSchema = ButtonTemplateSchema;
+
+export const CreateButtonTemplateRequestBodySchema = z.object({
+  template: ButtonTemplateSchema,
+});
+export type CreateButtonTemplateRequestBody = z.infer<typeof CreateButtonTemplateRequestBodySchema>;
+export const CreateButtonTemplateResponseDataSchema = ButtonTemplateSchema;
+
+export const UpdateButtonTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
+export const UpdateButtonTemplateRequestBodySchema = CreateButtonTemplateRequestBodySchema;
+export type UpdateButtonTemplateRequestBody = z.infer<typeof UpdateButtonTemplateRequestBodySchema>;
+export const UpdateButtonTemplateResponseDataSchema = ButtonTemplateSchema;
+
+export const DeleteButtonTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
+export const DeleteButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 

@@ -6,3 +6,8 @@ export * from "./ui/DeleteUiPageApi.js";
 export * from "./ui/CreatePageComponentApi.js";
 export * from "./ui/UpdatePageComponentApi.js";
 export * from "./ui/DeletePageComponentApi.js";
+export * from "./ui/ListButtonTemplatesApi.js";
+export * from "./ui/GetButtonTemplateApi.js";
+export * from "./ui/CreateButtonTemplateApi.js";
+export * from "./ui/UpdateButtonTemplateApi.js";
+export * from "./ui/DeleteButtonTemplateApi.js";
