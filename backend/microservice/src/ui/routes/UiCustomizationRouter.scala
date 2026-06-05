@@ -4,7 +4,27 @@ import cats.effect.IO
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.ApiSuccess
-import microservice.ui.api.{CreatePageComponentAPIMessage, CreatePageComponentBody, CreateUiPageAPIMessage, CreateUiPageBody, DeletePageComponentAPIMessage, DeleteUiPageAPIMessage, GetUiPageAPIMessage, ListUiPagesAPIMessage, UpdatePageComponentAPIMessage, UpdatePageComponentBody, UpdateUiPageAPIMessage, UpdateUiPageBody}
+import microservice.ui.api.{
+  CreateButtonTemplateAPIMessage,
+  CreateButtonTemplateBody,
+  CreatePageComponentAPIMessage,
+  CreatePageComponentBody,
+  CreateUiPageAPIMessage,
+  CreateUiPageBody,
+  DeleteButtonTemplateAPIMessage,
+  DeletePageComponentAPIMessage,
+  DeleteUiPageAPIMessage,
+  GetButtonTemplateAPIMessage,
+  GetUiPageAPIMessage,
+  ListButtonTemplatesAPIMessage,
+  ListUiPagesAPIMessage,
+  UpdateButtonTemplateAPIMessage,
+  UpdateButtonTemplateBody,
+  UpdatePageComponentAPIMessage,
+  UpdatePageComponentBody,
+  UpdateUiPageAPIMessage,
+  UpdateUiPageBody
+}
 import microservice.ui.objects.UiEndpoint
 import org.http4s.{HttpRoutes, Status}
 import org.http4s.circe.CirceEntityCodec._
@@ -23,6 +43,45 @@ object UiCustomizationRouter {
                 .run(databaseSession)
                 .flatMap(result => HttpError.fromEither(result.map(pages => ApiSuccess(pages))))
           }
+        }
+
+      case req @ GET -> Root / "button-templates" =>
+        withUserId(req) { userId =>
+          ListButtonTemplatesAPIMessage(userId)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(templates => ApiSuccess(templates))))
+        }
+
+      case req @ GET -> Root / "button-templates" / templateId =>
+        withUserId(req) { userId =>
+          GetButtonTemplateAPIMessage(userId, templateId)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
+        }
+
+      case req @ POST -> Root / "button-templates" =>
+        withUserId(req) { userId =>
+          req.as[CreateButtonTemplateBody].flatMap { body =>
+            CreateButtonTemplateAPIMessage(userId, body)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template)), successStatus = Status.Created))
+          }
+        }
+
+      case req @ PUT -> Root / "button-templates" / templateId =>
+        withUserId(req) { userId =>
+          req.as[UpdateButtonTemplateBody].flatMap { body =>
+            UpdateButtonTemplateAPIMessage(userId, templateId, body)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
+          }
+        }
+
+      case req @ DELETE -> Root / "button-templates" / templateId =>
+        withUserId(req) { userId =>
+          DeleteButtonTemplateAPIMessage(userId, templateId)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
         }
 
       case req @ GET -> Root / "pages" / pageId =>
