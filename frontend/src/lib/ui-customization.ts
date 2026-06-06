@@ -4,12 +4,14 @@ import {
   type PageConfig,
   type UiEndpoint,
 } from "../objects/ui-customization/ui-customization-objects.js";
+import { normalizePageComponentIds } from "../objects/ui-customization/page-config-normalizer.js";
 
 const UI_PAGE_CONFIG_STORAGE_KEY = "ugc-level-platform.ui-page-configs.v1";
 
 const canUseStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
-const parsePageConfigs = (value: unknown): PageConfig[] => PageConfigSchema.array().parse(value);
+const parsePageConfigs = (value: unknown): PageConfig[] =>
+  PageConfigSchema.array().parse(value).map(normalizePageComponentIds);
 
 const getStoredPageConfigs = (): PageConfig[] => {
   if (!canUseStorage()) {
@@ -59,7 +61,7 @@ export const getDefaultPageConfig = (pageId: string): PageConfig | null =>
   getDefaultPageConfigs().find((config) => config.id === pageId) ?? null;
 
 export const savePageConfig = (config: PageConfig): PageConfig => {
-  const parsedConfig = PageConfigSchema.parse(config);
+  const parsedConfig = PageConfigSchema.parse(normalizePageComponentIds(config));
   const storedConfigs = getStoredPageConfigs();
   const nextStoredConfigs = [
     ...storedConfigs.filter((candidate) => candidate.id !== parsedConfig.id),

@@ -58,6 +58,8 @@ const defaultTextScalePercent = 42;
 const defaultWhiteTolerance = 22;
 const defaultRenderWhiteTolerance = -1;
 const defaultAutoScanStep = 21;
+const maxImageFramePercent = 125;
+const maxImageFrameOverflowPercent = 25;
 const buttonDesignPreviewHeightPx = 132;
 const defaultScanArea: ImageCrop = {
   x: 0,
@@ -90,6 +92,17 @@ const clampScanArea = (scanArea: ImageCrop): ImageCrop => {
   return {
     x: Math.min(100 - width, Math.max(0, scanArea.x)),
     y: Math.min(100 - height, Math.max(0, scanArea.y)),
+    width,
+    height,
+  };
+};
+
+const clampImageFrame = (frame: ImageCrop): ImageCrop => {
+  const width = Math.min(maxImageFramePercent, Math.max(1, frame.width));
+  const height = Math.min(maxImageFramePercent, Math.max(1, frame.height));
+  return {
+    x: Math.min(maxImageFramePercent - width, Math.max(-maxImageFrameOverflowPercent, frame.x)),
+    y: Math.min(maxImageFramePercent - height, Math.max(-maxImageFrameOverflowPercent, frame.y)),
     width,
     height,
   };
@@ -707,7 +720,7 @@ export const DirectorButtonDesignPage = ({ userId, pageId, componentId, onBack }
     const start = previewFrameDragState.startFrame;
     const isLeft = previewFrameDragState.corner === "top-left" || previewFrameDragState.corner === "bottom-left";
     const isTop = previewFrameDragState.corner === "top-left" || previewFrameDragState.corner === "top-right";
-    setImageFrame(clampScanArea({
+    setImageFrame(clampImageFrame({
       x: isLeft ? start.x + deltaXPercent : start.x,
       y: isTop ? start.y + deltaYPercent : start.y,
       width: isLeft ? start.width - deltaXPercent : start.width + deltaXPercent,

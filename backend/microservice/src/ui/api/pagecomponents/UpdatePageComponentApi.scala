@@ -45,6 +45,7 @@ final case class UpdatePageComponentAPIMessage(
               case button: microservice.ui.objects.ButtonComponent => button.copy(id = componentId)
               case panel: microservice.ui.objects.PanelComponent => panel.copy(id = componentId)
               case text: microservice.ui.objects.TextComponent => text.copy(id = componentId)
+              case list: microservice.ui.objects.ListComponent => list.copy(id = componentId)
             }
             UiPageTable
               .updateComponent(connection, pageId, componentId, component, Instant.now().toString)

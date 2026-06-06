@@ -1,5 +1,6 @@
 import { ListUiPagesRequestQuerySchema, ListUiPagesResponseDataSchema, type UiPageConfig, type UiPageEndpoint } from "../../api-contracts.js";
 import { request } from "../../client.js";
+import { normalizePageComponentIds } from "../../../objects/ui-customization/page-config-normalizer.js";
 
 export const ListUiPagesApiPath = "/admin/director/ui/pages" as const;
 
@@ -13,7 +14,8 @@ export class ListUiPagesApi {
       searchParams.set("endpoint", query.endpoint);
     }
     const path = searchParams.size > 0 ? `${ListUiPagesApi.path}?${searchParams.toString()}` : ListUiPagesApi.path;
-    return request(path, { method: "GET", headers: { "x-user-id": userId } }, ListUiPagesResponseDataSchema);
+    const pages = await request(path, { method: "GET", headers: { "x-user-id": userId } }, ListUiPagesResponseDataSchema);
+    return pages.map(normalizePageComponentIds);
   }
 }
 

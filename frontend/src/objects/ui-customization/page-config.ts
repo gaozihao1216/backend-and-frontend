@@ -39,6 +39,21 @@ export const ComponentStyleSchema = z.object({
 });
 export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
 
+export const UiDataSourceSchema = z.object({
+  type: z.enum(["none", "api"]),
+  apiKey: nullishToUndefined(z.string().min(1)),
+  params: nullishToUndefined(z.record(z.string(), z.string())),
+  refreshMode: nullishToUndefined(z.enum(["manual", "onOpen", "interval"])),
+});
+export type UiDataSource = z.infer<typeof UiDataSourceSchema>;
+
+export const ComponentBindingSchema = z.object({
+  text: nullishToUndefined(z.string().min(1)),
+  visibleWhen: nullishToUndefined(z.string().min(1)),
+  disabledWhen: nullishToUndefined(z.string().min(1)),
+});
+export type ComponentBinding = z.infer<typeof ComponentBindingSchema>;
+
 export const ImageCropSchema = z.object({
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
@@ -46,6 +61,14 @@ export const ImageCropSchema = z.object({
   height: z.number().positive().max(100),
 });
 export type ImageCrop = z.infer<typeof ImageCropSchema>;
+
+export const ButtonImageFrameSchema = z.object({
+  x: z.number().min(-25).max(125),
+  y: z.number().min(-25).max(125),
+  width: z.number().positive().max(125),
+  height: z.number().positive().max(125),
+});
+export type ButtonImageFrame = z.infer<typeof ButtonImageFrameSchema>;
 
 export const ImagePolygonPointSchema = z.object({
   x: z.number().min(0).max(100),
@@ -58,7 +81,7 @@ export const ButtonImageDesignSchema = z.object({
   sourceName: nullishToUndefined(z.string().min(1)),
   crop: nullishToUndefined(ImageCropSchema),
   scanArea: nullishToUndefined(ImageCropSchema),
-  imageFrame: nullishToUndefined(ImageCropSchema),
+  imageFrame: nullishToUndefined(ButtonImageFrameSchema),
   polygonPoints: nullishToUndefined(z.array(ImagePolygonPointSchema)),
   whiteTolerance: nullishToUndefined(z.number().min(0).max(120)),
   renderWhiteTolerance: nullishToUndefined(z.number().min(-1).max(120)),
@@ -90,6 +113,18 @@ export const OpenModalActionSchema = z.object({
   modalId: z.string().min(1),
 });
 
+export const ApiActionSchema = z.object({
+  type: z.literal("apiAction"),
+  apiKey: z.string().min(1),
+  params: nullishToUndefined(z.record(z.string(), z.string())),
+  afterSuccess: nullishToUndefined(z.unknown()),
+});
+
+export const ClosePanelActionSchema = z.object({
+  type: z.literal("closePanel"),
+  panelId: nullishToUndefined(z.string().min(1)),
+});
+
 export const NoopActionSchema = z.object({
   type: z.literal("none"),
 });
@@ -98,6 +133,8 @@ export const ComponentActionSchema = z.discriminatedUnion("type", [
   NavigateActionSchema,
   OpenPanelActionSchema,
   OpenModalActionSchema,
+  ApiActionSchema,
+  ClosePanelActionSchema,
   NoopActionSchema,
 ]);
 export type ComponentAction = z.infer<typeof ComponentActionSchema>;
@@ -111,6 +148,8 @@ export const ButtonComponentSchema = z.object({
   style: nullishToUndefined(ComponentStyleSchema),
   baseDesign: nullishToUndefined(ButtonBaseDesignSchema),
   imageDesign: nullishToUndefined(ButtonImageDesignSchema),
+  dataSource: nullishToUndefined(UiDataSourceSchema),
+  binding: nullishToUndefined(ComponentBindingSchema),
   action: ComponentActionSchema,
 });
 export type ButtonComponent = z.infer<typeof ButtonComponentSchema>;
@@ -124,14 +163,26 @@ export const PanelContentSizeSchema = z.object({
 });
 export type PanelContentSize = z.infer<typeof PanelContentSizeSchema>;
 
+export const PanelFloatingSchema = z.object({
+  anchorComponentId: z.string().min(1),
+  placement: z.enum(["top", "right", "bottom", "left", "center"]),
+  offsetX: z.number(),
+  offsetY: z.number(),
+});
+export type PanelFloating = z.infer<typeof PanelFloatingSchema>;
+
 export const PanelComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("panel"),
   kind: nullishToUndefined(PanelKindSchema),
+  panelRole: nullishToUndefined(z.enum(["static", "popover", "dataPanel", "workflowPanel"])),
   title: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
   contentSize: nullishToUndefined(PanelContentSizeSchema),
+  floating: nullishToUndefined(PanelFloatingSchema),
+  dataSource: nullishToUndefined(UiDataSourceSchema),
+  binding: nullishToUndefined(ComponentBindingSchema),
   childComponentIds: z.array(z.string().min(1)).default([]),
 });
 export type PanelComponent = z.infer<typeof PanelComponentSchema>;
@@ -142,13 +193,27 @@ export const TextComponentSchema = z.object({
   text: z.string(),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
+  binding: nullishToUndefined(ComponentBindingSchema),
 });
 export type TextComponent = z.infer<typeof TextComponentSchema>;
+
+export const ListComponentSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("list"),
+  dataPath: z.string().min(1),
+  itemTemplate: z.array(z.unknown()).default([]),
+  emptyStateText: nullishToUndefined(z.string().min(1)),
+  position: ComponentPositionSchema,
+  style: nullishToUndefined(ComponentStyleSchema),
+  binding: nullishToUndefined(ComponentBindingSchema),
+});
+export type ListComponent = z.infer<typeof ListComponentSchema>;
 
 export const PageComponentSchema = z.discriminatedUnion("type", [
   ButtonComponentSchema,
   PanelComponentSchema,
   TextComponentSchema,
+  ListComponentSchema,
 ]);
 export type PageComponent = z.infer<typeof PageComponentSchema>;
 

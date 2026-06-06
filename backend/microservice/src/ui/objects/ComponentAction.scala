@@ -26,12 +26,26 @@ final case class OpenModalAction(
   override val `type`: String = "openModal"
 }
 
+final case class ApiAction(
+  apiKey: String,
+  params: Option[Map[String, String]],
+  afterSuccess: Option[ComponentAction]
+) extends ComponentAction {
+  override val `type`: String = "apiAction"
+}
+
+final case class ClosePanelAction(
+  panelId: Option[String]
+) extends ComponentAction {
+  override val `type`: String = "closePanel"
+}
+
 case object NoopAction extends ComponentAction {
   override val `type`: String = "none"
 }
 
 object ComponentAction {
-  implicit val encoder: Encoder[ComponentAction] = Encoder.instance {
+  implicit lazy val encoder: Encoder[ComponentAction] = Encoder.instance {
     case action: NavigateAction =>
       Json.obj(
         "type" -> Json.fromString(action.`type`),
@@ -48,11 +62,23 @@ object ComponentAction {
         "type" -> Json.fromString(action.`type`),
         "modalId" -> action.modalId.asJson
       )
+    case action: ApiAction =>
+      Json.obj(
+        "type" -> Json.fromString(action.`type`),
+        "apiKey" -> action.apiKey.asJson,
+        "params" -> action.params.asJson,
+        "afterSuccess" -> action.afterSuccess.asJson
+      )
+    case action: ClosePanelAction =>
+      Json.obj(
+        "type" -> Json.fromString(action.`type`),
+        "panelId" -> action.panelId.asJson
+      )
     case NoopAction =>
       Json.obj("type" -> Json.fromString(NoopAction.`type`))
   }
 
-  implicit val decoder: Decoder[ComponentAction] = Decoder.instance { cursor: HCursor =>
+  implicit lazy val decoder: Decoder[ComponentAction] = Decoder.instance { cursor: HCursor =>
     cursor.get[String]("type").flatMap {
       case "navigate" =>
         for {
@@ -63,6 +89,14 @@ object ComponentAction {
         cursor.get[String]("panelId").map(OpenPanelAction.apply)
       case "openModal" =>
         cursor.get[String]("modalId").map(OpenModalAction.apply)
+      case "apiAction" =>
+        for {
+          apiKey <- cursor.get[String]("apiKey")
+          params <- cursor.get[Option[Map[String, String]]]("params")
+          afterSuccess <- cursor.get[Option[ComponentAction]]("afterSuccess")
+        } yield ApiAction(apiKey, params, afterSuccess)
+      case "closePanel" =>
+        cursor.get[Option[String]]("panelId").map(ClosePanelAction.apply)
       case "none" =>
         Right(NoopAction)
       case other =>

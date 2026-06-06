@@ -1,5 +1,6 @@
 import { DeleteUiPageRequestParamsSchema, DeleteUiPageResponseDataSchema, type UiPageConfig } from "../../api-contracts.js";
 import { request } from "../../client.js";
+import { normalizePageComponentIds } from "../../../objects/ui-customization/page-config-normalizer.js";
 
 export const DeleteUiPageApiPath = "/admin/director/ui/pages" as const;
 
@@ -8,7 +9,8 @@ export class DeleteUiPageApi {
 
   async execute(userId: string, pageId: string): Promise<UiPageConfig> {
     const params = DeleteUiPageRequestParamsSchema.parse({ pageId });
-    return request(`${DeleteUiPageApi.path}/${encodeURIComponent(params.pageId)}`, { method: "DELETE", headers: { "x-user-id": userId } }, DeleteUiPageResponseDataSchema);
+    const page = await request(`${DeleteUiPageApi.path}/${encodeURIComponent(params.pageId)}`, { method: "DELETE", headers: { "x-user-id": userId } }, DeleteUiPageResponseDataSchema);
+    return normalizePageComponentIds(page);
   }
 }
 

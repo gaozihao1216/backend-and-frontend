@@ -1,4 +1,5 @@
 import { PageConfigSchema, type PageConfig, type UiEndpoint } from "./page-config.js";
+import { normalizePageComponentIds } from "./page-config-normalizer.js";
 import { createLevelChainHomeComponents } from "./level-chain-home-structure.js";
 
 const percentPosition = (x: number, y: number, width: number, height: number) => ({
@@ -300,4 +301,4 @@ export const defaultPageConfigs = [
 export const DefaultPageConfigsSchema = PageConfigSchema.array();
 
 export const getDefaultPageConfigs = (): PageConfig[] =>
-  DefaultPageConfigsSchema.parse(defaultPageConfigs);
+  DefaultPageConfigsSchema.parse(defaultPageConfigs.map(normalizePageComponentIds));

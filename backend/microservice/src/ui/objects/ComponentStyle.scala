@@ -29,7 +29,9 @@ final case class ComponentStyle(
   backgroundColor: Option[String],
   textColor: Option[String],
   borderRadius: Option[Double],
-  fontSize: Option[Double]
+  fontSize: Option[Double],
+  textScalePercent: Option[Double],
+  lockAspectRatio: Option[Double]
 )
 
 object ComponentStyle {

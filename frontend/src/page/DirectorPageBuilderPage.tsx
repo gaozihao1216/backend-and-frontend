@@ -101,6 +101,8 @@ const getComponentLabel = (component: PageComponent) => {
       return component.title ?? getPanelKindLabel(component.kind);
     case "text":
       return component.text.trim() || "文本框";
+    case "list":
+      return component.emptyStateText ?? component.dataPath;
   }
 };
 
@@ -112,6 +114,8 @@ const getComponentTypeLabel = (component: PageComponent) => {
       return "面板";
     case "text":
       return "文本框";
+    case "list":
+      return "列表";
   }
 };
 
@@ -165,17 +169,39 @@ const getPanelControlledChildren = (
     .map((child) => child ? getControlledPanelForButton(child, componentMap) : null)
     .filter((child): child is PanelComponent => Boolean(child));
 
-const createUniqueComponentId = (pageConfig: PageConfig, suffix: string) => {
+const createChildComponentId = (pageConfig: PageConfig, parentPanel: PanelComponent) => {
   const existingIds = new Set(pageConfig.components.map((component) => component.id));
-  let index = 1;
-  let candidate = `${pageConfig.id}.${suffix}`;
+  let index = parentPanel.childComponentIds.length + 1;
+  let candidate = `${parentPanel.id}.${index}`;
 
   while (existingIds.has(candidate)) {
     index += 1;
-    candidate = `${pageConfig.id}.${suffix}${index}`;
+    candidate = `${parentPanel.id}.${index}`;
   }
 
   return candidate;
+};
+
+const createDefaultComponentName = (
+  pageConfig: PageConfig,
+  parentPanel: PanelComponent,
+  type: "button" | "panel" | "text",
+) => {
+  const componentMap = createComponentMap(pageConfig.components);
+  const siblingCount = parentPanel.childComponentIds
+    .map((childId) => componentMap.get(childId))
+    .filter((component): component is PageComponent => Boolean(component))
+    .filter((component) => component.type === type)
+    .length;
+  const order = siblingCount + 1;
+
+  if (type === "button") {
+    return `新按钮 ${order}`;
+  }
+  if (type === "panel") {
+    return `新子面板 ${order}`;
+  }
+  return `新文本框 ${order}`;
 };
 
 const handleInlineScrollWheel = (event: WheelEvent<HTMLElement>) => {
@@ -598,6 +624,25 @@ const PageBuilderComponentNode = ({
     );
   }
 
+  if (component.type === "list") {
+    return (
+      <div
+        className="page-builder-preview-node page-builder-preview-text"
+        data-page-builder-component-id={component.id}
+        data-page-builder-selected={isSelected ? "true" : undefined}
+        style={{
+          ...getPositionStyle(component.position),
+          ...getComponentStyle(component.style),
+        }}
+      >
+        <div className="page-builder-preview-text-content">
+          {component.emptyStateText ?? `列表：${component.dataPath}`}
+        </div>
+        {showOutline ? <PageBuilderOutline componentId={component.id} selectionState={selectionState} /> : null}
+      </div>
+    );
+  }
+
   const contentSize = component.contentSize;
   const { scrollContainerRef, dragScrollHandlers } = useDragScroll(Boolean(contentSize));
   const childComponents = [
@@ -984,13 +1029,22 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
     }
 
     updatePageConfig((current) => {
-      const componentId = createUniqueComponentId(current, type);
+      const currentWorkingPanel = current.components.find(
+        (component): component is PanelComponent =>
+          component.id === normalizedWorkingPanel.id && canUseAsWorkingPanel(component),
+      );
+      if (!currentWorkingPanel) {
+        return current;
+      }
+
+      const componentId = createChildComponentId(current, currentWorkingPanel);
+      const defaultName = createDefaultComponentName(current, currentWorkingPanel, type);
       const newComponent: PageComponent =
         type === "button"
           ? {
               id: componentId,
               type: "button",
-              label: "新按钮",
+              label: defaultName,
               icon: "plus",
               position: { unit: "percent", x: 8, y: 8, width: 18, height: 8 },
               style: { variant: "secondary", borderRadius: 10 },
@@ -1001,6 +1055,7 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
                 id: componentId,
                 type: "panel",
                 kind: "group",
+                title: defaultName,
                 position: { unit: "percent", x: 10, y: 12, width: 34, height: 26 },
                 style: { backgroundColor: "#fffdfa", borderRadius: 12 },
                 childComponentIds: [],
@@ -1008,7 +1063,7 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
             : {
                 id: componentId,
                 type: "text",
-                text: "新文本框",
+                text: defaultName,
                 position: { unit: "percent", x: 8, y: 8, width: 28, height: 8 },
                 style: { backgroundColor: "#ffffff", textColor: "#12202f", borderRadius: 10 },
               };
@@ -1017,7 +1072,7 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
         ...current,
         components: current.components
           .map((component) =>
-            component.id === normalizedWorkingPanel.id && component.type === "panel"
+            component.id === currentWorkingPanel.id && component.type === "panel"
               ? {
                   ...component,
                   childComponentIds: [...component.childComponentIds, componentId],
@@ -1078,6 +1133,16 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
     const designBasePath = targetPath === "/" ? "" : targetPath;
     onNavigate(
       `${designBasePath}/button_design?pageId=${encodeURIComponent(pageId)}&componentId=${encodeURIComponent(activeComponent.id)}`,
+    );
+  };
+  const openButtonConfig = () => {
+    if (!pageId || activeComponent?.type !== "button") {
+      return;
+    }
+
+    const designBasePath = targetPath === "/" ? "" : targetPath;
+    onNavigate(
+      `${designBasePath}/button_config?pageId=${encodeURIComponent(pageId)}&componentId=${encodeURIComponent(activeComponent.id)}`,
     );
   };
   const setActivePanelAsWorkingPanel = () => {
@@ -1383,6 +1448,11 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
                   {activeComponent?.type === "button" ? (
                     <button type="button" className="page-builder-button-design-action" onClick={openButtonDesign}>
                       按钮美化
+                    </button>
+                  ) : null}
+                  {activeComponent?.type === "button" ? (
+                    <button type="button" className="secondary page-builder-button-config-action" onClick={openButtonConfig}>
+                      按钮配置
                     </button>
                   ) : null}
                   {canUseAsWorkingPanel(activeComponent) && activeComponent.id !== normalizedWorkingPanel?.id ? (

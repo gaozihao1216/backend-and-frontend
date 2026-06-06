@@ -27,5 +27,11 @@ export const DynamicComponentRenderer = ({
       );
     case "text":
       return <DynamicText text={component} context={context} />;
+    case "list":
+      return (
+        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+          {component.emptyStateText ?? "暂无数据"}
+        </div>
+      );
   }
 };

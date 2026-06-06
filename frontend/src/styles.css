@@ -2232,7 +2232,7 @@ fieldset {
     #f7faf5;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-size: 20px 20px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .button-template-preview img {
@@ -2477,7 +2477,7 @@ fieldset {
   justify-content: center;
   gap: 0.35rem;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(18, 32, 47, 0.12);
   border-radius: 10px;
   padding: 0.35rem 0.5rem;
@@ -3112,8 +3112,12 @@ fieldset {
   color: #12385f;
 }
 
-.page-builder-tool-buttons .page-builder-set-working-panel-action {
+.page-builder-tool-buttons .page-builder-button-config-action {
   grid-column: 2;
+}
+
+.page-builder-tool-buttons .page-builder-set-working-panel-action {
+  grid-column: 3;
 }
 
 .page-builder-dialog-backdrop {
@@ -3173,6 +3177,133 @@ fieldset {
 .button-design-shell {
   display: grid;
   gap: 1rem;
+}
+
+.button-config-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.button-config-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.7fr) minmax(360px, 1fr);
+  gap: 1rem;
+}
+
+.button-config-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 12px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.button-config-panel h3,
+.button-config-panel p {
+  margin: 0;
+}
+
+.button-config-route-picker {
+  display: grid;
+  gap: 0.8rem;
+  border-top: 1px solid rgba(18, 32, 47, 0.08);
+  padding-top: 0.85rem;
+}
+
+.button-config-route-picker .director-ui-endpoint-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0;
+}
+
+.button-config-route-picker .director-ui-endpoint {
+  min-height: 86px;
+}
+
+.button-config-panel-picker {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.button-config-panel-option {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.6fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(18, 32, 47, 0.08);
+  border-radius: 10px;
+  background: #f7faf5;
+  color: #12202f;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  box-shadow: none;
+}
+
+.button-config-panel-option.selected {
+  border-color: rgba(44, 104, 168, 0.56);
+  background: #dceeff;
+  color: #12385f;
+}
+
+.button-config-panel-option span,
+.button-config-panel-option small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #66867c;
+}
+
+.button-config-panel-preview {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid rgba(44, 104, 168, 0.22);
+  border-radius: 10px;
+  background: #f4f9ff;
+  padding: 0.85rem;
+}
+
+.button-config-panel-preview > div:first-child {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.button-config-panel-preview code {
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  color: #3e544f;
+  padding: 0.2rem 0.4rem;
+}
+
+.button-config-panel-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: #66867c;
+  font-size: 0.85rem;
+}
+
+.button-config-panel-preview ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.button-config-panel-preview li {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 0.5rem;
+  align-items: center;
+  border-top: 1px solid rgba(18, 32, 47, 0.08);
+  padding-top: 0.45rem;
+}
+
+.button-config-panel-preview li span {
+  color: #66867c;
+  font-size: 0.82rem;
 }
 
 .button-design-layout {

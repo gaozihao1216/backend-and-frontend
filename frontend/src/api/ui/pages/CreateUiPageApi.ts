@@ -1,5 +1,6 @@
 import { CreateUiPageRequestBodySchema, CreateUiPageResponseDataSchema, type UiPageConfig } from "../../api-contracts.js";
 import { request } from "../../client.js";
+import { normalizePageComponentIds } from "../../../objects/ui-customization/page-config-normalizer.js";
 
 export const CreateUiPageApiPath = "/admin/director/ui/pages" as const;
 
@@ -7,15 +8,17 @@ export class CreateUiPageApi {
   static readonly path = CreateUiPageApiPath;
 
   async execute(userId: string, page: UiPageConfig): Promise<UiPageConfig> {
-    return request(
+    const normalizedPage = normalizePageComponentIds(page);
+    const savedPage = await request(
       CreateUiPageApi.path,
       {
         method: "POST",
         headers: { "x-user-id": userId },
-        body: JSON.stringify(CreateUiPageRequestBodySchema.parse({ page })),
+        body: JSON.stringify(CreateUiPageRequestBodySchema.parse({ page: normalizedPage })),
       },
       CreateUiPageResponseDataSchema,
     );
+    return normalizePageComponentIds(savedPage);
   }
 }
 
