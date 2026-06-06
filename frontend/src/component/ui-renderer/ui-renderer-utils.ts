@@ -3,6 +3,7 @@ import type {
   ButtonImageDesign,
   ComponentPosition,
   ComponentStyle,
+  PanelComponent,
   PageComponent,
   UiPreviewUser,
 } from "../../objects/ui-customization/ui-customization-objects.js";
@@ -11,10 +12,21 @@ import type { ComponentMap } from "./ui-renderer-types.js";
 export const createComponentMap = (components: PageComponent[]): ComponentMap =>
   new Map(components.map((component) => [component.id, component]));
 
+export const isControlledPanel = (component: PageComponent): component is PanelComponent =>
+  component.type === "panel"
+  && (
+    component.kind === "overlay"
+    || component.panelRole === "popover"
+    || component.panelRole === "workflowPanel"
+  );
+
 export const getControlledPanelIds = (components: PageComponent[]): Set<string> => {
   const controlledPanelIds = new Set<string>();
 
   components.forEach((component) => {
+    if (isControlledPanel(component)) {
+      controlledPanelIds.add(component.id);
+    }
     if (component.type === "button" && component.action.type === "openPanel") {
       controlledPanelIds.add(component.action.panelId);
     }

@@ -39,6 +39,18 @@ export const ComponentStyleSchema = z.object({
 });
 export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
 
+export const ComponentVisualEffectSchema = z.object({
+  templateId: z.enum(["none", "softGlow", "rewardPulse", "slideIn", "sparkle"]).default("none"),
+  intensity: nullishToUndefined(z.number().min(0).max(100)),
+});
+export type ComponentVisualEffect = z.infer<typeof ComponentVisualEffectSchema>;
+
+export const PanelDecorationSchema = z.object({
+  templateId: z.enum(["plain", "paper", "reward", "glass", "notice"]).default("plain"),
+  accentColor: nullishToUndefined(z.string().min(1)),
+});
+export type PanelDecoration = z.infer<typeof PanelDecorationSchema>;
+
 export const UiDataSourceSchema = z.object({
   type: z.enum(["none", "api"]),
   apiKey: nullishToUndefined(z.string().min(1)),
@@ -53,6 +65,23 @@ export const ComponentBindingSchema = z.object({
   disabledWhen: nullishToUndefined(z.string().min(1)),
 });
 export type ComponentBinding = z.infer<typeof ComponentBindingSchema>;
+
+export const ButtonStateOptionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  label: z.string().min(1),
+  icon: nullishToUndefined(z.string().min(1)),
+  baseTemplateId: nullishToUndefined(z.enum(["rounded", "pill", "beveled", "flat", "glass"])),
+  patternTemplateId: nullishToUndefined(z.enum(["none", "gift", "check", "lock", "coin", "calendar", "star"])),
+  style: ComponentStyleSchema,
+});
+export type ButtonStateOption = z.infer<typeof ButtonStateOptionSchema>;
+
+export const ButtonStateDesignSchema = z.object({
+  defaultStateId: z.string().min(1),
+  states: z.array(ButtonStateOptionSchema).min(1),
+});
+export type ButtonStateDesign = z.infer<typeof ButtonStateDesignSchema>;
 
 export const ImageCropSchema = z.object({
   x: z.number().min(0).max(100),
@@ -148,6 +177,8 @@ export const ButtonComponentSchema = z.object({
   style: nullishToUndefined(ComponentStyleSchema),
   baseDesign: nullishToUndefined(ButtonBaseDesignSchema),
   imageDesign: nullishToUndefined(ButtonImageDesignSchema),
+  stateDesign: nullishToUndefined(ButtonStateDesignSchema),
+  effect: nullishToUndefined(ComponentVisualEffectSchema),
   dataSource: nullishToUndefined(UiDataSourceSchema),
   binding: nullishToUndefined(ComponentBindingSchema),
   action: ComponentActionSchema,
@@ -179,6 +210,8 @@ export const PanelComponentSchema = z.object({
   title: nullishToUndefined(z.string().min(1)),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
+  decoration: nullishToUndefined(PanelDecorationSchema),
+  effect: nullishToUndefined(ComponentVisualEffectSchema),
   contentSize: nullishToUndefined(PanelContentSizeSchema),
   floating: nullishToUndefined(PanelFloatingSchema),
   dataSource: nullishToUndefined(UiDataSourceSchema),

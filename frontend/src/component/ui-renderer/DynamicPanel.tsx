@@ -77,7 +77,7 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
 
   return (
     <section
-      className={`dynamic-ui-panel no-header kind-${panel.kind ?? "container"} ${floating ? "floating" : ""}`}
+      className={`dynamic-ui-panel no-header kind-${panel.kind ?? "container"} decoration-${panel.decoration?.templateId ?? "plain"} effect-${panel.effect?.templateId ?? "none"} ${floating ? "floating" : ""}`}
       style={{
         ...getPositionStyle(panel.position),
         ...getComponentStyle(panel.style),

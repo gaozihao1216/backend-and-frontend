@@ -13,6 +13,7 @@ import { PlayerShopPage } from "./page/PlayerShopPage.js";
 import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
 import { DirectorButtonConfigPage } from "./page/DirectorButtonConfigPage.js";
 import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
+import { DirectorPanelCreatePage } from "./page/DirectorPanelCreatePage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
@@ -40,6 +41,7 @@ const DYNAMIC_PAGE_PATH = "/dynamic_page";
 const PAGE_BUILDER_UPDATE_SUFFIX = "/update";
 const BUTTON_DESIGN_SUFFIX = "/button_design";
 const BUTTON_CONFIG_SUFFIX = "/button_config";
+const PANEL_CREATE_SUFFIX = "/panel_create";
 
 const readPathname = () => window.location.pathname;
 const readSearch = () => window.location.search;
@@ -169,7 +171,12 @@ export const App = () => {
       return <DynamicPageHost pageId={pageId} useDefaultConfig={useDefaultConfig} onNavigate={navigate} />;
     }
 
-    if (pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX) || pathname.endsWith(BUTTON_DESIGN_SUFFIX) || pathname.endsWith(BUTTON_CONFIG_SUFFIX)) {
+    if (
+      pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)
+      || pathname.endsWith(BUTTON_DESIGN_SUFFIX)
+      || pathname.endsWith(BUTTON_CONFIG_SUFFIX)
+      || pathname.endsWith(PANEL_CREATE_SUFFIX)
+    ) {
       if (user.role !== "admin" || user.adminLevel !== "director") {
         return (
           <section className="panel">
@@ -181,6 +188,19 @@ export const App = () => {
 
       const pageId = new URLSearchParams(search).get("pageId");
       const searchParams = new URLSearchParams(search);
+      if (pathname.endsWith(PANEL_CREATE_SUFFIX)) {
+        const targetPath = pathname.slice(0, -PANEL_CREATE_SUFFIX.length) || "/";
+        return renderBoundPage(user, "创建小面板", () => (
+          <DirectorPanelCreatePage
+            pageId={pageId}
+            targetPath={targetPath}
+            parentPanelId={searchParams.get("parentPanelId")}
+            onBack={() => navigate(`${targetPath === "/" ? "" : targetPath}${PAGE_BUILDER_UPDATE_SUFFIX}?pageId=${encodeURIComponent(pageId ?? "")}`)}
+            onNavigate={navigate}
+          />
+        ));
+      }
+
       if (pathname.endsWith(BUTTON_CONFIG_SUFFIX)) {
         const targetPath = pathname.slice(0, -BUTTON_CONFIG_SUFFIX.length) || "/";
         return renderBoundPage(user, "按钮配置", () => (
@@ -313,9 +333,12 @@ export const App = () => {
     pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)
     || pathname.endsWith(BUTTON_DESIGN_SUFFIX)
     || pathname.endsWith(BUTTON_CONFIG_SUFFIX)
+    || pathname.endsWith(PANEL_CREATE_SUFFIX)
       ? pathname.endsWith(BUTTON_CONFIG_SUFFIX)
         ? "按钮配置"
-        : pathname.endsWith(BUTTON_DESIGN_SUFFIX) ? "按钮美化" : "页面优化"
+        : pathname.endsWith(BUTTON_DESIGN_SUFFIX)
+          ? "按钮美化"
+          : pathname.endsWith(PANEL_CREATE_SUFFIX) ? "创建小面板" : "页面优化"
       : pathname === DYNAMIC_PAGE_PATH
         ? "动态页面"
       : pathname === OWN_PAGE_PATH

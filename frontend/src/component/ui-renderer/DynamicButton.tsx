@@ -1,4 +1,4 @@
-import type { ButtonComponent } from "../../objects/ui-customization/ui-customization-objects.js";
+import type { ButtonComponent, ButtonStateOption } from "../../objects/ui-customization/ui-customization-objects.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
 import {
   getButtonBaseDesignStyle,
@@ -15,7 +15,12 @@ type DynamicButtonProps = {
 };
 
 export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
-  const label = interpolatePreviewText(button.label, context.previewUser);
+  const defaultState = button.stateDesign?.states.find((state: ButtonStateOption) => state.id === button.stateDesign?.defaultStateId)
+    ?? button.stateDesign?.states[0]
+    ?? null;
+  const label = interpolatePreviewText(defaultState?.label ?? button.label, context.previewUser);
+  const icon = defaultState?.icon ?? defaultState?.patternTemplateId ?? button.icon;
+  const stateStyle = defaultState?.style;
   const isActivePanelTrigger = button.action.type === "openPanel" && context.openPanelIds.has(button.action.panelId);
   const shouldShowContent = !button.imageDesign?.outputDataUrl;
 
@@ -27,8 +32,12 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
       case "openPanel":
         context.onOpenPanel(button.action.panelId);
         return;
+      case "closePanel":
+        context.onClosePanel(button.action.panelId ?? "");
+        return;
       case "openModal":
       case "none":
+      case "apiAction":
         return;
     }
   };
@@ -36,10 +45,11 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   return (
     <button
       type="button"
-      className={`dynamic-ui-button ${button.style?.variant ?? "primary"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}`}
+      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${defaultState?.baseTemplateId ?? "rounded"} pattern-${defaultState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}`}
       style={{
         ...getPositionStyle(button.position),
         ...getComponentStyle(button.style),
+        ...getComponentStyle(stateStyle),
         ...getButtonTextScaleStyle(button.position, button.style),
         ...(button.baseDesign ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 } : {}),
       }}
@@ -65,7 +75,7 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
       ) : null}
       {shouldShowContent ? (
         <span className="dynamic-ui-button-content">
-          {button.icon ? <span className="dynamic-ui-button-icon">{button.icon}</span> : null}
+          {icon ? <span className="dynamic-ui-button-icon">{icon}</span> : null}
           <span>{label}</span>
         </span>
       ) : null}

@@ -130,9 +130,20 @@ const getParentPanelId = (pageConfig: PageConfig, componentId: string) =>
 const getButtonControlledPanelId = (component: PageComponent) =>
   component.type === "button" && component.action.type === "openPanel" ? component.action.panelId : null;
 
+const isControlledPanel = (component: PageComponent): component is PanelComponent =>
+  component.type === "panel"
+  && (
+    component.kind === "overlay"
+    || component.panelRole === "popover"
+    || component.panelRole === "workflowPanel"
+  );
+
 const createControlledPanelIds = (components: PageComponent[]) => {
   const controlledPanelIds = new Set<string>();
   components.forEach((component) => {
+    if (isControlledPanel(component)) {
+      controlledPanelIds.add(component.id);
+    }
     const panelId = getButtonControlledPanelId(component);
     if (panelId) {
       controlledPanelIds.add(panelId);
@@ -164,10 +175,24 @@ const getPanelControlledChildren = (
   panel: PanelComponent,
   componentMap: Map<string, PageComponent>,
 ) =>
+  [
+    ...panel.childComponentIds
+      .map((childId) => componentMap.get(childId))
+      .filter((child): child is PageComponent => Boolean(child))
+      .filter(isControlledPanel),
+    ...panel.childComponentIds
+      .map((childId) => componentMap.get(childId))
+      .map((child) => child ? getControlledPanelForButton(child, componentMap) : null)
+      .filter((child): child is PanelComponent => Boolean(child)),
+  ];
+
+const getAllChildPanels = (
+  panel: PanelComponent,
+  componentMap: Map<string, PageComponent>,
+) =>
   panel.childComponentIds
     .map((childId) => componentMap.get(childId))
-    .map((child) => child ? getControlledPanelForButton(child, componentMap) : null)
-    .filter((child): child is PanelComponent => Boolean(child));
+    .filter((child): child is PanelComponent => Boolean(child && child.type === "panel"));
 
 const createChildComponentId = (pageConfig: PageConfig, parentPanel: PanelComponent) => {
   const existingIds = new Set(pageConfig.components.map((component) => component.id));
@@ -1145,6 +1170,19 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
       `${designBasePath}/button_config?pageId=${encodeURIComponent(pageId)}&componentId=${encodeURIComponent(activeComponent.id)}`,
     );
   };
+  const openPanelCreate = () => {
+    if (!pageId) {
+      return;
+    }
+
+    const designBasePath = targetPath === "/" ? "" : targetPath;
+    const parentPanelQuery = normalizedWorkingPanel
+      ? `&parentPanelId=${encodeURIComponent(normalizedWorkingPanel.id)}`
+      : "";
+    onNavigate(
+      `${designBasePath}/panel_create?pageId=${encodeURIComponent(pageId)}${parentPanelQuery}`,
+    );
+  };
   const setActivePanelAsWorkingPanel = () => {
     if (!canUseAsWorkingPanel(activeComponent)) {
       return;
@@ -1434,6 +1472,9 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
                   <button type="button" onClick={() => addComponentToWorkingPanel("panel")}>
                     添加新子面板
                   </button>
+                  <button type="button" className="secondary" onClick={openPanelCreate}>
+                    创建小面板
+                  </button>
                   <button type="button" onClick={() => addComponentToWorkingPanel("text")}>
                     新建文本框
                   </button>
@@ -1571,7 +1612,7 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
               </button>
             </div>
             <div className="page-builder-directory-list">
-              {getLogicalPanelChildren(normalizedPickerPanel, componentMap, controlledPanelIds)
+              {getAllChildPanels(normalizedPickerPanel, componentMap)
                 .filter(canUseAsWorkingPanel)
                 .map((child) => {
                 return (
