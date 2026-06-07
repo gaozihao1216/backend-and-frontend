@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getPlayerUiData, invokePlayerUiAction } from "../api/player-ui-api.js";
-import { type AuthRole, type AuthUser } from "../lib/auth.js";
+import { type AuthRole, type AuthUser, getBoundApiUserId } from "../lib/auth.js";
 import { BackendBindingPanel } from "./BackendBindingPanel.js";
 import { LevelPreviewCard } from "./level/LevelPreviewCard.js";
 import { AdminPage } from "../page/AdminPage.js";
@@ -368,6 +368,7 @@ export const RoleHomePage = ({
   onOpenDesignerPortfolio,
   onNavigate,
 }: RoleHomePageProps) => {
+  const playerApiUserId = getBoundApiUserId(user);
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{
     active: boolean;
@@ -784,6 +785,7 @@ export const RoleHomePage = ({
                       {playingLevel.id === "01" ? (
                         <LevelPreviewCard
                           source={getStarterLevelSource()}
+                          {...(playerApiUserId ? { userId: playerApiUserId } : {})}
                           defaultOpen
                           onExit={exitLevelDemo}
                         />

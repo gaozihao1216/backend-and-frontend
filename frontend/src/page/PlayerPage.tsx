@@ -195,7 +195,11 @@ export const PlayerPage = ({ userId = API_USERS.player.id }: PlayerPageProps) =>
               ))}
             </div>
             <p className="meta">Level ID: {level.id}</p>
-            <LevelPreviewCard source={createPublishedLevelSource(level)} defaultOpen={level.id === STARTER_LEVEL_ID} />
+            <LevelPreviewCard
+              source={createPublishedLevelSource(level)}
+              userId={userId}
+              defaultOpen={level.id === STARTER_LEVEL_ID}
+            />
             <label>
               <span>Score</span>
               <select

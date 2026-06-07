@@ -1,5 +1,6 @@
 import type { Body, Engine } from "matter-js";
 import type { LevelGround, Position } from "../level-contracts.js";
+import type { CombatProfile } from "./combat-profile.js";
 
 export type GameBodyKind = "ground" | "block" | "pig" | "bird";
 
@@ -39,7 +40,7 @@ export type BlockGameEntity = {
 export type GameEntity =
   | { kind: "ground"; groundType?: LevelGround["type"]; surfaceRole?: "ground" | "ceiling" }
   | { kind: "pig" }
-  | { kind: "bird" }
+  | { kind: "bird"; combatProfile: CombatProfile; birdType: string; name: string; fillColor: string }
   | BlockGameEntity;
 
 export type GroundRenderPath = {
@@ -73,6 +74,9 @@ export type GameSnapshot = {
     x: number;
     y: number;
   };
+  birdsRemaining: number;
+  activeBirdName: string;
+  activeBirdType: string;
 };
 
 export type GameSession = {

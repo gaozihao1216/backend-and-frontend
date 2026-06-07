@@ -1,4 +1,5 @@
-import { Body, Sleeping, Vector, type Engine, type IEventCollision, type Vector as MatterVector } from "matter-js";
+import Matter from "matter-js";
+import type { Engine, IEventCollision, Vector as MatterVector } from "matter-js";
 import type { GameBody } from "../types.js";
 import {
   BEAM_SUPPORT_MAX_ANGLE,
@@ -67,6 +68,8 @@ import {
   velocityAtPoint,
   getBlockEntity,
 } from "./config.js";
+
+const { Body, Sleeping, Vector } = Matter;
 
 const shouldKeepBodyAwake = (
   body: GameBody,
@@ -332,7 +335,7 @@ export const applyGroundSupportStabilization = (
     x: -groundToBlockNormal.y,
     y: groundToBlockNormal.x,
   };
-  if (pair.activeContacts.length < 2) {
+  if ((pair.activeContacts?.length ?? 0) < 2) {
     return false;
   }
 

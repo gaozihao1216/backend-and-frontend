@@ -33,6 +33,39 @@ export const computeCollisionImpulse = (bodyA: Body, bodyB: Body, normal: Matter
   return normalSpeed * reducedMass * (1 + restitution);
 };
 
+const velocityAtPoint = (body: Body, offset: MatterVector) => ({
+  x: body.velocity.x - body.angularVelocity * offset.y,
+  y: body.velocity.y + body.angularVelocity * offset.x,
+});
+
+export const computeContactPointImpulse = (
+  bodyA: Body,
+  bodyB: Body,
+  normal: MatterVector,
+  contactPoint?: MatterVector,
+) => {
+  if (!contactPoint) {
+    return computeCollisionImpulse(bodyA, bodyB, normal);
+  }
+
+  const offsetA = Vector.sub(contactPoint, bodyA.position);
+  const offsetB = Vector.sub(contactPoint, bodyB.position);
+  const relativeVelocity = Vector.sub(velocityAtPoint(bodyA, offsetA), velocityAtPoint(bodyB, offsetB));
+  const normalSpeed = Math.abs(Vector.dot(relativeVelocity, normal));
+  const inverseMassA = bodyA.isStatic ? 0 : bodyA.inverseMass;
+  const inverseMassB = bodyB.isStatic ? 0 : bodyB.inverseMass;
+  const inverseMassSum = inverseMassA + inverseMassB;
+
+  if (inverseMassSum <= 0) {
+    return 0;
+  }
+
+  const reducedMass = 1 / inverseMassSum;
+  const restitution = Math.max(bodyA.restitution, bodyB.restitution);
+
+  return normalSpeed * reducedMass * (1 + restitution);
+};
+
 const getRectangleDimensions = (body: Body) => {
   const boundsWidth = body.bounds.max.x - body.bounds.min.x;
   const boundsHeight = body.bounds.max.y - body.bounds.min.y;

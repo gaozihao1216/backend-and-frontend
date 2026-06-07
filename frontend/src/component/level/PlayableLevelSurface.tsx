@@ -1,23 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LevelSource } from "../../lib/level-repository.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
+import type { BirdDefinition } from "../../lib/game-engine/bird-definition.js";
+import { resolveBirdQueueForLevel } from "../../lib/player-bird-queue.js";
 import { useLevelBackgroundTemplateResolution } from "../../hook/useLevelBackgroundTemplateResolution.js";
 import { LevelBackgroundStageLayer } from "../designer-page/LevelBackgroundStageLayer.js";
 import { GameCanvas } from "./GameCanvas.js";
 
 type PlayableLevelSurfaceProps = {
   source: LevelSource;
+  userId?: string;
   defaultOpen?: boolean;
   onExit?: () => void;
 };
 
 export const PlayableLevelSurface = ({
   source,
+  userId,
   defaultOpen = false,
   onExit,
 }: PlayableLevelSurfaceProps) => {
   const [open, setOpen] = useState(defaultOpen);
   const [instanceKey, setInstanceKey] = useState(0);
+  const [birdQueue, setBirdQueue] = useState<BirdDefinition[] | null>(null);
   const {
     template: levelBackgroundTemplate,
     panelBackgroundDesign,
@@ -26,6 +31,23 @@ export const PlayableLevelSurface = ({
     source.level.data.backgroundTemplateId,
     source.level.authorId,
   );
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    void resolveBirdQueueForLevel(userId, source.level.data.birdInventory).then((queue) => {
+      if (!cancelled) {
+        setBirdQueue(queue);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, userId, source.level.data.birdInventory, instanceKey]);
 
   const handleExit = () => {
     setOpen(false);
@@ -53,6 +75,7 @@ export const PlayableLevelSurface = ({
           <GameCanvas
             levelKey={source.key}
             levelData={source.level.data}
+            {...(birdQueue ? { birdQueue } : {})}
             restartToken={instanceKey}
             transparentBackground={Boolean(levelBackgroundTemplate)}
           />

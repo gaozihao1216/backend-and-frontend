@@ -7,6 +7,7 @@ import {
   type BirdUpgradeState,
   type PlayerPreparationState,
 } from "../api/player-preparation-api.js";
+import { readSelectedBirdType, writeSelectedBirdType } from "../lib/player-bird-selection.js";
 
 type PlayerPreparationPageProps = {
   userId: string;
@@ -26,7 +27,14 @@ export const PlayerPreparationPage = ({ userId }: PlayerPreparationPageProps) =>
     try {
       const nextState = await getPlayerPreparation(userId);
       setState(nextState);
-      setSelectedBirdType((current) => current ?? nextState.birds[0]?.birdType ?? null);
+      setSelectedBirdType((current) => {
+        const stored = readSelectedBirdType(userId);
+        if (stored && nextState.birds.some((bird) => bird.birdType === stored)) {
+          return stored;
+        }
+
+        return current ?? nextState.birds[0]?.birdType ?? null;
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "加载备战数据失败");
     } finally {
@@ -125,7 +133,10 @@ export const PlayerPreparationPage = ({ userId }: PlayerPreparationPageProps) =>
                   key={bird.birdType}
                   type="button"
                   className={selectedBirdType === bird.birdType ? "player-bird-picker-item is-active" : "player-bird-picker-item"}
-                  onClick={() => setSelectedBirdType(bird.birdType)}
+                  onClick={() => {
+                    setSelectedBirdType(bird.birdType);
+                    writeSelectedBirdType(userId, bird.birdType);
+                  }}
                 >
                   <strong>{bird.name}</strong>
                   <span>

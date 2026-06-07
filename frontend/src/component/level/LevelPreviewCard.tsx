@@ -5,6 +5,7 @@ import { PlayableLevelSurface } from "./PlayableLevelSurface.js";
 type LevelPreviewCardProps = {
   level?: Level;
   source?: LevelSource;
+  userId?: string;
   defaultOpen?: boolean;
   onExit?: () => void;
 };
@@ -12,6 +13,7 @@ type LevelPreviewCardProps = {
 export const LevelPreviewCard = ({
   level,
   source,
+  userId,
   defaultOpen = false,
   onExit,
 }: LevelPreviewCardProps) => {
@@ -24,6 +26,7 @@ export const LevelPreviewCard = ({
   return (
     <PlayableLevelSurface
       source={resolvedSource}
+      {...(userId ? { userId } : {})}
       defaultOpen={defaultOpen}
       {...(onExit ? { onExit } : {})}
     />

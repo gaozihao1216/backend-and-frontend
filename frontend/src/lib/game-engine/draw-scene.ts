@@ -806,9 +806,11 @@ const drawBody = (ctx: CanvasRenderingContext2D, body: GameBody) => {
         ctx.arc(radius * 0.45, radius * 0.06, radius * 0.05, 0, Math.PI * 2);
         ctx.fill();
       } else {
+        const entity = body.plugin.gameEntity;
+        const fillColor = entity?.kind === "bird" ? entity.fillColor : "#d84a3f";
         ctx.beginPath();
         ctx.arc(0, 0, radius, 0, Math.PI * 2);
-        ctx.fillStyle = "#d84a3f";
+        ctx.fillStyle = fillColor;
         ctx.fill();
       }
       break;
@@ -817,6 +819,18 @@ const drawBody = (ctx: CanvasRenderingContext2D, body: GameBody) => {
       break;
   }
 
+  ctx.restore();
+};
+
+const drawBirdHud = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) => {
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+  ctx.fillRect(12, 12, 220, 34);
+  ctx.strokeStyle = "rgba(31, 41, 55, 0.18)";
+  ctx.strokeRect(12, 12, 220, 34);
+  ctx.fillStyle = "#1f2937";
+  ctx.font = "14px sans-serif";
+  ctx.fillText(`${snapshot.activeBirdName} · 剩余 ${snapshot.birdsRemaining}`, 22, 34);
   ctx.restore();
 };
 
@@ -855,4 +869,5 @@ export const drawScene = (
   }
 
   ctx.restore();
+  drawBirdHud(ctx, snapshot);
 };

@@ -1,17 +1,7 @@
-import {
-  Bodies,
-  Body,
-  Engine,
-  Events,
-  Sleeping,
-  World,
-  Vector,
-  type IEventCollision,
-  type Vector as MatterVector,
-} from "matter-js";
+import Matter from "matter-js";
+import type { Engine as MatterEngine, IEventCollision } from "matter-js";
 import {
   BIRD_RADIUS,
-  BLOCK_GROUND_DAMAGE_MULTIPLIER,
   DEFAULT_LEVEL_DATA,
   FIXED_TIMESTEP_MS,
   GRAVITY_Y,
@@ -20,8 +10,6 @@ import {
   LEVEL_GRAVITY_REFERENCE,
   MAX_ACCUMULATED_TIME_MS,
   MAX_DRAG_DISTANCE,
-  PAIR_IMPACT_COOLDOWN_MS,
-  PIG_DAMAGE_FACTOR,
   SETTLE_SPEED_THRESHOLD,
   SETTLE_TIME_MS,
   SLINGSHOT_X,
@@ -35,11 +23,19 @@ import {
   scaleX,
   scaleY,
   setRenderKind,
-  updateDamageVisuals,
   COLLISION_CATEGORY_CEILING,
   COLLISION_CATEGORY_GROUND,
   COLLISION_MASK_BOUNDARY,
 } from "./config.js";
+import { createCombatResolver } from "./combat-resolver.js";
+import {
+  applyCombatProfileToBird,
+} from "../combat-profile.js";
+import {
+  buildBirdQueue,
+  DEFAULT_BIRD_DEFINITION,
+  type BirdDefinition,
+} from "../bird-definition.js";
 import {
   applyBeamSupportStabilization,
   applyBlockSupportStabilization,
@@ -54,22 +50,33 @@ import {
   updateDynamicCollisionFilters,
   applyBirdCollisionFilter,
 } from "./physics.js";
-import {
-  computeCollisionImpulse,
-  computeEffectiveThickness,
-  computeFractureResponse,
-  computeVelocityPreservationRatio,
-} from "../fracture.js";
-import { MATERIAL_PARAMS } from "../materials.js";
 import type { GameBody, GameSession, GameSnapshot } from "../types.js";
 import type { LevelData } from "../../level-contracts.js";
-import { MIN_DAMAGE_IMPULSE } from "../constants.js";
 import { getGroundSurfaceYAtX, getLevelGround, getLevelTerrain, sampleBoundaryPathSegments, sampleGroundPath } from "../../ground.js";
 
+const { Bodies, Body, Engine, Events, Sleeping, World } = Matter;
+
+export type CreateGameSessionInput = {
+  levelData?: LevelData;
+  birdQueue?: BirdDefinition[];
+};
+
+const normalizeSessionInput = (input?: CreateGameSessionInput | LevelData): CreateGameSessionInput => {
+  if (input && "world" in input) {
+    return { levelData: input };
+  }
+
+  return input ?? {};
+};
+
 // Game session
-export const createGameSession = (levelDataInput?: LevelData): GameSession => {
+export const createGameSession = (input?: CreateGameSessionInput | LevelData): GameSession => {
+  const sessionInput = normalizeSessionInput(input);
   const engine = Engine.create();
-  const levelData = levelDataInput ?? DEFAULT_LEVEL_DATA;
+  const levelData = sessionInput.levelData ?? DEFAULT_LEVEL_DATA;
+  const birdQueue = sessionInput.birdQueue && sessionInput.birdQueue.length > 0
+    ? sessionInput.birdQueue
+    : buildBirdQueue(levelData.birdInventory, DEFAULT_BIRD_DEFINITION);
   engine.enableSleeping = true;
   engine.gravity.y = (levelData.world.gravity / LEVEL_GRAVITY_REFERENCE) * GRAVITY_Y;
   engine.positionIterations = 16;
@@ -150,7 +157,27 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
   );
 
   Body.setStatic(bird, true);
-  attachGameEntity(bird, { kind: "bird" });
+
+  let consumedBirds = 0;
+
+  const equipBird = (definition: BirdDefinition) => {
+    Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
+    Body.setStatic(bird, true);
+    Body.setVelocity(bird, { x: 0, y: 0 });
+    Body.setAngularVelocity(bird, 0);
+    Body.setAngle(bird, 0);
+    Sleeping.set(bird, false);
+    attachGameEntity(bird, {
+      kind: "bird",
+      combatProfile: definition.combatProfile,
+      birdType: definition.birdType,
+      name: definition.name,
+      fillColor: definition.fillColor,
+    });
+    applyCombatProfileToBird(bird, definition.combatProfile);
+  };
+
+  equipBird(birdQueue[0] ?? DEFAULT_BIRD_DEFINITION);
 
   const obstacleBodies = levelData.obstacles.map((obstacle) => createObstacleBody(obstacle, levelData));
   const enemyBodies = levelData.enemies.map((enemy) => createEnemyBody(enemy, levelData));
@@ -164,11 +191,41 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
   let initialSettleTimeMs = 0;
   let worldPrimed = false;
   let accumulatedTimeMs = 0;
-  const recentPairImpacts = new Map<string, number>();
 
   const slingshotAnchor = {
     x: SLINGSHOT_X,
     y: SLINGSHOT_Y,
+  };
+
+  const getBirdsRemaining = () => birdQueue.length - consumedBirds - (birdLaunched ? 1 : 0);
+
+  const getActiveBirdPresentation = () => {
+    const entity = bird.plugin.gameEntity;
+    if (entity?.kind === "bird") {
+      return {
+        activeBirdName: entity.name,
+        activeBirdType: entity.birdType,
+      };
+    }
+
+    return {
+      activeBirdName: DEFAULT_BIRD_DEFINITION.name,
+      activeBirdType: DEFAULT_BIRD_DEFINITION.birdType,
+    };
+  };
+
+  const spendCurrentBird = () => {
+    consumedBirds += 1;
+    if (consumedBirds >= birdQueue.length) {
+      return false;
+    }
+
+    equipBird(birdQueue[consumedBirds]!);
+    birdLaunched = false;
+    isDragging = false;
+    settleTimeMs = 0;
+    status = "ready";
+    return true;
   };
 
   // Session/world state helpers
@@ -207,185 +264,17 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
     World.remove(engine.world, body);
   };
 
-  // Damage and fracture handling
-  const applyDamage = (body: GameBody, amount: number) => {
-    const blockEntity = getBlockEntity(body);
-    if (blockEntity) {
-      if (body.destroyed || blockEntity.state === "broken" || blockEntity.state === "cracking") {
-        return;
-      }
-
-      blockEntity.hp = Math.max(0, blockEntity.hp - amount);
-      updateDamageVisuals(body);
-      if (blockEntity.hp <= 0) {
-        removeBody(body);
-      }
-      return;
-    }
-
-    if (body.destroyed || body.health === undefined) {
-      return;
-    }
-
-    body.health = Math.max(0, body.health - amount);
-    updateDamageVisuals(body);
-    if (body.health <= 0) {
-      removeBody(body);
-    }
-  };
-
-  const getPairKey = (bodyA: GameBody, bodyB: GameBody) =>
-    (bodyA.id < bodyB.id ? `${bodyA.id}:${bodyB.id}` : `${bodyB.id}:${bodyA.id}`);
-
-  const applyImpulseDampingToBird = (
-    birdBody: GameBody,
-    normal: MatterVector,
-    rawImpulse: number,
-    effectiveImpulse: number,
-  ) => {
-    if (birdBody.renderKind !== "bird" || rawImpulse <= 0) {
-      return;
-    }
-
-    const velocityAlongNormal = Vector.dot(birdBody.velocity, normal);
-    if (velocityAlongNormal >= 0) {
-      return;
-    }
-
-    const preservedRatio = computeVelocityPreservationRatio(rawImpulse, effectiveImpulse);
-    const tangentialVelocity = Vector.sub(birdBody.velocity, Vector.mult(normal, velocityAlongNormal));
-    const adjustedNormalVelocity = velocityAlongNormal * preservedRatio;
-
-    Body.setVelocity(birdBody, Vector.add(tangentialVelocity, Vector.mult(normal, adjustedNormalVelocity)));
-  };
-
-  const shouldUseFractureModel = (targetBody: GameBody, otherBody: GameBody) => {
-    if (targetBody.renderKind !== "block") {
-      return false;
-    }
-
-    // 只对鸟的直接撞击启用延迟破裂，避免世界物体之间的接触把行为放大。
-    return otherBody.renderKind === "bird";
-  };
-
-  const triggerFracture = (
-    targetBody: GameBody,
-    otherBody: GameBody,
-    impactImpulse: number,
-    normal: MatterVector,
-    nowMs: number,
-  ) => {
-    const entity = getBlockEntity(targetBody);
-    if (!entity || entity.state === "cracking" || entity.state === "broken") {
-      return false;
-    }
-
-    const material = MATERIAL_PARAMS[entity.material];
-    const effectiveThickness = computeEffectiveThickness(targetBody, normal);
-    const fracture = computeFractureResponse(material, effectiveThickness, impactImpulse);
-
-    entity.hp = 0;
-    entity.state = "cracking";
-    entity.crackStartTime = nowMs;
-    entity.breakDuration = fracture.breakDuration;
-    entity.effectiveThickness = effectiveThickness;
-    entity.pendingRemoval = true;
-    entity.collisionCooldownUntil = nowMs + fracture.breakDuration;
-    updateDamageVisuals(targetBody);
-
-    if (otherBody.renderKind === "bird") {
-      applyImpulseDampingToBird(otherBody, normal, impactImpulse, fracture.effectiveImpulse);
-    } else if (targetBody.renderKind === "bird") {
-      applyImpulseDampingToBird(targetBody, Vector.neg(normal), impactImpulse, fracture.effectiveImpulse);
-    }
-
-    return true;
-  };
-
-  const applyBlockImpact = (
-    targetBody: GameBody,
-    otherBody: GameBody,
-    impactImpulse: number,
-    nowMs: number,
-    normal: MatterVector,
-  ) => {
-    const entity = getBlockEntity(targetBody);
-    if (!entity) {
-      return;
-    }
-
-    if (entity.state === "cracking" || entity.state === "broken" || nowMs < entity.collisionCooldownUntil) {
-      return;
-    }
-
-    const material = MATERIAL_PARAMS[entity.material];
-    const multiplier =
-      otherBody.renderKind === "bird"
-        ? 1.1
-        : otherBody.renderKind === "ground"
-          ? BLOCK_GROUND_DAMAGE_MULTIPLIER
-          : 0.7;
-    const damage = impactImpulse * material.damageFactor * multiplier;
-
-    if (shouldUseFractureModel(targetBody, otherBody) && impactImpulse >= material.fractureThreshold && damage >= entity.hp) {
-      if (triggerFracture(targetBody, otherBody, impactImpulse, normal, nowMs)) {
-        return;
-      }
-    }
-
-    applyDamage(targetBody, damage);
-    entity.collisionCooldownUntil = nowMs + 45;
-  };
+  const combatResolver = createCombatResolver({
+    removeBody,
+    shouldApplyDamage: () => worldPrimed && birdLaunched,
+  });
 
   // Collision event handlers
-  const onCollisionStart = (event: IEventCollision<Engine>) => {
-    if (!worldPrimed) {
-      // 初始静置阶段不处理伤害，避免关卡刚载入就因为轻微抖动扣血。
-      return;
-    }
-
-    const nowMs = engine.timing.timestamp;
-
-    for (const pair of event.pairs) {
-      const bodyA = pair.bodyA as GameBody;
-      const bodyB = pair.bodyB as GameBody;
-      if (bodyA.destroyed || bodyB.destroyed) {
-        continue;
-      }
-
-      const pairKey = getPairKey(bodyA, bodyB);
-      const lastImpactAt = recentPairImpacts.get(pairKey) ?? -Infinity;
-      if (nowMs - lastImpactAt < PAIR_IMPACT_COOLDOWN_MS) {
-        // 对同一对物体做一个短冷却，避免一帧内连打多次伤害。
-        continue;
-      }
-
-      const impactImpulse = computeCollisionImpulse(bodyA, bodyB, pair.collision.normal);
-      if (impactImpulse < MIN_DAMAGE_IMPULSE) {
-        continue;
-      }
-      recentPairImpacts.set(pairKey, nowMs);
-
-      const damages = [
-        { body: bodyA, other: bodyB, normal: pair.collision.normal },
-        { body: bodyB, other: bodyA, normal: Vector.neg(pair.collision.normal) },
-      ];
-
-      for (const entry of damages) {
-        if (entry.body.renderKind === "pig") {
-          const multiplier =
-            entry.other.renderKind === "bird" ? 1.2 : entry.other.renderKind === "block" ? 1 : 0.45;
-          applyDamage(entry.body, impactImpulse * PIG_DAMAGE_FACTOR * multiplier);
-        }
-
-        if (entry.body.renderKind === "block") {
-          applyBlockImpact(entry.body, entry.other, impactImpulse, nowMs, entry.normal);
-        }
-      }
-    }
+  const onCollisionStart = (event: IEventCollision<MatterEngine>) => {
+    combatResolver.handleCollisionStart(event, engine.timing.timestamp);
   };
 
-  const onCollisionActive = (event: IEventCollision<Engine>) => {
+  const onCollisionActive = (event: IEventCollision<MatterEngine>) => {
     // 初始下落/落稳阶段交给 Matter 默认求解，自定义稳定化会把接触链瞬间“钉死”。
     if (!worldPrimed) {
       return;
@@ -459,6 +348,15 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
         continue;
       }
 
+      if (body === bird && body.position.y > height + 300) {
+        if (spendCurrentBird()) {
+          continue;
+        }
+
+        removeBody(body);
+        continue;
+      }
+
       if (body.position.y > height + 300) {
         removeBody(body);
       }
@@ -511,7 +409,16 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
     if (isSettled) {
       settleTimeMs += engine.timing.lastDelta;
       if (settleTimeMs >= SETTLE_TIME_MS) {
-        status = livingPigs.length === 0 ? "won" : "lost";
+        if (livingPigs.length === 0) {
+          status = "won";
+          return;
+        }
+
+        if (spendCurrentBird()) {
+          return;
+        }
+
+        status = "lost";
         return;
       }
     } else {
@@ -542,6 +449,8 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
     isDragging,
     status,
     slingshotAnchor,
+    birdsRemaining: getBirdsRemaining(),
+    ...getActiveBirdPresentation(),
   });
 
   return {

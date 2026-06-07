@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { drawScene } from "../../lib/game-engine/draw-scene.js";
 import { createGameSession } from "../../lib/game-engine/game-session/index.js";
+import type { BirdDefinition } from "../../lib/game-engine/bird-definition.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
 import type { LevelData } from "../../lib/level-contracts.js";
 
 type GameCanvasProps = {
   levelKey: string;
   levelData?: LevelData;
+  birdQueue?: BirdDefinition[];
   restartToken?: number;
   transparentBackground?: boolean;
 };
@@ -14,6 +16,7 @@ type GameCanvasProps = {
 export const GameCanvas = ({
   levelKey,
   levelData,
+  birdQueue,
   restartToken = 0,
   transparentBackground = false,
 }: GameCanvasProps) => {
@@ -51,7 +54,10 @@ export const GameCanvas = ({
     }
 
     // 每次切关卡或重开时，重新创建一个全新的游戏 session。
-    const session = createGameSession(levelData);
+    const session = createGameSession({
+      ...(levelData ? { levelData } : {}),
+      ...(birdQueue ? { birdQueue } : {}),
+    });
     sessionRef.current = session;
     let animationFrameId = 0;
     let lastTimestamp = performance.now();
@@ -76,7 +82,7 @@ export const GameCanvas = ({
       sessionRef.current = null;
       session.destroy();
     };
-  }, [levelKey, restartToken, levelData, transparentBackground]);
+  }, [levelKey, restartToken, levelData, birdQueue, transparentBackground]);
 
   const getCanvasPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

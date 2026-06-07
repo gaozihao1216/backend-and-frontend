@@ -1,4 +1,7 @@
-import { Bodies, type Body as MatterBody, type Engine, type IEventCollision, Vector, type Vector as MatterVector } from "matter-js";
+import Matter from "matter-js";
+import type { Body as MatterBody, Engine, IEventCollision, Vector as MatterVector } from "matter-js";
+
+const { Bodies, Vector } = Matter;
 import {
   BIRD_RADIUS,
   BLOCK_HEIGHT,
@@ -244,9 +247,10 @@ export const getPairContactPoint = (
   fallbackBody: GameBody,
   normal: MatterVector,
 ) => {
-  if (pair.activeContacts.length > 0) {
+  const contacts = pair.activeContacts ?? [];
+  if (contacts.length > 0) {
     // Matter 可能给出多个接触点，这里取平均点作为“接触中心”近似。
-    const summed = pair.activeContacts.reduce(
+    const summed = contacts.reduce(
       (accumulator, contact) => ({
         x: accumulator.x + contact.vertex.x,
         y: accumulator.y + contact.vertex.y,
@@ -255,8 +259,8 @@ export const getPairContactPoint = (
     );
 
     return {
-      x: summed.x / pair.activeContacts.length,
-      y: summed.y / pair.activeContacts.length,
+      x: summed.x / contacts.length,
+      y: summed.y / contacts.length,
     };
   }
 
@@ -273,14 +277,15 @@ export const getPairContactPoint = (
 };
 
 export const getPairContactSpan = (pair: IEventCollision<Engine>["pairs"][number], tangent: MatterVector) => {
-  if (pair.activeContacts.length < 2) {
+  const contacts = pair.activeContacts ?? [];
+  if (contacts.length < 2) {
     return 0;
   }
 
   // 在切向上的跨度可用来区分“面支撑”与“单角接触”。
   let minProjection = Infinity;
   let maxProjection = -Infinity;
-  for (const contact of pair.activeContacts) {
+  for (const contact of contacts) {
     const projection = Vector.dot(contact.vertex, tangent);
     minProjection = Math.min(minProjection, projection);
     maxProjection = Math.max(maxProjection, projection);
