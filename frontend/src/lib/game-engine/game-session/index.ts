@@ -36,6 +36,9 @@ import {
   scaleY,
   setRenderKind,
   updateDamageVisuals,
+  COLLISION_CATEGORY_CEILING,
+  COLLISION_CATEGORY_GROUND,
+  COLLISION_MASK_BOUNDARY,
 } from "./config.js";
 import {
   applyBeamSupportStabilization,
@@ -46,6 +49,10 @@ import {
   applyPigSupportStabilization,
   applyRestingContactStabilization,
   clampBodyVelocity,
+  keepBodiesAwakeDuringPriming,
+  manageBodySleep,
+  updateDynamicCollisionFilters,
+  applyBirdCollisionFilter,
 } from "./physics.js";
 import {
   computeCollisionImpulse,
@@ -113,6 +120,10 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
         friction: 1.6,
         frictionStatic: 3.2,
         slop: 0.01,
+        collisionFilter: {
+          category: surfaceRole === "ground" ? COLLISION_CATEGORY_GROUND : COLLISION_CATEGORY_CEILING,
+          mask: COLLISION_MASK_BOUNDARY,
+        },
       }),
       "ground",
     );
@@ -375,6 +386,11 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
   };
 
   const onCollisionActive = (event: IEventCollision<Engine>) => {
+    // 初始下落/落稳阶段交给 Matter 默认求解，自定义稳定化会把接触链瞬间“钉死”。
+    if (!worldPrimed) {
+      return;
+    }
+
     for (const pair of event.pairs) {
       const bodyA = pair.bodyA as GameBody;
       const bodyB = pair.bodyB as GameBody;
@@ -403,27 +419,29 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
       const usesPigSupportModel = !usesGroundSupportModel
         && !usesBlockSupportModel
         && applyPigSupportStabilization(bodyA, bodyB, pair.collision.normal, pair.collision.depth);
+      const stabilized = usesGroundSupportModel || usesBlockSupportModel || usesPigSupportModel;
 
-      // 如果没有命中特化的支撑模型，再退回到通用的低速接触稳定化。
-      if (!usesGroundSupportModel && !usesBlockSupportModel && !usesPigSupportModel) {
+      if (!stabilized) {
         applyRestingContactStabilization(bodyA, bodyB, pair.collision.normal);
+        applyBeamSupportStabilization(bodyA, bodyB, pair.collision.normal);
+        applyPigBeamStabilization(bodyA, bodyB, pair.collision.normal);
       }
-
-      applyBeamSupportStabilization(bodyA, bodyB, pair.collision.normal);
-      applyPigBeamStabilization(bodyA, bodyB, pair.collision.normal);
     }
   };
 
   // Per-frame world update
   const onAfterUpdate = () => {
+    updateDynamicCollisionFilters(bodies, { worldPrimed, birdLaunched });
+
+    if (!worldPrimed) {
+      keepBodiesAwakeDuringPriming(bodies);
+    } else {
+      manageBodySleep(bodies, bird, { birdLaunched, isDragging });
+    }
+
     for (const body of bodies) {
       if (body.isStatic || body.destroyed) {
         continue;
-      }
-
-      // 自定义稳定化不负责让物体睡眠，统一唤醒避免“低速即冻结”。
-      if (body.isSleeping) {
-        Sleeping.set(body, false);
       }
 
       clampBodyVelocity(body);
@@ -446,7 +464,9 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
       }
     }
 
-    applyPenetrationCorrection(bodies);
+    if (worldPrimed) {
+      applyPenetrationCorrection(bodies);
+    }
 
     const movingBodies = bodies.filter((body) => !body.destroyed && !body.isStatic);
     const isSettled = movingBodies.every(
@@ -566,6 +586,7 @@ export const createGameSession = (levelDataInput?: LevelData): GameSession => {
       birdLaunched = true;
       settleTimeMs = 0;
       status = "running";
+      applyBirdCollisionFilter(bird);
       Body.setStatic(bird, false);
       Sleeping.set(bird, false);
       Body.setVelocity(bird, {

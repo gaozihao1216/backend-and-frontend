@@ -1,5 +1,7 @@
 export * from "./admin/GetPendingSubmissionsApi.js";
+export * from "./admin/GetPendingBirdSubmissionsApi.js";
 export * from "./admin/ReviewSubmissionApi.js";
+export * from "./admin/ReviewBirdSubmissionApi.js";
 export * from "./admin/GetAdminCommentsApi.js";
 export * from "./admin/DeleteCommentApi.js";
 export * from "./admin/GetDirectorPermissionsApi.js";

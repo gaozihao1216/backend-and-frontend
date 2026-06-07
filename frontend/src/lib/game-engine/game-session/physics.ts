@@ -1,4 +1,4 @@
-import { Body, Vector, type Engine, type IEventCollision, type Vector as MatterVector } from "matter-js";
+import { Body, Sleeping, Vector, type Engine, type IEventCollision, type Vector as MatterVector } from "matter-js";
 import type { GameBody } from "../types.js";
 import {
   BEAM_SUPPORT_MAX_ANGLE,
@@ -10,8 +10,19 @@ import {
   BLOCK_SUPPORT_MAX_NORMAL_RESPONSE,
   BLOCK_SUPPORT_MIN_DEPTH,
   BLOCK_SUPPORT_NORMAL_SPEED_THRESHOLD,
-  BLOCK_SUPPORT_STIFFNESS,
   BLOCK_SUPPORT_TANGENTIAL_DAMPING,
+  BODY_SLEEP_ANGULAR_THRESHOLD,
+  BODY_SLEEP_LINEAR_THRESHOLD,
+  COLLISION_CATEGORY_BIRD,
+  COLLISION_CATEGORY_CEILING,
+  COLLISION_CATEGORY_DYNAMIC,
+  COLLISION_CATEGORY_GROUND,
+  COLLISION_MASK_BOUNDARY,
+  COLLISION_MASK_DYNAMIC_FULL,
+  COLLISION_MASK_FREE_FALL,
+  FREE_FALL_MAX_REST_ANGULAR,
+  FREE_FALL_MAX_REST_SPEED,
+  FREE_FALL_MIN_DOWNWARD,
   GROUND_CONTACT_MIN_DEPTH,
   GROUND_CONTACT_MIN_SUPPORT_SPAN,
   GROUND_CONTACT_NORMAL_SPEED_THRESHOLD,
@@ -19,9 +30,10 @@ import {
   GROUND_CONTACT_POINT_MAX_NORMAL_SPEED_CORRECTION,
   GROUND_CONTACT_POINT_MAX_TANGENTIAL_IMPULSE_RATIO,
   GROUND_CONTACT_POINT_NORMAL_DAMPING,
-  GROUND_CONTACT_POINT_NORMAL_STIFFNESS,
   GROUND_CONTACT_POINT_TANGENTIAL_DAMPING,
   GROUND_CONTACT_POST_ANGULAR_DAMPING,
+  PENETRATION_CORRECTION_MAX_SPEED,
+  PENETRATION_CORRECTION_MIN_OVERLAP,
   MAX_ANGULAR_SPEED,
   MAX_BEAM_ANGULAR_SPEED,
   MAX_BLOCK_LINEAR_SPEED,
@@ -40,7 +52,6 @@ import {
   PIG_SUPPORT_MAX_NORMAL_RESPONSE,
   PIG_SUPPORT_MIN_DEPTH,
   PIG_SUPPORT_NORMAL_SPEED_THRESHOLD,
-  PIG_SUPPORT_STIFFNESS,
   PIG_SUPPORT_TANGENTIAL_DAMPING,
   RESTING_CONTACT_ANGULAR_DAMPING,
   RESTING_CONTACT_NORMAL_SPEED_THRESHOLD,
@@ -54,7 +65,109 @@ import {
   isPigBeamCandidate,
   isStableBeamCandidate,
   velocityAtPoint,
+  getBlockEntity,
 } from "./config.js";
+
+const shouldKeepBodyAwake = (
+  body: GameBody,
+  bird: GameBody,
+  options: { birdLaunched: boolean; isDragging: boolean },
+) => {
+  if (body === bird) {
+    return options.isDragging || !options.birdLaunched || body.speed > 0.45;
+  }
+
+  const blockEntity = getBlockEntity(body);
+  if (blockEntity?.state === "cracking") {
+    return true;
+  }
+
+  return body.speed > BODY_SLEEP_LINEAR_THRESHOLD || Math.abs(body.angularVelocity) > BODY_SLEEP_ANGULAR_THRESHOLD;
+};
+
+export const manageBodySleep = (
+  bodies: GameBody[],
+  bird: GameBody,
+  options: { birdLaunched: boolean; isDragging: boolean },
+) => {
+  for (const body of bodies) {
+    if (body.isStatic || body.destroyed || !body.isSleeping) {
+      continue;
+    }
+
+    if (shouldKeepBodyAwake(body, bird, options)) {
+      Sleeping.set(body, false);
+    }
+  }
+};
+
+export const keepBodiesAwakeDuringPriming = (bodies: GameBody[]) => {
+  for (const body of bodies) {
+    if (body.isStatic || body.destroyed || !body.isSleeping) {
+      continue;
+    }
+
+    Sleeping.set(body, false);
+  }
+};
+
+export const isInFreeFall = (body: GameBody) => {
+  if (body.isStatic || body.destroyed || body.renderKind === "bird") {
+    return false;
+  }
+
+  if (body.speed <= FREE_FALL_MAX_REST_SPEED && Math.abs(body.angularVelocity) <= FREE_FALL_MAX_REST_ANGULAR) {
+    return false;
+  }
+
+  return body.velocity.y >= FREE_FALL_MIN_DOWNWARD || body.speed >= FREE_FALL_MAX_REST_SPEED;
+};
+
+const applyDynamicCollisionFilter = (body: GameBody, freeFall: boolean) => {
+  Body.set(body, {
+    collisionFilter: {
+      category: COLLISION_CATEGORY_DYNAMIC,
+      mask: freeFall ? COLLISION_MASK_FREE_FALL : COLLISION_MASK_DYNAMIC_FULL,
+    },
+  });
+};
+
+export const applyBirdCollisionFilter = (body: GameBody) => {
+  Body.set(body, {
+    collisionFilter: {
+      category: COLLISION_CATEGORY_BIRD,
+      mask: COLLISION_MASK_DYNAMIC_FULL,
+    },
+  });
+};
+
+export const updateDynamicCollisionFilters = (
+  bodies: GameBody[],
+  options: { worldPrimed: boolean; birdLaunched: boolean },
+) => {
+  if (options.worldPrimed || options.birdLaunched) {
+    for (const body of bodies) {
+      if (body.destroyed || body.isStatic || body.renderKind === "bird") {
+        continue;
+      }
+
+      if (body.renderKind === "block" || body.renderKind === "pig") {
+        applyDynamicCollisionFilter(body, false);
+      }
+    }
+    return;
+  }
+
+  for (const body of bodies) {
+    if (body.destroyed || body.isStatic || body.renderKind === "bird") {
+      continue;
+    }
+
+    if (body.renderKind === "block" || body.renderKind === "pig") {
+      applyDynamicCollisionFilter(body, isInFreeFall(body));
+    }
+  }
+};
 
 export const clampBodyVelocity = (body: GameBody) => {
   if (body.isStatic || body.destroyed) {
@@ -96,7 +209,11 @@ export const applyPenetrationCorrection = (bodies: GameBody[]) => {
 
     for (let otherIndex = index + 1; otherIndex < bodies.length; otherIndex += 1) {
       const bodyB = bodies[otherIndex];
-      if (!bodyB || bodyB.destroyed) {
+      if (!bodyB || bodyB.destroyed || bodyB.isStatic) {
+        continue;
+      }
+
+      if (bodyA.speed > PENETRATION_CORRECTION_MAX_SPEED || bodyB.speed > PENETRATION_CORRECTION_MAX_SPEED) {
         continue;
       }
 
@@ -106,10 +223,14 @@ export const applyPenetrationCorrection = (bodies: GameBody[]) => {
         continue;
       }
 
-      // 这里只做非常保守的轴向分离，避免深度重叠时继续把系统推向不稳定。
+      const overlapAmount = Math.min(overlapX, overlapY);
+      if (overlapAmount < PENETRATION_CORRECTION_MIN_OVERLAP) {
+        continue;
+      }
+
       const correctionAxis = overlapX < overlapY ? { x: 1, y: 0, amount: overlapX } : { x: 0, y: 1, amount: overlapY };
-      const correctionAmount = Math.min(MAX_POSITION_CORRECTION, correctionAxis.amount * 0.35);
-      if (correctionAmount <= 0.02) {
+      const correctionAmount = Math.min(MAX_POSITION_CORRECTION, correctionAxis.amount * 0.18);
+      if (correctionAmount <= 0.04) {
         continue;
       }
 
@@ -126,13 +247,10 @@ export const applyPenetrationCorrection = (bodies: GameBody[]) => {
         x: bodyA.position.x + shift.x,
         y: bodyA.position.y + shift.y,
       });
-
-      if (!bodyB.isStatic) {
-        Body.setPosition(bodyB, {
-          x: bodyB.position.x - shift.x,
-          y: bodyB.position.y - shift.y,
-        });
-      }
+      Body.setPosition(bodyB, {
+        x: bodyB.position.x - shift.x,
+        y: bodyB.position.y - shift.y,
+      });
     }
   }
 };
@@ -155,7 +273,14 @@ export const applyRestingContactStabilization = (bodyA: GameBody, bodyB: GameBod
 
   const tangentialVelocity = Vector.sub(relativeVelocity, Vector.mult(normal, normalVelocity));
   const dampedTangentialVelocity = Vector.mult(tangentialVelocity, RESTING_CONTACT_TANGENTIAL_DAMPING);
-  const correctionVelocity = Vector.sub(relativeVelocity, dampedTangentialVelocity);
+  const dampedNormalVelocity = normalSpeed > 0.001 ? normalVelocity * 0.82 : 0;
+  const correctionVelocity = Vector.sub(
+    relativeVelocity,
+    Vector.add(
+      Vector.mult(normal, dampedNormalVelocity),
+      dampedTangentialVelocity,
+    ),
+  );
 
   if (!bodyA.isStatic) {
     const share = inverseMassA / inverseMassSum;
@@ -238,24 +363,25 @@ export const applyGroundSupportStabilization = (
     return false;
   }
 
-  // 这里不是直接按质心速度修正，而是按接触点速度计算法向/切向冲量。
+  const tangentialVelocity = Vector.dot(relativeContactVelocity, contactTangent);
   const targetNormalSpeedCorrection = Math.min(
     GROUND_CONTACT_POINT_MAX_NORMAL_SPEED_CORRECTION,
-    GROUND_CONTACT_POINT_NORMAL_STIFFNESS * contactDepth
-    + GROUND_CONTACT_POINT_NORMAL_DAMPING * Math.max(0, -normalVelocity),
+    GROUND_CONTACT_POINT_NORMAL_DAMPING * Math.max(0, -normalVelocity),
   );
   const normalImpulseMagnitude = Math.min(
     GROUND_CONTACT_POINT_MAX_NORMAL_IMPULSE,
     targetNormalSpeedCorrection / effectiveMassNormal,
   );
-  if (normalImpulseMagnitude <= 0) {
+  if (normalImpulseMagnitude <= 0 && Math.abs(tangentialVelocity) < 0.02) {
     return false;
   }
 
-  const tangentialVelocity = Vector.dot(relativeContactVelocity, contactTangent);
   const targetTangentialSpeedCorrection = -tangentialVelocity * GROUND_CONTACT_POINT_TANGENTIAL_DAMPING;
   const unclampedTangentialImpulse = targetTangentialSpeedCorrection / effectiveMassTangent;
-  const maxTangentialImpulse = normalImpulseMagnitude * GROUND_CONTACT_POINT_MAX_TANGENTIAL_IMPULSE_RATIO;
+  const maxTangentialImpulse = Math.max(
+    normalImpulseMagnitude * GROUND_CONTACT_POINT_MAX_TANGENTIAL_IMPULSE_RATIO,
+    GROUND_CONTACT_POINT_MAX_NORMAL_IMPULSE * 0.35,
+  );
   const tangentialImpulseMagnitude = Math.max(
     -maxTangentialImpulse,
     Math.min(maxTangentialImpulse, unclampedTangentialImpulse),
@@ -304,14 +430,15 @@ export const applyBlockSupportStabilization = (
 
   const normalResponse = Math.min(
     BLOCK_SUPPORT_MAX_NORMAL_RESPONSE,
-    BLOCK_SUPPORT_STIFFNESS * contactDepth + BLOCK_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
+    BLOCK_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
   );
-  if (normalResponse <= 0) {
-    return false;
-  }
 
   const tangentialVelocity = Vector.sub(relativeVelocity, Vector.mult(normal, normalVelocity));
   const tangentialCorrection = Vector.mult(tangentialVelocity, 1 - BLOCK_SUPPORT_TANGENTIAL_DAMPING);
+  if (normalResponse <= 0 && Vector.magnitude(tangentialCorrection) < 0.015) {
+    return false;
+  }
+
   const correctionVelocity = Vector.add(
     Vector.mult(normal, normalResponse),
     Vector.neg(tangentialCorrection),
@@ -377,14 +504,15 @@ export const applyPigSupportStabilization = (
 
   const normalResponse = Math.min(
     PIG_SUPPORT_MAX_NORMAL_RESPONSE,
-    PIG_SUPPORT_STIFFNESS * contactDepth + PIG_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
+    PIG_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
   );
-  if (normalResponse <= 0) {
-    return false;
-  }
 
   const tangentialVelocity = Vector.sub(relativeVelocity, Vector.mult(supportToPigNormal, normalVelocity));
   const tangentialCorrection = Vector.mult(tangentialVelocity, 1 - PIG_SUPPORT_TANGENTIAL_DAMPING);
+  if (normalResponse <= 0 && Vector.magnitude(tangentialCorrection) < 0.015) {
+    return false;
+  }
+
   const correctionVelocity = Vector.add(
     Vector.mult(supportToPigNormal, normalResponse),
     Vector.neg(tangentialCorrection),

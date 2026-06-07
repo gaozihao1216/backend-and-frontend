@@ -33,13 +33,29 @@ export const MAX_BLOCK_LINEAR_SPEED = 16;
 export const MAX_ANGULAR_SPEED = 0.22;
 export const MAX_BEAM_ANGULAR_SPEED = 0.14;
 export const BEAM_ANGULAR_DAMPING = 0.92;
-export const MAX_POSITION_CORRECTION = 1.4;
+export const MAX_POSITION_CORRECTION = 0.55;
+export const PENETRATION_CORRECTION_MIN_OVERLAP = 1.25;
+export const PENETRATION_CORRECTION_MAX_SPEED = 0.42;
+export const BODY_SLEEP_LINEAR_THRESHOLD = 0.38;
+export const BODY_SLEEP_ANGULAR_THRESHOLD = 0.09;
+
+export const COLLISION_CATEGORY_GROUND = 0x0001;
+export const COLLISION_CATEGORY_CEILING = 0x0002;
+export const COLLISION_CATEGORY_DYNAMIC = 0x0004;
+export const COLLISION_CATEGORY_BIRD = 0x0008;
+export const COLLISION_MASK_FREE_FALL = COLLISION_CATEGORY_GROUND | COLLISION_CATEGORY_CEILING;
+export const COLLISION_MASK_DYNAMIC_FULL =
+  COLLISION_MASK_FREE_FALL | COLLISION_CATEGORY_DYNAMIC | COLLISION_CATEGORY_BIRD;
+export const COLLISION_MASK_BOUNDARY = COLLISION_MASK_DYNAMIC_FULL;
+
+export const FREE_FALL_MAX_REST_SPEED = 0.14;
+export const FREE_FALL_MAX_REST_ANGULAR = 0.055;
+export const FREE_FALL_MIN_DOWNWARD = 0.06;
 export const RESTING_CONTACT_NORMAL_SPEED_THRESHOLD = 0.28;
 export const RESTING_CONTACT_TANGENTIAL_DAMPING = 0.9;
 export const RESTING_CONTACT_ANGULAR_DAMPING = 0.84;
 export const GROUND_CONTACT_NORMAL_SPEED_THRESHOLD = 0.42;
 export const GROUND_CONTACT_MIN_DEPTH = 0.002;
-export const GROUND_CONTACT_POINT_NORMAL_STIFFNESS = 5.8;
 export const GROUND_CONTACT_POINT_NORMAL_DAMPING = 0.24;
 export const GROUND_CONTACT_POINT_TANGENTIAL_DAMPING = 0.08;
 export const GROUND_CONTACT_POINT_MAX_NORMAL_SPEED_CORRECTION = 0.11;
@@ -49,14 +65,12 @@ export const GROUND_CONTACT_POST_ANGULAR_DAMPING = 0.997;
 export const GROUND_CONTACT_MIN_SUPPORT_SPAN = 10;
 export const BLOCK_SUPPORT_NORMAL_SPEED_THRESHOLD = 0.34;
 export const BLOCK_SUPPORT_MIN_DEPTH = 0.003;
-export const BLOCK_SUPPORT_STIFFNESS = 0.12;
 export const BLOCK_SUPPORT_DAMPING = 0.24;
 export const BLOCK_SUPPORT_TANGENTIAL_DAMPING = 0.88;
 export const BLOCK_SUPPORT_MAX_NORMAL_RESPONSE = 0.44;
 export const BLOCK_SUPPORT_ANGULAR_DAMPING = 0.92;
 export const PIG_SUPPORT_NORMAL_SPEED_THRESHOLD = 0.48;
 export const PIG_SUPPORT_MIN_DEPTH = 0.002;
-export const PIG_SUPPORT_STIFFNESS = 0.14;
 export const PIG_SUPPORT_DAMPING = 0.28;
 export const PIG_SUPPORT_TANGENTIAL_DAMPING = 0.76;
 export const PIG_SUPPORT_MAX_NORMAL_RESPONSE = 0.4;
@@ -290,8 +304,8 @@ const getObstaclePhysics = (
     case "glass":
       return {
         restitution: 0,
-        friction: isHorizontalBeam ? 0.52 : 0.44,
-        frictionStatic: isHorizontalBeam ? 0.78 : 0.66,
+        friction: isHorizontalBeam ? 0.48 : 0.4,
+        frictionStatic: isHorizontalBeam ? 0.58 : 0.5,
         frictionAir: isHorizontalBeam ? 0.028 : 0.022,
         density: isVerticalSupport ? 0.0018 : 0.00145,
         isBeam,
@@ -301,8 +315,8 @@ const getObstaclePhysics = (
     case "stone":
       return {
         restitution: 0,
-        friction: isVerticalSupport ? 1.9 : isHorizontalBeam ? 1.58 : 1.48,
-        frictionStatic: isVerticalSupport ? 3.8 : isHorizontalBeam ? 2.75 : 2.45,
+        friction: isVerticalSupport ? 1.55 : isHorizontalBeam ? 1.35 : 1.25,
+        frictionStatic: isVerticalSupport ? 1.85 : isHorizontalBeam ? 1.55 : 1.45,
         frictionAir: isHorizontalBeam ? 0.05 : 0.034,
         density: isVerticalSupport ? 0.0066 : isHorizontalBeam ? 0.0037 : 0.005,
         isBeam,
@@ -313,8 +327,8 @@ const getObstaclePhysics = (
     default:
       return {
         restitution: 0,
-        friction: isVerticalSupport ? 1.8 : isHorizontalBeam ? 1.52 : 1.32,
-        frictionStatic: isVerticalSupport ? 3.35 : isHorizontalBeam ? 2.6 : 2.05,
+        friction: isVerticalSupport ? 1.45 : isHorizontalBeam ? 1.25 : 1.1,
+        frictionStatic: isVerticalSupport ? 1.75 : isHorizontalBeam ? 1.45 : 1.3,
         frictionAir: isHorizontalBeam ? 0.048 : 0.03,
         density: isVerticalSupport ? 0.0039 : isHorizontalBeam ? 0.00155 : 0.0025,
         isBeam,
@@ -339,7 +353,11 @@ export const createObstacleBody = (obstacle: LevelObstacle, levelData: LevelData
       frictionStatic: physics.frictionStatic,
       frictionAir: physics.frictionAir,
       density: physics.density,
-      slop: 0.008,
+      slop: 0.014,
+      collisionFilter: {
+        category: COLLISION_CATEGORY_DYNAMIC,
+        mask: COLLISION_MASK_FREE_FALL,
+      },
     }),
     "block",
   );
@@ -358,11 +376,15 @@ export const createEnemyBody = (enemy: LevelEnemy, levelData: LevelData) => {
   const pig = setRenderKind(
     Bodies.circle(scaleX(enemy.position.x, levelData), scaleY(enemy.position.y, levelData), enemyRadius, {
       restitution: 0,
-      friction: 0.9,
-      frictionStatic: 1.2,
+      friction: 0.82,
+      frictionStatic: 0.98,
       frictionAir: 0.02,
       density: 0.0015,
       slop: 0.01,
+      collisionFilter: {
+        category: COLLISION_CATEGORY_DYNAMIC,
+        mask: COLLISION_MASK_FREE_FALL,
+      },
     }),
     "pig",
   );

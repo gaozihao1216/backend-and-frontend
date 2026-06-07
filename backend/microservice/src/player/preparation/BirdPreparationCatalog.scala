@@ -9,7 +9,9 @@ final case class BirdCatalogEntry(
   previewImageUrl: String,
   baseStats: BirdBaseStats,
   skillName: String,
-  tierSkillDescriptions: Vector[String]
+  tierSkillDescriptions: Vector[String],
+  source: String = "system",
+  authorId: Option[String] = None
 )
 
 object BirdPreparationCatalog {

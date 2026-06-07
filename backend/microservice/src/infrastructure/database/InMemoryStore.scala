@@ -2,6 +2,7 @@ package microservice.infrastructure.database
 
 import microservice.auth.tables.UserRow
 import microservice.level.objects.Favorite
+import microservice.bird.tables.{BirdDesignRow, BirdSubmissionRow}
 import microservice.level.tables.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
 import microservice.player.runtime.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
 import microservice.player.tables.{
@@ -38,6 +39,8 @@ object InMemoryStore {
   var playerPrivateMessages: Vector[PlayerPrivateMessageRow] = Vector.empty
   var playerBirdUpgrades: Vector[PlayerBirdUpgradeRow] = Vector.empty
   var playerSlingshotUpgrades: Vector[PlayerSlingshotUpgradeRow] = Vector.empty
+  var birdDesigns: Vector[BirdDesignRow] = Vector.empty
+  var birdSubmissions: Vector[BirdSubmissionRow] = Vector.empty
 
   def reset(
     nextUsers: Vector[UserRow],

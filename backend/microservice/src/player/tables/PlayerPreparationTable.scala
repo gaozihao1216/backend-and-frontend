@@ -20,11 +20,11 @@ final case class PlayerSlingshotUpgradeRow(
 )
 
 object PlayerPreparationTable {
-  val birdCatalog: Vector[(String, String)] =
-    BirdPreparationCatalog.entries.map(entry => entry.birdType -> entry.name)
-
   val maxLevel: Int = 5
   val maxTier: Int = BirdPreparationCatalog.maxTier
+
+  private val systemBirdTypes: Vector[String] =
+    BirdPreparationCatalog.entries.map(_.birdType)
 
   private def isInMemory(connection: Connection): Boolean = connection == null
 
@@ -56,7 +56,7 @@ object PlayerPreparationTable {
             )
           """
         )
-        birdCatalog.foreach { case (birdType, _) =>
+        systemBirdTypes.foreach { birdType =>
           statement.executeUpdate(
             s"""
               INSERT INTO player_bird_upgrades (user_id, bird_type, level, tier, updated_at)
@@ -79,9 +79,9 @@ object PlayerPreparationTable {
       seedInMemory("player-1")
     }
 
-  def seedInMemory(userId: String): Unit = {
+  def seedInMemory(userId: String, birdTypes: Vector[String] = systemBirdTypes): Unit = {
     val now = Instant.now().toString
-    birdCatalog.foreach { case (birdType, _) =>
+    birdTypes.foreach { birdType =>
       if (!InMemoryStore.playerBirdUpgrades.exists(row => row.userId == userId && row.birdType == birdType)) {
         InMemoryStore.playerBirdUpgrades =
           InMemoryStore.playerBirdUpgrades :+ PlayerBirdUpgradeRow(userId, birdType, 1, 1, now)
@@ -93,8 +93,7 @@ object PlayerPreparationTable {
     }
   }
 
-  def listBirdRows(connection: Connection, userId: String): Vector[PlayerBirdUpgradeRow] = {
-    ensureDefaults(connection, userId)
+  def listBirdRows(connection: Connection, userId: String): Vector[PlayerBirdUpgradeRow] =
     if (isInMemory(connection)) {
       InMemoryStore.playerBirdUpgrades.filter(_.userId == userId)
     } else {
@@ -123,7 +122,6 @@ object PlayerPreparationTable {
         statement.close()
       }
     }
-  }
 
   def listBirdLevels(connection: Connection, userId: String): Map[String, Int] =
     listBirdRows(connection, userId).map(row => row.birdType -> row.level).toMap
@@ -132,7 +130,7 @@ object PlayerPreparationTable {
     listBirdRows(connection, userId).map(row => row.birdType -> row.tier).toMap
 
   def getSlingshotLevel(connection: Connection, userId: String): Int = {
-    ensureDefaults(connection, userId)
+    ensureSlingshotDefault(connection, userId)
     if (isInMemory(connection)) {
       InMemoryStore.playerSlingshotUpgrades.find(_.userId == userId).map(_.level).getOrElse(1)
     } else {
@@ -151,10 +149,6 @@ object PlayerPreparationTable {
   }
 
   def upgradeBird(connection: Connection, userId: String, birdType: String): Either[String, Int] = {
-    if (!birdCatalog.exists(_._1 == birdType)) {
-      return Left(s"Unknown bird type: $birdType")
-    }
-    ensureDefaults(connection, userId)
     val current = listBirdLevels(connection, userId).getOrElse(birdType, 1)
     if (current >= maxLevel) {
       return Left("Bird is already at max level")
@@ -166,10 +160,6 @@ object PlayerPreparationTable {
   }
 
   def ascendBird(connection: Connection, userId: String, birdType: String): Either[String, Int] = {
-    if (!birdCatalog.exists(_._1 == birdType)) {
-      return Left(s"Unknown bird type: $birdType")
-    }
-    ensureDefaults(connection, userId)
     val currentTier = listBirdTiers(connection, userId).getOrElse(birdType, 1)
     if (currentTier >= maxTier) {
       return Left("Bird is already at max tier")
@@ -181,7 +171,7 @@ object PlayerPreparationTable {
   }
 
   def upgradeSlingshot(connection: Connection, userId: String): Either[String, Int] = {
-    ensureDefaults(connection, userId)
+    ensureSlingshotDefault(connection, userId)
     val current = getSlingshotLevel(connection, userId)
     if (current >= maxLevel) {
       return Left("Slingshot is already at max level")
@@ -195,10 +185,10 @@ object PlayerPreparationTable {
 
   def ascendCost(tier: Int): Int = tier * 8
 
-  private def ensureDefaults(connection: Connection, userId: String): Unit =
-    if (isInMemory(connection)) seedInMemory(userId)
+  def ensureBirdDefaults(connection: Connection, userId: String, birdTypes: Vector[String]): Unit =
+    if (isInMemory(connection)) seedInMemory(userId, birdTypes)
     else {
-      birdCatalog.foreach { case (birdType, _) =>
+      birdTypes.foreach { birdType =>
         val statement = connection.prepareStatement(
           """
             INSERT INTO player_bird_upgrades (user_id, bird_type, level, tier, updated_at)
@@ -215,6 +205,16 @@ object PlayerPreparationTable {
           statement.close()
         }
       }
+      ensureSlingshotDefault(connection, userId)
+    }
+
+  def ensureSlingshotDefault(connection: Connection, userId: String): Unit =
+    if (isInMemory(connection)) {
+      if (!InMemoryStore.playerSlingshotUpgrades.exists(_.userId == userId)) {
+        InMemoryStore.playerSlingshotUpgrades =
+          InMemoryStore.playerSlingshotUpgrades :+ PlayerSlingshotUpgradeRow(userId, 1, Instant.now().toString)
+      }
+    } else {
       val slingshotStatement = connection.prepareStatement(
         """
           INSERT INTO player_slingshot_upgrades (user_id, level, updated_at)
@@ -230,6 +230,9 @@ object PlayerPreparationTable {
         slingshotStatement.close()
       }
     }
+
+  private def ensureDefaults(connection: Connection, userId: String): Unit =
+    ensureBirdDefaults(connection, userId, systemBirdTypes)
 
   private def upsertBird(
     connection: Connection,

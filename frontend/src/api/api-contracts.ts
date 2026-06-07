@@ -32,6 +32,21 @@ import {
   type LevelSlotAssignmentDetail as LevelSlotAssignmentDetailObject,
 } from "../objects/admin/level-slot-assignment.js";
 import { ReviewedSubmissionSchema, type ReviewedSubmission as ReviewedSubmissionObject } from "../objects/admin/reviewed-submission.js";
+import {
+  BirdDesignSchema,
+  BirdDesignInputSchema,
+  type BirdDesign,
+  type BirdDesignInput,
+} from "../objects/bird/bird-design.js";
+import {
+  BirdSubmissionSchema,
+  BirdSubmissionWithDesignSchema,
+  ReviewedBirdSubmissionSchema,
+  type BirdSubmission,
+  type BirdSubmissionWithDesign,
+  type ReviewedBirdSubmission,
+} from "../objects/bird/bird-submission.js";
+import { LevelStatusSchema } from "../objects/system/level-status.js";
 import { FavoriteSchema, type Favorite } from "../objects/level/favorite.js";
 import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/favorite-with-level.js";
 import { LevelCommentSchema, type LevelComment as LevelCommentObject } from "../objects/level/level-comment.js";
@@ -72,6 +87,16 @@ export type DesignerSubmission = SubmissionObject;
 export type PendingSubmission = SubmissionWithLevelObject;
 export type SubmissionWithLevel = SubmissionWithLevelObject;
 export type ReviewedSubmission = ReviewedSubmissionObject;
+export type DesignerBirdDesign = BirdDesign;
+export type PendingBirdSubmission = BirdSubmissionWithDesign;
+export type { BirdDesign, BirdDesignInput, BirdSubmission, BirdSubmissionWithDesign, ReviewedBirdSubmission };
+export {
+  BirdDesignSchema,
+  BirdDesignInputSchema,
+  BirdSubmissionSchema,
+  BirdSubmissionWithDesignSchema,
+  ReviewedBirdSubmissionSchema,
+};
 export type AdminComment = Comment;
 export type DirectorPermissionSummary = DirectorPermissionSummaryObject;
 export type DirectorTransferResult = DirectorTransferResultObject;
@@ -173,6 +198,41 @@ export const ReviewSubmissionRequestBodySchema = z.object({
 });
 export type ReviewSubmissionRequestBody = z.infer<typeof ReviewSubmissionRequestBodySchema>;
 export const ReviewSubmissionResponseDataSchema = ReviewedSubmissionSchema;
+
+export const ListBirdDesignsRequestQuerySchema = z.object({
+  status: LevelStatusSchema.optional(),
+});
+export type ListBirdDesignsRequestQuery = z.infer<typeof ListBirdDesignsRequestQuerySchema>;
+export const ListBirdDesignsResponseDataSchema = z.array(BirdDesignSchema);
+
+export const CreateBirdDesignRequestBodySchema = BirdDesignInputSchema;
+export type CreateBirdDesignRequestBody = BirdDesignInput;
+export const CreateBirdDesignResponseDataSchema = BirdDesignSchema;
+
+export const UpdateBirdDesignRequestBodySchema = BirdDesignInputSchema;
+export type UpdateBirdDesignRequestBody = BirdDesignInput;
+export const UpdateBirdDesignResponseDataSchema = BirdDesignSchema;
+
+export const DeleteBirdDesignRequestParamsSchema = z.object({
+  designId: z.string().min(1),
+});
+export const DeleteBirdDesignResponseDataSchema = BirdDesignSchema;
+
+export const SubmitBirdDesignRequestParamsSchema = DeleteBirdDesignRequestParamsSchema;
+export const SubmitBirdDesignResponseDataSchema = BirdSubmissionSchema;
+
+export const GetPendingBirdSubmissionsRequestQuerySchema = z.object({});
+export const GetPendingBirdSubmissionsResponseDataSchema = z.array(BirdSubmissionWithDesignSchema);
+
+export const ReviewBirdSubmissionRequestParamsSchema = z.object({
+  submissionId: z.string().min(1),
+});
+export const ReviewBirdSubmissionRequestBodySchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+  reviewNote: z.string().max(1000).optional(),
+});
+export type ReviewBirdSubmissionRequestBody = z.infer<typeof ReviewBirdSubmissionRequestBodySchema>;
+export const ReviewBirdSubmissionResponseDataSchema = ReviewedBirdSubmissionSchema;
 
 export const GetDirectorPermissionsRequestQuerySchema = z.object({});
 export const GetDirectorPermissionsResponseDataSchema = DirectorPermissionSummarySchema;

@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
-import { getPendingSubmissions, reviewSubmission } from "../api/index.js";
+import {
+  getPendingBirdSubmissions,
+  getPendingSubmissions,
+  reviewBirdSubmission,
+  reviewSubmission,
+} from "../api/index.js";
 import { LevelPreviewCard } from "../component/level/LevelPreviewCard.js";
 import { API_USERS } from "../lib/config.js";
 import { createSubmissionLevelSource } from "../lib/level-repository.js";
 import { STARTER_LEVEL_ID } from "../lib/level-contracts.js";
-import type { SubmissionWithLevel } from "../api/api-contracts.js";
+import type { BirdSubmissionWithDesign, SubmissionWithLevel } from "../api/api-contracts.js";
 
 type AdminPageProps = {
   userId?: string;
 };
 
+type ReviewTab = "levels" | "birds";
+
 export const AdminPage = ({ userId = API_USERS.admin.id }: AdminPageProps) => {
-  const [submissions, setSubmissions] = useState<SubmissionWithLevel[]>([]);
+  const [reviewTab, setReviewTab] = useState<ReviewTab>("levels");
+  const [levelSubmissions, setLevelSubmissions] = useState<SubmissionWithLevel[]>([]);
+  const [birdSubmissions, setBirdSubmissions] = useState<BirdSubmissionWithDesign[]>([]);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,10 +30,13 @@ export const AdminPage = ({ userId = API_USERS.admin.id }: AdminPageProps) => {
     setError("");
 
     try {
-      const pending = await getPendingSubmissions(userId);
-      setSubmissions(pending);
+      if (reviewTab === "levels") {
+        setLevelSubmissions(await getPendingSubmissions(userId));
+      } else {
+        setBirdSubmissions(await getPendingBirdSubmissions(userId));
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to load submissions");
+      setError(caught instanceof Error ? caught.message : "加载待审核提案失败");
     } finally {
       setLoading(false);
     }
@@ -32,80 +44,157 @@ export const AdminPage = ({ userId = API_USERS.admin.id }: AdminPageProps) => {
 
   useEffect(() => {
     void loadPending();
-  }, []);
+  }, [reviewTab, userId]);
 
-  const handleReview = async (
-    submissionId: string,
-    status: "approved" | "rejected",
-  ) => {
+  const handleReviewLevel = async (submissionId: string, status: "approved" | "rejected") => {
     setError("");
-
     try {
       const reviewNote = reviewNotes[submissionId]?.trim();
-      const input = {
+      await reviewSubmission(userId, submissionId, {
         status,
         ...(reviewNote ? { reviewNote } : {}),
-      };
-      await reviewSubmission(userId, submissionId, input);
+      });
       await loadPending();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to review submission");
+      setError(caught instanceof Error ? caught.message : "关卡审核失败");
+    }
+  };
+
+  const handleReviewBird = async (submissionId: string, status: "approved" | "rejected") => {
+    setError("");
+    try {
+      const reviewNote = reviewNotes[submissionId]?.trim();
+      await reviewBirdSubmission(userId, submissionId, {
+        status,
+        ...(reviewNote ? { reviewNote } : {}),
+      });
+      await loadPending();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "鸟类审核失败");
     }
   };
 
   return (
-    <section className="panel">
-      <h2>Admin</h2>
-      <p className="panel-copy">Review pending submissions and approve or reject them.</p>
+    <section className="panel admin-review-page">
+      <h2>提案处理</h2>
+      <p className="panel-copy">审核设计师提交的关卡与鸟类设计提案。</p>
+
+      <div className="admin-review-tabs">
+        <button
+          type="button"
+          className={reviewTab === "levels" ? "secondary is-active" : "secondary"}
+          onClick={() => setReviewTab("levels")}
+        >
+          关卡提案
+        </button>
+        <button
+          type="button"
+          className={reviewTab === "birds" ? "secondary is-active" : "secondary"}
+          onClick={() => setReviewTab("birds")}
+        >
+          鸟类提案
+        </button>
+      </div>
 
       <button type="button" onClick={() => void loadPending()} disabled={loading}>
-        {loading ? "Refreshing..." : "Refresh Pending"}
+        {loading ? "刷新中…" : "刷新待审核"}
       </button>
 
       {error ? <p className="feedback error">{error}</p> : null}
 
-      <div className="list">
-        {submissions.length === 0 && !loading ? <p>No pending submissions.</p> : null}
-        {submissions.map((submission) => (
-          <article key={submission.id} className="card">
-            <div className="card-header">
-              <strong>{submission.id}</strong>
-              <span>{submission.status}</span>
-            </div>
-            <p className="meta">Level ID: {submission.levelId}</p>
-            <p className="meta">Submitter ID: {submission.submitterId}</p>
-            <LevelPreviewCard
-              source={createSubmissionLevelSource(submission.level)}
-              defaultOpen={submission.levelId === STARTER_LEVEL_ID}
-            />
-            <label>
-              <span>Review Note</span>
-              <textarea
-                rows={3}
-                value={reviewNotes[submission.id] ?? ""}
-                onChange={(event) =>
-                  setReviewNotes((current) => ({
-                    ...current,
-                    [submission.id]: event.target.value,
-                  }))
-                }
+      {reviewTab === "levels" ? (
+        <div className="list">
+          {levelSubmissions.length === 0 && !loading ? <p>暂无待审核关卡。</p> : null}
+          {levelSubmissions.map((submission) => (
+            <article key={submission.id} className="card">
+              <div className="card-header">
+                <strong>{submission.id}</strong>
+                <span>{submission.status}</span>
+              </div>
+              <p className="meta">Level ID: {submission.levelId}</p>
+              <p className="meta">Submitter ID: {submission.submitterId}</p>
+              <LevelPreviewCard
+                source={createSubmissionLevelSource(submission.level)}
+                defaultOpen={submission.levelId === STARTER_LEVEL_ID}
               />
-            </label>
-            <div className="actions">
-              <button type="button" onClick={() => void handleReview(submission.id, "approved")}>
-                Approve
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => void handleReview(submission.id, "rejected")}
-              >
-                Reject
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
+              <label>
+                <span>审核备注</span>
+                <textarea
+                  rows={3}
+                  value={reviewNotes[submission.id] ?? ""}
+                  onChange={(event) =>
+                    setReviewNotes((current) => ({
+                      ...current,
+                      [submission.id]: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <div className="actions">
+                <button type="button" onClick={() => void handleReviewLevel(submission.id, "approved")}>
+                  通过
+                </button>
+                <button type="button" className="secondary" onClick={() => void handleReviewLevel(submission.id, "rejected")}>
+                  驳回
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="list">
+          {birdSubmissions.length === 0 && !loading ? <p>暂无待审核鸟类提案。</p> : null}
+          {birdSubmissions.map((submission) => (
+            <article key={submission.id} className="card admin-bird-review-card">
+              <div className="card-header">
+                <strong>{submission.design.name}</strong>
+                <span>{submission.status}</span>
+              </div>
+              <p className="meta">Submission ID: {submission.id}</p>
+              <p className="meta">Designer ID: {submission.submitterId}</p>
+              <div className="admin-bird-review-layout">
+                <img src={submission.design.previewImageUrl} alt={submission.design.name} />
+                <div>
+                  <p>{submission.design.summary}</p>
+                  <p className="meta">
+                    攻击 {submission.design.attack} / 冲击 {submission.design.impact} / 速度 {submission.design.speed}
+                  </p>
+                  <p><strong>{submission.design.skillName}</strong></p>
+                  <ul className="designer-bird-tier-list">
+                    {submission.design.tierSkills.map((skill, index) => (
+                      <li key={index}>{index + 1} 阶：{skill}</li>
+                    ))}
+                  </ul>
+                  {submission.design.mechanismTags.length > 0 ? (
+                    <p className="meta">机制标签：{submission.design.mechanismTags.join("、")}</p>
+                  ) : null}
+                </div>
+              </div>
+              <label>
+                <span>审核备注</span>
+                <textarea
+                  rows={3}
+                  value={reviewNotes[submission.id] ?? ""}
+                  onChange={(event) =>
+                    setReviewNotes((current) => ({
+                      ...current,
+                      [submission.id]: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <div className="actions">
+                <button type="button" onClick={() => void handleReviewBird(submission.id, "approved")}>
+                  通过
+                </button>
+                <button type="button" className="secondary" onClick={() => void handleReviewBird(submission.id, "rejected")}>
+                  驳回
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 };

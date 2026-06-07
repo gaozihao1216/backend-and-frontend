@@ -1,144 +1,319 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  createBirdDesign,
+  deleteBirdDesign,
+  listBirdDesigns,
+  submitBirdDesign,
+  updateBirdDesign,
+} from "../api/designer-api.js";
+import type { BirdDesign, BirdDesignInput } from "../api/api-contracts.js";
+import type { LevelStatus } from "../objects/system/level-status.js";
 
 type DesignerBirdLabPageProps = {
-  nickname: string;
+  userId: string;
+  onBack: () => void;
 };
 
-type BirdPrototype = {
-  id: string;
-  name: string;
-  trait: string;
-  power: number;
-  speed: number;
+type PortfolioTab = "draft" | "pending_review" | "published" | "rejected";
+
+const tabLabels: Record<PortfolioTab, string> = {
+  draft: "草稿",
+  pending_review: "待审核",
+  published: "已发布",
+  rejected: "已驳回",
 };
 
-const baseBirds: BirdPrototype[] = [
-  {
-    id: "bird-1",
-    name: "岩羽",
-    trait: "冲击后额外造成结构裂纹",
-    power: 8,
-    speed: 4,
-  },
-  {
-    id: "bird-2",
-    name: "风切",
-    trait: "飞行速度高，适合远距打点",
-    power: 5,
-    speed: 9,
-  },
-];
+const emptyForm = (): BirdDesignInput => ({
+  name: "",
+  summary: "",
+  skillName: "",
+  attack: 80,
+  impact: 70,
+  speed: 60,
+  tierSkills: ["一阶技能描述", "二阶技能描述", "三阶技能描述"],
+  mechanismTags: [],
+});
 
-export const DesignerBirdLabPage = ({ nickname }: DesignerBirdLabPageProps) => {
-  const [birds, setBirds] = useState<BirdPrototype[]>(baseBirds);
-  const [name, setName] = useState("");
-  const [trait, setTrait] = useState("");
-  const [power, setPower] = useState("6");
-  const [speed, setSpeed] = useState("6");
-  const [message, setMessage] = useState("");
+export const DesignerBirdLabPage = ({ userId, onBack }: DesignerBirdLabPageProps) => {
+  const [activeTab, setActiveTab] = useState<PortfolioTab>("draft");
+  const [designs, setDesigns] = useState<BirdDesign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<BirdDesignInput>(emptyForm);
+  const [tagInput, setTagInput] = useState("");
 
-  const handleAddBird = () => {
-    setMessage("");
+  const loadDesigns = useCallback(async (status: LevelStatus) => {
+    setLoading(true);
     setError("");
+    try {
+      setDesigns(await listBirdDesigns(userId, { status }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "加载鸟类设计失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
 
-    const trimmedName = name.trim();
-    const trimmedTrait = trait.trim();
-    const parsedPower = Number(power);
-    const parsedSpeed = Number(speed);
+  useEffect(() => {
+    void loadDesigns(activeTab);
+  }, [activeTab, loadDesigns]);
 
-    if (trimmedName.length < 2) {
-      setError("鸟类名称至少 2 个字符");
+  const resetForm = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+    setTagInput("");
+  };
+
+  const handleSave = async () => {
+    setError("");
+    setNotice("");
+    try {
+      if (editingId) {
+        await updateBirdDesign(userId, editingId, form);
+        setNotice("鸟类设计已更新");
+      } else {
+        await createBirdDesign(userId, form);
+        setNotice("鸟类设计已保存为草稿");
+      }
+      resetForm();
+      await loadDesigns(activeTab);
+      if (!editingId) {
+        setActiveTab("draft");
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "保存失败");
+    }
+  };
+
+  const handleEdit = (design: BirdDesign) => {
+    setEditingId(design.id);
+    setForm({
+      name: design.name,
+      summary: design.summary,
+      skillName: design.skillName,
+      attack: design.attack,
+      impact: design.impact,
+      speed: design.speed,
+      tierSkills: design.tierSkills,
+      previewImageUrl: design.previewImageUrl,
+      mechanismTags: design.mechanismTags,
+    });
+    setTagInput(design.mechanismTags.join(", "));
+    setActiveTab("draft");
+  };
+
+  const handleSubmit = async (designId: string) => {
+    setBusyId(designId);
+    setError("");
+    setNotice("");
+    try {
+      await submitBirdDesign(userId, designId);
+      setNotice("已提交审核");
+      await loadDesigns(activeTab);
+      setActiveTab("pending_review");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "提交失败");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (designId: string) => {
+    if (!window.confirm("确定作废这份草稿吗？")) {
       return;
     }
-
-    if (trimmedTrait.length < 6) {
-      setError("技能描述至少 6 个字符");
-      return;
+    setBusyId(designId);
+    setError("");
+    try {
+      await deleteBirdDesign(userId, designId);
+      setNotice("草稿已作废");
+      if (editingId === designId) {
+        resetForm();
+      }
+      await loadDesigns(activeTab);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "作废失败");
+    } finally {
+      setBusyId(null);
     }
+  };
 
-    if (!Number.isInteger(parsedPower) || parsedPower < 1 || parsedPower > 10) {
-      setError("威力必须是 1 到 10 的整数");
-      return;
-    }
+  const updateTierSkill = (index: number, value: string) => {
+    setForm((current) => ({
+      ...current,
+      tierSkills: current.tierSkills.map((skill, skillIndex) => (skillIndex === index ? value : skill)),
+    }));
+  };
 
-    if (!Number.isInteger(parsedSpeed) || parsedSpeed < 1 || parsedSpeed > 10) {
-      setError("速度必须是 1 到 10 的整数");
-      return;
-    }
-
-    const nextBird: BirdPrototype = {
-      id: `bird-${birds.length + 1}`,
-      name: trimmedName,
-      trait: trimmedTrait,
-      power: parsedPower,
-      speed: parsedSpeed,
-    };
-
-    setBirds((current) => [nextBird, ...current]);
-    setName("");
-    setTrait("");
-    setPower("6");
-    setSpeed("6");
-    setMessage(`已为设计师 ${nickname} 添加新的鸟类原型`);
+  const applyTags = () => {
+    const tags = tagInput.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean);
+    setForm((current) => ({ ...current, mechanismTags: tags }));
   };
 
   return (
-    <section className="panel">
-      <div className="feature-header">
+    <section className="panel designer-bird-lab-page">
+      <div className="feature-header designer-bird-lab-header">
         <div>
           <h2>鸟类开发</h2>
-          <p className="panel-copy">配置新鸟种的定位、技能和属性，作为后续内容设计的前端草案。</p>
+          <p className="panel-copy">设计新鸟种的基础数值与三阶技能，提交后由管理员审核发布。</p>
         </div>
-        <div className="feature-pill">设计实验室</div>
+        <div className="designer-bird-lab-header-actions">
+          <div className="feature-pill">设计实验室</div>
+          <button type="button" className="secondary" onClick={onBack}>
+            返回主页
+          </button>
+        </div>
       </div>
 
-      <div className="feature-grid">
-        <section className="feature-card">
-          <h3>新建鸟类原型</h3>
-          <label>
-            <span>名称</span>
-            <input value={name} onChange={(event) => setName(event.target.value)} />
-          </label>
-          <label>
-            <span>技能描述</span>
-            <textarea rows={4} value={trait} onChange={(event) => setTrait(event.target.value)} />
-          </label>
-          <div className="feature-inline-fields">
-            <label>
-              <span>威力</span>
-              <input value={power} onChange={(event) => setPower(event.target.value)} />
-            </label>
-            <label>
-              <span>速度</span>
-              <input value={speed} onChange={(event) => setSpeed(event.target.value)} />
-            </label>
-          </div>
-          <button type="button" onClick={handleAddBird}>
-            保存原型
-          </button>
-          {message ? <p className="feedback success">{message}</p> : null}
-          {error ? <p className="feedback error">{error}</p> : null}
-        </section>
+      {error ? <p className="feedback error">{error}</p> : null}
+      {notice ? <p className="feedback success">{notice}</p> : null}
 
+      <div className="designer-bird-tabs">
+        {(Object.keys(tabLabels) as PortfolioTab[]).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={activeTab === tab ? "secondary is-active" : "secondary"}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tabLabels[tab]}
+          </button>
+        ))}
+      </div>
+
+      {(activeTab === "draft" || activeTab === "rejected") ? (
+        <div className="feature-grid designer-bird-editor-grid">
+          <section className="feature-card">
+            <h3>{editingId ? "编辑鸟类设计" : "新建鸟类设计"}</h3>
+            <label>
+              <span>名称</span>
+              <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+            </label>
+            <label>
+              <span>简介</span>
+              <textarea rows={3} value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} />
+            </label>
+            <label>
+              <span>技能名称</span>
+              <input value={form.skillName} onChange={(event) => setForm((current) => ({ ...current, skillName: event.target.value }))} />
+            </label>
+            <div className="feature-inline-fields">
+              <label>
+                <span>攻击</span>
+                <input type="number" value={form.attack} onChange={(event) => setForm((current) => ({ ...current, attack: Number(event.target.value) }))} />
+              </label>
+              <label>
+                <span>冲击</span>
+                <input type="number" value={form.impact} onChange={(event) => setForm((current) => ({ ...current, impact: Number(event.target.value) }))} />
+              </label>
+              <label>
+                <span>速度</span>
+                <input type="number" value={form.speed} onChange={(event) => setForm((current) => ({ ...current, speed: Number(event.target.value) }))} />
+              </label>
+            </div>
+            {form.tierSkills.map((skill, index) => (
+              <label key={index}>
+                <span>{index + 1} 阶技能</span>
+                <textarea rows={2} value={skill} onChange={(event) => updateTierSkill(index, event.target.value)} />
+              </label>
+            ))}
+            <label>
+              <span>机制标签（逗号分隔）</span>
+              <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} onBlur={applyTags} />
+            </label>
+            <div className="designer-bird-form-actions">
+              <button type="button" onClick={() => void handleSave()}>
+                {editingId ? "保存修改" : "保存草稿"}
+              </button>
+              {editingId ? (
+                <button type="button" className="secondary" onClick={resetForm}>
+                  取消编辑
+                </button>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="feature-card">
+            <h3>{tabLabels[activeTab]}</h3>
+            {loading ? <p className="panel-copy">加载中…</p> : null}
+            {!loading && designs.length === 0 ? <p className="panel-copy">暂无内容。</p> : null}
+            <div className="feature-stack">
+              {designs.map((design) => (
+                <article key={design.id} className="mini-card designer-bird-card">
+                  <div className="designer-bird-card-layout">
+                    <img src={design.previewImageUrl} alt={design.name} />
+                    <div>
+                      <div className="mini-card-header">
+                        <strong>{design.name}</strong>
+                        <span>{design.skillName}</span>
+                      </div>
+                      <p>{design.summary}</p>
+                      <p className="meta">
+                        攻击 {design.attack} / 冲击 {design.impact} / 速度 {design.speed}
+                      </p>
+                      {design.rejectionReason ? (
+                        <p className="feedback error">驳回原因：{design.rejectionReason}</p>
+                      ) : null}
+                      <div className="designer-bird-card-actions">
+                        <button type="button" className="secondary" onClick={() => handleEdit(design)}>
+                          继续编辑
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busyId === design.id}
+                          onClick={() => void handleSubmit(design.id)}
+                        >
+                          提交审核
+                        </button>
+                        {activeTab === "draft" ? (
+                          <button
+                            type="button"
+                            className="secondary"
+                            disabled={busyId === design.id}
+                            onClick={() => void handleDelete(design.id)}
+                          >
+                            作废
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : (
         <section className="feature-card">
-          <h3>当前原型</h3>
+          <h3>{tabLabels[activeTab]}</h3>
+          {loading ? <p className="panel-copy">加载中…</p> : null}
+          {!loading && designs.length === 0 ? <p className="panel-copy">暂无内容。</p> : null}
           <div className="feature-stack">
-            {birds.map((bird) => (
-              <article key={bird.id} className="mini-card">
-                <div className="mini-card-header">
-                  <strong>{bird.name}</strong>
-                  <span>
-                    威力 {bird.power} / 速度 {bird.speed}
-                  </span>
+            {designs.map((design) => (
+              <article key={design.id} className="mini-card designer-bird-card">
+                <div className="designer-bird-card-layout">
+                  <img src={design.previewImageUrl} alt={design.name} />
+                  <div>
+                    <div className="mini-card-header">
+                      <strong>{design.name}</strong>
+                      <span>{design.status}</span>
+                    </div>
+                    <p>{design.summary}</p>
+                    <ul className="designer-bird-tier-list">
+                      {design.tierSkills.map((skill, index) => (
+                        <li key={index}>{index + 1} 阶：{skill}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <p>{bird.trait}</p>
-                <p className="meta">原型编号：{bird.id}</p>
               </article>
             ))}
           </div>
         </section>
-      </div>
+      )}
     </section>
   );
 };

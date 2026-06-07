@@ -14,40 +14,50 @@ object PlayerPreparationService {
   }
 
   def upgradeBird(connection: Connection, userId: String, birdType: String): Either[HttpError, PlayerPreparationResponse] = {
-    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
-    val currentLevel = PlayerPreparationTable.listBirdLevels(connection, userId).getOrElse(birdType, 1)
-    if (currentLevel >= PlayerPreparationTable.maxLevel) {
-      return Left(HttpError.conflict("MAX_LEVEL", "Bird is already at max level"))
-    }
-    val cost = PlayerPreparationTable.upgradeCost(currentLevel)
-    if (wallet.coins < cost) {
-      return Left(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
-    }
+    PlayerPreparationCatalog.find(connection, birdType) match {
+      case None => Left(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
+      case Some(entry) =>
+        PlayerPreparationTable.ensureBirdDefaults(connection, userId, Vector(entry.birdType))
+        val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+        val currentLevel = PlayerPreparationTable.listBirdLevels(connection, userId).getOrElse(birdType, 1)
+        if (currentLevel >= PlayerPreparationTable.maxLevel) {
+          return Left(HttpError.conflict("MAX_LEVEL", "Bird is already at max level"))
+        }
+        val cost = PlayerPreparationTable.upgradeCost(currentLevel)
+        if (wallet.coins < cost) {
+          return Left(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
+        }
 
-    PlayerPreparationTable.upgradeBird(connection, userId, birdType) match {
-      case Left(message) => Left(HttpError.badRequest("INVALID_BIRD", message))
-      case Right(_) =>
-        PlayerWalletTable.save(connection, userId, wallet.copy(coins = wallet.coins - cost))
-        getState(connection, userId)
+        PlayerPreparationTable.upgradeBird(connection, userId, birdType) match {
+          case Left(message) => Left(HttpError.badRequest("INVALID_BIRD", message))
+          case Right(_) =>
+            PlayerWalletTable.save(connection, userId, wallet.copy(coins = wallet.coins - cost))
+            getState(connection, userId)
+        }
     }
   }
 
   def ascendBird(connection: Connection, userId: String, birdType: String): Either[HttpError, PlayerPreparationResponse] = {
-    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
-    val currentTier = PlayerPreparationTable.listBirdTiers(connection, userId).getOrElse(birdType, 1)
-    if (currentTier >= PlayerPreparationTable.maxTier) {
-      return Left(HttpError.conflict("MAX_TIER", "Bird is already at max tier"))
-    }
-    val cost = PlayerPreparationTable.ascendCost(currentTier)
-    if (wallet.fragments < cost) {
-      return Left(HttpError.conflict("INSUFFICIENT_FRAGMENTS", s"Need $cost fragments to ascend"))
-    }
+    PlayerPreparationCatalog.find(connection, birdType) match {
+      case None => Left(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
+      case Some(entry) =>
+        PlayerPreparationTable.ensureBirdDefaults(connection, userId, Vector(entry.birdType))
+        val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+        val currentTier = PlayerPreparationTable.listBirdTiers(connection, userId).getOrElse(birdType, 1)
+        if (currentTier >= PlayerPreparationTable.maxTier) {
+          return Left(HttpError.conflict("MAX_TIER", "Bird is already at max tier"))
+        }
+        val cost = PlayerPreparationTable.ascendCost(currentTier)
+        if (wallet.fragments < cost) {
+          return Left(HttpError.conflict("INSUFFICIENT_FRAGMENTS", s"Need $cost fragments to upgrade"))
+        }
 
-    PlayerPreparationTable.ascendBird(connection, userId, birdType) match {
-      case Left(message) => Left(HttpError.badRequest("INVALID_BIRD", message))
-      case Right(_) =>
-        PlayerWalletTable.save(connection, userId, wallet.copy(fragments = wallet.fragments - cost))
-        getState(connection, userId)
+        PlayerPreparationTable.ascendBird(connection, userId, birdType) match {
+          case Left(message) => Left(HttpError.badRequest("INVALID_BIRD", message))
+          case Right(_) =>
+            PlayerWalletTable.save(connection, userId, wallet.copy(fragments = wallet.fragments - cost))
+            getState(connection, userId)
+        }
     }
   }
 
@@ -101,15 +111,19 @@ object PlayerPreparationService {
       "skillDescription" -> Json.fromString(bird.skillDescription),
       "nextTierSkillPreview" -> bird.nextTierSkillPreview.fold(Json.Null)(Json.fromString),
       "nextCostCoins" -> Json.fromInt(bird.nextCostCoins),
-      "nextCostFragments" -> Json.fromInt(bird.nextCostFragments)
+      "nextCostFragments" -> Json.fromInt(bird.nextCostFragments),
+      "source" -> Json.fromString(bird.source),
+      "authorId" -> bird.authorId.fold(Json.Null)(Json.fromString)
     )
 
   private def buildResponse(connection: Connection, userId: String, wallet: PlayerWallet): PlayerPreparationResponse = {
+    val catalogEntries = PlayerPreparationCatalog.loadEntries(connection)
+    PlayerPreparationTable.ensureBirdDefaults(connection, userId, catalogEntries.map(_.birdType))
     val birdLevels = PlayerPreparationTable.listBirdLevels(connection, userId)
     val birdTiers = PlayerPreparationTable.listBirdTiers(connection, userId)
     val slingshotLevel = PlayerPreparationTable.getSlingshotLevel(connection, userId)
     PlayerPreparationResponse(
-      birds = BirdPreparationCatalog.entries.map { entry =>
+      birds = catalogEntries.map { entry =>
         val level = birdLevels.getOrElse(entry.birdType, 1)
         val tier = birdTiers.getOrElse(entry.birdType, 1)
         val stats = BirdPreparationCatalog.statsFor(level, entry.baseStats)
@@ -127,7 +141,9 @@ object PlayerPreparationService {
           skillDescription = BirdPreparationCatalog.skillDescription(entry, tier),
           nextTierSkillPreview = BirdPreparationCatalog.nextTierSkillPreview(entry, tier),
           nextCostCoins = if (level >= PlayerPreparationTable.maxLevel) 0 else PlayerPreparationTable.upgradeCost(level),
-          nextCostFragments = if (tier >= PlayerPreparationTable.maxTier) 0 else PlayerPreparationTable.ascendCost(tier)
+          nextCostFragments = if (tier >= PlayerPreparationTable.maxTier) 0 else PlayerPreparationTable.ascendCost(tier),
+          source = entry.source,
+          authorId = entry.authorId
         )
       }.toList,
       slingshot = SlingshotUpgradeView(

@@ -7134,9 +7134,162 @@ textarea {
 }
 
 .player-preparation-wallet {
+  display: flex;
+  gap: 1rem;
+}
+
+.player-preparation-wallet > div {
   display: grid;
   gap: 0.15rem;
   justify-items: end;
+}
+
+.player-bird-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.player-bird-picker-item {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+  min-width: 120px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
+  color: #1e293b;
+  cursor: pointer;
+  text-align: left;
+}
+
+.player-bird-picker-item strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.player-bird-picker-item span {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.player-bird-picker-item.is-active {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  background: rgba(219, 234, 254, 0.95);
+}
+
+.player-bird-picker-item.is-active strong {
+  color: #1e3a8a;
+}
+
+.player-bird-detail {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 18px;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.player-bird-detail-preview {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  align-content: start;
+}
+
+.player-bird-detail-preview img {
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.player-bird-detail-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.player-bird-detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.player-bird-detail-head h4 {
+  margin: 0 0 0.35rem;
+}
+
+.player-bird-source-badge {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(254, 243, 199, 0.95);
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.player-bird-badges {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: end;
+}
+
+.player-bird-badges span {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(219, 234, 254, 0.85);
+  font-size: 0.85rem;
+}
+
+.player-bird-stats dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+.player-bird-stats dl div {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.player-bird-stats dt {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.player-bird-stats dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.player-bird-stats h5,
+.player-bird-skill h5 {
+  margin: 0;
+}
+
+.player-bird-skill-next {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(254, 243, 199, 0.85);
+}
+
+.player-bird-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .player-preparation-grid {
@@ -7182,4 +7335,74 @@ textarea {
   .player-social-layout {
     grid-template-columns: 1fr;
   }
+
+  .player-bird-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .designer-bird-card-layout,
+  .admin-bird-review-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.designer-bird-tabs,
+.admin-review-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.designer-bird-lab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.designer-bird-lab-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.designer-bird-tabs .secondary.is-active,
+.admin-review-tabs .secondary.is-active {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.designer-bird-editor-grid {
+  margin-top: 1rem;
+}
+
+.designer-bird-form-actions,
+.designer-bird-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.designer-bird-card-layout,
+.admin-bird-review-layout {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.designer-bird-card-layout img,
+.admin-bird-review-layout img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.designer-bird-tier-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
 }

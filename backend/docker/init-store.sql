@@ -194,7 +194,37 @@ CREATE TABLE IF NOT EXISTS player_slingshot_upgrades (
   updated_at TEXT NOT NULL
 );
 
-TRUNCATE TABLE player_private_messages, player_slingshot_upgrades, player_bird_upgrades, player_friends, shop_purchases, shop_items, check_in_panel_rewards, player_legacy_check_ins, player_level_progress, player_weekly_check_ins, player_wallets, ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
+CREATE TABLE IF NOT EXISTS bird_designs (
+  id TEXT PRIMARY KEY,
+  author_id TEXT NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  skill_name TEXT NOT NULL,
+  attack INTEGER NOT NULL,
+  impact INTEGER NOT NULL,
+  speed INTEGER NOT NULL,
+  tier_skills_json TEXT NOT NULL,
+  preview_image_url TEXT NOT NULL,
+  mechanism_tags_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL,
+  rejection_reason TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  published_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS bird_submissions (
+  id TEXT PRIMARY KEY,
+  bird_design_id TEXT NOT NULL REFERENCES bird_designs(id),
+  submitter_id TEXT NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL,
+  reviewer_id TEXT REFERENCES users(id),
+  review_note TEXT,
+  submitted_at TEXT NOT NULL,
+  reviewed_at TEXT
+);
+
+TRUNCATE TABLE bird_submissions, bird_designs, player_private_messages, player_slingshot_upgrades, player_bird_upgrades, player_friends, shop_purchases, shop_items, check_in_panel_rewards, player_legacy_check_ins, player_level_progress, player_weekly_check_ins, player_wallets, ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
 
 INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
   ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),

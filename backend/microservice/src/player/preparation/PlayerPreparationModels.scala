@@ -20,7 +20,9 @@ final case class BirdUpgradeView(
   skillDescription: String,
   nextTierSkillPreview: Option[String],
   nextCostCoins: Int,
-  nextCostFragments: Int
+  nextCostFragments: Int,
+  source: String,
+  authorId: Option[String]
 )
 
 final case class SlingshotUpgradeView(

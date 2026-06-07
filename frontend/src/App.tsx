@@ -4,6 +4,7 @@ import { AuthLandingPage } from "./component/auth/AuthLandingPage.js";
 import { BackendBindingPanel } from "./component/BackendBindingPanel.js";
 import { RoleHomePage } from "./component/RoleHomePage.js";
 import { SettingsPanel } from "./component/SettingsPanel.js";
+import { DesignerBirdLabPage } from "./page/DesignerBirdLabPage.js";
 import { DesignerHomePage } from "./page/DesignerHomePage.js";
 import { DesignerPortfolioPage } from "./page/DesignerPortfolioPage.js";
 import { DesignerResubmitPage } from "./page/DesignerResubmitPage.js";
@@ -38,6 +39,7 @@ import {
 // 这样实现足够轻量，也方便把设计器页面与主页逻辑拆开。
 const DESIGNER_HOME_PATH = "/designer";
 const DESIGNER_PORTFOLIO_PATH = "/designer/portfolio";
+const DESIGNER_BIRDS_PATH = "/designer/birds";
 const DESIGNER_RESUBMIT_PATH_PREFIX = "/designer/resubmit/";
 const DESIGNER_DESIGN_PATH = "/designer/design";
 const DESIGNER_SETTINGS_PATH = "/designer/design/settings";
@@ -127,6 +129,21 @@ export const App = () => {
       );
     }
 
+    if (pathname === DESIGNER_BIRDS_PATH) {
+      if (!user.apiUserId) {
+        return (
+          <BackendBindingPanel title="鸟类开发" user={user} onBound={setCurrentUser} />
+        );
+      }
+
+      return (
+        <DesignerBirdLabPage
+          userId={user.apiUserId}
+          onBack={() => navigate("/")}
+        />
+      );
+    }
+
     if (pathname.startsWith(DESIGNER_RESUBMIT_PATH_PREFIX)) {
       const levelId = decodeURIComponent(pathname.slice(DESIGNER_RESUBMIT_PATH_PREFIX.length));
       return (
@@ -204,6 +221,7 @@ export const App = () => {
   const isDesignerAppPath =
     pathname === DESIGNER_HOME_PATH
     || pathname === DESIGNER_PORTFOLIO_PATH
+    || pathname === DESIGNER_BIRDS_PATH
     || pathname.startsWith(DESIGNER_RESUBMIT_PATH_PREFIX)
     || pathname === DESIGNER_DESIGN_PATH
     || pathname === DESIGNER_SETTINGS_PATH

@@ -4,7 +4,6 @@ import { type AuthRole, type AuthUser } from "../lib/auth.js";
 import { BackendBindingPanel } from "./BackendBindingPanel.js";
 import { LevelPreviewCard } from "./level/LevelPreviewCard.js";
 import { AdminPage } from "../page/AdminPage.js";
-import { DesignerBirdLabPage } from "../page/DesignerBirdLabPage.js";
 import { DesignerPage } from "../page/DesignerPage/index.js";
 import { PlayerPage } from "../page/PlayerPage.js";
 import { getStarterLevelSource } from "../lib/level-repository.js";
@@ -147,6 +146,7 @@ const PLAYER_SOCIAL_PATH = "/player_social";
 const PLAYER_PREPARATION_PATH = "/player_preparation";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
+const DESIGNER_BIRDS_PATH = "/designer/birds";
 
 const createChainLinks = () =>
   chainLevels.slice(0, -1).flatMap((level, index) => {
@@ -346,7 +346,7 @@ const renderDetailContent = (
         <BackendBindingPanel title="创造地图" user={user} onBound={onUserUpdated} />
       );
     case "designer-birds":
-      return <DesignerBirdLabPage nickname={user.nickname} />;
+      return null;
     case "admin-community":
       return null;
     case "admin-proposal":
@@ -478,6 +478,12 @@ export const RoleHomePage = ({
 
     if (nextView === "designer-portfolio") {
       onOpenDesignerPortfolio?.();
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "designer-birds") {
+      onNavigate(DESIGNER_BIRDS_PATH);
       setActionOpen(false);
       return;
     }
@@ -830,7 +836,8 @@ export const RoleHomePage = ({
       {detailView
         && detailView !== "player-shop"
         && detailView !== "player-social"
-        && detailView !== "player-preparation" ? (
+        && detailView !== "player-preparation"
+        && detailView !== "designer-birds" ? (
         <section className={`detail-shell ${detailView === "player-community" ? "community-detail-shell" : ""}`}>
           <div className="detail-shell-header">
             <div>

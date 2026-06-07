@@ -7,6 +7,7 @@ import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
 import microservice.level.routes.PlayerLevelRouteSupport
 import microservice.player.runtime.PlayerUiRuntimeService
+import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
@@ -26,7 +27,9 @@ object PlayerUiRuntimeRouter {
             databaseSession.withTransaction { connection =>
               IO.pure(
                 PlayerUiRuntimeService.getData(connection, userId, apiKey, req.uri.query.params)
-              ).flatMap(HttpError.fromEither(_))
+              ).flatMap { result =>
+                HttpError.fromEither(result.map(json => ApiSuccess(json)))
+              }
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
@@ -39,7 +42,9 @@ object PlayerUiRuntimeRouter {
               databaseSession.withTransaction { connection =>
                 IO.pure(
                   PlayerUiRuntimeService.executeAction(connection, userId, apiKey, body.params)
-                ).flatMap(HttpError.fromEither(_))
+                ).flatMap { result =>
+                  HttpError.fromEither(result.map(json => ApiSuccess(json)))
+                }
               }
             }
           case None =>
