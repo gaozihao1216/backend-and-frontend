@@ -58,9 +58,14 @@ import {
   applyBirdCollisionFilter,
   markSettlingSupport,
   releaseStructureSupport,
+  releaseBirdContactSupport,
+  markBirdContactSupport,
   wakeDependentBodies,
   clearSupportCollapseOnContact,
+  enforceStructureSupport,
   isCrackingBlock,
+  dampSupportedRestingMotion,
+  correctGroundPenetration,
 } from "./physics.js";
 import type { GameBody, GameSession, GameSnapshot } from "../types.js";
 import type { LevelData } from "../../level-contracts.js";
@@ -262,6 +267,21 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
   const finishCurrentShot = () => {
     const entity = bird.plugin.gameEntity;
     const birdType = entity?.kind === "bird" ? entity.birdType : DEFAULT_BIRD_DEFINITION.birdType;
+
+    for (const shotBody of getActiveShotBirds()) {
+      releaseBirdContactSupport(shotBody, bodies);
+    }
+
+    for (const shotBody of getActiveShotBirds()) {
+      if (shotBody !== bird) {
+        removeBody(shotBody);
+      }
+    }
+
+    if (worldPrimed) {
+      enforceStructureSupport(bodies);
+    }
+
     poolTracker.consumeShot(birdType);
     birdLaunched = false;
     isDragging = false;
@@ -270,12 +290,13 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     skillEngine.clearShotState();
     shotBirdBodies = [bird];
 
+    Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
+    Body.setStatic(bird, true);
+    Body.setVelocity(bird, { x: 0, y: 0 });
+    Body.setAngularVelocity(bird, 0);
+
     if (poolTracker.getShotsRemaining() > 0) {
       awaitingBirdSelection = true;
-      Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
-      Body.setStatic(bird, true);
-      Body.setVelocity(bird, { x: 0, y: 0 });
-      Body.setAngularVelocity(bird, 0);
       status = "ready";
       return true;
     }
@@ -326,7 +347,11 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       return;
     }
 
-    wakeDependentBodies(body, bodies);
+    if (body.renderKind === "bird") {
+      releaseBirdContactSupport(body, bodies);
+    } else {
+      wakeDependentBodies(body, bodies);
+    }
 
     const blockEntity = getBlockEntity(body);
     if (blockEntity) {
@@ -336,6 +361,10 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
 
     body.destroyed = true;
     World.remove(engine.world, body);
+
+    if (worldPrimed) {
+      enforceStructureSupport(bodies);
+    }
   };
 
   const addBody = (body: GameBody) => {
@@ -350,7 +379,12 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     }
   };
 
-  const combatEffects = createCombatEffects({ removeBody });
+  const combatEffects = createCombatEffects({
+    removeBody,
+    onStructureSupportLost: (body) => {
+      releaseStructureSupport(body, bodies);
+    },
+  });
 
   const skillEngine = createSkillEngine({
     getBird: getSkillBird,
@@ -381,6 +415,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
         markSettlingSupport(bodyA, bodyB);
       } else {
         clearSupportCollapseOnContact(bodyA, bodyB);
+        markBirdContactSupport(bodyA, bodyB);
       }
     }
 
@@ -405,11 +440,25 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
         && bodyB.renderKind !== "block"
         && bodyA.renderKind !== "ground"
         && bodyB.renderKind !== "ground"
+        && bodyA.renderKind !== "pig"
+        && bodyB.renderKind !== "pig"
+        && bodyA.renderKind !== "bird"
+        && bodyB.renderKind !== "bird"
       ) {
         continue;
       }
 
+      if (bodyA.renderKind === "bird" && bodyB.renderKind === "bird") {
+        continue;
+      }
+
+      markBirdContactSupport(bodyA, bodyB);
+
       if (isCrackingBlock(bodyA) || isCrackingBlock(bodyB)) {
+        continue;
+      }
+
+      if (bodyA.plugin.supportCollapse || bodyB.plugin.supportCollapse) {
         continue;
       }
 
@@ -482,10 +531,18 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     }
 
     if (worldPrimed) {
+      enforceStructureSupport(bodies);
+      correctGroundPenetration(bodies);
+      dampSupportedRestingMotion(bodies);
       applyPenetrationCorrection(bodies);
     }
 
     skillEngine.tick(engine.timing.lastDelta);
+
+    if (worldPrimed) {
+      enforceStructureSupport(bodies);
+      correctGroundPenetration(bodies);
+    }
 
     const movingBodies = bodies.filter((body) => !body.destroyed && !body.isStatic);
     const isSettled = movingBodies.every(

@@ -2,39 +2,16 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { AuthLandingPage } from "./component/auth/AuthLandingPage.js";
 import { BackendBindingPanel } from "./component/BackendBindingPanel.js";
-import { RoleHomePage } from "./component/RoleHomePage.js";
 import { SettingsPanel } from "./component/SettingsPanel.js";
-import { DesignerBirdLabPage } from "./page/DesignerBirdLabPage.js";
-import { DesignerHomePage } from "./page/DesignerHomePage.js";
-import { DesignerPortfolioPage } from "./page/DesignerPortfolioPage.js";
 import { DesignerResubmitPage } from "./page/DesignerResubmitPage.js";
-import { DesignerPage } from "./page/DesignerPage/index.js";
-import { AdminPage } from "./page/AdminPage.js";
-import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
-import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
-import { PlayerShopPage } from "./page/PlayerShopPage.js";
-import { PlayerSocialPage } from "./page/PlayerSocialPage.js";
-import { PlayerPreparationPage } from "./page/PlayerPreparationPage.js";
-import { DirectorBirdSkillLabPage } from "./page/DirectorBirdSkillLabPage.js";
 import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
 import { DirectorButtonConfigPage } from "./page/DirectorButtonConfigPage.js";
-import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
 import { DirectorPanelCreatePage } from "./page/DirectorPanelCreatePage.js";
-import { DirectorLevelInterfacePage } from "./page/DirectorLevelInterfacePage.js";
-import { DirectorLevelAssignmentPage } from "./page/DirectorLevelAssignmentPage.js";
-import { DirectorLevelBackgroundTemplatesPage } from "./page/DirectorLevelBackgroundTemplatesPage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
-import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
-import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
-import { DynamicPageHost } from "./page/DynamicPageHost.js";
-import { UserProfilePage } from "./page/UserProfilePage.js";
+import { PageDualModeHost } from "./page/PageDualModeHost.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
 import { compactStoredPageConfigVisualAssets } from "./lib/ui-customization.js";
-import {
-  getLevelScreenPageId,
-  LEVEL_MAP_PAGE_ID,
-  LEVEL_MAP_PATH,
-} from "./objects/ui-customization/level-map-structure.js";
+import { isPageBuilderPath, resolveHomePageId, resolvePageId } from "./lib/page-id-resolver.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
 // 这样实现足够轻量，也方便把设计器页面与主页逻辑拆开。
@@ -110,6 +87,31 @@ export const App = () => {
     setSearch(readSearch());
   };
 
+  const renderDualModePage = (
+    user: AuthUser,
+    pageId: string,
+    options?: {
+      useDefaultConfig?: boolean;
+      onOpenSettings?: () => void;
+      onUserUpdated?: (nextUser: AuthUser) => void;
+      onOpenDesignerDesign?: () => void;
+      onOpenDesignerPortfolio?: () => void;
+    },
+  ) => (
+    <PageDualModeHost
+      pageId={pageId}
+      user={user}
+      pathname={pathname}
+      search={search}
+      onNavigate={navigate}
+      onOpenSettings={() => setSettingsOpen(true)}
+      onUserUpdated={setCurrentUser}
+      onOpenDesignerDesign={() => navigate(DESIGNER_DESIGN_PATH)}
+      onOpenDesignerPortfolio={() => navigate(DESIGNER_PORTFOLIO_PATH)}
+      {...(options?.useDefaultConfig ? { useDefaultConfig: true } : {})}
+    />
+  );
+
   const renderDesignerRoute = (user: AuthUser) => {
     // 即便用户强行访问设计器路径，也要再次校验角色，避免前端越权显示。
     if (user.role !== "designer") {
@@ -122,13 +124,7 @@ export const App = () => {
     }
 
     if (pathname === DESIGNER_PORTFOLIO_PATH) {
-      return (
-        <DesignerPortfolioPage
-          onBack={() => navigate(DESIGNER_HOME_PATH)}
-          onOpenResubmit={(levelId) => navigate(`${DESIGNER_RESUBMIT_PATH_PREFIX}${encodeURIComponent(levelId)}`)}
-          onContinueDesign={(levelId) => navigate(`${DESIGNER_DESIGN_PATH}?levelId=${encodeURIComponent(levelId)}`)}
-        />
-      );
+      return renderDualModePage(user, "designer.portfolio");
     }
 
     if (pathname === DESIGNER_BIRDS_PATH) {
@@ -138,12 +134,7 @@ export const App = () => {
         );
       }
 
-      return (
-        <DesignerBirdLabPage
-          userId={user.apiUserId}
-          onBack={() => navigate("/")}
-        />
-      );
+      return renderDualModePage(user, "designer.birds");
     }
 
     if (pathname.startsWith(DESIGNER_RESUBMIT_PATH_PREFIX)) {
@@ -163,61 +154,13 @@ export const App = () => {
       || pathname === DESIGNER_JSON_CHECK_PATH
       || pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
     ) {
-      const isArchiveJsonCheckPath =
-        pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
-        && pathname.endsWith(DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX);
-      const archiveBackupId = pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
-        ? pathname
-            .slice(DESIGNER_ARCHIVE_PATH_PREFIX.length)
-            .replace(DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX, "")
-        : undefined;
-      const resumeLevelId = pathname === DESIGNER_DESIGN_PATH
-        ? new URLSearchParams(search).get("levelId") ?? undefined
-        : undefined;
-      return (
-        <DesignerPage
-          // 只有后端已绑定的用户才会携带 apiUserId，这里按需透传。
-          {...(user.apiUserId ? { userId: user.apiUserId } : {})}
-          {...(resumeLevelId ? { resumeLevelId } : {})}
-          mode={
-            isArchiveJsonCheckPath
-              ? "archive_json_check"
-              : pathname === DESIGNER_SETTINGS_PATH
-              ? "settings"
-              : pathname === DESIGNER_GUIDE_PATH
-              ? "design_book"
-              : pathname === DESIGNER_JSON_CHECK_PATH
-              ? "json_check"
-              : pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
-                ? "archive"
-                : "design"
-          }
-          {...(
-            archiveBackupId
-              ? { archiveBackupId }
-              : {}
-          )}
-          onBack={() => navigate(DESIGNER_HOME_PATH)}
-          onOpenSettingsPage={() => navigate(DESIGNER_SETTINGS_PATH)}
-          onExitSettingsPage={() => navigate(DESIGNER_DESIGN_PATH)}
-          onOpenDesignBook={() => navigate(DESIGNER_GUIDE_PATH)}
-          onExitDesignBook={() => navigate(DESIGNER_DESIGN_PATH)}
-          onOpenJsonCheck={() => navigate(DESIGNER_JSON_CHECK_PATH)}
-          onExitJsonCheck={() => navigate(DESIGNER_DESIGN_PATH)}
-          onOpenArchive={(archiveBackupId) => navigate(`${DESIGNER_ARCHIVE_PATH_PREFIX}${archiveBackupId}`)}
-          onExitArchive={() => navigate(DESIGNER_DESIGN_PATH)}
-          onOpenArchiveJsonCheck={(archiveBackupId) => navigate(`${DESIGNER_ARCHIVE_PATH_PREFIX}${archiveBackupId}${DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX}`)}
-          onExitArchiveJsonCheck={() => archiveBackupId ? navigate(`${DESIGNER_ARCHIVE_PATH_PREFIX}${archiveBackupId}`) : navigate(DESIGNER_DESIGN_PATH)}
-        />
-      );
+      const pageId = resolvePageId(pathname, user, search);
+      if (pageId) {
+        return renderDualModePage(user, pageId);
+      }
     }
 
-    return (
-      <DesignerHomePage
-        onOpenDesignWindow={() => navigate(DESIGNER_DESIGN_PATH)}
-        onOpenPortfolio={() => navigate(DESIGNER_PORTFOLIO_PATH)}
-      />
-    );
+    return renderDualModePage(user, "designer.home");
   };
 
   const isDesignerAppPath =
@@ -250,47 +193,8 @@ export const App = () => {
       <BackendBindingPanel title={title} user={user} onBound={setCurrentUser} />
     );
 
-  const resolveLevelDynamicPageId = (path: string): string | null => {
-    if (path === LEVEL_MAP_PATH) {
-      return LEVEL_MAP_PAGE_ID;
-    }
-
-    const levelMatch = path.match(/^\/levels\/(level\d{2})$/);
-    return levelMatch?.[1] ? getLevelScreenPageId(levelMatch[1]) : null;
-  };
-
   const renderStandaloneRoute = (user: AuthUser) => {
-    const levelDynamicPageId = resolveLevelDynamicPageId(pathname);
-    if (levelDynamicPageId) {
-      return (
-        <DynamicPageHost
-          pageId={levelDynamicPageId}
-          runtimeUserId={user.apiUserId ?? undefined}
-          onNavigate={navigate}
-        />
-      );
-    }
-
-    if (pathname === DYNAMIC_PAGE_PATH) {
-      const searchParams = new URLSearchParams(search);
-      const pageId = searchParams.get("pageId") ?? "designer.home";
-      const useDefaultConfig = searchParams.get("source") === "default";
-      return (
-        <DynamicPageHost
-          pageId={pageId}
-          useDefaultConfig={useDefaultConfig}
-          runtimeUserId={user.apiUserId ?? undefined}
-          onNavigate={navigate}
-        />
-      );
-    }
-
-    if (
-      pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)
-      || pathname.endsWith(BUTTON_DESIGN_SUFFIX)
-      || pathname.endsWith(BUTTON_CONFIG_SUFFIX)
-      || pathname.endsWith(PANEL_CREATE_SUFFIX)
-    ) {
+    if (isPageBuilderPath(pathname)) {
       if (user.role !== "admin" || user.adminLevel !== "director") {
         return (
           <section className="panel">
@@ -350,25 +254,19 @@ export const App = () => {
       );
     }
 
-    if (pathname === OWN_PAGE_PATH) {
-      return renderBoundPage(user, "个人主页", (apiUserId) => (
-        <UserProfilePage viewerUserId={apiUserId} profileUserId={apiUserId} />
-      ));
+    if (pathname === DYNAMIC_PAGE_PATH) {
+      const searchParams = new URLSearchParams(search);
+      const pageId = searchParams.get("pageId") ?? "designer.home";
+      const useDefaultConfig = searchParams.get("source") === "default";
+      return renderDualModePage(user, pageId, { useDefaultConfig });
     }
 
-    if (pathname === COMMUNITY_HALL_PATH) {
-      if (user.role === "player") {
-        return renderBoundPage(user, "社区大厅", (apiUserId) => (
-          <PlayerCommunityPage nickname={user.nickname} userId={apiUserId} />
-        ));
-      }
+    const pageId = resolvePageId(pathname, user, search);
+    if (!pageId) {
+      return null;
+    }
 
-      if (user.role === "admin") {
-        return renderBoundPage(user, "社区管理", (apiUserId) => (
-          <AdminCommunityPage nickname={user.nickname} userId={apiUserId} />
-        ));
-      }
-
+    if (pathname === COMMUNITY_HALL_PATH && user.role !== "player" && user.role !== "admin") {
       return (
         <section className="panel">
           <h2>社区大厅</h2>
@@ -377,138 +275,83 @@ export const App = () => {
       );
     }
 
-    if (pathname === PLAYER_SHOP_PATH) {
-      if (user.role !== "player") {
-        return (
-          <section className="panel">
-            <h2>玩家商店</h2>
-            <p className="panel-copy">当前账号不是玩家，无法访问玩家商店。</p>
-          </section>
-        );
-      }
-
-      return renderBoundPage(user, "玩家商店", (apiUserId) => <PlayerShopPage userId={apiUserId} />);
+    if (pathname === PLAYER_SHOP_PATH && user.role !== "player") {
+      return (
+        <section className="panel">
+          <h2>玩家商店</h2>
+          <p className="panel-copy">当前账号不是玩家，无法访问玩家商店。</p>
+        </section>
+      );
     }
 
-    if (pathname === PLAYER_SOCIAL_PATH) {
-      if (user.role !== "player") {
-        return (
-          <section className="panel">
-            <h2>好友与私聊</h2>
-            <p className="panel-copy">当前账号不是玩家，无法访问好友系统。</p>
-          </section>
-        );
-      }
-
-      return renderBoundPage(user, "好友与私聊", (apiUserId) => <PlayerSocialPage userId={apiUserId} />);
+    if (pathname === PLAYER_SOCIAL_PATH && user.role !== "player") {
+      return (
+        <section className="panel">
+          <h2>好友与私聊</h2>
+          <p className="panel-copy">当前账号不是玩家，无法访问好友系统。</p>
+        </section>
+      );
     }
 
-    if (pathname === PLAYER_PREPARATION_PATH) {
-      if (user.role !== "player") {
-        return (
-          <section className="panel">
-            <h2>备战区域</h2>
-            <p className="panel-copy">当前账号不是玩家，无法访问备战区域。</p>
-          </section>
-        );
-      }
-
-      return renderBoundPage(user, "备战区域", (apiUserId) => <PlayerPreparationPage userId={apiUserId} />);
+    if (pathname === PLAYER_PREPARATION_PATH && user.role !== "player") {
+      return (
+        <section className="panel">
+          <h2>备战区域</h2>
+          <p className="panel-copy">当前账号不是玩家，无法访问备战区域。</p>
+        </section>
+      );
     }
 
-    if (pathname === ADMIN_PROPOSALS_PATH) {
-      if (user.role !== "admin") {
-        return (
-          <section className="panel">
-            <h2>提案处理</h2>
-            <p className="panel-copy">当前账号不是管理员，无法访问提案处理页面。</p>
-          </section>
-        );
-      }
-
-      return renderBoundPage(user, "提案处理", (apiUserId) => <AdminPage userId={apiUserId} />);
+    if (pathname === ADMIN_PROPOSALS_PATH && user.role !== "admin") {
+      return (
+        <section className="panel">
+          <h2>提案处理</h2>
+          <p className="panel-copy">当前账号不是管理员，无法访问提案处理页面。</p>
+        </section>
+      );
     }
 
     if (
-      pathname === DIRECTOR_CONSOLE_PATH
-      || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
-      || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
-      || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
-      || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
-      || pathname === DIRECTOR_BIRD_SKILL_LAB_PATH
-      || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
+      (pathname === DIRECTOR_CONSOLE_PATH
+        || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
+        || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
+        || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
+        || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
+        || pathname === DIRECTOR_BIRD_SKILL_LAB_PATH
+        || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH)
+      && user.role !== "admin"
     ) {
-      if (user.role !== "admin") {
-        return (
-          <section className="panel">
-            <h2>总监控制台</h2>
-            <p className="panel-copy">当前账号不是管理员，无法访问总监控制台。</p>
-          </section>
-        );
-      }
-
-      if (pathname === DIRECTOR_LEVEL_INTERFACE_PATH) {
-        return renderBoundPage(user, "关卡界面优化", (apiUserId) => (
-          <DirectorLevelInterfacePage
-            userId={apiUserId}
-            onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
-            onNavigate={navigate}
-          />
-        ));
-      }
-
-      if (pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH) {
-        return renderBoundPage(user, "关卡背景模板", (apiUserId) => (
-          <DirectorLevelBackgroundTemplatesPage userId={apiUserId} onBack={() => navigate(DIRECTOR_CONSOLE_PATH)} />
-        ));
-      }
-
-      if (pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH) {
-        return renderBoundPage(user, "关卡细节分配", (apiUserId) => (
-          <DirectorLevelAssignmentPage
-            userId={apiUserId}
-            onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
-          />
-        ));
-      }
-
-      if (pathname === DIRECTOR_BIRD_SKILL_LAB_PATH) {
-        return renderBoundPage(user, "鸟类技能实验室", (apiUserId) => (
-          <DirectorBirdSkillLabPage
-            userId={apiUserId}
-            onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
-          />
-        ));
-      }
-
-      if (pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
-        return renderBoundPage(user, "UI 美化配置", () => (
-          <DirectorUiCustomizationPage onNavigate={navigate} />
-        ));
-      }
-
-      if (pathname === DIRECTOR_BUTTON_TEMPLATES_PATH) {
-        return renderBoundPage(user, "模板库", (apiUserId) => (
-          <DirectorButtonTemplatesPage
-            userId={apiUserId}
-            onBack={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
-          />
-        ));
-      }
-
-      return renderBoundPage(user, "总监控制台", (apiUserId) => (
-        <DirectorWorkbenchPage
-          userId={apiUserId}
-          onOpenUiCustomization={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
-          onOpenLevelInterfaceOptimization={() => navigate(DIRECTOR_LEVEL_INTERFACE_PATH)}
-          onOpenLevelAssignment={() => navigate(DIRECTOR_LEVEL_ASSIGNMENT_PATH)}
-          onOpenBirdSkillLab={() => navigate(DIRECTOR_BIRD_SKILL_LAB_PATH)}
-          onOpenLevelBackgroundTemplates={() => navigate(DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH)}
-        />
-      ));
+      return (
+        <section className="panel">
+          <h2>总监控制台</h2>
+          <p className="panel-copy">当前账号不是管理员，无法访问总监控制台。</p>
+        </section>
+      );
     }
 
-    return null;
+    const bindingTitles: Record<string, string> = {
+      "shared.profile": "个人主页",
+      "player.community": "社区大厅",
+      "player.shop": "玩家商店",
+      "player.social": "好友与私聊",
+      "player.preparation": "备战区域",
+      "admin.community": "社区管理",
+      "admin.proposals": "提案处理",
+      "designer.birds": "鸟类开发",
+      "director.workbench": "总监控制台",
+      "director.levelInterface": "关卡界面优化",
+      "director.levelAssignment": "关卡细节分配",
+      "director.birdSkillLab": "鸟类技能实验室",
+      "director.levelBackgroundTemplates": "关卡背景模板",
+      "director.buttonTemplates": "模板库",
+    };
+
+    const bindingTitle = bindingTitles[pageId];
+    if (bindingTitle && !user.apiUserId) {
+      return <BackendBindingPanel title={bindingTitle} user={user} onBound={setCurrentUser} />;
+    }
+
+    return renderDualModePage(user, pageId);
   };
 
   const standaloneRoute = currentUser ? renderStandaloneRoute(currentUser) : null;
@@ -596,14 +439,7 @@ export const App = () => {
           ) : isDesignerAppPath ? (
             renderDesignerRoute(currentUser)
           ) : (
-            <RoleHomePage
-              user={currentUser}
-              onOpenSettings={() => setSettingsOpen(true)}
-              onUserUpdated={setCurrentUser}
-              onOpenDesignerDesign={() => navigate(DESIGNER_DESIGN_PATH)}
-              onOpenDesignerPortfolio={() => navigate(DESIGNER_PORTFOLIO_PATH)}
-              onNavigate={navigate}
-            />
+            renderDualModePage(currentUser, resolveHomePageId(currentUser))
           )}
           <SettingsPanel
             user={currentUser}

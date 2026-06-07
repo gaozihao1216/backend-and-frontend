@@ -8,6 +8,9 @@ import {
   resolveTextArtDesign,
 } from "../lib/art-text-styles.js";
 import { PageBuilderTextObjectEditor } from "../component/director/PageBuilderTextObjectEditor.js";
+import { DynamicPageRenderer } from "../component/ui-renderer/index.js";
+import { isStaticPageSupported } from "./StaticPageRenderer.js";
+import { UiActualPagePreview } from "./UiActualPagePreview.js";
 import { getTextContentMode, resolveTextComponentContent } from "../lib/dynamic-text-program.js";
 import {
   getButtonBaseDesignStyle,
@@ -1004,6 +1007,7 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [editingTextComponentId, setEditingTextComponentId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [builderSurfaceMode, setBuilderSurfaceMode] = useState<"editor" | "static" | "dynamic" | "compare">("editor");
   const previewUser = pageConfig ? getUiPreviewUser(pageConfig.roleScope) : null;
   const componentMap = useMemo(
     () => pageConfig ? createComponentMap(pageConfig.components) : new Map<string, PageComponent>(),
@@ -1395,7 +1399,7 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
         <div>
           <p className="eyebrow">Page Builder</p>
           <h2>页面可视化编辑器</h2>
-          <p className="panel-copy">当前画布直接渲染目标测试账号打开该路由时看到的真实页面。</p>
+          <p className="panel-copy">可在编辑画布、静态页面、动态嵌套与并排对比之间切换，检查 UI 差异。</p>
         </div>
         <div className="actions">
           <button type="button" className="secondary" onClick={onBack}>
@@ -1572,26 +1576,66 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
               ) : null}
             </section>
             <div className="page-builder-render-surface page-builder-actual-preview-surface">
-              {previewUser ? (
+              <div className="page-builder-surface-toggle" role="tablist" aria-label="页面预览模式">
+                {([
+                  ["editor", "编辑画布"],
+                  ["static", "静态页面"],
+                  ["dynamic", "动态嵌套"],
+                  ["compare", "并排对比"],
+                ] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="tab"
+                    aria-selected={builderSurfaceMode === mode}
+                    className={builderSurfaceMode === mode ? "active" : "secondary"}
+                    disabled={mode === "static" && pageConfig ? !isStaticPageSupported(pageConfig.id) : false}
+                    onClick={() => setBuilderSurfaceMode(mode)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {builderSurfaceMode === "editor" && previewUser ? (
                 <div className="page-builder-dynamic-page-frame">
                   <PageBuilderPreview
                     pageConfig={pageConfig}
                     controlledPanelIds={controlledPanelIds}
                     openPanelIds={openPanelIds}
-                        previewUser={previewUser}
-                        outlinedComponentIds={outlinedComponentIds}
-                        pendingComponentId={normalizedPendingComponentId}
-                        selectedComponentId={normalizedSelectedComponentId}
-                        editingTextComponentId={editingTextComponentId}
-                        onTogglePanel={togglePreviewPanel}
-                        onOutlineClick={selectPreviewObject}
-                        onOutlineMiss={clearPreviewObjectSelection}
-                        onStartTextEditing={startTextEditing}
-                        onMoveSelectedComponent={moveSelectedPreviewObject}
-                        onResizeSelectedComponent={resizeSelectedPreviewObject}
-                        onTextChange={updateTextComponentContent}
-                        onTextEditEnd={endTextEditing}
-                      />
+                    previewUser={previewUser}
+                    outlinedComponentIds={outlinedComponentIds}
+                    pendingComponentId={normalizedPendingComponentId}
+                    selectedComponentId={normalizedSelectedComponentId}
+                    editingTextComponentId={editingTextComponentId}
+                    onTogglePanel={togglePreviewPanel}
+                    onOutlineClick={selectPreviewObject}
+                    onOutlineMiss={clearPreviewObjectSelection}
+                    onStartTextEditing={startTextEditing}
+                    onMoveSelectedComponent={moveSelectedPreviewObject}
+                    onResizeSelectedComponent={resizeSelectedPreviewObject}
+                    onTextChange={updateTextComponentContent}
+                    onTextEditEnd={endTextEditing}
+                  />
+                </div>
+              ) : null}
+              {builderSurfaceMode === "static" && previewUser ? (
+                <UiActualPagePreview page={pageConfig} previewUser={previewUser} pathname={targetPath} onNavigate={onNavigate} />
+              ) : null}
+              {builderSurfaceMode === "dynamic" && previewUser ? (
+                <div className="page-builder-dynamic-page-frame">
+                  <DynamicPageRenderer page={pageConfig} previewUser={previewUser} onNavigate={onNavigate} />
+                </div>
+              ) : null}
+              {builderSurfaceMode === "compare" && previewUser ? (
+                <div className="page-builder-compare-surface">
+                  <div className="page-dual-mode-pane page-dual-mode-pane-static">
+                    <p className="page-dual-mode-pane-label">静态页面</p>
+                    <UiActualPagePreview page={pageConfig} previewUser={previewUser} pathname={targetPath} onNavigate={onNavigate} />
+                  </div>
+                  <div className="page-dual-mode-pane page-dual-mode-pane-dynamic">
+                    <p className="page-dual-mode-pane-label">动态嵌套</p>
+                    <DynamicPageRenderer page={pageConfig} previewUser={previewUser} onNavigate={onNavigate} />
+                  </div>
                 </div>
               ) : null}
             </div>

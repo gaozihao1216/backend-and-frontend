@@ -47,6 +47,7 @@ export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver =
     const remainingHp = applyDamageToBody(body, amount, blockEntity);
     updateDamageVisuals(body);
     if (remainingHp !== null && remainingHp <= 0) {
+      deps.onStructureSupportLost?.(body);
       deps.removeBody(body);
     }
   };

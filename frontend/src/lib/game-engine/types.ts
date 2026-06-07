@@ -61,6 +61,7 @@ export type GameBody = Body & {
   renderHeight?: number;
   plugin: Body["plugin"] & {
     gameEntity?: GameEntity;
+    birdSupportFrom?: number;
     physicsSettling?: {
       supported: boolean;
     };

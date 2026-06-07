@@ -1,9 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import Matter from "matter-js";
 import type { GameBody } from "../types.js";
-import { SLINGSHOT_X, SLINGSHOT_Y } from "../constants.js";
-import { COLLISION_GROUP_FREE_FALL, COLLISION_MASK_DYNAMIC_FULL, getBlockEntity } from "./config.js";
-import { isInFreeFall, releaseStructureSupport } from "./physics.js";
+import { SLINGSHOT_X, SLINGSHOT_Y, BIRD_RADIUS } from "../constants.js";
+import { COLLISION_GROUP_FREE_FALL, COLLISION_MASK_DYNAMIC_FULL, getBlockEntity, setRenderKind } from "./config.js";
+import {
+  enforceStructureSupport,
+  hasPhysicalSupportBelow,
+  isInFreeFall,
+  markBirdContactSupport,
+  releaseBirdContactSupport,
+  releaseStructureSupport,
+} from "./physics.js";
+import { SKILL_TEST_LEVEL_DATA } from "../../../shared/levels/skill-test-level.js";
 import { createGameSession } from "./index.js";
 import { FIXED_TIMESTEP_MS } from "./config.js";
 import {
@@ -128,6 +137,128 @@ test("losing lower support triggers collapse of blocks above", () => {
 
   assert.equal(bottom.isSensor, true);
   assert.ok(upper.position.y > upperStartY + 6, "upper block should fall after lower support is lost");
+
+  session.destroy();
+});
+
+test("skill test tower collapses through multiple levels when base support is lost", () => {
+  const session = createGameSession({ levelData: SKILL_TEST_LEVEL_DATA });
+  stepFrames(session, 420);
+
+  const blocks = session.engine.world.bodies.filter((body) => (body as GameBody).renderKind === "block") as GameBody[];
+  const towerBase = blocks.find((body) => Math.abs(body.position.x - 691.2) < 2 && Math.abs(body.position.y - 456.1) < 2);
+  const towerUpper = blocks.filter((body) => Math.abs(body.position.x - 691.2) < 40 && body.position.y < 420);
+  assert.ok(towerBase);
+  assert.ok(towerUpper.length >= 2);
+
+  const upperStartY = Math.min(...towerUpper.map((body) => body.position.y));
+  const bottomEntity = getBlockEntity(towerBase);
+  assert.ok(bottomEntity);
+  bottomEntity.state = "cracking";
+  bottomEntity.pendingRemoval = true;
+  releaseStructureSupport(towerBase, session.engine.world.bodies as GameBody[]);
+
+  stepFrames(session, 90);
+
+  const maxUpperY = Math.max(...towerUpper.map((body) => body.position.y));
+  assert.ok(maxUpperY > upperStartY + 20, "upper tower segments should cascade downward");
+
+  session.destroy();
+});
+
+test("bird removal releases contact support and triggers upper structure collapse", () => {
+  const { Bodies, Body, World } = Matter;
+  const session = createGameSession(createStackedWoodDropLevel());
+  stepFrames(session, 420);
+
+  const blocks = session.engine.world.bodies.filter((body) => (body as GameBody).renderKind === "block") as GameBody[];
+  const sorted = [...blocks].sort((left, right) => left.position.y - right.position.y);
+  const bottom = sorted[0];
+  const upper = sorted[1];
+  assert.ok(bottom);
+  assert.ok(upper);
+
+  const bird = setRenderKind(
+    Bodies.circle(upper.position.x, bottom.bounds.min.y - BIRD_RADIUS, BIRD_RADIUS, {
+      restitution: 0.18,
+      friction: 0.8,
+      density: 0.004,
+    }),
+    "bird",
+  );
+  Body.setVelocity(bird, { x: 0, y: 0 });
+  World.add(session.engine.world, bird);
+
+  const upperHalfHeight = upper.position.y - upper.bounds.min.y;
+  Body.setPosition(upper, {
+    x: upper.position.x,
+    y: bird.bounds.min.y - upperHalfHeight,
+  });
+  markBirdContactSupport(bird, upper);
+  assert.equal(upper.plugin.birdSupportFrom, bird.id);
+
+  bottom.destroyed = true;
+  World.remove(session.engine.world, bottom);
+
+  const liveBodies = () => session.engine.world.bodies as GameBody[];
+  stepFrames(session, 24);
+  assert.ok(hasPhysicalSupportBelow(upper, liveBodies()));
+
+  const upperStartY = upper.position.y;
+  releaseBirdContactSupport(bird, liveBodies());
+  bird.destroyed = true;
+  World.remove(session.engine.world, bird);
+
+  stepFrames(session, 45);
+  assert.ok(
+    upper.plugin.supportCollapse || upper.position.y > upperStartY + 6,
+    "upper block should collapse after bird contact support is released",
+  );
+
+  session.destroy();
+});
+
+test("auto-finish shot clears bird support and collapses structures after teleport", () => {
+  const { Body, World } = Matter;
+  const session = createGameSession(createStackedWoodDropLevel());
+  stepFrames(session, 420);
+
+  const blocks = session.engine.world.bodies.filter((body) => (body as GameBody).renderKind === "block") as GameBody[];
+  const sorted = [...blocks].sort((left, right) => left.position.y - right.position.y);
+  const bottom = sorted[0];
+  const upper = sorted[1];
+  const bird = session.engine.world.bodies.find((body) => (body as GameBody).renderKind === "bird") as GameBody | undefined;
+  assert.ok(bottom);
+  assert.ok(upper);
+  assert.ok(bird);
+
+  Body.setPosition(bird, { x: upper.position.x, y: bottom.bounds.min.y - BIRD_RADIUS });
+  Body.setStatic(bird, false);
+  const upperHalfHeight = upper.position.y - upper.bounds.min.y;
+  Body.setPosition(upper, {
+    x: upper.position.x,
+    y: bird.bounds.min.y - upperHalfHeight,
+  });
+  markBirdContactSupport(bird, upper);
+  assert.equal(upper.plugin.birdSupportFrom, bird.id);
+  bottom.destroyed = true;
+  World.remove(session.engine.world, bottom);
+
+  const liveBodies = () => session.engine.world.bodies as GameBody[];
+  const upperStartY = upper.position.y;
+  releaseBirdContactSupport(bird, liveBodies());
+  Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
+  Body.setStatic(bird, true);
+  enforceStructureSupport(liveBodies());
+
+  assert.equal(upper.plugin.birdSupportFrom, undefined);
+  assert.equal(hasPhysicalSupportBelow(upper, liveBodies()), false);
+
+  stepFrames(session, 45);
+  assert.ok(
+    upper.plugin.supportCollapse || upper.position.y > upperStartY + 6,
+    "structures should collapse when settled bird is auto-removed from the field",
+  );
 
   session.destroy();
 });

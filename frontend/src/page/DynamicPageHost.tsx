@@ -7,9 +7,16 @@ type DynamicPageHostProps = {
   useDefaultConfig?: boolean | undefined;
   runtimeUserId?: string | undefined;
   onNavigate: (path: string) => void;
+  embedded?: boolean | undefined;
 };
 
-export const DynamicPageHost = ({ pageId, useDefaultConfig = false, runtimeUserId, onNavigate }: DynamicPageHostProps) => {
+export const DynamicPageHost = ({
+  pageId,
+  useDefaultConfig = false,
+  runtimeUserId,
+  onNavigate,
+  embedded = false,
+}: DynamicPageHostProps) => {
   const pageConfig = pageId ? (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId)) : null;
   const previewUser = pageConfig ? getUiPreviewUser(pageConfig.roleScope) : null;
 
@@ -24,7 +31,7 @@ export const DynamicPageHost = ({ pageId, useDefaultConfig = false, runtimeUserI
 
   if (!pageConfig) {
     return (
-      <section className="panel dynamic-page-host">
+      <section className={`panel dynamic-page-host ${embedded ? "embedded" : ""}`.trim()}>
         <h2>动态页面渲染</h2>
         <p className="feedback error">未找到动态页面配置：{pageId}</p>
       </section>
@@ -33,9 +40,28 @@ export const DynamicPageHost = ({ pageId, useDefaultConfig = false, runtimeUserI
 
   if (pageConfig.components.length === 0) {
     return (
-      <section className="panel dynamic-page-host">
+      <section className={`panel dynamic-page-host ${embedded ? "embedded" : ""}`.trim()}>
         <h2>动态页面渲染</h2>
         <p className="feedback error">该页面配置没有组件，无法验证嵌套渲染：{pageId}</p>
+      </section>
+    );
+  }
+
+  const canvas = (
+    <div className="dynamic-page-host-canvas">
+      <DynamicPageRenderer
+        page={pageConfig}
+        previewUser={previewUser ?? undefined}
+        runtimeUserId={runtimeUserId}
+        onNavigate={onNavigate}
+      />
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <section className="panel dynamic-page-host embedded">
+        {canvas}
       </section>
     );
   }
@@ -56,15 +82,7 @@ export const DynamicPageHost = ({ pageId, useDefaultConfig = false, runtimeUserI
           <code>{pageConfig.path}</code>
         </div>
       </div>
-
-      <div className="dynamic-page-host-canvas">
-        <DynamicPageRenderer
-          page={pageConfig}
-          previewUser={previewUser ?? undefined}
-          runtimeUserId={runtimeUserId}
-          onNavigate={onNavigate}
-        />
-      </div>
+      {canvas}
     </section>
   );
 };

@@ -36,6 +36,9 @@ import {
   GROUND_CONTACT_POST_ANGULAR_DAMPING,
   PENETRATION_CORRECTION_MAX_SPEED,
   PENETRATION_CORRECTION_MIN_OVERLAP,
+  PENETRATION_CORRECTION_DYNAMIC_MAX_SPEED,
+  RESTING_MICRO_SPEED,
+  RESTING_SNAP_SPEED,
   MAX_ANGULAR_SPEED,
   MAX_BEAM_ANGULAR_SPEED,
   MAX_BLOCK_LINEAR_SPEED,
@@ -53,11 +56,15 @@ import {
   PIG_SUPPORT_DAMPING,
   PIG_SUPPORT_MAX_NORMAL_RESPONSE,
   PIG_SUPPORT_MIN_DEPTH,
+  PIG_SUPPORT_MICRO_NORMAL_SPEED_THRESHOLD,
   PIG_SUPPORT_NORMAL_SPEED_THRESHOLD,
   PIG_SUPPORT_TANGENTIAL_DAMPING,
   RESTING_CONTACT_ANGULAR_DAMPING,
+  RESTING_CONTACT_MICRO_SPEED_THRESHOLD,
   RESTING_CONTACT_NORMAL_SPEED_THRESHOLD,
+  RESTING_CONTACT_MICRO_TANGENTIAL_DAMPING,
   RESTING_CONTACT_TANGENTIAL_DAMPING,
+  BLOCK_SUPPORT_MICRO_NORMAL_SPEED_THRESHOLD,
   BEAM_ANGULAR_DAMPING,
   cross2D,
   getObstacleAspectRatio,
@@ -173,12 +180,140 @@ export const markSettlingSupport = (bodyA: GameBody, bodyB: GameBody) => {
 const horizontalOverlapAmount = (bodyA: GameBody, bodyB: GameBody) =>
   Math.min(bodyA.bounds.max.x, bodyB.bounds.max.x) - Math.max(bodyA.bounds.min.x, bodyB.bounds.min.x);
 
+const FOOT_SUPPORT_TOLERANCE = 16;
+const GROUND_PENETRATION_TOLERANCE = 0.75;
+
 export const isCrackingBlock = (body: GameBody) => getBlockEntity(body)?.state === "cracking";
+
+const isSupportCandidate = (body: GameBody) =>
+  !body.destroyed
+  && !body.isSensor
+  && (body.renderKind === "ground" || body.renderKind === "block" || body.renderKind === "pig" || body.renderKind === "bird")
+  && !isCrackingBlock(body);
+
+const isPenetratingGround = (body: GameBody, bodies: GameBody[]) => {
+  const footY = body.bounds.max.y;
+
+  for (const ground of bodies) {
+    if (ground.renderKind !== "ground" || ground.destroyed) {
+      continue;
+    }
+
+    if (horizontalOverlapAmount(body, ground) <= 0) {
+      continue;
+    }
+
+    if (footY - ground.bounds.min.y > GROUND_PENETRATION_TOLERANCE) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/** 检测物体下方是否仍有可承载的地面/结构（碎裂中的方块不算支撑） */
+export const hasPhysicalSupportBelow = (body: GameBody, bodies: GameBody[]) => {
+  if (body.destroyed || body.isStatic) {
+    return true;
+  }
+
+  if (isPenetratingGround(body, bodies)) {
+    return false;
+  }
+
+  if (body.plugin.birdSupportFrom !== undefined) {
+    const supportingBird = bodies.find(
+      (candidate) => candidate.id === body.plugin.birdSupportFrom && !candidate.destroyed && candidate.renderKind === "bird",
+    );
+    if (
+      supportingBird
+      && horizontalOverlapAmount(body, supportingBird) > 0
+      && body.bounds.max.y >= supportingBird.bounds.min.y - FOOT_SUPPORT_TOLERANCE
+    ) {
+      return true;
+    }
+
+    delete body.plugin.birdSupportFrom;
+  }
+
+  const footY = body.bounds.max.y;
+
+  for (const candidate of bodies) {
+    if (candidate === body || !isSupportCandidate(candidate)) {
+      continue;
+    }
+
+    if (horizontalOverlapAmount(body, candidate) <= 0) {
+      continue;
+    }
+
+    const supportTop = candidate.bounds.min.y;
+
+    if (candidate.renderKind === "ground" || candidate.renderKind === "bird") {
+      if (Math.abs(footY - supportTop) <= FOOT_SUPPORT_TOLERANCE) {
+        return true;
+      }
+      continue;
+    }
+
+    if (Math.abs(footY - supportTop) <= FOOT_SUPPORT_TOLERANCE) {
+      return true;
+    }
+
+    if (footY >= supportTop - 4 && footY <= supportTop + 6 && body.bounds.min.y < supportTop) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const wakeBodyForCollapse = (body: GameBody) => {
+  const alreadyCollapsing = Boolean(body.plugin.supportCollapse);
+  Sleeping.set(body, false);
+  delete body.plugin.physicsSettling;
+  body.plugin.supportCollapse = true;
+
+  if (!alreadyCollapsing && body.velocity.y < 1) {
+    Body.setVelocity(body, {
+      x: body.velocity.x,
+      y: Math.max(body.velocity.y, 1.2),
+    });
+  }
+};
+
+/** 每帧检测悬空结构并强制进入坍塌态，保证多层连锁 */
+export const enforceStructureSupport = (bodies: GameBody[]) => {
+  for (const body of bodies) {
+    if (
+      body.destroyed
+      || body.isStatic
+      || body.renderKind === "bird"
+      || body.renderKind === "ground"
+      || (body.renderKind !== "block" && body.renderKind !== "pig")
+      || isCrackingBlock(body)
+    ) {
+      continue;
+    }
+
+    if (hasPhysicalSupportBelow(body, bodies)) {
+      if (
+        body.plugin.supportCollapse
+        && body.speed < 0.25
+        && Math.abs(body.angularVelocity) < 0.06
+      ) {
+        delete body.plugin.supportCollapse;
+      }
+      continue;
+    }
+
+    wakeBodyForCollapse(body);
+  }
+};
 
 /** 支撑体失效后，唤醒其上方/与之接触的结构，避免睡眠体悬空或钉死 */
 export const wakeDependentBodies = (supportBody: GameBody, bodies: GameBody[]) => {
   const supportBounds = supportBody.bounds;
-  const supportHalfWidth = (supportBounds.max.x - supportBounds.min.x) * 0.5;
 
   for (const body of bodies) {
     if (
@@ -191,9 +326,14 @@ export const wakeDependentBodies = (supportBody: GameBody, bodies: GameBody[]) =
       continue;
     }
 
-    const bodyHalfWidth = (body.bounds.max.x - body.bounds.min.x) * 0.5;
-    const overlapX = horizontalOverlapAmount(body, supportBody);
-    if (overlapX <= Math.min(supportHalfWidth, bodyHalfWidth) * 0.2) {
+    if (supportBody.renderKind === "bird") {
+      if (horizontalOverlapAmount(body, supportBody) > 0 && body.bounds.max.y >= supportBounds.min.y - 14) {
+        wakeBodyForCollapse(body);
+      }
+      continue;
+    }
+
+    if (horizontalOverlapAmount(body, supportBody) <= 0) {
       continue;
     }
 
@@ -208,15 +348,147 @@ export const wakeDependentBodies = (supportBody: GameBody, bodies: GameBody[]) =
       continue;
     }
 
-    Sleeping.set(body, false);
-    delete body.plugin.physicsSettling;
-    body.plugin.supportCollapse = true;
+    wakeBodyForCollapse(body);
+  }
+};
 
-    if (body.speed < 0.35 && body.velocity.y < 1.2) {
+/** 已获支撑且低速的结构：消掉挤压/contact 求解留下的微振 */
+export const dampSupportedRestingMotion = (bodies: GameBody[]) => {
+  for (const body of bodies) {
+    if (
+      body.destroyed
+      || body.isStatic
+      || body.renderKind === "bird"
+      || body.renderKind === "ground"
+      || body.plugin.supportCollapse
+      || isCrackingBlock(body)
+    ) {
+      continue;
+    }
+
+    if (!hasPhysicalSupportBelow(body, bodies)) {
+      continue;
+    }
+
+    if (isPenetratingGround(body, bodies)) {
+      continue;
+    }
+
+    const angularSpeed = Math.abs(body.angularVelocity);
+    if (body.speed < RESTING_MICRO_SPEED) {
       Body.setVelocity(body, {
-        x: body.velocity.x,
-        y: Math.max(body.velocity.y, 1.6),
+        x: body.velocity.x * 0.62,
+        y: body.velocity.y * 0.62,
       });
+    }
+
+    if (body.speed < RESTING_SNAP_SPEED && angularSpeed < 0.035) {
+      Body.setVelocity(body, { x: 0, y: 0 });
+      Body.setAngularVelocity(body, 0);
+    } else if (angularSpeed < 0.02) {
+      Body.setAngularVelocity(body, 0);
+    }
+  }
+};
+
+/** 将陷入地面的动态体抬回地表，避免 resting 阻尼把物体“钉”进地里 */
+export const correctGroundPenetration = (bodies: GameBody[]) => {
+  for (const body of bodies) {
+    if (
+      body.destroyed
+      || body.isStatic
+      || body.renderKind === "bird"
+      || body.renderKind === "ground"
+    ) {
+      continue;
+    }
+
+    const footY = body.bounds.max.y;
+
+    for (const ground of bodies) {
+      if (ground.renderKind !== "ground" || ground.destroyed) {
+        continue;
+      }
+
+      if (horizontalOverlapAmount(body, ground) <= 0) {
+        continue;
+      }
+
+      const groundTop = ground.bounds.min.y;
+      const penetration = footY - groundTop;
+      if (penetration <= GROUND_PENETRATION_TOLERANCE) {
+        continue;
+      }
+
+      const correction = Math.min(MAX_POSITION_CORRECTION, penetration * 0.65);
+      Body.setPosition(body, {
+        x: body.position.x,
+        y: body.position.y - correction,
+      });
+
+      if (body.velocity.y > 0) {
+        Body.setVelocity(body, {
+          x: body.velocity.x,
+          y: Math.min(body.velocity.y, 0),
+        });
+      }
+
+      Sleeping.set(body, false);
+    }
+  }
+};
+
+/** 记录与鸟体接触、由鸟承担支撑的结构 */
+export const markBirdContactSupport = (bodyA: GameBody, bodyB: GameBody) => {
+  for (const [bird, other] of [[bodyA, bodyB], [bodyB, bodyA]] as const) {
+    if (bird.renderKind !== "bird" || bird.destroyed) {
+      continue;
+    }
+
+    if (other.renderKind === "bird" || other.renderKind === "ground" || other.destroyed) {
+      continue;
+    }
+
+    if (horizontalOverlapAmount(bird, other) <= 0) {
+      continue;
+    }
+
+    const birdTop = bird.bounds.min.y;
+    const otherFoot = other.bounds.max.y;
+    if (otherFoot >= birdTop - 12 && other.bounds.min.y <= bird.bounds.max.y + 6) {
+      other.plugin.birdSupportFrom = bird.id;
+    }
+  }
+};
+
+/** 鸟体移除：释放其承担的一切接触支撑并触发连锁坍塌 */
+export const releaseBirdContactSupport = (bird: GameBody, bodies: GameBody[]) => {
+  if (bird.renderKind !== "bird" || bird.destroyed) {
+    return;
+  }
+
+  for (const body of bodies) {
+    if (body === bird || body.destroyed || body.isStatic || body.renderKind === "bird" || body.renderKind === "ground") {
+      continue;
+    }
+
+    if (body.plugin.birdSupportFrom === bird.id) {
+      delete body.plugin.birdSupportFrom;
+      wakeBodyForCollapse(body);
+    }
+  }
+
+  wakeDependentBodies(bird, bodies);
+
+  for (const body of bodies) {
+    if (body === bird || body.destroyed || body.isStatic || body.renderKind === "bird" || body.renderKind === "ground") {
+      continue;
+    }
+
+    const overlapX = horizontalOverlapAmount(body, bird);
+    const overlapY = Math.min(body.bounds.max.y, bird.bounds.max.y) - Math.max(body.bounds.min.y, bird.bounds.min.y);
+    if (overlapX > 0 && overlapY > 0) {
+      wakeBodyForCollapse(body);
     }
   }
 };
@@ -232,7 +504,22 @@ export const clearSupportCollapseOnContact = (bodyA: GameBody, bodyB: GameBody) 
       continue;
     }
 
-    if (other.renderKind === "block" && !isCrackingBlock(other)) {
+    if (other.renderKind === "bird") {
+      continue;
+    }
+
+    if (!isSupportCandidate(other)) {
+      continue;
+    }
+
+    const overlapX = horizontalOverlapAmount(body, other);
+    if (overlapX <= 0) {
+      continue;
+    }
+
+    const footY = body.bounds.max.y;
+    const supportTop = other.bounds.min.y;
+    if (Math.abs(footY - supportTop) <= FOOT_SUPPORT_TOLERANCE) {
       delete body.plugin.supportCollapse;
     }
   }
@@ -341,17 +628,26 @@ export const applyPenetrationCorrection = (bodies: GameBody[]) => {
 
   for (let index = 0; index < activeBodies.length; index += 1) {
     const bodyA = activeBodies[index];
-    if (!bodyA) {
+    if (!bodyA || bodyA.plugin.supportCollapse) {
       continue;
     }
 
     for (let otherIndex = index + 1; otherIndex < bodies.length; otherIndex += 1) {
       const bodyB = bodies[otherIndex];
-      if (!bodyB || bodyB.destroyed || bodyB.isStatic) {
+      if (!bodyB || bodyB.destroyed || bodyB.isStatic || bodyB.plugin.supportCollapse) {
         continue;
       }
 
       if (bodyA.speed > PENETRATION_CORRECTION_MAX_SPEED || bodyB.speed > PENETRATION_CORRECTION_MAX_SPEED) {
+        continue;
+      }
+
+      const bothDynamic =
+        !bodyA.isStatic
+        && !bodyB.isStatic
+        && bodyA.renderKind !== "bird"
+        && bodyB.renderKind !== "bird";
+      if (bothDynamic && Math.max(bodyA.speed, bodyB.speed) < PENETRATION_CORRECTION_DYNAMIC_MAX_SPEED) {
         continue;
       }
 
@@ -395,7 +691,12 @@ export const applyPenetrationCorrection = (bodies: GameBody[]) => {
 
 // 这层是工程化的低速稳定器，不追求严格守恒，只避免长时间微抖。
 export const applyRestingContactStabilization = (bodyA: GameBody, bodyB: GameBody, normal: MatterVector) => {
-  if (isCrackingBlock(bodyA) || isCrackingBlock(bodyB)) {
+  if (
+    isCrackingBlock(bodyA)
+    || isCrackingBlock(bodyB)
+    || bodyA.plugin.supportCollapse
+    || bodyB.plugin.supportCollapse
+  ) {
     return;
   }
 
@@ -414,8 +715,15 @@ export const applyRestingContactStabilization = (bodyA: GameBody, bodyB: GameBod
   }
 
   const tangentialVelocity = Vector.sub(relativeVelocity, Vector.mult(normal, normalVelocity));
-  const dampedTangentialVelocity = Vector.mult(tangentialVelocity, RESTING_CONTACT_TANGENTIAL_DAMPING);
-  const dampedNormalVelocity = normalSpeed > 0.001 ? normalVelocity * 0.82 : 0;
+  const tangentialDamping = normalSpeed <= RESTING_CONTACT_MICRO_SPEED_THRESHOLD
+    ? RESTING_CONTACT_MICRO_TANGENTIAL_DAMPING
+    : RESTING_CONTACT_TANGENTIAL_DAMPING;
+  const dampedTangentialVelocity = Vector.mult(tangentialVelocity, tangentialDamping);
+  const dampedNormalVelocity = normalSpeed <= RESTING_CONTACT_MICRO_SPEED_THRESHOLD
+    ? 0
+    : normalSpeed > 0.001
+      ? normalVelocity * 0.55
+      : 0;
   const correctionVelocity = Vector.sub(
     relativeVelocity,
     Vector.add(
@@ -548,16 +856,26 @@ export const applyBlockSupportStabilization = (
   normal: MatterVector,
   depth: number,
 ) => {
-  if (bodyA.renderKind !== "block" || bodyB.renderKind !== "block" || bodyA.destroyed || bodyB.destroyed) {
+  const block = bodyA.renderKind === "block" ? bodyA : bodyB.renderKind === "block" ? bodyB : null;
+  const support = block === bodyA ? bodyB : block === bodyB ? bodyA : null;
+  if (!block || !support || block.destroyed || support.destroyed) {
     return false;
   }
 
-  if (isCrackingBlock(bodyA) || isCrackingBlock(bodyB)) {
+  if (support.renderKind !== "block" && support.renderKind !== "bird") {
     return false;
   }
 
-  const inverseMassA = bodyA.isStatic ? 0 : bodyA.inverseMass;
-  const inverseMassB = bodyB.isStatic ? 0 : bodyB.inverseMass;
+  if (support.renderKind === "block" && isCrackingBlock(support)) {
+    return false;
+  }
+
+  if (bodyA.plugin.supportCollapse || bodyB.plugin.supportCollapse) {
+    return false;
+  }
+
+  const inverseMassA = block.isStatic ? 0 : block.inverseMass;
+  const inverseMassB = support.isStatic ? 0 : support.inverseMass;
   const inverseMassSum = inverseMassA + inverseMassB;
   if (inverseMassSum <= 0) {
     return false;
@@ -568,16 +886,18 @@ export const applyBlockSupportStabilization = (
     return false;
   }
 
-  const relativeVelocity = Vector.sub(bodyA.velocity, bodyB.velocity);
+  const relativeVelocity = Vector.sub(block.velocity, support.velocity);
   const normalVelocity = Vector.dot(relativeVelocity, normal);
   if (Math.abs(normalVelocity) > BLOCK_SUPPORT_NORMAL_SPEED_THRESHOLD) {
     return false;
   }
 
-  const normalResponse = Math.min(
-    BLOCK_SUPPORT_MAX_NORMAL_RESPONSE,
-    BLOCK_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
-  );
+  const normalResponse = Math.abs(normalVelocity) <= BLOCK_SUPPORT_MICRO_NORMAL_SPEED_THRESHOLD
+    ? 0
+    : Math.min(
+        BLOCK_SUPPORT_MAX_NORMAL_RESPONSE,
+        BLOCK_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
+      );
 
   const tangentialVelocity = Vector.sub(relativeVelocity, Vector.mult(normal, normalVelocity));
   const tangentialCorrection = Vector.mult(tangentialVelocity, 1 - BLOCK_SUPPORT_TANGENTIAL_DAMPING);
@@ -590,17 +910,17 @@ export const applyBlockSupportStabilization = (
     Vector.neg(tangentialCorrection),
   );
 
-  if (!bodyA.isStatic) {
+  if (!block.isStatic) {
     const share = inverseMassA / inverseMassSum;
-    Body.setVelocity(bodyA, Vector.sub(bodyA.velocity, Vector.mult(correctionVelocity, share)));
+    Body.setVelocity(block, Vector.sub(block.velocity, Vector.mult(correctionVelocity, share)));
   }
 
-  if (!bodyB.isStatic) {
+  if (!support.isStatic) {
     const share = inverseMassB / inverseMassSum;
-    Body.setVelocity(bodyB, Vector.add(bodyB.velocity, Vector.mult(correctionVelocity, share)));
+    Body.setVelocity(support, Vector.add(support.velocity, Vector.mult(correctionVelocity, share)));
   }
 
-  for (const body of [bodyA, bodyB]) {
+  for (const body of [block, support]) {
     if (body.isStatic || body.destroyed) {
       continue;
     }
@@ -625,7 +945,7 @@ export const applyPigSupportStabilization = (
     return false;
   }
 
-  if (support.renderKind !== "block" && support.renderKind !== "ground") {
+  if (support.renderKind !== "block" && support.renderKind !== "ground" && support.renderKind !== "bird") {
     return false;
   }
 
@@ -652,10 +972,12 @@ export const applyPigSupportStabilization = (
     return false;
   }
 
-  const normalResponse = Math.min(
-    PIG_SUPPORT_MAX_NORMAL_RESPONSE,
-    PIG_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
-  );
+  const normalResponse = Math.abs(normalVelocity) <= PIG_SUPPORT_MICRO_NORMAL_SPEED_THRESHOLD
+    ? 0
+    : Math.min(
+        PIG_SUPPORT_MAX_NORMAL_RESPONSE,
+        PIG_SUPPORT_DAMPING * Math.max(0, -normalVelocity),
+      );
 
   const tangentialVelocity = Vector.sub(relativeVelocity, Vector.mult(supportToPigNormal, normalVelocity));
   const tangentialCorrection = Vector.mult(tangentialVelocity, 1 - PIG_SUPPORT_TANGENTIAL_DAMPING);

@@ -92,6 +92,8 @@ export const defaultPageConfigs = [
   })),
   createPageConfig("player.community", "社区大厅", "/community_hall", "player"),
   createPageConfig("player.shop", "玩家商店", "/player_shop", "player"),
+  createPageConfig("player.social", "好友与私聊", "/player_social", "player"),
+  createPageConfig("player.preparation", "备战区域", "/player_preparation", "player"),
 
   createPageConfig("designer.home", "设计师主界面", "/", "designer", createLevelChainHomeComponents({
     prefix: "designer.home",
@@ -340,6 +342,26 @@ export const defaultPageConfigs = [
     "director.uiCustomization",
     "UI 美化配置",
     "/director_console/ui_customization",
+    "director",
+  ),
+  createPageConfig(
+    "director.levelInterface",
+    "关卡界面优化",
+    "/director_console/level_interface_optimization",
+    "director",
+  ),
+  createPageConfig("director.levelAssignment", "关卡细节分配", "/director_console/level_assignment", "director"),
+  createPageConfig("director.birdSkillLab", "鸟类技能实验室", "/director_console/bird_skill_lab", "director"),
+  createPageConfig(
+    "director.levelBackgroundTemplates",
+    "关卡背景模板",
+    "/director_console/level_background_templates",
+    "director",
+  ),
+  createPageConfig(
+    "director.buttonTemplates",
+    "模板库",
+    "/director_console/ui_customization/button_templates",
     "director",
   ),
 ] satisfies PageConfig[];

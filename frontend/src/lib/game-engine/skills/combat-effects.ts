@@ -30,6 +30,7 @@ export type CombatEffects = {
 
 export type CombatEffectsDeps = {
   removeBody: (body: GameBody) => void;
+  onStructureSupportLost?: (body: GameBody) => void;
 };
 
 export const createCombatEffects = (deps: CombatEffectsDeps): CombatEffects => {
@@ -49,6 +50,7 @@ export const createCombatEffects = (deps: CombatEffectsDeps): CombatEffects => {
     const remainingHp = applyDamageToBody(target, damage, blockEntity);
     updateDamageVisuals(target);
     if (remainingHp !== null && remainingHp <= 0) {
+      deps.onStructureSupportLost?.(target);
       deps.removeBody(target);
     }
   };
@@ -67,6 +69,7 @@ export const createCombatEffects = (deps: CombatEffectsDeps): CombatEffects => {
     const damage = amount * PIG_DAMAGE_FACTOR * multiplier;
     const remainingHp = applyDamageToBody(target, damage, null);
     if (remainingHp !== null && remainingHp <= 0) {
+      deps.onStructureSupportLost?.(target);
       deps.removeBody(target);
     }
   };
