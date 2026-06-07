@@ -14,6 +14,10 @@ object SubmissionTable {
     if (isInMemory(connection)) SubmissionTableInMemory.listPending()
     else SubmissionTableJdbc.listPending(connection)
 
+  def listApproved(connection: Connection): Vector[SubmissionRow] =
+    if (isInMemory(connection)) SubmissionTableInMemory.listApproved()
+    else SubmissionTableJdbc.listApproved(connection)
+
   def hasPendingForLevel(connection: Connection, levelId: String): Boolean =
     if (isInMemory(connection)) SubmissionTableInMemory.hasPendingForLevel(levelId)
     else SubmissionTableJdbc.hasPendingForLevel(connection, levelId)

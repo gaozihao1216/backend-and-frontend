@@ -15,6 +15,8 @@ object PlayerUiRuntimeService {
         PlayerWeeklyCheckInService.getData(userId)
       case PlayerLevelProgressService.dataApiKey =>
         PlayerLevelProgressService.getData(userId)
+      case PlayerWalletService.dataApiKey =>
+        PlayerWalletService.getData(userId)
       case LegacyCheckInDataKey =>
         Right(Json.obj("status" -> Json.fromString(legacyCheckInStatus(userId))))
       case other =>

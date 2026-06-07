@@ -7,12 +7,8 @@ import {
   isArtTextPreset,
   resolveTextArtDesign,
 } from "../lib/art-text-styles.js";
-import {
-  getUiPreviewUser,
-  type PageComponent,
-  type PageConfig,
-  type PanelComponent,
-} from "../objects/ui-customization/ui-customization-objects.js";
+import { PageBuilderTextObjectEditor } from "../component/director/PageBuilderTextObjectEditor.js";
+import { getTextContentMode, resolveTextComponentContent } from "../lib/dynamic-text-program.js";
 import {
   getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
@@ -20,8 +16,14 @@ import {
   getComponentStyle,
   getPositionStyle,
   getRootComponents,
-  interpolatePreviewText,
 } from "../component/ui-renderer/ui-renderer-utils.js";
+import {
+  getUiPreviewUser,
+  type PageComponent,
+  type PageConfig,
+  type PanelComponent,
+  type TextComponent,
+} from "../objects/ui-customization/ui-customization-objects.js";
 
 type DirectorPageBuilderPageProps = {
   pageId: string | null;
@@ -552,7 +554,7 @@ const PageBuilderTextNode = ({
           }
         }}
       >
-        {isEditing ? null : interpolatePreviewText(component.text, previewUser)}
+        {isEditing ? null : resolveTextComponentContent(component, previewUser)}
       </div>
       {showOutline ? <PageBuilderOutline componentId={component.id} selectionState={selectionState} /> : null}
     </div>
@@ -1100,6 +1102,8 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
                 id: componentId,
                 type: "text",
                 text: defaultName,
+                textContentMode: "fixed",
+                artTextDesign: { preset: "goldGradient" },
                 position: { unit: "percent", x: 8, y: 8, width: 28, height: 8 },
                 style: { backgroundColor: "#ffffff", textColor: "#12202f", borderRadius: 10 },
               };
@@ -1242,24 +1246,28 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
   };
   const startTextEditing = (componentId: string) => {
     const component = componentMap.get(componentId);
-    if (component?.type !== "text" || normalizedSelectedComponentId !== componentId) {
+    if (
+      component?.type !== "text"
+      || normalizedSelectedComponentId !== componentId
+      || getTextContentMode(component.textContentMode) === "dynamic"
+    ) {
       return;
     }
 
     setEditingTextComponentId(componentId);
   };
-  const updateTextComponentContent = (componentId: string, text: string) => {
+  const updateTextComponent = (componentId: string, updater: (component: TextComponent) => TextComponent) => {
     updatePageConfig((current) => ({
       ...current,
       components: current.components.map((component) =>
         component.id === componentId && component.type === "text"
-          ? {
-              ...component,
-              text,
-            }
+          ? updater(component)
           : component,
       ),
     }));
+  };
+  const updateTextComponentContent = (componentId: string, text: string) => {
+    updateTextComponent(componentId, (component) => ({ ...component, text }));
   };
   const endTextEditing = () => {
     setEditingTextComponentId(null);
@@ -1554,6 +1562,14 @@ export const DirectorPageBuilderPage = ({ pageId, targetPath = "/", onBack, onNa
                   <code onWheel={handleInlineScrollWheel}>{activeComponent ? activeComponent.position.height.toFixed(2) : "-"}</code>
                 </label>
               </div>
+              {activeComponent?.type === "text" && previewUser ? (
+                <PageBuilderTextObjectEditor
+                  component={activeComponent}
+                  pageRoleScope={pageConfig.roleScope}
+                  previewUser={previewUser}
+                  onChange={(nextComponent) => updateTextComponent(activeComponent.id, () => nextComponent)}
+                />
+              ) : null}
             </section>
             <div className="page-builder-render-surface page-builder-actual-preview-surface">
               {previewUser ? (

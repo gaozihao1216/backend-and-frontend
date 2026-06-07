@@ -14,6 +14,7 @@ export const LevelDataSchema = z.object({
   birdInventory: BirdInventorySchema,
   obstacles: z.array(LevelObstacleSchema),
   enemies: z.array(LevelEnemySchema),
+  backgroundTemplateId: nullishToUndefined(z.string().min(1)),
 });
 
 export type LevelData = z.infer<typeof LevelDataSchema>;

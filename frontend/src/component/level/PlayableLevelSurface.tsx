@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { LevelSource } from "../../lib/level-repository.js";
+import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
+import { useLevelBackgroundTemplateResolution } from "../../hook/useLevelBackgroundTemplateResolution.js";
+import { LevelBackgroundStageLayer } from "../designer-page/LevelBackgroundStageLayer.js";
 import { GameCanvas } from "./GameCanvas.js";
 
 type PlayableLevelSurfaceProps = {
@@ -15,6 +18,14 @@ export const PlayableLevelSurface = ({
 }: PlayableLevelSurfaceProps) => {
   const [open, setOpen] = useState(defaultOpen);
   const [instanceKey, setInstanceKey] = useState(0);
+  const {
+    template: levelBackgroundTemplate,
+    panelBackgroundDesign,
+    cloudPatternDesigns,
+  } = useLevelBackgroundTemplateResolution(
+    source.level.data.backgroundTemplateId,
+    source.level.authorId,
+  );
 
   const handleExit = () => {
     setOpen(false);
@@ -24,11 +35,26 @@ export const PlayableLevelSurface = ({
   return (
     <section className="comment-section">
       {open ? (
-        <div style={{ position: "relative" }}>
+        <div
+          className={`playable-level-surface${levelBackgroundTemplate ? " has-level-background" : ""}`}
+          style={{ position: "relative" }}
+        >
+          {levelBackgroundTemplate ? (
+            <div className="playable-level-background-layer" aria-hidden="true">
+              <LevelBackgroundStageLayer
+                template={levelBackgroundTemplate}
+                panelBackgroundDesign={panelBackgroundDesign}
+                cloudPatternDesigns={cloudPatternDesigns}
+                width={WORLD_WIDTH}
+                height={WORLD_HEIGHT}
+              />
+            </div>
+          ) : null}
           <GameCanvas
             levelKey={source.key}
             levelData={source.level.data}
             restartToken={instanceKey}
+            transparentBackground={Boolean(levelBackgroundTemplate)}
           />
           <div
             style={{

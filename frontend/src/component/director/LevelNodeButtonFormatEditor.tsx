@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useDirectorTemplateLibrary } from "../../hook/useDirectorTemplateLibrary.js";
+import { processButtonBaseDesign, processStretchVisualDesign } from "../../lib/template-image-utils.js";
 import {
   createLibraryTemplateSelectOptions,
   createButtonStateDraftPatchFromBaseTemplate,
@@ -7,19 +8,19 @@ import {
 } from "../../lib/director-template-select.js";
 import {
   createPatternLayerFromTemplate,
-  getButtonStateTemplatePreviewClassName,
-  getButtonStateTemplatePreviewStyle,
-  renderButtonStateTemplatePreviewContent,
-  renderButtonStateTemplatePreviewLayers,
 } from "./button-state-template-preview.js";
+import { LevelNodeButtonStatePreview } from "./LevelNodeButtonStatePreview.js";
 import {
   LEVEL_NODE_PROGRESS_STATE_META,
   LEVEL_NODE_PROGRESS_STATE_IDS,
+  copyLevelNodeStateDesign,
   formatLevelNodeButtonLabel,
-  getSharedDesignTemplateSelectValues,
+  getStateDesignTemplateSelectValues,
+  updateLevelNodePatternLayerFrame,
+  updateLevelNodeStateDesign,
   type LevelNodeButtonFormatSettings,
   type LevelNodeProgressStateId,
-  type LevelNodeSharedButtonDesign,
+  type LevelNodeStateButtonDesign,
 } from "../../lib/level-node-button-format.js";
 import { LEVEL_NODE_DEFINITIONS } from "../../objects/ui-customization/level-map-structure.js";
 
@@ -81,7 +82,10 @@ export const LevelNodeButtonFormatEditor = ({
     () => createLibraryTemplateSelectOptions(patternTemplates),
     [patternTemplates],
   );
-  const templateSelectValues = getSharedDesignTemplateSelectValues(format.sharedDesign);
+
+  const editingStateId = previewState;
+  const editingDesign = format.stateDesigns[editingStateId];
+  const templateSelectValues = getStateDesignTemplateSelectValues(editingDesign);
 
   const previewLevel = useMemo(
     () => LEVEL_NODE_DEFINITIONS.find((level) => level.suffix === previewLevelSuffix) ?? LEVEL_NODE_DEFINITIONS[0]!,
@@ -99,25 +103,19 @@ export const LevelNodeButtonFormatEditor = ({
   );
 
   const previewButtonState = useMemo(() => ({
-    ...format.sharedDesign,
+    ...editingDesign,
     icon: format.stateIcons[previewState],
     label: previewLabel,
-  }), [format.sharedDesign, format.stateIcons, previewLabel, previewState]);
+  }), [editingDesign, format.stateIcons, previewLabel, previewState]);
 
-  const updateSharedDesign = (patch: Partial<LevelNodeSharedButtonDesign>) => {
-    onChange({
-      ...format,
-      sharedDesign: {
-        ...format.sharedDesign,
-        ...patch,
-      },
-    });
+  const updateStateDesign = (patch: Partial<LevelNodeStateButtonDesign>) => {
+    onChange(updateLevelNodeStateDesign(format, editingStateId, patch));
   };
 
   const applyBaseTemplateSelection = (value: string) => {
     if (!value) {
-      const { baseDesign: _removed, ...rest } = format.sharedDesign;
-      updateSharedDesign({
+      const { baseDesign: _removed, ...rest } = editingDesign;
+      updateStateDesign({
         ...rest,
         baseTemplateValue: "",
       });
@@ -125,16 +123,25 @@ export const LevelNodeButtonFormatEditor = ({
     }
 
     const resolved = createButtonStateDraftPatchFromBaseTemplate(value, buttonTemplateMap);
-    updateSharedDesign({
-      baseTemplateValue: value,
-      ...(resolved.baseDesign ? { baseDesign: resolved.baseDesign } : {}),
+    if (!resolved.baseDesign) {
+      updateStateDesign({
+        baseTemplateValue: value,
+      });
+      return;
+    }
+
+    void processButtonBaseDesign(resolved.baseDesign).then((baseDesign) => {
+      updateStateDesign({
+        baseTemplateValue: value,
+        baseDesign,
+      });
     });
   };
 
   const applyPatternTemplateSelection = (value: string) => {
     if (!value) {
-      const { patternDesign: _removed, ...rest } = format.sharedDesign;
-      updateSharedDesign({
+      const { patternDesign: _removed, ...rest } = editingDesign;
+      updateStateDesign({
         ...rest,
         contentType: "text",
         patternTemplateValue: "",
@@ -145,15 +152,17 @@ export const LevelNodeButtonFormatEditor = ({
 
     const resolved = createButtonStateDraftPatchFromPatternTemplate(value, patternTemplateMap);
     if (!resolved.patternDesign) {
-      updateSharedDesign({ patternTemplateValue: value });
+      updateStateDesign({ patternTemplateValue: value });
       return;
     }
 
-    updateSharedDesign({
-      contentType: "pattern",
-      patternTemplateValue: value,
-      patternDesign: resolved.patternDesign,
-      patternLayers: createPatternLayerFromTemplate(value, resolved.patternDesign),
+    void processStretchVisualDesign(resolved.patternDesign).then((patternDesign) => {
+      updateStateDesign({
+        contentType: "pattern",
+        patternTemplateValue: value,
+        patternDesign,
+        patternLayers: createPatternLayerFromTemplate(value, patternDesign),
+      });
     });
   };
 
@@ -177,13 +186,27 @@ export const LevelNodeButtonFormatEditor = ({
     });
   };
 
+  const copyDesignFromState = (fromStateId: LevelNodeProgressStateId) => {
+    onChange(copyLevelNodeStateDesign(format, fromStateId, editingStateId));
+  };
+
+  const handlePatternLayerFrameChange = (layerId: string, frame: NonNullable<LevelNodeStateButtonDesign["patternDesign"]>["frame"]) => {
+    if (!frame) {
+      return;
+    }
+
+    onChange(updateLevelNodePatternLayerFrame(format, editingStateId, layerId, frame));
+  };
+
+  const otherStateIds = LEVEL_NODE_PROGRESS_STATE_IDS.filter((stateId) => stateId !== editingStateId);
+
   return (
     <section className="level-interface-button-format-editor panel-create-form">
       <div className="level-interface-background-editor-header">
         <div>
           <h3>按钮格式设置</h3>
           <p className="panel-copy">
-            通过模板库配置关卡节点按钮的统一样式。三种状态共用底座/图案模板，仅切换显示文案。
+            为未解锁、未通关、已通关三种状态分别配置底座与图案。运行时根据玩家登录账号与关卡进度自动切换状态。
           </p>
         </div>
         <button type="button" className="secondary" onClick={onClose}>
@@ -191,209 +214,26 @@ export const LevelNodeButtonFormatEditor = ({
         </button>
       </div>
 
-      <div className="level-interface-background-mode-tabs">
-        <button
-          type="button"
-          className={activeSection === "template" ? "active" : ""}
-          onClick={() => setActiveSection("template")}
-        >
-          模板与样式
-        </button>
-        <button
-          type="button"
-          className={activeSection === "text" ? "active" : ""}
-          onClick={() => setActiveSection("text")}
-        >
-          状态文案
-        </button>
-      </div>
-
-      {activeSection === "template" ? (
-        <div className="level-interface-button-format-template-panel">
-          <div className="level-interface-button-format-grid">
-            <label className="button-design-field">
-              <span>底座模板</span>
-              <select
-                value={templateSelectValues.baseTemplateValue}
-                disabled={templatesLoading}
-                onChange={(event) => applyBaseTemplateSelection(event.target.value)}
-              >
-                <option value="">
-                  {buttonTemplateSelectOptions.length > 0 ? "不使用模板（纯色按钮）" : "暂无底座模板，请先到模板库创建"}
-                </option>
-                {buttonTemplateSelectOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="button-design-field">
-              <span>内容类型</span>
-              <select
-                value={format.sharedDesign.contentType}
-                onChange={(event) => {
-                  const contentType = event.target.value as "text" | "pattern";
-                  if (contentType === "text") {
-                    const { patternDesign: _removed, ...rest } = format.sharedDesign;
-                    updateSharedDesign({
-                      ...rest,
-                      contentType: "text",
-                      patternTemplateValue: "",
-                      patternLayers: [],
-                    });
-                    return;
-                  }
-
-                  updateSharedDesign({ contentType: "pattern" });
-                }}
-              >
-                <option value="text">文本型</option>
-                <option value="pattern">图案型</option>
-              </select>
-            </label>
-
-            {format.sharedDesign.contentType === "pattern" ? (
-              <label className="button-design-field">
-                <span>图案模板</span>
-                <select
-                  value={templateSelectValues.patternTemplateValue}
-                  disabled={templatesLoading}
-                  onChange={(event) => applyPatternTemplateSelection(event.target.value)}
-                >
-                  <option value="">
-                    {patternTemplateSelectOptions.length > 0 ? "请选择图案模板" : "暂无图案模板，请先到模板库创建"}
-                  </option>
-                  {patternTemplateSelectOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-
-            <label className="button-design-field">
-              <span>按钮类型</span>
-              <select
-                value={format.sharedDesign.variant}
-                onChange={(event) => updateSharedDesign({
-                  variant: event.target.value as LevelNodeSharedButtonDesign["variant"],
-                })}
-              >
-                {variantOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="button-design-field">
-              <span>圆角</span>
-              <input
-                type="number"
-                min={0}
-                max={999}
-                value={format.sharedDesign.borderRadius}
-                onChange={(event) => updateSharedDesign({ borderRadius: Number(event.target.value) || 0 })}
-              />
-            </label>
-
-            <label className="button-design-color-field">
-              <span>背景色</span>
-              <input
-                type="color"
-                value={format.sharedDesign.backgroundColor}
-                disabled={Boolean(format.sharedDesign.baseDesign)}
-                onChange={(event) => updateSharedDesign({ backgroundColor: event.target.value })}
-              />
-            </label>
-
-            <label className="button-design-color-field">
-              <span>文字色</span>
-              <input
-                type="color"
-                value={format.sharedDesign.textColor}
-                onChange={(event) => updateSharedDesign({ textColor: event.target.value })}
-              />
-            </label>
-
-            <label className="button-design-field">
-              <span>字号</span>
-              <input
-                type="number"
-                min={8}
-                max={14}
-                value={format.sharedDesign.fontSize}
-                onChange={(event) => updateSharedDesign({
-                  fontSize: Math.min(14, Number(event.target.value) || 11),
-                })}
-              />
-            </label>
-            <p className="meta">关卡节点按钮建议使用 10–14px 字号，避免路径地图上文字过大。</p>
+      <div className="level-interface-button-format-workspace">
+        <div className="level-interface-button-format-editor-column">
+          <div className="level-interface-background-mode-tabs">
+            <button
+              type="button"
+              className={activeSection === "template" ? "active" : ""}
+              onClick={() => setActiveSection("template")}
+            >
+              状态样式
+            </button>
+            <button
+              type="button"
+              className={activeSection === "text" ? "active" : ""}
+              onClick={() => setActiveSection("text")}
+            >
+              状态文案
+            </button>
           </div>
 
-          {format.sharedDesign.baseDesign ? (
-            <p className="meta">已绑定底座模板，按钮外形由模板决定；背景色仅在未使用模板时生效。</p>
-          ) : null}
-          {templatesError ? <p className="feedback error">{templatesError}</p> : null}
-        </div>
-      ) : (
-        <div className="level-interface-button-format-states">
-          <label className="button-design-field">
-            <span>文案模式</span>
-            <select
-              value={format.labelMode}
-              onChange={(event) => onChange({
-                ...format,
-                labelMode: event.target.value as LevelNodeButtonFormatSettings["labelMode"],
-              })}
-            >
-              <option value="levelAndState">关卡名 + 状态（例如：01 草地训练场 · 未通关）</option>
-              <option value="levelNumberAndState">关卡编号 + 状态（例如：01 · 未通关）</option>
-              <option value="stateOnly">仅显示状态（例如：未通关）</option>
-            </select>
-          </label>
-
-          {LEVEL_NODE_PROGRESS_STATE_META.map((state) => (
-            <div key={state.id} className="level-interface-button-format-state-row">
-              <div>
-                <strong>{state.name}</strong>
-                <p className="meta">{state.description}</p>
-              </div>
-              <label className="button-design-field">
-                <span>显示文字</span>
-                <input
-                  type="text"
-                  value={format.stateLabels[state.id]}
-                  onChange={(event) => updateStateLabel(state.id, event.target.value)}
-                />
-              </label>
-              {format.sharedDesign.contentType === "text" ? (
-                <label className="button-design-field">
-                  <span>图标</span>
-                  <input
-                    type="text"
-                    value={format.stateIcons[state.id]}
-                    onChange={(event) => updateStateIcon(state.id, event.target.value)}
-                  />
-                </label>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="level-interface-button-format-preview-panel">
-        <div className="level-interface-button-format-preview-controls">
-          <label className="button-design-field">
-            <span>预览关卡</span>
-            <select
-              value={previewLevelSuffix}
-              onChange={(event) => onPreviewLevelSuffixChange(event.target.value)}
-            >
-              {LEVEL_NODE_DEFINITIONS.map((level) => (
-                <option key={level.suffix} value={level.suffix}>{level.label}</option>
-              ))}
-            </select>
-          </label>
-          <div className="level-interface-button-format-preview-tabs">
+          <div className="level-interface-button-format-state-switch">
             {LEVEL_NODE_PROGRESS_STATE_IDS.map((stateId) => (
               <button
                 key={stateId}
@@ -405,26 +245,224 @@ export const LevelNodeButtonFormatEditor = ({
               </button>
             ))}
           </div>
+
+          {activeSection === "template" ? (
+            <div className="level-interface-button-format-template-panel">
+              <div className="level-interface-button-format-copy-row">
+                <span className="meta">正在编辑：{LEVEL_NODE_PROGRESS_STATE_META.find((item) => item.id === editingStateId)?.name}</span>
+                {otherStateIds.map((stateId) => (
+                  <button
+                    key={stateId}
+                    type="button"
+                    className="secondary"
+                    onClick={() => copyDesignFromState(stateId)}
+                  >
+                    复制自{LEVEL_NODE_PROGRESS_STATE_META.find((item) => item.id === stateId)?.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="level-interface-button-format-grid">
+                <label className="button-design-field">
+                  <span>底座模板</span>
+                  <select
+                    value={templateSelectValues.baseTemplateValue}
+                    disabled={templatesLoading}
+                    onChange={(event) => applyBaseTemplateSelection(event.target.value)}
+                  >
+                    <option value="">
+                      {buttonTemplateSelectOptions.length > 0 ? "不使用模板（纯色按钮）" : "暂无底座模板，请先到模板库创建"}
+                    </option>
+                    {buttonTemplateSelectOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="button-design-field">
+                  <span>内容类型</span>
+                  <select
+                    value={editingDesign.contentType}
+                    onChange={(event) => {
+                      const contentType = event.target.value as "text" | "pattern";
+                      if (contentType === "text") {
+                        const { patternDesign: _removed, ...rest } = editingDesign;
+                        updateStateDesign({
+                          ...rest,
+                          contentType: "text",
+                          patternTemplateValue: "",
+                          patternLayers: [],
+                        });
+                        return;
+                      }
+
+                      updateStateDesign({ contentType: "pattern" });
+                    }}
+                  >
+                    <option value="text">文本型</option>
+                    <option value="pattern">图案型</option>
+                  </select>
+                </label>
+
+                {editingDesign.contentType === "pattern" ? (
+                  <label className="button-design-field">
+                    <span>图案模板</span>
+                    <select
+                      value={templateSelectValues.patternTemplateValue}
+                      disabled={templatesLoading}
+                      onChange={(event) => applyPatternTemplateSelection(event.target.value)}
+                    >
+                      <option value="">
+                        {patternTemplateSelectOptions.length > 0 ? "请选择图案模板" : "暂无图案模板，请先到模板库创建"}
+                      </option>
+                      {patternTemplateSelectOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+
+                <label className="button-design-field">
+                  <span>按钮类型</span>
+                  <select
+                    value={editingDesign.variant}
+                    onChange={(event) => updateStateDesign({
+                      variant: event.target.value as LevelNodeStateButtonDesign["variant"],
+                    })}
+                  >
+                    {variantOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="button-design-field">
+                  <span>圆角</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={999}
+                    value={editingDesign.borderRadius}
+                    onChange={(event) => updateStateDesign({ borderRadius: Number(event.target.value) || 0 })}
+                  />
+                </label>
+
+                <label className="button-design-color-field">
+                  <span>背景色</span>
+                  <input
+                    type="color"
+                    value={editingDesign.backgroundColor}
+                    disabled={Boolean(editingDesign.baseDesign)}
+                    onChange={(event) => updateStateDesign({ backgroundColor: event.target.value })}
+                  />
+                </label>
+
+                <label className="button-design-color-field">
+                  <span>文字色</span>
+                  <input
+                    type="color"
+                    value={editingDesign.textColor}
+                    onChange={(event) => updateStateDesign({ textColor: event.target.value })}
+                  />
+                </label>
+
+                <label className="button-design-field">
+                  <span>字号</span>
+                  <input
+                    type="number"
+                    min={8}
+                    max={14}
+                    value={editingDesign.fontSize}
+                    onChange={(event) => updateStateDesign({
+                      fontSize: Math.min(14, Number(event.target.value) || 11),
+                    })}
+                  />
+                </label>
+              </div>
+
+              {editingDesign.baseDesign ? (
+                <p className="meta">已绑定底座模板，按钮外形由模板决定；背景色仅在未使用模板时生效。</p>
+              ) : null}
+              {editingDesign.contentType === "pattern" && editingDesign.patternLayers.length > 0 ? (
+                <p className="meta">在右侧预览区拖拽图案可调整位置，拖拽角点可缩放。</p>
+              ) : null}
+              {templatesError ? <p className="feedback error">{templatesError}</p> : null}
+            </div>
+          ) : (
+            <div className="level-interface-button-format-states">
+              <label className="button-design-field">
+                <span>文案模式</span>
+                <select
+                  value={format.labelMode}
+                  onChange={(event) => onChange({
+                    ...format,
+                    labelMode: event.target.value as LevelNodeButtonFormatSettings["labelMode"],
+                  })}
+                >
+                  <option value="levelAndState">关卡名 + 状态（例如：01 草地训练场 · 未通关）</option>
+                  <option value="levelNumberAndState">关卡编号 + 状态（例如：01 · 未通关）</option>
+                  <option value="stateOnly">仅显示状态（例如：未通关）</option>
+                </select>
+              </label>
+
+              {LEVEL_NODE_PROGRESS_STATE_META.map((state) => (
+                <div key={state.id} className="level-interface-button-format-state-row">
+                  <div>
+                    <strong>{state.name}</strong>
+                    <p className="meta">{state.description}</p>
+                  </div>
+                  <label className="button-design-field">
+                    <span>显示文字</span>
+                    <input
+                      type="text"
+                      value={format.stateLabels[state.id]}
+                      onChange={(event) => updateStateLabel(state.id, event.target.value)}
+                    />
+                  </label>
+                  {format.stateDesigns[state.id].contentType === "text" ? (
+                    <label className="button-design-field">
+                      <span>图标</span>
+                      <input
+                        type="text"
+                        value={format.stateIcons[state.id]}
+                        onChange={(event) => updateStateIcon(state.id, event.target.value)}
+                      />
+                    </label>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="level-interface-button-format-preview-sample">
-          <div className="level-interface-button-format-preview-stage">
-            <button
-              type="button"
-              className={`dynamic-ui-button panel-create-button-state-sample ${getButtonStateTemplatePreviewClassName(previewButtonState)}`}
-              style={getButtonStateTemplatePreviewStyle(previewButtonState, {
-                position: "relative",
-                minWidth: "220px",
-                minHeight: "56px",
-                padding: "0.65rem 1rem",
-              })}
-              disabled={previewState === "locked"}
-            >
-              {renderButtonStateTemplatePreviewLayers(previewButtonState)}
-              {renderButtonStateTemplatePreviewContent(previewButtonState)}
-            </button>
+        <div className="level-interface-button-format-preview-column">
+          <div className="level-interface-button-format-preview-panel level-interface-button-format-preview-panel-large">
+            <div className="level-interface-button-format-preview-controls">
+              <label className="button-design-field">
+                <span>预览关卡</span>
+                <select
+                  value={previewLevelSuffix}
+                  onChange={(event) => onPreviewLevelSuffixChange(event.target.value)}
+                >
+                  {LEVEL_NODE_DEFINITIONS.map((level) => (
+                    <option key={level.suffix} value={level.suffix}>{level.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="level-interface-button-format-preview-sample level-interface-button-format-preview-sample-large">
+              <LevelNodeButtonStatePreview
+                state={previewButtonState}
+                disabled={false}
+                editable={editingDesign.contentType === "pattern" && editingDesign.patternLayers.length > 0}
+                onPatternLayerFrameChange={handlePatternLayerFrameChange}
+              />
+            </div>
+            <p className="meta">
+              右侧地图会同步当前预览状态。玩家进度由后端接口 `player.levelProgress` 计算：前一关通关则解锁下一关，通关后显示已通关样式。
+            </p>
           </div>
-          <p className="meta">预览使用与面板创建相同的模板渲染方式；右侧地图会同步所选状态。</p>
         </div>
       </div>
 

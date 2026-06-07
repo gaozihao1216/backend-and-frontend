@@ -8,12 +8,14 @@ type GameCanvasProps = {
   levelKey: string;
   levelData?: LevelData;
   restartToken?: number;
+  transparentBackground?: boolean;
 };
 
 export const GameCanvas = ({
   levelKey,
   levelData,
   restartToken = 0,
+  transparentBackground = false,
 }: GameCanvasProps) => {
   const defaultView = {
     zoom: 1,
@@ -61,7 +63,9 @@ export const GameCanvas = ({
       // session 负责推进物理世界，drawScene 负责把快照画出来。
       session.step(deltaMs);
       const snapshot = session.getSnapshot();
-      drawScene(context, snapshot, viewRef.current.zoom, viewRef.current.center);
+      drawScene(context, snapshot, viewRef.current.zoom, viewRef.current.center, {
+        skipSky: transparentBackground,
+      });
       animationFrameId = window.requestAnimationFrame(renderFrame);
     };
 
@@ -72,7 +76,7 @@ export const GameCanvas = ({
       sessionRef.current = null;
       session.destroy();
     };
-  }, [levelKey, restartToken]);
+  }, [levelKey, restartToken, levelData, transparentBackground]);
 
   const getCanvasPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -180,7 +184,7 @@ export const GameCanvas = ({
           maxWidth: "100%",
           border: "1px solid #d8dde6",
           borderRadius: "16px",
-          background: "#d9efff",
+          background: transparentBackground ? "transparent" : "#d9efff",
           touchAction: "none",
         }}
       />

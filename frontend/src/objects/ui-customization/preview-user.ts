@@ -1,11 +1,26 @@
 import type { UiEndpoint } from "./page-config.js";
 
+export type UiPreviewAccount = {
+  coins: number;
+  gems: number;
+  fragments: number;
+  clearedLevelCount?: number;
+};
+
 export type UiPreviewUser = {
   id: string;
   nickname: string;
   roleScope: UiEndpoint;
   roleLabel: string;
   apiUserId: string;
+  account?: UiPreviewAccount;
+};
+
+const defaultPlayerAccount: UiPreviewAccount = {
+  coins: 1280,
+  gems: 96,
+  fragments: 0,
+  clearedLevelCount: 1,
 };
 
 const previewUsersByEndpoint: Record<UiEndpoint, UiPreviewUser> = {
@@ -15,6 +30,7 @@ const previewUsersByEndpoint: Record<UiEndpoint, UiPreviewUser> = {
     roleScope: "player",
     roleLabel: "玩家端",
     apiUserId: "player-1",
+    account: defaultPlayerAccount,
   },
   designer: {
     id: "ui-preview-designer",

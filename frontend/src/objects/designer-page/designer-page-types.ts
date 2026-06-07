@@ -31,6 +31,7 @@ export type DesignerPageProps = {
   userId?: string;
   mode?: DesignerPageMode;
   archiveBackupId?: string;
+  resumeLevelId?: string;
   onBack?: () => void;
   onOpenSettingsPage?: () => void;
   onExitSettingsPage?: () => void;

@@ -106,6 +106,13 @@ export const defaultPageConfigs = [
         action: { type: "navigate", targetPageId: "shared.profile", targetPath: "/own_page" },
       },
       {
+        id: "portfolio",
+        label: "作品集",
+        icon: "folder",
+        variant: "ghost",
+        action: { type: "navigate", targetPageId: "designer.portfolio", targetPath: "/designer/portfolio" },
+      },
+      {
         id: "createMap",
         label: "创造地图",
         icon: "map",
@@ -122,6 +129,7 @@ export const defaultPageConfigs = [
     ],
   })),
   createPageConfig("designer.design", "创造地图", "/designer/design", "designer"),
+  createPageConfig("designer.portfolio", "作品集", "/designer/portfolio", "designer"),
   createPageConfig("designer.settings", "设置", "/designer/design/settings", "designer"),
   createPageConfig("designer.designBook", "设计手册", "/designer/design/design_book", "designer"),
   createPageConfig("designer.jsonCheck", "JSON 检查", "/designer/design/json_check", "designer"),

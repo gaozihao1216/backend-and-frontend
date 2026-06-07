@@ -7,6 +7,9 @@ private[tables] object SubmissionTableInMemory {
   def listPending(): Vector[SubmissionRow] =
     InMemoryStore.submissions.filter(_.status == SubmissionStatus.PendingReview)
 
+  def listApproved(): Vector[SubmissionRow] =
+    InMemoryStore.submissions.filter(_.status == SubmissionStatus.Approved)
+
   def hasPendingForLevel(levelId: String): Boolean =
     InMemoryStore.submissions.exists(submission => submission.levelId == levelId && submission.status == SubmissionStatus.PendingReview)
 

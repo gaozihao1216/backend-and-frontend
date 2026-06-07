@@ -825,14 +825,19 @@ export const drawScene = (
   snapshot: GameSnapshot,
   zoom = 1,
   center = { x: snapshot.width / 2, y: snapshot.height / 2 },
+  options?: {
+    skipSky?: boolean;
+  },
 ) => {
   ctx.clearRect(0, 0, snapshot.width, snapshot.height);
 
-  const sky = ctx.createLinearGradient(0, 0, 0, snapshot.height);
-  sky.addColorStop(0, "#d9efff");
-  sky.addColorStop(1, "#f9fbef");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, snapshot.width, snapshot.height);
+  if (!options?.skipSky) {
+    const sky = ctx.createLinearGradient(0, 0, 0, snapshot.height);
+    sky.addColorStop(0, "#d9efff");
+    sky.addColorStop(1, "#f9fbef");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, snapshot.width, snapshot.height);
+  }
 
   ctx.save();
   ctx.translate(snapshot.width / 2, snapshot.height / 2);

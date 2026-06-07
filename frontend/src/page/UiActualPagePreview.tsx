@@ -27,7 +27,12 @@ export const UiActualPagePreview = ({ page, previewUser }: UiActualPagePreviewPr
     case "shared.profile":
       return <UserProfilePage viewerUserId={previewUser.apiUserId} profileUserId={previewUser.apiUserId} />;
     case "designer.home":
-      return <DesignerHomePage onOpenDesignWindow={() => undefined} />;
+      return (
+        <DesignerHomePage
+          onOpenDesignWindow={() => undefined}
+          onOpenPortfolio={() => undefined}
+        />
+      );
     default:
       return (
         <section className="panel page-builder-preview-error">

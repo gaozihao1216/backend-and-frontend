@@ -1,6 +1,7 @@
 import type { ComponentAction, PageConfig } from "./page-config.js";
 import {
   createLevelNodeButtonAction,
+  createDefaultLevelMapPathDesign,
   getDefaultLevelStageDecoration,
   LEVEL_NODE_DEFINITIONS,
 } from "./level-map-structure.js";
@@ -138,6 +139,7 @@ export const createLevelChainHomeComponents = ({
         borderRadius: 14,
       },
       decoration: getDefaultLevelStageDecoration(),
+      pathDesign: createDefaultLevelMapPathDesign(),
       childComponentIds: LEVEL_NODE_DEFINITIONS.map((level) => componentId(level.suffix)),
     },
     ...LEVEL_NODE_DEFINITIONS.map((level) => ({
@@ -146,13 +148,15 @@ export const createLevelChainHomeComponents = ({
       label: level.label,
       icon: buttonFormat.stateIcons.notCleared,
       position: percentPosition(level.x, level.y, 16, 12),
-      ...(buttonFormat.sharedDesign.baseDesign ? { baseDesign: buttonFormat.sharedDesign.baseDesign } : {}),
+      ...(buttonFormat.stateDesigns.notCleared.baseDesign
+        ? { baseDesign: buttonFormat.stateDesigns.notCleared.baseDesign }
+        : {}),
       style: {
-        variant: buttonFormat.sharedDesign.variant,
-        backgroundColor: buttonFormat.sharedDesign.backgroundColor,
-        textColor: buttonFormat.sharedDesign.textColor,
-        borderRadius: buttonFormat.sharedDesign.borderRadius,
-        fontSize: Math.min(14, buttonFormat.sharedDesign.fontSize),
+        variant: buttonFormat.stateDesigns.notCleared.variant,
+        backgroundColor: buttonFormat.stateDesigns.notCleared.backgroundColor,
+        textColor: buttonFormat.stateDesigns.notCleared.textColor,
+        borderRadius: buttonFormat.stateDesigns.notCleared.borderRadius,
+        fontSize: Math.min(14, buttonFormat.stateDesigns.notCleared.fontSize),
       },
       stateDesign: createLevelNodeButtonStateDesign(level.suffix, level.label, buttonFormat),
       action: createLevelNodeButtonAction(level.suffix),

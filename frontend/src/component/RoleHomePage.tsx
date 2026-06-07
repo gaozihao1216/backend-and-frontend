@@ -13,6 +13,7 @@ type RoleHomePageProps = {
   onOpenSettings: () => void;
   onUserUpdated: (user: AuthUser) => void;
   onOpenDesignerDesign?: () => void;
+  onOpenDesignerPortfolio?: () => void;
   onNavigate: (path: string) => void;
 };
 
@@ -22,6 +23,7 @@ type DetailView =
   | "player-community"
   | "player-shop"
   | "designer-map"
+  | "designer-portfolio"
   | "designer-birds"
   | "admin-community"
   | "admin-proposal"
@@ -266,6 +268,7 @@ const getActionOptions = (user: AuthUser) => {
     case "designer":
       return [
         { id: "user-profile" as const, label: "个人主页" },
+        { id: "designer-portfolio" as const, label: "作品集" },
         { id: "designer-map" as const, label: "创造地图" },
         { id: "designer-birds" as const, label: "鸟类开发" },
       ];
@@ -359,6 +362,7 @@ export const RoleHomePage = ({
   onOpenSettings,
   onUserUpdated,
   onOpenDesignerDesign,
+  onOpenDesignerPortfolio,
   onNavigate,
 }: RoleHomePageProps) => {
   const mapViewportRef = useRef<HTMLDivElement | null>(null);
@@ -432,6 +436,12 @@ export const RoleHomePage = ({
 
     if (nextView === "designer-map") {
       onOpenDesignerDesign?.();
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "designer-portfolio") {
+      onOpenDesignerPortfolio?.();
       setActionOpen(false);
       return;
     }

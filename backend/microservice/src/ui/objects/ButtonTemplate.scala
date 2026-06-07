@@ -37,6 +37,7 @@ final case class ButtonTemplate(
   id: String,
   name: String,
   sourceDataUrl: String,
+  category: String,
   scalingMode: ButtonTemplateScalingMode,
   slice: ButtonTemplateSlice,
   createdAt: Option[String],
@@ -51,6 +52,7 @@ object ButtonTemplate {
         id <- cursor.downField("id").as[String]
         name <- cursor.downField("name").as[String]
         sourceDataUrl <- cursor.downField("sourceDataUrl").as[String]
+        category <- cursor.downField("category").as[Option[String]].map(_.getOrElse(ButtonTemplateCategory.defaultValue))
         scalingMode <- cursor.downField("scalingMode").as[Option[ButtonTemplateScalingMode]].map(_.getOrElse(ButtonTemplateScalingMode.FixedAspect))
         slice <- cursor.downField("slice").as[ButtonTemplateSlice]
         createdAt <- cursor.downField("createdAt").as[Option[String]]
@@ -59,6 +61,7 @@ object ButtonTemplate {
         id = id,
         name = name,
         sourceDataUrl = sourceDataUrl,
+        category = category,
         scalingMode = scalingMode,
         slice = slice,
         createdAt = createdAt,

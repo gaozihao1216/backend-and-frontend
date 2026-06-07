@@ -3,6 +3,8 @@ import { SelectedEntityPanel } from "../designer/SelectedEntityPanel.js";
 import type { EditorTool } from "../../lib/designer-level.js";
 import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../lib/ground.js";
 import type { LevelData } from "../../lib/level-contracts.js";
+import type { LevelBackgroundTemplate } from "../../objects/level/level-background-template.js";
+import type { StretchVisualDesign } from "../../objects/ui-customization/ui-customization-objects.js";
 import type { DesignerPhase } from "../../objects/designer-page/designer-page-types.js";
 import { DesignerWorkspace } from "./DesignerWorkspace.js";
 
@@ -34,6 +36,9 @@ type DesignerCanvasPanelProps = {
   selectedVoidSpanId: string | null;
   onVoidSpanSelectionChange: (voidSpanId: string | null) => void;
   entityEditingEnabled: boolean;
+  levelBackgroundTemplate?: LevelBackgroundTemplate | null;
+  levelBackgroundPanelDesign?: StretchVisualDesign | null;
+  levelBackgroundCloudDesigns?: StretchVisualDesign[];
 };
 
 export const DesignerCanvasPanel = ({
@@ -64,6 +69,9 @@ export const DesignerCanvasPanel = ({
   selectedVoidSpanId,
   onVoidSpanSelectionChange,
   entityEditingEnabled,
+  levelBackgroundTemplate = null,
+  levelBackgroundPanelDesign = null,
+  levelBackgroundCloudDesigns = [],
 }: DesignerCanvasPanelProps) => (
   <DesignerWorkspace>
       <LevelEditorCanvas
@@ -94,6 +102,9 @@ export const DesignerCanvasPanel = ({
         selectedVoidSpanId={selectedVoidSpanId}
         onVoidSpanSelectionChange={onVoidSpanSelectionChange}
         entityEditingEnabled={entityEditingEnabled}
+        levelBackgroundTemplate={levelBackgroundTemplate}
+        levelBackgroundPanelDesign={levelBackgroundPanelDesign}
+        levelBackgroundCloudDesigns={levelBackgroundCloudDesigns}
       />
       {editorPhase === "entities" ? (
         <SelectedEntityPanel

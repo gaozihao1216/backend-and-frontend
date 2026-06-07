@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ClipboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ClipboardEvent } from "react";
 import {
   createStretchVisualTemplate,
   deleteStretchVisualTemplate,
@@ -8,9 +8,21 @@ import {
 import { processTemplateImage, readFileAsDataUrl } from "../../lib/template-image-utils.js";
 import {
   StretchVisualTemplateSchema,
+  getDefaultStretchVisualTemplateCategory,
   type StretchVisualTemplate,
   type StretchVisualTemplateKind,
 } from "../../objects/ui-customization/stretch-visual-template.js";
+import {
+  getPanelTemplateCategoryLabel,
+  getPatternTemplateCategoryLabel,
+  normalizePanelTemplateCategory,
+  normalizePatternTemplateCategory,
+  PANEL_TEMPLATE_CATEGORIES,
+  PATTERN_TEMPLATE_CATEGORIES,
+  type PanelTemplateCategory,
+  type PatternTemplateCategory,
+} from "../../objects/ui-customization/template-category.js";
+import { TemplateCategoryFilter } from "./TemplateCategoryFilter.js";
 
 type SimpleStretchTemplateSectionProps = {
   userId: string;
@@ -28,6 +40,7 @@ type TemplateDraft = {
   id: string;
   name: string;
   sourceDataUrl: string;
+  category: PanelTemplateCategory | PatternTemplateCategory;
 };
 
 const LEGACY_STORAGE_KEY = "ugc-level-platform.stretch-visual-templates.v1";
@@ -36,16 +49,21 @@ const createDefaultDraft = (
   idPrefix: string,
   defaultName: string,
   defaultDataUrl: string,
+  kind: StretchVisualTemplateKind,
 ): TemplateDraft => ({
   id: `${idPrefix}-${Date.now()}`,
   name: defaultName,
   sourceDataUrl: defaultDataUrl,
+  category: getDefaultStretchVisualTemplateCategory(kind),
 });
 
 const createDraftFromTemplate = (template: StretchVisualTemplate): TemplateDraft => ({
   id: template.id,
   name: template.name,
   sourceDataUrl: template.sourceDataUrl,
+  category: template.kind === "panel"
+    ? normalizePanelTemplateCategory(template.category)
+    : normalizePatternTemplateCategory(template.category),
 });
 
 const createTemplateFromDraft = (kind: StretchVisualTemplateKind, draft: TemplateDraft): StretchVisualTemplate => ({
@@ -53,6 +71,7 @@ const createTemplateFromDraft = (kind: StretchVisualTemplateKind, draft: Templat
   name: draft.name.trim(),
   sourceDataUrl: draft.sourceDataUrl,
   kind,
+  category: draft.category,
 });
 
 const readLegacyTemplates = (kind: StretchVisualTemplateKind): StretchVisualTemplate[] => {
@@ -66,8 +85,18 @@ const readLegacyTemplates = (kind: StretchVisualTemplateKind): StretchVisualTemp
   }
 
   try {
+    const parsed = JSON.parse(raw) as unknown;
+    const legacyRows = Array.isArray(parsed) ? parsed : [];
     return StretchVisualTemplateSchema.array()
-      .parse(JSON.parse(raw) as unknown)
+      .parse(
+        legacyRows.map((entry) => {
+          const template = entry as StretchVisualTemplate;
+          return {
+            ...template,
+            category: template.category ?? getDefaultStretchVisualTemplateCategory(template.kind),
+          };
+        }),
+      )
       .filter((template) => template.kind === kind);
   } catch {
     return [];
@@ -112,9 +141,20 @@ export const SimpleStretchTemplateSection = ({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [editorMode, setEditorMode] = useState<EditorMode | null>(null);
-  const [draft, setDraft] = useState<TemplateDraft>(() => createDefaultDraft(idPrefix, defaultName, defaultDataUrl));
+  const [draft, setDraft] = useState<TemplateDraft>(() => createDefaultDraft(idPrefix, defaultName, defaultDataUrl, kind));
   const [pastedImageValue, setPastedImageValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<PanelTemplateCategory | PatternTemplateCategory | "all">("all");
+
+  const categoryOptions = kind === "panel" ? PANEL_TEMPLATE_CATEGORIES : PATTERN_TEMPLATE_CATEGORIES;
+  const filteredTemplates = useMemo(
+    () => categoryFilter === "all"
+      ? templates
+      : templates.filter((template) => template.category === categoryFilter),
+    [categoryFilter, templates],
+  );
+  const getCategoryLabel = (category: string) =>
+    kind === "panel" ? getPanelTemplateCategoryLabel(normalizePanelTemplateCategory(category)) : getPatternTemplateCategoryLabel(normalizePatternTemplateCategory(category));
 
   const migrateLegacyTemplates = useCallback(async () => {
     const legacyTemplates = readLegacyTemplates(kind);
@@ -161,7 +201,7 @@ export const SimpleStretchTemplateSection = ({
   }, [loadTemplates]);
 
   const openCreateEditor = () => {
-    setDraft(createDefaultDraft(idPrefix, defaultName, defaultDataUrl));
+    setDraft(createDefaultDraft(idPrefix, defaultName, defaultDataUrl, kind));
     setPastedImageValue("");
     setEditorMode("create");
     setMessage("");
@@ -293,11 +333,17 @@ export const SimpleStretchTemplateSection = ({
       {message ? <p className="feedback success">{message}</p> : null}
       {error ? <p className="feedback error">{error}</p> : null}
 
+      <TemplateCategoryFilter
+        categories={categoryOptions}
+        activeCategory={categoryFilter}
+        onChange={setCategoryFilter}
+      />
+
       {loading ? (
         <p className="meta">正在读取{title}...</p>
-      ) : templates.length > 0 ? (
+      ) : filteredTemplates.length > 0 ? (
         <div className="button-template-grid">
-          {templates.map((template) => (
+          {filteredTemplates.map((template) => (
             <article key={template.id} className="button-template-card">
               <div className="button-template-preview stretch-template-preview">
                 <img src={template.sourceDataUrl} alt={template.name} className="stretch-template-image" />
@@ -306,6 +352,7 @@ export const SimpleStretchTemplateSection = ({
                 <div>
                   <strong>{template.name}</strong>
                   <p className="meta">{template.id}</p>
+                  <p className="template-category-badge">{getCategoryLabel(template.category)}</p>
                   <p className="meta">可压缩 · 整体拉伸</p>
                 </div>
                 <div className="button-template-card-actions">
@@ -358,6 +405,24 @@ export const SimpleStretchTemplateSection = ({
                     value={draft.name}
                     onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
                   />
+                </label>
+                <label className="button-design-field">
+                  <span>模板分类</span>
+                  <select
+                    value={draft.category}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        category: event.target.value as TemplateDraft["category"],
+                      }))
+                    }
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <p className="meta">缩放方式固定为可压缩（整体拉伸），无需设置九宫格分割线。</p>
                 <label className="button-design-file-drop">

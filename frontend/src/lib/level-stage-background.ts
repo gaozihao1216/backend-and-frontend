@@ -3,6 +3,7 @@ import { loadVisualAsset, saveVisualAsset } from "./ui-visual-asset-store.js";
 import type { PageConfig, PanelDecoration, StretchVisualDesign } from "../objects/ui-customization/ui-customization-objects.js";
 import { LEVEL_MAP_PAGE_ID } from "../objects/ui-customization/level-map-structure.js";
 import type { StretchVisualTemplate } from "../objects/ui-customization/stretch-visual-template.js";
+import { DEFAULT_PANEL_TEMPLATE_CATEGORY } from "../objects/ui-customization/template-category.js";
 
 export const LEVEL_STAGE_CUSTOM_STYLE_ID_PREFIX = "levelStageBg-";
 
@@ -83,6 +84,7 @@ export const createLevelStageCustomStyleTemplate = (
   name: name.trim() || "自定义背景",
   sourceDataUrl,
   kind: "panel",
+  category: DEFAULT_PANEL_TEMPLATE_CATEGORY,
 });
 
 export const createLevelStageDecorationFromTemplate = (

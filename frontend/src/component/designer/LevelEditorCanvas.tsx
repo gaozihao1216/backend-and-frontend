@@ -48,6 +48,9 @@ import {
   type GroundStrokeSimplifyConfig,
   type TerrainEditMode,
 } from "../../lib/ground.js";
+import type { LevelBackgroundTemplate } from "../../objects/level/level-background-template.js";
+import type { StretchVisualDesign } from "../../objects/ui-customization/ui-customization-objects.js";
+import { LevelBackgroundStageLayer } from "../designer-page/LevelBackgroundStageLayer.js";
 
 type LevelEditorCanvasProps = {
   activeTool: EditorTool;
@@ -78,6 +81,9 @@ type LevelEditorCanvasProps = {
   onVoidSpanSelectionChange: (voidSpanId: string | null) => void;
   entityEditingEnabled: boolean;
   readOnly?: boolean;
+  levelBackgroundTemplate?: LevelBackgroundTemplate | null;
+  levelBackgroundPanelDesign?: StretchVisualDesign | null;
+  levelBackgroundCloudDesigns?: StretchVisualDesign[];
 };
 
 type DragState = {
@@ -355,6 +361,9 @@ export const LevelEditorCanvas = ({
   onVoidSpanSelectionChange,
   entityEditingEnabled,
   readOnly = false,
+  levelBackgroundTemplate = null,
+  levelBackgroundPanelDesign = null,
+  levelBackgroundCloudDesigns = [],
 }: LevelEditorCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
@@ -1276,7 +1285,7 @@ export const LevelEditorCanvas = ({
       </div>
       <div
         ref={canvasRef}
-        className={`designer-editor-canvas tool-${activeTool} ${readOnly ? "read-only" : ""}`}
+        className={`designer-editor-canvas tool-${activeTool} ${readOnly ? "read-only" : ""}${levelBackgroundTemplate ? " has-level-background" : ""}`}
         style={{
           aspectRatio: `${levelData.world.width} / ${levelData.world.height}`,
           overscrollBehavior: isZoomed ? "contain" : "auto",
@@ -1299,6 +1308,15 @@ export const LevelEditorCanvas = ({
             transform: `translate(${canvasViewport.panX}px, ${canvasViewport.panY}px) scale(${canvasViewport.zoom})`,
           }}
         >
+          {levelBackgroundTemplate ? (
+            <LevelBackgroundStageLayer
+              template={levelBackgroundTemplate}
+              panelBackgroundDesign={levelBackgroundPanelDesign}
+              cloudPatternDesigns={levelBackgroundCloudDesigns}
+              width={levelData.world.width}
+              height={levelData.world.height}
+            />
+          ) : null}
           {gridVisible ? (
             <div
               className="designer-grid-overlay"

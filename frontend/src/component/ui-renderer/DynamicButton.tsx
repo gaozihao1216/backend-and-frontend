@@ -1,4 +1,8 @@
+import type { PointerEvent } from "react";
 import type { ButtonComponent } from "../../objects/ui-customization/ui-customization-objects.js";
+import {
+  COMPONENT_RESIZE_HANDLES,
+} from "../../lib/component-position-adjust.js";
 import {
   getButtonStateHasPatternLayers,
   normalizeButtonStatePatternLayers,
@@ -14,13 +18,14 @@ import {
   LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
 } from "../../lib/level-node-button-format.js";
 import {
-  getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
   getButtonTextScaleStyle,
   getComponentStyle,
   getPositionStyle,
+  getTemplateButtonShellStyle,
   interpolatePreviewText,
 } from "./ui-renderer-utils.js";
+import { ProcessedTemplateBase } from "./ProcessedTemplateImage.js";
 
 type DynamicButtonProps = {
   button: ButtonComponent;
@@ -30,7 +35,11 @@ type DynamicButtonProps = {
 export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   const uiData = context.uiRuntime?.uiData ?? {};
   const activeState = resolveActiveButtonState(button, uiData);
-  const label = interpolatePreviewText(activeState?.label ?? button.label, context.previewUser);
+  const label = interpolatePreviewText(
+    activeState?.label ?? button.label,
+    context.previewUser,
+    context.uiRuntime?.uiData,
+  );
   const icon = activeState?.icon ?? activeState?.patternTemplateId ?? button.icon;
   const stateStyle = activeState?.style;
   const activeBaseDesign = activeState?.baseDesign ?? button.baseDesign;
@@ -40,13 +49,32 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   const isActivePanelTrigger = button.action.type === "openPanel" && context.openPanelIds.has(button.action.panelId);
   const shouldShowContent = !button.imageDesign?.outputDataUrl
     && !(isPatternContent && activeState && getButtonStateHasPatternLayers(activeState));
-  const actionDisabled = isButtonActionDisabled(button, activeState)
-    || button.action.type === "openModal"
-    || (button.action.type === "apiAction" && !context.uiRuntime);
-  const isLevelNodeButton = getLevelSuffixFromNodeButton(button) != null;
+  const levelSuffix = getLevelSuffixFromNodeButton(button);
+  const layoutEdit = context.levelMapLayoutEdit;
+  const pathEdit = context.levelMapPathEdit;
+  const inLayoutEdit = Boolean(layoutEdit?.enabled && levelSuffix);
+  const inPathConnect = Boolean(pathEdit?.enabled && levelSuffix && pathEdit.connectFromSuffix !== null);
+  const isLayoutSelected = inLayoutEdit && layoutEdit?.selectedLevelSuffix === levelSuffix;
+  const isPathConnectSource = inPathConnect && pathEdit?.connectFromSuffix === levelSuffix;
+  const actionDisabled = inLayoutEdit || inPathConnect
+    ? false
+    : isButtonActionDisabled(button, activeState)
+      || button.action.type === "openModal"
+      || (button.action.type === "apiAction" && !context.uiRuntime);
+  const isLevelNodeButton = levelSuffix != null;
   const mergedButtonStyle = { ...button.style, ...stateStyle };
 
   const handleClick = () => {
+    if (inPathConnect && levelSuffix) {
+      pathEdit?.onConnectNode(levelSuffix);
+      return;
+    }
+
+    if (inLayoutEdit && levelSuffix) {
+      layoutEdit?.onSelect(levelSuffix);
+      return;
+    }
+
     switch (button.action.type) {
       case "navigate":
         context.onNavigate(button.action.targetPath);
@@ -69,10 +97,27 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
     }
   };
 
+  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!inLayoutEdit || !levelSuffix || inPathConnect || event.button !== 0) {
+      return;
+    }
+
+    if ((event.target as HTMLElement).closest("[data-level-map-resize-handle]")) {
+      return;
+    }
+
+    const wasSelected = layoutEdit?.selectedLevelSuffix === levelSuffix;
+    layoutEdit?.onSelect(levelSuffix);
+
+    if (wasSelected) {
+      layoutEdit?.onBeginMove(levelSuffix, event);
+    }
+  };
+
   return (
     <button
       type="button"
-      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${activeState?.baseTemplateId ?? "rounded"} pattern-${activeState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}`}
+      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${activeState?.baseTemplateId ?? "rounded"} pattern-${activeState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}${activeBaseDesign ? " uses-template-base" : ""}${isLayoutSelected ? " level-map-layout-selected" : ""}${inLayoutEdit ? " level-map-layout-editable" : ""}${isPathConnectSource ? " level-map-path-connect-source" : ""}${inPathConnect && pathEdit?.connectFromSuffix ? " level-map-path-connect-target" : ""}`}
       style={{
         ...getPositionStyle(button.position),
         ...getComponentStyle(button.style),
@@ -82,20 +127,15 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
           mergedButtonStyle,
           isLevelNodeButton ? { maxFontSize: LEVEL_NODE_BUTTON_MAX_FONT_SIZE } : undefined,
         ),
-        ...(activeBaseDesign ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 } : {}),
+        ...(activeBaseDesign ? getTemplateButtonShellStyle() : {}),
       }}
       onClick={handleClick}
+      onPointerDown={inLayoutEdit ? handlePointerDown : undefined}
       disabled={actionDisabled}
       title={button.action.type === "openModal" ? "openModal 暂未实现" : undefined}
     >
       {activeBaseDesign ? (
-        <span
-          className="dynamic-ui-button-base"
-          style={getButtonBaseDesignStyle(activeBaseDesign)}
-          aria-hidden="true"
-        >
-          {activeBaseDesign.scalingMode === "fixedAspect" ? <img src={activeBaseDesign.sourceDataUrl} alt="" /> : null}
-        </span>
+        <ProcessedTemplateBase baseDesign={activeBaseDesign} />
       ) : null}
       {button.imageDesign ? (
         <span
@@ -112,6 +152,22 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
           {icon ? <span className="dynamic-ui-button-icon">{icon}</span> : null}
           <span>{label}</span>
         </span>
+      ) : null}
+      {isLayoutSelected && layoutEdit && levelSuffix ? (
+        <>
+          {COMPONENT_RESIZE_HANDLES.map((handle) => (
+            <span
+              key={handle}
+              className={`level-map-layout-handle page-builder-corner ${handle}`}
+              data-level-map-resize-handle={handle}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                layoutEdit.onBeginResize(levelSuffix, handle, event);
+              }}
+            />
+          ))}
+        </>
       ) : null}
     </button>
   );

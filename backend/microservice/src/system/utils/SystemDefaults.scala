@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.time.Instant
 import microservice.auth.tables.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
-import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable, SubmissionTable}
+import microservice.level.tables.{CommentTable, FavoriteTable, LevelSlotAssignmentTable, LevelTable, RatingTable, SubmissionTable}
 import microservice.routes.ApiRouter
 import microservice.ui.tables.{ButtonTemplateTable, StretchVisualTemplateTable, UiPageTable}
 import org.http4s.HttpRoutes
@@ -39,6 +39,7 @@ object SystemDefaults {
         UserTable.initialize(connection)
         LevelTable.initialize(connection)
         SubmissionTable.initialize(connection)
+        LevelSlotAssignmentTable.initialize(connection)
         RatingTable.initialize(connection)
         CommentTable.initialize(connection)
         FavoriteTable.initialize(connection)

@@ -9,7 +9,8 @@ final case class LevelData(
   terrain: Option[LevelTerrain],
   birdInventory: BirdInventory,
   obstacles: List[LevelObstacle],
-  enemies: List[LevelEnemy]
+  enemies: List[LevelEnemy],
+  backgroundTemplateId: Option[String] = None
 )
 
 object LevelData {

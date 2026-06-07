@@ -8,6 +8,7 @@ import {
   normalizeButtonStatePatternLayers,
   usesPatternLayerImage,
 } from "../../lib/button-pattern-layers.js";
+import { ProcessedTemplateBackground } from "./ProcessedTemplateImage.js";
 
 type ButtonPatternLayersProps = {
   state: Pick<ButtonStateOption, "patternDesign" | "patternLayers" | "label" | "style">;
@@ -50,13 +51,13 @@ const ButtonPatternLayerView = ({ layer, stackIndex, label, stateStyle }: Button
       style={frameStyle}
       aria-hidden="true"
     >
-      {usesImage ? (
-        <span
+      {usesImage && layer.design ? (
+        <ProcessedTemplateBackground
+          sourceDataUrl={layer.design.sourceDataUrl}
           className="dynamic-ui-button-pattern"
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url("${layer.design.sourceDataUrl}")`,
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             backgroundSize: "100% 100%",

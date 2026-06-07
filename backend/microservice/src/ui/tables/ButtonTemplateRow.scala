@@ -6,6 +6,7 @@ final case class ButtonTemplateRow(
   id: String,
   name: String,
   sourceDataUrl: String,
+  category: String,
   scalingMode: ButtonTemplateScalingMode,
   slice: ButtonTemplateSlice,
   createdAt: String,

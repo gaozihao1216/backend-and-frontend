@@ -11,9 +11,8 @@ import {
   usesPatternLayerImage,
   type ButtonPatternLayerDraft,
 } from "../../lib/button-pattern-layers.js";
-import {
-  getButtonBaseDesignStyle,
-} from "../ui-renderer/ui-renderer-utils.js";
+import { getTemplateButtonShellStyle } from "../ui-renderer/ui-renderer-utils.js";
+import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../ui-renderer/ProcessedTemplateImage.js";
 import {
   LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
   type LevelNodeSharedButtonDesign,
@@ -33,7 +32,7 @@ export const getButtonStateTemplatePreviewStyle = (
 ): CSSProperties => ({
   ...(positionStyle ?? {}),
   ...(state.baseDesign
-    ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 }
+    ? getTemplateButtonShellStyle()
     : {
         backgroundColor: state.backgroundColor,
         color: state.textColor,
@@ -50,15 +49,7 @@ export const renderButtonStateTemplatePreviewLayers = (
   return (
     <>
       {state.baseDesign ? (
-        <span
-          className="dynamic-ui-button-base"
-          style={getButtonBaseDesignStyle(state.baseDesign)}
-          aria-hidden="true"
-        >
-          {state.baseDesign.scalingMode === "fixedAspect" ? (
-            <img src={state.baseDesign.sourceDataUrl} alt="" />
-          ) : null}
-        </span>
+        <ProcessedTemplateBase baseDesign={state.baseDesign} />
       ) : null}
       {layers.map((layer, index) => {
         if (!layer.design && layer.kind !== "artText") {
@@ -76,16 +67,24 @@ export const renderButtonStateTemplatePreviewLayers = (
             style={usesImage ? getPatternLayerFrameBoxStyle(frame, index) : getArtTextLayerFrameBoxStyle(frame, index)}
             aria-hidden="true"
           >
-            {usesImage ? (
+            {usesImage && layer.design ? (
+              <ProcessedTemplateBackground
+                sourceDataUrl={layer.design.sourceDataUrl}
+                className="dynamic-ui-button-pattern"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "100% 100%",
+                }}
+              />
+            ) : usesImage ? (
               <span
                 className="dynamic-ui-button-pattern"
                 style={{
                   position: "absolute",
                   inset: 0,
-                  backgroundImage: layer.design ? `url("${layer.design.sourceDataUrl}")` : undefined,
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "100% 100%",
                 }}
               />
             ) : (

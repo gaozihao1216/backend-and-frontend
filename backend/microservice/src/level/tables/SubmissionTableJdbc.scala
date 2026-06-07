@@ -10,6 +10,9 @@ private[tables] object SubmissionTableJdbc {
   def listPending(connection: Connection): Vector[SubmissionRow] =
     SubmissionTableJdbcRead.listPending(connection)
 
+  def listApproved(connection: Connection): Vector[SubmissionRow] =
+    SubmissionTableJdbcRead.listApproved(connection)
+
   def hasPendingForLevel(connection: Connection, levelId: String): Boolean =
     SubmissionTableJdbcRead.hasPendingForLevel(connection, levelId)
 

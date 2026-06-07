@@ -1,12 +1,14 @@
 package microservice.ui.api.buttontemplates
 
 import microservice.infrastructure.http.HttpError
-import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
+import microservice.ui.objects.{ButtonTemplate, ButtonTemplateCategory, UiCustomizationErrors}
 
 private[api] object ButtonTemplateValidation {
   def validate(template: ButtonTemplate): Either[HttpError, Unit] =
     if (template.id.trim.isEmpty || template.name.trim.isEmpty || template.sourceDataUrl.trim.isEmpty) {
       Left(UiCustomizationErrors.InvalidButtonTemplate("id, name and sourceDataUrl are required").toHttpError)
+    } else if (!ButtonTemplateCategory.isValid(template.category)) {
+      Left(UiCustomizationErrors.InvalidButtonTemplate(s"Invalid button template category: ${template.category}").toHttpError)
     } else if (!isValidSlice(template)) {
       Left(UiCustomizationErrors.InvalidButtonTemplate("slice values must be finite and non-negative").toHttpError)
     } else {
@@ -17,7 +19,8 @@ private[api] object ButtonTemplateValidation {
     template.copy(
       id = template.id.trim,
       name = template.name.trim,
-      sourceDataUrl = template.sourceDataUrl.trim
+      sourceDataUrl = template.sourceDataUrl.trim,
+      category = template.category.trim
     )
 
   private def isValidSlice(template: ButtonTemplate): Boolean = {

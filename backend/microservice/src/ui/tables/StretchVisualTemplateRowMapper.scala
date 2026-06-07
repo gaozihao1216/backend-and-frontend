@@ -9,6 +9,7 @@ object StretchVisualTemplateRowMapper {
       name = row.name,
       sourceDataUrl = row.sourceDataUrl,
       kind = row.kind,
+      category = row.category,
       createdAt = Some(row.createdAt),
       updatedAt = Some(row.updatedAt)
     )
@@ -19,6 +20,7 @@ object StretchVisualTemplateRowMapper {
       name = template.name,
       sourceDataUrl = template.sourceDataUrl,
       kind = template.kind,
+      category = template.category,
       createdAt = createdAt,
       updatedAt = updatedAt
     )

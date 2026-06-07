@@ -37,6 +37,7 @@ export const routeTrees: Record<UiEndpoint, RouteNode> = {
     path: "/",
     children: [
       { pageId: "shared.profile", label: "个人主页", path: "/own_page" },
+      { pageId: "designer.portfolio", label: "作品集", path: "/designer/portfolio" },
       {
         pageId: "designer.design",
         label: "创造地图",
@@ -91,6 +92,11 @@ export const routeTrees: Record<UiEndpoint, RouteNode> = {
             pageId: "director.levelInterface",
             label: "关卡界面优化",
             path: "/director_console/level_interface_optimization",
+          },
+          {
+            pageId: "director.levelAssignment",
+            label: "关卡细节分配",
+            path: "/director_console/level_assignment",
           },
           {
             pageId: "shared.levelMap",

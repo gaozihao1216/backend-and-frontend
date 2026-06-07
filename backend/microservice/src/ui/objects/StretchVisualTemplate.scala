@@ -26,11 +26,45 @@ final case class StretchVisualTemplate(
   name: String,
   sourceDataUrl: String,
   kind: StretchVisualTemplateKind,
+  category: String,
   createdAt: Option[String],
   updatedAt: Option[String]
 )
 
 object StretchVisualTemplate {
   implicit val encoder: Encoder[StretchVisualTemplate] = deriveEncoder
-  implicit val decoder: Decoder[StretchVisualTemplate] = deriveDecoder
+  implicit val decoder: Decoder[StretchVisualTemplate] =
+    Decoder.instance { cursor =>
+      for {
+        id <- cursor.downField("id").as[String]
+        name <- cursor.downField("name").as[String]
+        sourceDataUrl <- cursor.downField("sourceDataUrl").as[String]
+        kind <- cursor.downField("kind").as[StretchVisualTemplateKind]
+        category <- cursor.downField("category").as[Option[String]]
+        createdAt <- cursor.downField("createdAt").as[Option[String]]
+        updatedAt <- cursor.downField("updatedAt").as[Option[String]]
+      } yield StretchVisualTemplate(
+        id = id,
+        name = name,
+        sourceDataUrl = sourceDataUrl,
+        kind = kind,
+        category = category.getOrElse(defaultCategoryForKind(kind)),
+        createdAt = createdAt,
+        updatedAt = updatedAt
+      )
+    }
+
+  def defaultCategoryForKind(kind: StretchVisualTemplateKind): String =
+    kind match {
+      case StretchVisualTemplateKind.Panel   => PanelTemplateCategory.defaultValue
+      case StretchVisualTemplateKind.Pattern => PatternTemplateCategory.defaultValue
+    }
+
+  def normalizeCategoryForKind(kind: StretchVisualTemplateKind, category: String): String =
+    kind match {
+      case StretchVisualTemplateKind.Panel if PanelTemplateCategory.isValid(category)   => category
+      case StretchVisualTemplateKind.Pattern if PatternTemplateCategory.isValid(category) => category
+      case StretchVisualTemplateKind.Panel                                               => PanelTemplateCategory.defaultValue
+      case StretchVisualTemplateKind.Pattern                                             => PatternTemplateCategory.defaultValue
+    }
 }

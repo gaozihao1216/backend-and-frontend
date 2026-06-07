@@ -8,7 +8,8 @@ import {
   resolveTextArtDesign,
 } from "../../lib/art-text-styles.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
-import { getComponentStyle, getPositionStyle, interpolatePreviewText } from "./ui-renderer-utils.js";
+import { getComponentStyle, getPositionStyle } from "./ui-renderer-utils.js";
+import { resolveTextComponentContent } from "../../lib/dynamic-text-program.js";
 
 type DynamicTextProps = {
   text: TextComponent;
@@ -16,7 +17,11 @@ type DynamicTextProps = {
 };
 
 export const DynamicText = ({ text, context }: DynamicTextProps) => {
-  const content = interpolatePreviewText(text.text, context.previewUser);
+  const content = resolveTextComponentContent(
+    text,
+    context.previewUser,
+    context.uiRuntime?.uiData,
+  );
   const artTextDesign = text.artTextDesign;
   const preset = resolveTextArtDesign(artTextDesign).preset;
   const usesArtText = isArtTextPreset(preset);

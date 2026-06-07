@@ -1,4 +1,4 @@
-import type { ComponentAction, PageConfig } from "./page-config.js";
+import type { ComponentAction, LevelMapPathDesign, PageConfig } from "./page-config.js";
 
 const percentPosition = (x: number, y: number, width: number, height: number) => ({
   unit: "percent" as const,
@@ -112,6 +112,22 @@ export const getLevelScreenPageId = (levelSuffix: string) => `shared.level.${lev
 
 export const getLevelScreenPath = (levelSuffix: string) => `/levels/${levelSuffix}`;
 
+export const createDefaultLevelMapPathDesign = (): LevelMapPathDesign => ({
+  edges: LEVEL_NODE_DEFINITIONS.slice(0, -1).flatMap((level, index) => {
+    const nextLevel = LEVEL_NODE_DEFINITIONS[index + 1];
+    if (!nextLevel) {
+      return [];
+    }
+
+    return [{
+      id: `${level.suffix}-to-${nextLevel.suffix}`,
+      fromSuffix: level.suffix,
+      toSuffix: nextLevel.suffix,
+      style: { templateId: "plank" as const },
+    }];
+  }),
+});
+
 export const createLevelNodeButtonAction = (levelSuffix: string): ComponentAction => ({
   type: "navigate",
   targetPageId: getLevelScreenPageId(levelSuffix),
@@ -138,6 +154,7 @@ export const createLevelMapStageComponents = (prefix: string): PageConfig["compo
         borderRadius: 14,
       },
       decoration: getDefaultLevelStageDecoration(),
+      pathDesign: createDefaultLevelMapPathDesign(),
       childComponentIds: LEVEL_NODE_DEFINITIONS.map((level) => componentId(level.suffix)),
     },
     ...LEVEL_NODE_DEFINITIONS.map((level) => ({

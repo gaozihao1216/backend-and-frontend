@@ -11,6 +11,8 @@ export const DynamicPageRenderer = ({
   runtimeUserId,
   previewUiData,
   onNavigate,
+  levelMapLayoutEdit,
+  levelMapPathEdit,
 }: DynamicPageRendererProps) => {
   const [openPanelIds, setOpenPanelIds] = useState<Set<string>>(() => new Set());
   const componentMap = useMemo(() => createComponentMap(page.components), [page.components]);
@@ -42,6 +44,8 @@ export const DynamicPageRenderer = ({
       refreshUiData,
       invokeUiAction,
     },
+    ...(levelMapLayoutEdit ? { levelMapLayoutEdit } : {}),
+    ...(levelMapPathEdit ? { levelMapPathEdit } : {}),
     onNavigate,
     onOpenPanel: (panelId: string) =>
       setOpenPanelIds((current) => {

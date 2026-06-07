@@ -12,6 +12,7 @@ private[tables] object ButtonTemplateTableJdbcSchema {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             source_data_url TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'business',
             scaling_mode TEXT NOT NULL DEFAULT 'fixedAspect',
             slice TEXT NOT NULL,
             created_at TEXT NOT NULL,
@@ -21,6 +22,9 @@ private[tables] object ButtonTemplateTableJdbcSchema {
       )
       statement.executeUpdate(
         "ALTER TABLE ui_button_templates ADD COLUMN IF NOT EXISTS scaling_mode TEXT NOT NULL DEFAULT 'fixedAspect'"
+      )
+      statement.executeUpdate(
+        "ALTER TABLE ui_button_templates ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'business'"
       )
       statement.executeUpdate("CREATE INDEX IF NOT EXISTS ui_button_templates_name_idx ON ui_button_templates(name)")
     } finally {

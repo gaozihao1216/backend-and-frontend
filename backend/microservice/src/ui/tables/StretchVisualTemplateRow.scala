@@ -7,6 +7,7 @@ final case class StretchVisualTemplateRow(
   name: String,
   sourceDataUrl: String,
   kind: StretchVisualTemplateKind,
+  category: String,
   createdAt: String,
   updatedAt: String
 )

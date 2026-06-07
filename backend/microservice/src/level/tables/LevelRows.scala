@@ -46,3 +46,13 @@ final case class SubmissionRow(
   submittedAt: String,
   reviewedAt: Option[String]
 )
+
+final case class LevelSlotAssignmentRow(
+  id: String,
+  levelSuffix: String,
+  submissionId: String,
+  sourceLevelId: String,
+  assignedById: String,
+  assignedAt: String,
+  note: Option[String]
+)

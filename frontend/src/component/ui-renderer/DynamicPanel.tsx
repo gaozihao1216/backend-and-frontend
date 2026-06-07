@@ -3,6 +3,8 @@ import { useVisualAsset } from "../../hook/useVisualAsset.js";
 import { DynamicComponentRenderer } from "./DynamicComponentRenderer.js";
 import type { DynamicPanelProps } from "./ui-renderer-types.js";
 import { getComponentStyle, getPositionStyle, getStretchVisualDesignStyle } from "./ui-renderer-utils.js";
+import { LevelMapPathLayer } from "./LevelMapPathLayer.js";
+import { getDefaultLevelMapPathDesign } from "../../lib/level-map-path.js";
 import type { PageComponent } from "../../objects/ui-customization/ui-customization-objects.js";
 
 const isRenderableChild = (component: PageComponent | undefined): component is PageComponent =>
@@ -39,7 +41,7 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
     }
 
     const target = event.target as HTMLElement;
-    if (target.closest("button, input, textarea, select, a")) {
+    if (target.closest("button, input, textarea, select, a, .level-map-path-layer")) {
       return;
     }
 
@@ -88,6 +90,9 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
       })
     : null;
 
+  const pathDesign = panel.pathDesign ?? (panel.kind === "stage" ? getDefaultLevelMapPathDesign() : undefined);
+  const uiData = context.uiRuntime?.uiData ?? {};
+
   return (
     <section
       className={`dynamic-ui-panel no-header kind-${panel.kind ?? "container"} decoration-${panel.decoration?.templateId ?? "plain"} effect-${panel.effect?.templateId ?? "none"} ${floating ? "floating" : ""}`}
@@ -126,6 +131,18 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
               : undefined
           }
         >
+          {panel.kind === "stage" && pathDesign ? (
+            <LevelMapPathLayer
+              pathDesign={pathDesign}
+              componentMap={context.componentMap}
+              uiData={uiData}
+              contentSize={contentSize}
+              selectedEdgeId={context.levelMapPathEdit?.selectedEdgeId ?? null}
+              {...(context.levelMapPathEdit?.enabled
+                ? { onSelectEdge: (edgeId) => context.levelMapPathEdit?.onSelectEdge(edgeId) }
+                : {})}
+            />
+          ) : null}
           {childComponents.map((component) => (
             <DynamicComponentRenderer
               key={component.id}

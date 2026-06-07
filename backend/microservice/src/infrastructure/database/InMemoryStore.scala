@@ -2,7 +2,7 @@ package microservice.infrastructure.database
 
 import microservice.auth.tables.UserRow
 import microservice.level.objects.Favorite
-import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
+import microservice.level.tables.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
 import microservice.player.runtime.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
 import microservice.ui.tables.{ButtonTemplateRow, StretchVisualTemplateRow, UiPageRow}
 
@@ -13,6 +13,7 @@ object InMemoryStore {
   var comments: Vector[CommentRow] = Vector.empty
   var favorites: Vector[Favorite] = Vector.empty
   var submissions: Vector[SubmissionRow] = Vector.empty
+  var levelSlotAssignments: Vector[LevelSlotAssignmentRow] = Vector.empty
   var uiPages: Vector[UiPageRow] = Vector.empty
   var buttonTemplates: Vector[ButtonTemplateRow] = Vector.empty
   var stretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty
@@ -31,7 +32,8 @@ object InMemoryStore {
     nextSubmissions: Vector[SubmissionRow],
     nextUiPages: Vector[UiPageRow] = Vector.empty,
     nextButtonTemplates: Vector[ButtonTemplateRow] = Vector.empty,
-    nextStretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty
+    nextStretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty,
+    nextLevelSlotAssignments: Vector[LevelSlotAssignmentRow] = Vector.empty
   ): Unit = {
     users = nextUsers
     levels = nextLevels
@@ -42,5 +44,6 @@ object InMemoryStore {
     uiPages = nextUiPages
     buttonTemplates = nextButtonTemplates
     stretchVisualTemplates = nextStretchVisualTemplates
+    levelSlotAssignments = nextLevelSlotAssignments
   }
 }

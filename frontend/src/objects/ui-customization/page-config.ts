@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { nullishToUndefined } from "../system/schema-utils.js";
+import {
+  DynamicTextProgramSchema,
+  TextContentModeSchema,
+} from "./dynamic-text-program.js";
 import { ButtonTemplateSliceSchema } from "./button-template.js";
 
 export const UiEndpointSchema = z.enum(["player", "designer", "admin", "director"]);
@@ -244,6 +248,32 @@ export const PanelContentSizeSchema = z.object({
 });
 export type PanelContentSize = z.infer<typeof PanelContentSizeSchema>;
 
+export const LevelMapPathPointSchema = z.object({
+  x: z.number().min(-25).max(175),
+  y: z.number().min(-25).max(175),
+});
+export type LevelMapPathPoint = z.infer<typeof LevelMapPathPointSchema>;
+
+export const LevelMapPathEdgeStyleTemplateSchema = z.enum(["plank", "rope", "dashed"]);
+export type LevelMapPathEdgeStyleTemplate = z.infer<typeof LevelMapPathEdgeStyleTemplateSchema>;
+
+export const LevelMapPathEdgeSchema = z.object({
+  id: z.string().min(1),
+  fromSuffix: z.string().min(1),
+  toSuffix: z.string().min(1),
+  waypoints: nullishToUndefined(z.array(LevelMapPathPointSchema)),
+  style: nullishToUndefined(z.object({
+    templateId: LevelMapPathEdgeStyleTemplateSchema.default("plank"),
+    width: nullishToUndefined(z.number().positive().max(12)),
+  })),
+});
+export type LevelMapPathEdge = z.infer<typeof LevelMapPathEdgeSchema>;
+
+export const LevelMapPathDesignSchema = z.object({
+  edges: z.array(LevelMapPathEdgeSchema).default([]),
+});
+export type LevelMapPathDesign = z.infer<typeof LevelMapPathDesignSchema>;
+
 export const PanelFloatingSchema = z.object({
   anchorComponentId: z.string().min(1),
   placement: z.enum(["top", "right", "bottom", "left", "center"]),
@@ -263,6 +293,7 @@ export const PanelComponentSchema = z.object({
   decoration: nullishToUndefined(PanelDecorationSchema),
   effect: nullishToUndefined(ComponentVisualEffectSchema),
   contentSize: nullishToUndefined(PanelContentSizeSchema),
+  pathDesign: nullishToUndefined(LevelMapPathDesignSchema),
   floating: nullishToUndefined(PanelFloatingSchema),
   dataSource: nullishToUndefined(UiDataSourceSchema),
   binding: nullishToUndefined(ComponentBindingSchema),
@@ -307,6 +338,8 @@ export const TextComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("text"),
   text: z.string(),
+  textContentMode: nullishToUndefined(TextContentModeSchema),
+  dynamicTextProgram: nullishToUndefined(DynamicTextProgramSchema),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
   artTextDesign: nullishToUndefined(TextArtDesignSchema),

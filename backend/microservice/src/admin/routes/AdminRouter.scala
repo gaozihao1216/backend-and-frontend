@@ -3,7 +3,7 @@ package microservice.admin.routes
 import cats.effect.IO
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{HttpError}
-import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetDirectorPermissionsAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody, TransferDirectorPermissionAPIMessage, TransferDirectorPermissionBody}
+import microservice.admin.api.{DeleteCommentAPIMessage, GetAdminCommentsAPIMessage, GetDirectorPermissionsAPIMessage, GetDirectorLevelAssignmentBoardAPIMessage, GetPendingSubmissionsAPIMessage, ReviewSubmissionAPIMessage, ReviewSubmissionBody, TransferDirectorPermissionAPIMessage, TransferDirectorPermissionBody, AssignLevelSlotAPIMessage, AssignLevelSlotBody, UnassignLevelSlotAPIMessage, AbolishDirectorSubmissionAPIMessage, AbolishDirectorSubmissionBody}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
@@ -77,6 +77,54 @@ object AdminRouter {
               TransferDirectorPermissionAPIMessage(currentUserId, body)
                 .run(databaseSession)
                 .flatMap(result => HttpError.fromEither(result.map(transfer => ApiSuccess(transfer))))
+            }
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ GET -> Root / "director" / "level-assignments" / "board" =>
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            GetDirectorLevelAssignmentBoardAPIMessage(currentUserId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(board => ApiSuccess(board))))
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ POST -> Root / "director" / "level-assignments" / levelSuffix =>
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            req.as[AssignLevelSlotBody].flatMap { body =>
+              AssignLevelSlotAPIMessage(currentUserId, levelSuffix, body)
+                .run(databaseSession)
+                .flatMap(result => HttpError.fromEither(result.map(assignment => ApiSuccess(assignment))))
+            }
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ DELETE -> Root / "director" / "level-assignments" / levelSuffix =>
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            UnassignLevelSlotAPIMessage(currentUserId, levelSuffix)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(assignment => ApiSuccess(assignment))))
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
+      case req @ POST -> Root / "director" / "submissions" / submissionId / "abolish" =>
+        val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        userId match {
+          case Some(currentUserId) =>
+            req.as[AbolishDirectorSubmissionBody].flatMap { body =>
+              AbolishDirectorSubmissionAPIMessage(currentUserId, submissionId, body)
+                .run(databaseSession)
+                .flatMap(result => HttpError.fromEither(result.map(submission => ApiSuccess(submission))))
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))

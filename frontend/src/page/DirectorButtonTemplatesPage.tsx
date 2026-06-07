@@ -7,7 +7,15 @@ import {
 } from "../api/index.js";
 import type { UiButtonTemplate } from "../api/api-contracts.js";
 import { SimpleStretchTemplateSection } from "../component/director/SimpleStretchTemplateSection.js";
+import { TemplateCategoryFilter } from "../component/director/TemplateCategoryFilter.js";
 import { processTemplateImage, readFileAsDataUrl } from "../lib/template-image-utils.js";
+import {
+  BUTTON_TEMPLATE_CATEGORIES,
+  DEFAULT_BUTTON_TEMPLATE_CATEGORY,
+  getButtonTemplateCategoryLabel,
+  normalizeButtonTemplateCategory,
+  type ButtonTemplateCategory,
+} from "../objects/ui-customization/template-category.js";
 
 type DirectorButtonTemplatesPageProps = {
   userId: string;
@@ -22,6 +30,7 @@ type TemplateDraft = {
   id: string;
   name: string;
   sourceDataUrl: string;
+  category: ButtonTemplateCategory;
   scalingMode: "fixedAspect" | "nineSlice";
   slice: {
     top: number;
@@ -90,6 +99,7 @@ const createDefaultDraft = (): TemplateDraft => ({
   id: `button-template-${Date.now()}`,
   name: "新按钮模板",
   sourceDataUrl: defaultTemplateDataUrl,
+  category: DEFAULT_BUTTON_TEMPLATE_CATEGORY,
   scalingMode: "fixedAspect",
   slice: {
     top: 24,
@@ -103,6 +113,7 @@ const createDraftFromTemplate = (template: UiButtonTemplate): TemplateDraft => (
   id: template.id,
   name: template.name,
   sourceDataUrl: template.sourceDataUrl,
+  category: normalizeButtonTemplateCategory(template.category),
   scalingMode: template.scalingMode,
   slice: { ...template.slice },
 });
@@ -111,6 +122,7 @@ const createTemplateFromDraft = (draft: TemplateDraft): UiButtonTemplate => ({
   id: draft.id.trim(),
   name: draft.name.trim(),
   sourceDataUrl: draft.sourceDataUrl,
+  category: draft.category,
   scalingMode: draft.scalingMode,
   slice: {
     top: Number.isFinite(draft.slice.top) ? draft.slice.top : 0,
@@ -218,6 +230,14 @@ export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTe
   });
   const [draggingSlice, setDraggingSlice] = useState<SliceKey | null>(null);
   const [saving, setSaving] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<ButtonTemplateCategory | "all">("all");
+
+  const filteredTemplates = useMemo(
+    () => categoryFilter === "all"
+      ? templates
+      : templates.filter((template) => normalizeButtonTemplateCategory(template.category) === categoryFilter),
+    [categoryFilter, templates],
+  );
 
   const selectedTemplate = useMemo(
     () => editorMode === "update" ? templates.find((template) => template.id === draft.id) ?? null : null,
@@ -532,11 +552,17 @@ export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTe
       {message ? <p className="feedback success">{message}</p> : null}
       {error ? <p className="feedback error">{error}</p> : null}
 
+      <TemplateCategoryFilter
+        categories={BUTTON_TEMPLATE_CATEGORIES}
+        activeCategory={categoryFilter}
+        onChange={setCategoryFilter}
+      />
+
       {loading ? (
         <p className="meta">正在读取按钮模板...</p>
-      ) : templates.length > 0 ? (
+      ) : filteredTemplates.length > 0 ? (
         <div className="button-template-grid">
-          {templates.map((template) => (
+          {filteredTemplates.map((template) => (
             <article key={template.id} className="button-template-card">
               <div className="button-template-preview">
                 <img src={template.sourceDataUrl} alt={template.name} />
@@ -545,6 +571,9 @@ export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTe
                 <div>
                   <strong>{template.name}</strong>
                   <p className="meta">{template.id}</p>
+                  <p className="template-category-badge">
+                    {getButtonTemplateCategoryLabel(normalizeButtonTemplateCategory(template.category))}
+                  </p>
                   <p className="meta">{template.scalingMode === "nineSlice" ? "可压缩模板" : "不可压缩模板"}</p>
                 </div>
                 <div className="button-template-card-actions">
@@ -599,6 +628,24 @@ export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTe
                     value={draft.name}
                     onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
                   />
+                </label>
+                <label className="button-design-field">
+                  <span>模板分类</span>
+                  <select
+                    value={draft.category}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        category: event.target.value as ButtonTemplateCategory,
+                      }))
+                    }
+                  >
+                    {BUTTON_TEMPLATE_CATEGORIES.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="button-design-field">
                   <span>缩放方式</span>

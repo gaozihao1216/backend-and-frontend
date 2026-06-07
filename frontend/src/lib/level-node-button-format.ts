@@ -16,6 +16,12 @@ import {
   getButtonBaseTemplateSelectValue,
   getPatternTemplateSelectValue,
 } from "./director-template-select.js";
+import {
+  LEVEL_NODE_PROGRESS_API_KEY,
+  LEVEL_NODE_PROGRESS_STATE_IDS,
+  createPreviewLevelProgressUiData,
+  type LevelNodeProgressStateId,
+} from "./level-node-progress.js";
 import type {
   ButtonBaseDesign,
   ButtonComponent,
@@ -27,15 +33,18 @@ import type {
   StretchVisualDesign,
 } from "../objects/ui-customization/ui-customization-objects.js";
 
-export const LEVEL_NODE_PROGRESS_API_KEY = "player.levelProgress";
+export {
+  LEVEL_NODE_PROGRESS_API_KEY,
+  LEVEL_NODE_PROGRESS_STATE_IDS,
+  createPreviewLevelProgressUiData,
+  resolveLevelNodeStateFromUiData,
+  resolveLevelNodeProgressState,
+  type LevelNodeProgressStateId,
+} from "./level-node-progress.js";
 
 export const LEVEL_NODE_BUTTON_MAX_FONT_SIZE = 14;
 
-export const LEVEL_NODE_PROGRESS_STATE_IDS = ["locked", "notCleared", "cleared"] as const;
-
-export type LevelNodeProgressStateId = typeof LEVEL_NODE_PROGRESS_STATE_IDS[number];
-
-export type LevelNodeSharedButtonDesign = {
+export type LevelNodeStateButtonDesign = {
   baseTemplateValue: string;
   baseDesign?: ButtonBaseDesign;
   contentType: "text" | "pattern";
@@ -50,10 +59,13 @@ export type LevelNodeSharedButtonDesign = {
   textScalePercent: number;
 };
 
+/** @deprecated Use LevelNodeStateButtonDesign */
+export type LevelNodeSharedButtonDesign = LevelNodeStateButtonDesign;
+
 export type LevelNodeButtonLabelMode = "stateOnly" | "levelAndState" | "levelNumberAndState";
 
 export type LevelNodeButtonFormatSettings = {
-  sharedDesign: LevelNodeSharedButtonDesign;
+  stateDesigns: Record<LevelNodeProgressStateId, LevelNodeStateButtonDesign>;
   stateLabels: Record<LevelNodeProgressStateId, string>;
   stateIcons: Record<LevelNodeProgressStateId, string>;
   defaultStateId: LevelNodeProgressStateId;
@@ -70,7 +82,7 @@ export const LEVEL_NODE_PROGRESS_STATE_META: ReadonlyArray<{
   { id: "cleared", name: "已通关", description: "玩家已成功通关该关卡。" },
 ];
 
-export const getDefaultLevelNodeSharedButtonDesign = (): LevelNodeSharedButtonDesign => ({
+export const getDefaultLevelNodeStateButtonDesign = (): LevelNodeStateButtonDesign => ({
   baseTemplateValue: "",
   contentType: "text",
   patternTemplateValue: "",
@@ -83,8 +95,26 @@ export const getDefaultLevelNodeSharedButtonDesign = (): LevelNodeSharedButtonDe
   textScalePercent: 42,
 });
 
+export const getDefaultLevelNodeSharedButtonDesign = getDefaultLevelNodeStateButtonDesign;
+
+const createDefaultStateDesigns = (): Record<LevelNodeProgressStateId, LevelNodeStateButtonDesign> => ({
+  locked: {
+    ...getDefaultLevelNodeStateButtonDesign(),
+    variant: "ghost",
+    backgroundColor: "#4a5568",
+    textColor: "#e2e8f0",
+  },
+  notCleared: getDefaultLevelNodeStateButtonDesign(),
+  cleared: {
+    ...getDefaultLevelNodeStateButtonDesign(),
+    variant: "secondary",
+    backgroundColor: "#1f6b45",
+    textColor: "#f0fff4",
+  },
+});
+
 export const getDefaultLevelNodeButtonFormatSettings = (): LevelNodeButtonFormatSettings => ({
-  sharedDesign: getDefaultLevelNodeSharedButtonDesign(),
+  stateDesigns: createDefaultStateDesigns(),
   stateLabels: {
     locked: "未解锁",
     notCleared: "未通关",
@@ -180,7 +210,7 @@ const buildStateLabel = (
   settings: LevelNodeButtonFormatSettings,
 ): string => formatLevelNodeButtonLabel(levelSuffix, levelLabel, stateId, settings);
 
-const buildSharedComponentStyle = (design: LevelNodeSharedButtonDesign): ComponentStyle => ({
+const buildComponentStyle = (design: LevelNodeStateButtonDesign): ComponentStyle => ({
   variant: design.variant,
   backgroundColor: design.backgroundColor,
   textColor: design.textColor,
@@ -188,13 +218,13 @@ const buildSharedComponentStyle = (design: LevelNodeSharedButtonDesign): Compone
   fontSize: Math.min(LEVEL_NODE_BUTTON_MAX_FONT_SIZE, design.fontSize),
 });
 
-const buildSharedStateOption = (
+const buildStateOption = (
   stateId: LevelNodeProgressStateId,
   levelSuffix: string,
   levelLabel: string,
   settings: LevelNodeButtonFormatSettings,
 ): ButtonStateOption => {
-  const design = settings.sharedDesign;
+  const design = settings.stateDesigns[stateId];
   const contentType = getButtonStateContentType(design);
   const serializedLayers = serializePatternLayersForStateOption(normalizeButtonStatePatternLayerDrafts(design));
   const icon = settings.stateIcons[stateId].trim();
@@ -212,7 +242,7 @@ const buildSharedStateOption = (
           patternDesign: serializedLayers[0]?.design,
         }
       : {}),
-    style: buildSharedComponentStyle(design),
+    style: buildComponentStyle(design),
   };
 };
 
@@ -227,7 +257,7 @@ export const createLevelNodeButtonStateDesign = (
     field: `levels.${levelSuffix}`,
   },
   states: LEVEL_NODE_PROGRESS_STATE_IDS.map((stateId) =>
-    buildSharedStateOption(stateId, levelSuffix, levelLabel, settings),
+    buildStateOption(stateId, levelSuffix, levelLabel, settings),
   ),
 });
 
@@ -245,14 +275,14 @@ const createLevelNodeButtonPatch = (
     return component;
   }
 
-  const sharedStyle = buildSharedComponentStyle(settings.sharedDesign);
+  const shellDesign = settings.stateDesigns.notCleared;
 
   return {
     ...component,
     label: level.label,
     icon: settings.stateIcons.notCleared,
-    ...(settings.sharedDesign.baseDesign ? { baseDesign: settings.sharedDesign.baseDesign } : {}),
-    style: sharedStyle,
+    ...(shellDesign.baseDesign ? { baseDesign: shellDesign.baseDesign } : {}),
+    style: buildComponentStyle(shellDesign),
     stateDesign: createLevelNodeButtonStateDesign(level.suffix, level.label, settings),
   };
 };
@@ -284,38 +314,67 @@ export const syncLevelNodeButtonFormat = (settings: LevelNodeButtonFormatSetting
   return savedConfigs;
 };
 
-const extractSharedDesignFromButton = (button: ButtonComponent): LevelNodeSharedButtonDesign => {
-  const defaults = getDefaultLevelNodeSharedButtonDesign();
-  const sampleState = button.stateDesign?.states[0];
-  const patternLayers = sampleState
-    ? normalizeButtonStatePatternLayerDrafts(sampleState)
-    : defaults.patternLayers;
-  const patternTemplateValue = sampleState && "patternDesign" in sampleState && sampleState.patternDesign
-    ? formatTemplateSelectValue("library", sampleState.patternDesign.templateId)
+const extractStateDesignFromStateOption = (
+  state: ButtonStateOption | undefined,
+  defaults: LevelNodeStateButtonDesign,
+): LevelNodeStateButtonDesign => {
+  if (!state) {
+    return defaults;
+  }
+
+  const patternLayers = normalizeButtonStatePatternLayerDrafts(state);
+  const patternTemplateValue = state.patternDesign
+    ? formatTemplateSelectValue("library", state.patternDesign.templateId)
     : defaults.patternTemplateValue;
 
   return {
-    baseTemplateValue: button.baseDesign
-      ? formatTemplateSelectValue("library", button.baseDesign.templateId)
-      : sampleState?.baseDesign
-        ? formatTemplateSelectValue("library", sampleState.baseDesign.templateId)
-        : defaults.baseTemplateValue,
-    ...(button.baseDesign ?? sampleState?.baseDesign
-      ? { baseDesign: button.baseDesign ?? sampleState?.baseDesign }
-      : {}),
-    contentType: sampleState?.contentType ?? defaults.contentType,
+    baseTemplateValue: state.baseDesign
+      ? formatTemplateSelectValue("library", state.baseDesign.templateId)
+      : defaults.baseTemplateValue,
+    ...(state.baseDesign ? { baseDesign: state.baseDesign } : {}),
+    contentType: state.contentType ?? getButtonStateContentType(state),
     patternTemplateValue,
-    ...(sampleState?.patternDesign ? { patternDesign: sampleState.patternDesign } : {}),
+    ...(state.patternDesign ? { patternDesign: state.patternDesign } : {}),
     patternLayers,
-    variant: button.style?.variant ?? sampleState?.style?.variant ?? defaults.variant,
-    backgroundColor: button.style?.backgroundColor ?? sampleState?.style?.backgroundColor ?? defaults.backgroundColor,
-    textColor: button.style?.textColor ?? sampleState?.style?.textColor ?? defaults.textColor,
-    borderRadius: button.style?.borderRadius ?? sampleState?.style?.borderRadius ?? defaults.borderRadius,
+    variant: state.style?.variant ?? defaults.variant,
+    backgroundColor: state.style?.backgroundColor ?? defaults.backgroundColor,
+    textColor: state.style?.textColor ?? defaults.textColor,
+    borderRadius: state.style?.borderRadius ?? defaults.borderRadius,
     fontSize: Math.min(
       LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
-      button.style?.fontSize ?? sampleState?.style?.fontSize ?? defaults.fontSize,
+      state.style?.fontSize ?? defaults.fontSize,
     ),
     textScalePercent: defaults.textScalePercent,
+  };
+};
+
+const extractStateDesignFromButton = (
+  button: ButtonComponent,
+  stateId?: LevelNodeProgressStateId,
+): LevelNodeStateButtonDesign => {
+  const defaults = getDefaultLevelNodeStateButtonDesign();
+  const stateOption = stateId
+    ? button.stateDesign?.states.find((state: ButtonStateOption) => state.id === stateId)
+    : button.stateDesign?.states[0];
+
+  if (stateOption) {
+    return extractStateDesignFromStateOption(stateOption, defaults);
+  }
+
+  return {
+    ...defaults,
+    ...(button.baseDesign ? {
+      baseDesign: button.baseDesign,
+      baseTemplateValue: formatTemplateSelectValue("library", button.baseDesign.templateId),
+    } : {}),
+    variant: button.style?.variant ?? defaults.variant,
+    backgroundColor: button.style?.backgroundColor ?? defaults.backgroundColor,
+    textColor: button.style?.textColor ?? defaults.textColor,
+    borderRadius: button.style?.borderRadius ?? defaults.borderRadius,
+    fontSize: Math.min(
+      LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
+      button.style?.fontSize ?? defaults.fontSize,
+    ),
   };
 };
 
@@ -367,14 +426,20 @@ const extractSettingsFromButton = (button: ButtonComponent): LevelNodeButtonForm
   const defaults = getDefaultLevelNodeButtonFormatSettings();
   const stateDesign = button.stateDesign;
   if (!stateDesign) {
+    const legacyDesign = extractStateDesignFromButton(button);
     return {
       ...defaults,
-      sharedDesign: extractSharedDesignFromButton(button),
+      stateDesigns: {
+        locked: legacyDesign,
+        notCleared: legacyDesign,
+        cleared: legacyDesign,
+      },
     };
   }
 
   const stateLabels = { ...defaults.stateLabels };
   const stateIcons = { ...defaults.stateIcons };
+  const stateDesigns = { ...defaults.stateDesigns };
 
   stateDesign.states.forEach((state: ButtonStateOption) => {
     if (LEVEL_NODE_PROGRESS_STATE_IDS.includes(state.id as LevelNodeProgressStateId)) {
@@ -385,6 +450,7 @@ const extractSettingsFromButton = (button: ButtonComponent): LevelNodeButtonForm
       if (state.icon) {
         stateIcons[stateId] = state.icon;
       }
+      stateDesigns[stateId] = extractStateDesignFromStateOption(state, defaults.stateDesigns[stateId]);
     }
   });
 
@@ -393,7 +459,7 @@ const extractSettingsFromButton = (button: ButtonComponent): LevelNodeButtonForm
   const labelMode = sampleState ? detectLabelMode(sampleState.label) : "stateOnly";
 
   return {
-    sharedDesign: extractSharedDesignFromButton(button),
+    stateDesigns,
     stateLabels,
     stateIcons,
     defaultStateId: LEVEL_NODE_PROGRESS_STATE_IDS.includes(stateDesign.defaultStateId as LevelNodeProgressStateId)
@@ -419,31 +485,7 @@ export const getLevelNodeButtonFormatFromStore = (): LevelNodeButtonFormatSettin
   return extractSettingsFromButton(button);
 };
 
-export const createPreviewLevelProgressUiData = (
-  previewState: LevelNodeProgressStateId,
-  previewLevelSuffix = LEVEL_NODE_DEFINITIONS[0]?.suffix ?? "level01",
-): Record<string, unknown> => {
-  const previewIndex = LEVEL_NODE_DEFINITIONS.findIndex((level) => level.suffix === previewLevelSuffix);
-  const levels = Object.fromEntries(
-    LEVEL_NODE_DEFINITIONS.map((level, index) => {
-      if (level.suffix === previewLevelSuffix) {
-        return [level.suffix, previewState];
-      }
-
-      if (index < previewIndex) {
-        return [level.suffix, "cleared"];
-      }
-
-      return [level.suffix, "locked"];
-    }),
-  );
-
-  return {
-    [LEVEL_NODE_PROGRESS_API_KEY]: { levels },
-  };
-};
-
-export const getSharedDesignTemplateSelectValues = (design: LevelNodeSharedButtonDesign) => ({
+export const getStateDesignTemplateSelectValues = (design: LevelNodeStateButtonDesign) => ({
   baseTemplateValue: getButtonBaseTemplateSelectValue({
     ...(design.baseTemplateValue ? { baseTemplateValue: design.baseTemplateValue } : {}),
     ...(design.baseDesign ? { baseDesign: design.baseDesign } : {}),
@@ -453,3 +495,75 @@ export const getSharedDesignTemplateSelectValues = (design: LevelNodeSharedButto
     ...(design.patternDesign ? { patternDesign: design.patternDesign } : {}),
   }),
 });
+
+/** @deprecated Use getStateDesignTemplateSelectValues */
+export const getSharedDesignTemplateSelectValues = getStateDesignTemplateSelectValues;
+
+export const updateLevelNodeStateDesign = (
+  settings: LevelNodeButtonFormatSettings,
+  stateId: LevelNodeProgressStateId,
+  patch: Partial<LevelNodeStateButtonDesign>,
+): LevelNodeButtonFormatSettings => ({
+  ...settings,
+  stateDesigns: {
+    ...settings.stateDesigns,
+    [stateId]: {
+      ...settings.stateDesigns[stateId],
+      ...patch,
+    },
+  },
+});
+
+export const copyLevelNodeStateDesign = (
+  settings: LevelNodeButtonFormatSettings,
+  fromStateId: LevelNodeProgressStateId,
+  toStateId: LevelNodeProgressStateId,
+): LevelNodeButtonFormatSettings => ({
+  ...settings,
+  stateDesigns: {
+    ...settings.stateDesigns,
+    [toStateId]: {
+      ...settings.stateDesigns[fromStateId],
+      patternLayers: settings.stateDesigns[fromStateId].patternLayers.map((layer) => ({
+        ...layer,
+        id: `${layer.id}-${Date.now().toString(36)}`,
+        design: layer.design ? { ...layer.design, frame: layer.design.frame ? { ...layer.design.frame } : undefined } : undefined,
+      })),
+      ...(settings.stateDesigns[fromStateId].baseDesign
+        ? { baseDesign: { ...settings.stateDesigns[fromStateId].baseDesign! } }
+        : {}),
+      ...(settings.stateDesigns[fromStateId].patternDesign
+        ? { patternDesign: { ...settings.stateDesigns[fromStateId].patternDesign! } }
+        : {}),
+    },
+  },
+});
+
+export const updateLevelNodePatternLayerFrame = (
+  settings: LevelNodeButtonFormatSettings,
+  stateId: LevelNodeProgressStateId,
+  layerId: string,
+  frame: NonNullable<StretchVisualDesign["frame"]>,
+): LevelNodeButtonFormatSettings => {
+  const design = settings.stateDesigns[stateId];
+  const nextLayers = normalizeButtonStatePatternLayerDrafts(design).map((layer) => {
+    if (layer.id !== layerId) {
+      return layer;
+    }
+
+    const nextDesign = layer.design ?? design.patternDesign ?? {
+      templateId: "layer-adjust",
+      sourceDataUrl: "",
+    };
+
+    return {
+      ...layer,
+      design: {
+        ...nextDesign,
+        frame,
+      },
+    };
+  });
+
+  return updateLevelNodeStateDesign(settings, stateId, { patternLayers: nextLayers });
+};

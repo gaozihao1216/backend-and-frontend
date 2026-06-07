@@ -85,3 +85,22 @@ export const readFileAsDataUrl = (file: File): Promise<string> =>
     reader.onerror = () => reject(new Error("图片读取失败。"));
     reader.readAsDataURL(file);
   });
+
+export const processButtonBaseDesign = async (design: {
+  sourceDataUrl: string;
+  templateId: string;
+  scalingMode: "fixedAspect" | "nineSlice";
+  slice?: { top: number; right: number; bottom: number; left: number };
+}) => ({
+  ...design,
+  sourceDataUrl: await processTemplateImage(design.sourceDataUrl),
+});
+
+export const processStretchVisualDesign = async (design: {
+  templateId: string;
+  sourceDataUrl: string;
+  frame?: { x: number; y: number; width: number; height: number };
+}) => ({
+  ...design,
+  sourceDataUrl: await processTemplateImage(design.sourceDataUrl),
+});

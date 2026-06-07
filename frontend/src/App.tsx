@@ -5,6 +5,8 @@ import { BackendBindingPanel } from "./component/BackendBindingPanel.js";
 import { RoleHomePage } from "./component/RoleHomePage.js";
 import { SettingsPanel } from "./component/SettingsPanel.js";
 import { DesignerHomePage } from "./page/DesignerHomePage.js";
+import { DesignerPortfolioPage } from "./page/DesignerPortfolioPage.js";
+import { DesignerResubmitPage } from "./page/DesignerResubmitPage.js";
 import { DesignerPage } from "./page/DesignerPage/index.js";
 import { AdminPage } from "./page/AdminPage.js";
 import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
@@ -15,6 +17,8 @@ import { DirectorButtonConfigPage } from "./page/DirectorButtonConfigPage.js";
 import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
 import { DirectorPanelCreatePage } from "./page/DirectorPanelCreatePage.js";
 import { DirectorLevelInterfacePage } from "./page/DirectorLevelInterfacePage.js";
+import { DirectorLevelAssignmentPage } from "./page/DirectorLevelAssignmentPage.js";
+import { DirectorLevelBackgroundTemplatesPage } from "./page/DirectorLevelBackgroundTemplatesPage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
@@ -31,6 +35,8 @@ import {
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
 // 这样实现足够轻量，也方便把设计器页面与主页逻辑拆开。
 const DESIGNER_HOME_PATH = "/designer";
+const DESIGNER_PORTFOLIO_PATH = "/designer/portfolio";
+const DESIGNER_RESUBMIT_PATH_PREFIX = "/designer/resubmit/";
 const DESIGNER_DESIGN_PATH = "/designer/design";
 const DESIGNER_SETTINGS_PATH = "/designer/design/settings";
 const DESIGNER_GUIDE_PATH = "/designer/design/design_book";
@@ -44,6 +50,8 @@ const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
 const DIRECTOR_LEVEL_INTERFACE_PATH = "/director_console/level_interface_optimization";
+const DIRECTOR_LEVEL_ASSIGNMENT_PATH = "/director_console/level_assignment";
+const DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH = "/director_console/level_background_templates";
 const LEVEL_SCREEN_PATH_PREFIX = "/levels/";
 const DIRECTOR_BUTTON_TEMPLATES_PATH = "/director_console/ui_customization/button_templates";
 const DYNAMIC_PAGE_PATH = "/dynamic_page";
@@ -81,12 +89,15 @@ export const App = () => {
   }, []);
 
   const navigate = (nextPath: string) => {
+    const nextUrl = new URL(nextPath, window.location.origin);
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    const targetPath = `${nextUrl.pathname}${nextUrl.search}`;
     // 这里显式跳过重复跳转，避免无意义的 history 记录。
-    if (window.location.pathname === nextPath) {
+    if (currentPath === targetPath) {
       return;
     }
 
-    window.history.pushState({}, "", nextPath);
+    window.history.pushState({}, "", targetPath);
     setPathname(readPathname());
     setSearch(readSearch());
   };
@@ -99,6 +110,26 @@ export const App = () => {
           <h2>Designer</h2>
           <p className="panel-copy">当前账号不是设计师，无法访问设计师页面。</p>
         </section>
+      );
+    }
+
+    if (pathname === DESIGNER_PORTFOLIO_PATH) {
+      return (
+        <DesignerPortfolioPage
+          onBack={() => navigate(DESIGNER_HOME_PATH)}
+          onOpenResubmit={(levelId) => navigate(`${DESIGNER_RESUBMIT_PATH_PREFIX}${encodeURIComponent(levelId)}`)}
+          onContinueDesign={(levelId) => navigate(`${DESIGNER_DESIGN_PATH}?levelId=${encodeURIComponent(levelId)}`)}
+        />
+      );
+    }
+
+    if (pathname.startsWith(DESIGNER_RESUBMIT_PATH_PREFIX)) {
+      const levelId = decodeURIComponent(pathname.slice(DESIGNER_RESUBMIT_PATH_PREFIX.length));
+      return (
+        <DesignerResubmitPage
+          levelId={levelId}
+          onBack={() => navigate(DESIGNER_PORTFOLIO_PATH)}
+        />
       );
     }
 
@@ -117,10 +148,14 @@ export const App = () => {
             .slice(DESIGNER_ARCHIVE_PATH_PREFIX.length)
             .replace(DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX, "")
         : undefined;
+      const resumeLevelId = pathname === DESIGNER_DESIGN_PATH
+        ? new URLSearchParams(search).get("levelId") ?? undefined
+        : undefined;
       return (
         <DesignerPage
           // 只有后端已绑定的用户才会携带 apiUserId，这里按需透传。
           {...(user.apiUserId ? { userId: user.apiUserId } : {})}
+          {...(resumeLevelId ? { resumeLevelId } : {})}
           mode={
             isArchiveJsonCheckPath
               ? "archive_json_check"
@@ -154,8 +189,23 @@ export const App = () => {
       );
     }
 
-    return <DesignerHomePage onOpenDesignWindow={() => navigate(DESIGNER_DESIGN_PATH)} />;
+    return (
+      <DesignerHomePage
+        onOpenDesignWindow={() => navigate(DESIGNER_DESIGN_PATH)}
+        onOpenPortfolio={() => navigate(DESIGNER_PORTFOLIO_PATH)}
+      />
+    );
   };
+
+  const isDesignerAppPath =
+    pathname === DESIGNER_HOME_PATH
+    || pathname === DESIGNER_PORTFOLIO_PATH
+    || pathname.startsWith(DESIGNER_RESUBMIT_PATH_PREFIX)
+    || pathname === DESIGNER_DESIGN_PATH
+    || pathname === DESIGNER_SETTINGS_PATH
+    || pathname === DESIGNER_GUIDE_PATH
+    || pathname === DESIGNER_JSON_CHECK_PATH
+    || pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX);
 
   const isDesignerWorkspacePath =
     pathname === DESIGNER_DESIGN_PATH
@@ -334,6 +384,8 @@ export const App = () => {
       || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
       || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
       || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
+      || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
+      || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
     ) {
       if (user.role !== "admin") {
         return (
@@ -350,6 +402,21 @@ export const App = () => {
             userId={apiUserId}
             onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
             onNavigate={navigate}
+          />
+        ));
+      }
+
+      if (pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH) {
+        return renderBoundPage(user, "关卡背景模板", (apiUserId) => (
+          <DirectorLevelBackgroundTemplatesPage userId={apiUserId} onBack={() => navigate(DIRECTOR_CONSOLE_PATH)} />
+        ));
+      }
+
+      if (pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH) {
+        return renderBoundPage(user, "关卡细节分配", (apiUserId) => (
+          <DirectorLevelAssignmentPage
+            userId={apiUserId}
+            onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
           />
         ));
       }
@@ -374,6 +441,8 @@ export const App = () => {
           userId={apiUserId}
           onOpenUiCustomization={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
           onOpenLevelInterfaceOptimization={() => navigate(DIRECTOR_LEVEL_INTERFACE_PATH)}
+          onOpenLevelAssignment={() => navigate(DIRECTOR_LEVEL_ASSIGNMENT_PATH)}
+          onOpenLevelBackgroundTemplates={() => navigate(DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH)}
         />
       ));
     }
@@ -412,12 +481,18 @@ export const App = () => {
           || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
           || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
           || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
+          || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
+          || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
             ? pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
               ? "模板库"
               : pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
                 ? "UI 美化配置"
                 : pathname === DIRECTOR_LEVEL_INTERFACE_PATH
                   ? "关卡界面优化"
+                  : pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
+                    ? "关卡细节分配"
+                    : pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
+                      ? "关卡背景模板"
                   : "总监控制台"
           : "";
 
@@ -450,12 +525,7 @@ export const App = () => {
               </div>
               {standaloneRoute}
             </>
-          ) : pathname === DESIGNER_HOME_PATH
-          || pathname === DESIGNER_DESIGN_PATH
-          || pathname === DESIGNER_SETTINGS_PATH
-          || pathname === DESIGNER_GUIDE_PATH
-          || pathname === DESIGNER_JSON_CHECK_PATH
-          || pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX) ? (
+          ) : isDesignerAppPath ? (
             renderDesignerRoute(currentUser)
           ) : (
             <RoleHomePage
@@ -463,6 +533,7 @@ export const App = () => {
               onOpenSettings={() => setSettingsOpen(true)}
               onUserUpdated={setCurrentUser}
               onOpenDesignerDesign={() => navigate(DESIGNER_DESIGN_PATH)}
+              onOpenDesignerPortfolio={() => navigate(DESIGNER_PORTFOLIO_PATH)}
               onNavigate={navigate}
             />
           )}

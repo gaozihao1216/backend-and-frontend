@@ -9,6 +9,7 @@ import type {
   StretchVisualDesign,
   UiPreviewUser,
 } from "../../objects/ui-customization/ui-customization-objects.js";
+import { buildUiTextRuntimeContext } from "../../lib/ui-text-runtime-context.js";
 import type { ComponentMap } from "./ui-renderer-types.js";
 
 export const createComponentMap = (components: PageComponent[]): ComponentMap =>
@@ -156,6 +157,15 @@ export const getButtonBaseDesignStyle = (baseDesign: ButtonBaseDesign): React.CS
   };
 };
 
+/** Transparent shell when a button uses a library template base instead of flat colors. */
+export const getTemplateButtonShellStyle = (): React.CSSProperties => ({
+  backgroundColor: "transparent",
+  borderColor: "transparent",
+  borderRadius: 0,
+  padding: 0,
+  boxShadow: "none",
+});
+
 export const DEFAULT_STRETCH_VISUAL_FRAME: ButtonImageFrame = {
   x: 0,
   y: 0,
@@ -188,13 +198,23 @@ export const getStretchVisualDesignStyle = (design: StretchVisualDesign): React.
   };
 };
 
-export const interpolatePreviewText = (value: string, previewUser?: UiPreviewUser): string => {
-  if (!previewUser) {
+export const interpolatePreviewText = (
+  value: string,
+  previewUser?: UiPreviewUser,
+  uiData?: Record<string, unknown>,
+): string => {
+  const context = buildUiTextRuntimeContext(previewUser, uiData);
+  if (!context) {
     return value;
   }
 
   return value
-    .replaceAll("{{nickname}}", previewUser.nickname)
-    .replaceAll("{{roleLabel}}", previewUser.roleLabel)
-    .replaceAll("{{apiUserId}}", previewUser.apiUserId);
+    .replaceAll("{{nickname}}", context.nickname)
+    .replaceAll("{{roleLabel}}", context.roleLabel)
+    .replaceAll("{{apiUserId}}", context.apiUserId)
+    .replaceAll("{{roleScope}}", context.roleScope)
+    .replaceAll("{{coins}}", String(context.coins))
+    .replaceAll("{{gems}}", String(context.gems))
+    .replaceAll("{{fragments}}", String(context.fragments))
+    .replaceAll("{{clearedLevelCount}}", String(context.clearedLevelCount));
 };

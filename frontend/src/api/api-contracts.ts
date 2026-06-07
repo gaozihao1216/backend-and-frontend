@@ -19,6 +19,18 @@ import {
 import { BackendUserSchema, type BackendUser } from "../objects/auth/backend-user.js";
 import { DirectorPermissionSummarySchema, type DirectorPermissionSummary as DirectorPermissionSummaryObject } from "../objects/admin/director-permission-summary.js";
 import { DirectorTransferResultSchema, type DirectorTransferResult as DirectorTransferResultObject } from "../objects/admin/director-transfer-result.js";
+import {
+  AssignLevelSlotRequestBodySchema as AssignLevelSlotRequestBodyInputSchema,
+  AbolishDirectorSubmissionRequestBodySchema as AbolishDirectorSubmissionRequestBodyInputSchema,
+  DirectorLevelAssignmentBoardSchema,
+  LevelSlotAssignmentDetailSchema,
+  LevelSlotAssignmentSchema,
+  type AssignLevelSlotRequestBody as AssignLevelSlotRequestBodyObject,
+  type AbolishDirectorSubmissionRequestBody as AbolishDirectorSubmissionRequestBodyObject,
+  type DirectorLevelAssignmentBoard as DirectorLevelAssignmentBoardObject,
+  type LevelSlotAssignment as LevelSlotAssignmentObject,
+  type LevelSlotAssignmentDetail as LevelSlotAssignmentDetailObject,
+} from "../objects/admin/level-slot-assignment.js";
 import { ReviewedSubmissionSchema, type ReviewedSubmission as ReviewedSubmissionObject } from "../objects/admin/reviewed-submission.js";
 import { FavoriteSchema, type Favorite } from "../objects/level/favorite.js";
 import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/favorite-with-level.js";
@@ -63,6 +75,11 @@ export type ReviewedSubmission = ReviewedSubmissionObject;
 export type AdminComment = Comment;
 export type DirectorPermissionSummary = DirectorPermissionSummaryObject;
 export type DirectorTransferResult = DirectorTransferResultObject;
+export type LevelSlotAssignment = LevelSlotAssignmentObject;
+export type LevelSlotAssignmentDetail = LevelSlotAssignmentDetailObject;
+export type DirectorLevelAssignmentBoard = DirectorLevelAssignmentBoardObject;
+export type AssignLevelSlotRequestBody = AssignLevelSlotRequestBodyObject;
+export type AbolishDirectorSubmissionRequestBody = AbolishDirectorSubmissionRequestBodyObject;
 export type ApiUserProfile = UserProfileObject;
 export type UiPageConfig = PageConfigObject;
 export type UiPageComponent = PageComponentObject;
@@ -165,6 +182,24 @@ export const TransferDirectorPermissionRequestBodySchema = z.object({
 });
 export type TransferDirectorPermissionRequestBody = z.infer<typeof TransferDirectorPermissionRequestBodySchema>;
 export const TransferDirectorPermissionResponseDataSchema = DirectorTransferResultSchema;
+
+export const GetDirectorLevelAssignmentBoardRequestQuerySchema = z.object({});
+export const GetDirectorLevelAssignmentBoardResponseDataSchema = DirectorLevelAssignmentBoardSchema;
+
+export const AssignLevelSlotRequestParamsSchema = z.object({
+  levelSuffix: z.string().min(1),
+});
+export const AssignLevelSlotRequestBodySchema = AssignLevelSlotRequestBodyInputSchema;
+export const AssignLevelSlotResponseDataSchema = LevelSlotAssignmentDetailSchema;
+
+export const UnassignLevelSlotRequestParamsSchema = AssignLevelSlotRequestParamsSchema;
+export const UnassignLevelSlotResponseDataSchema = LevelSlotAssignmentSchema;
+
+export const AbolishDirectorSubmissionRequestParamsSchema = z.object({
+  submissionId: z.string().min(1),
+});
+export const AbolishDirectorSubmissionRequestBodySchema = AbolishDirectorSubmissionRequestBodyInputSchema;
+export const AbolishDirectorSubmissionResponseDataSchema = SubmissionWithLevelSchema;
 
 export const ListUiPagesRequestQuerySchema = z.object({
   endpoint: UiEndpointSchema.optional(),

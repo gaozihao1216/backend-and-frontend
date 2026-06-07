@@ -20,6 +20,22 @@ private[tables] object SubmissionTableJdbcRead {
     }
   }
 
+  def listApproved(connection: Connection): Vector[SubmissionRow] = {
+    val statement = connection.prepareStatement(
+      s"""
+        ${SubmissionTableCodec.baseSelect}
+        WHERE status = ?
+        ORDER BY reviewed_at DESC, submitted_at DESC, id ASC
+      """
+    )
+    try {
+      statement.setString(1, SubmissionStatus.Approved.value)
+      rows(statement.executeQuery())
+    } finally {
+      statement.close()
+    }
+  }
+
   def hasPendingForLevel(connection: Connection, levelId: String): Boolean = {
     val statement = connection.prepareStatement(
       """

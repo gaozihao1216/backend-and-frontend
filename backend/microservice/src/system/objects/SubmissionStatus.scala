@@ -10,8 +10,10 @@ object SubmissionStatus {
   case object PendingReview extends SubmissionStatus { override val value: String = "pending_review" }
   case object Approved extends SubmissionStatus { override val value: String = "approved" }
   case object Rejected extends SubmissionStatus { override val value: String = "rejected" }
+  case object Abolished extends SubmissionStatus { override val value: String = "abolished" }
 
-  private val byValue = List(PendingReview, Approved, Rejected).map(status => status.value -> status).toMap
+  private val byValue =
+    List(PendingReview, Approved, Rejected, Abolished).map(status => status.value -> status).toMap
 
   def fromString(value: String): Option[SubmissionStatus] =
     byValue.get(value)

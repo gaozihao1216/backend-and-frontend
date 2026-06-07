@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  normalizeStretchVisualTemplateCategory,
+  type PanelTemplateCategory,
+  type PatternTemplateCategory,
+} from "./template-category.js";
 
 export const StretchVisualTemplateKindSchema = z.enum(["panel", "pattern"]);
 export type StretchVisualTemplateKind = z.infer<typeof StretchVisualTemplateKindSchema>;
@@ -9,5 +14,17 @@ export const StretchVisualTemplateSchema = z.object({
   name: z.string().min(1),
   sourceDataUrl: z.string().min(1),
   kind: StretchVisualTemplateKindSchema,
-});
+  category: z.string().optional(),
+  createdAt: z.string().min(1).optional(),
+  updatedAt: z.string().min(1).optional(),
+}).transform((template) => ({
+  ...template,
+  category: normalizeStretchVisualTemplateCategory(template.kind, template.category),
+}));
 export type StretchVisualTemplate = z.infer<typeof StretchVisualTemplateSchema>;
+export type { PanelTemplateCategory, PatternTemplateCategory };
+
+export const getDefaultStretchVisualTemplateCategory = (
+  kind: StretchVisualTemplateKind,
+): PanelTemplateCategory | PatternTemplateCategory =>
+  normalizeStretchVisualTemplateCategory(kind, undefined);

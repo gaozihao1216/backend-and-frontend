@@ -1,0 +1,20 @@
+package microservice.admin.objects
+
+object LevelSlotCatalog {
+  val supportedSuffixes: List[String] =
+    List(
+      "level01",
+      "level02",
+      "level03",
+      "level04",
+      "level05",
+      "level06",
+      "level07",
+      "level08",
+      "level09",
+      "level10"
+    )
+
+  def isSupported(levelSuffix: String): Boolean =
+    supportedSuffixes.contains(levelSuffix)
+}

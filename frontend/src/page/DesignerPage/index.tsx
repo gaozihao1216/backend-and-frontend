@@ -1,6 +1,8 @@
+import { useEffect, useRef } from "react";
 import { createDefaultLevelInput } from "../../api/index.js";
 import { API_USERS } from "../../lib/config.js";
 import { createDraftLevelSource } from "../../lib/level-repository.js";
+import { getDesignerPortfolioItemById } from "../../lib/designer-portfolio-mock.js";
 import {
   removeEntity,
 } from "../../lib/designer-level.js";
@@ -17,6 +19,7 @@ import { useDesignerLevelSubmission } from "../../hook/designer-page/useDesigner
 import { useDesignerKeyboardActions } from "../../hook/designer-page/useDesignerKeyboardActions.js";
 import { useDesignerGroundActions } from "../../hook/designer-page/useDesignerGroundActions.js";
 import { useDesignerRotationActions } from "../../hook/designer-page/useDesignerRotationActions.js";
+import { useLevelBackgroundTemplateResolution } from "../../hook/useLevelBackgroundTemplateResolution.js";
 import type { DesignerPageProps, DesignerPhase } from "../../objects/designer-page/designer-page-types.js";
 import { ArchivePanel } from "../../component/designer-page/ArchivePanel.js";
 import { DesignerHeader } from "../../component/designer-page/DesignerHeader.js";
@@ -36,6 +39,7 @@ import { GroundPointControls } from "../../component/designer-page/GroundPointCo
 import { DesignerActionBar } from "../../component/designer-page/DesignerActionBar.js";
 import { DesignerGridControls } from "../../component/designer-page/DesignerGridControls.js";
 import { DesignerEntityControls } from "../../component/designer-page/DesignerEntityControls.js";
+import { DesignerLevelBackgroundPanel } from "../../component/designer-page/DesignerLevelBackgroundPanel.js";
 
 const initialDesignerLevelData = createDefaultLevelInput().data;
 
@@ -43,6 +47,7 @@ export const DesignerPage = ({
   userId = API_USERS.designer.id,
   mode = "design",
   archiveBackupId,
+  resumeLevelId,
   onBack,
   onOpenSettingsPage,
   onExitSettingsPage,
@@ -122,6 +127,22 @@ export const DesignerPage = ({
     data: levelData,
     authorId: userId,
   }).level;
+  const {
+    template: levelBackgroundTemplate,
+    panelBackgroundDesign: levelBackgroundPanelDesign,
+    cloudPatternDesigns: levelBackgroundCloudDesigns,
+  } = useLevelBackgroundTemplateResolution(levelData.backgroundTemplateId, userId);
+
+  const handleBackgroundTemplateChange = (backgroundTemplateId: string | undefined) => {
+    applyLevelDataUpdate((current) => {
+      if (!backgroundTemplateId) {
+        const { backgroundTemplateId: _removed, ...rest } = current;
+        return rest;
+      }
+
+      return { ...current, backgroundTemplateId };
+    });
+  };
 
   const resetEditorSelection = () => {
     editor.resetEditorSelection();
@@ -159,6 +180,29 @@ export const DesignerPage = ({
     restoreDraft(draft);
     clearHistory();
   };
+
+  const resumedPortfolioLevelIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!resumeLevelId || mode !== "design" || resumedPortfolioLevelIdRef.current === resumeLevelId) {
+      return;
+    }
+
+    const portfolioItem = getDesignerPortfolioItemById(resumeLevelId);
+    if (!portfolioItem || portfolioItem.status !== "draft") {
+      setError("未找到可继续编辑的草稿关卡。");
+      return;
+    }
+
+    resumedPortfolioLevelIdRef.current = resumeLevelId;
+    restoreDraftAndClearHistory({
+      title: portfolioItem.title,
+      description: portfolioItem.description,
+      selectedTags: portfolioItem.tags.filter((tag): tag is LevelTag => availableTags.includes(tag as LevelTag)),
+      levelData: initialDesignerLevelData,
+    });
+    setMessage(`已打开草稿「${portfolioItem.title}」，可继续编辑。`);
+    setError("");
+  }, [mode, resumeLevelId, setError, setMessage]);
 
   const { designerBackups, handleCreateBackup, handleRestoreBackup } = useDesignerBackupActions({
     title,
@@ -408,6 +452,12 @@ export const DesignerPage = ({
         onToggleTag={toggleTag}
       />
 
+      <DesignerLevelBackgroundPanel
+        userId={userId}
+        selectedTemplateId={levelData.backgroundTemplateId}
+        onSelectTemplate={handleBackgroundTemplateChange}
+      />
+
       {groundEditor.designerPhase === "entities" ? (
         <DesignerEntityControls
           activeTool={editor.activeTool}
@@ -516,6 +566,9 @@ export const DesignerPage = ({
         selectedVoidSpanId={groundEditor.selectedVoidSpanId}
         onVoidSpanSelectionChange={groundEditor.setSelectedVoidSpanId}
         entityEditingEnabled={groundEditor.designerPhase === "entities"}
+        levelBackgroundTemplate={levelBackgroundTemplate}
+        levelBackgroundPanelDesign={levelBackgroundPanelDesign}
+        levelBackgroundCloudDesigns={levelBackgroundCloudDesigns}
       />
 
       <DraftPreviewPanel

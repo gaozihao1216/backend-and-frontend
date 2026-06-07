@@ -14,7 +14,9 @@ private[utils] object SystemSeedData {
       nextRatings = Vector(RatingRow("rating-1", "level-1", "player-1", 4, createdAt, createdAt)),
       nextComments = Vector(CommentRow("comment-1", "level-1", "player-1", "Solid tutorial pacing.", createdAt)),
       nextFavorites = Vector.empty,
-      nextSubmissions = submissions(createdAt, reviewedAt)
+      nextSubmissions = submissions(createdAt, reviewedAt),
+      nextButtonTemplates = SystemUiTemplateSeedData.buttonTemplates(createdAt),
+      nextStretchVisualTemplates = SystemUiTemplateSeedData.stretchVisualTemplates(createdAt)
     )
 
   private def users(createdAt: String): Vector[UserRow] =

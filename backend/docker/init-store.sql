@@ -61,10 +61,21 @@ CREATE TABLE IF NOT EXISTS favorites (
   UNIQUE (level_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS level_slot_assignments (
+  id TEXT PRIMARY KEY,
+  level_suffix TEXT NOT NULL UNIQUE,
+  submission_id TEXT NOT NULL UNIQUE REFERENCES submissions(id),
+  source_level_id TEXT NOT NULL REFERENCES levels(id),
+  assigned_by_id TEXT NOT NULL REFERENCES users(id),
+  assigned_at TEXT NOT NULL,
+  note TEXT
+);
+
 CREATE TABLE IF NOT EXISTS ui_button_templates (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   source_data_url TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'business',
   scaling_mode TEXT NOT NULL DEFAULT 'fixedAspect',
   slice TEXT NOT NULL,
   created_at TEXT NOT NULL,
@@ -78,6 +89,7 @@ CREATE TABLE IF NOT EXISTS ui_stretch_visual_templates (
   name TEXT NOT NULL,
   source_data_url TEXT NOT NULL,
   kind TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'smallPanel',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -85,7 +97,7 @@ CREATE TABLE IF NOT EXISTS ui_stretch_visual_templates (
 CREATE INDEX IF NOT EXISTS ui_stretch_visual_templates_kind_idx ON ui_stretch_visual_templates(kind);
 CREATE INDEX IF NOT EXISTS ui_stretch_visual_templates_name_idx ON ui_stretch_visual_templates(name);
 
-TRUNCATE TABLE ui_stretch_visual_templates, ui_button_templates, favorites, comments, ratings, submissions, levels, users CASCADE;
+TRUNCATE TABLE ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
 
 INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
   ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
@@ -157,3 +169,10 @@ INSERT INTO ratings (id, level_id, player_id, score, created_at, updated_at) VAL
 
 INSERT INTO comments (id, level_id, user_id, content, created_at) VALUES
   ('comment-1', 'level-1', 'player-1', 'Solid tutorial pacing.', '2026-06-03T00:00:00Z');
+
+INSERT INTO ui_button_templates (id, name, source_data_url, category, scaling_mode, slice, created_at, updated_at) VALUES
+  ('btn-demo-primary', '演示按钮底座', 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22360%22%20height%3D%22144%22%20viewBox%3D%220%200%20360%20144%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22button%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237dd3fc%22%2F%3E%3Cstop%20offset%3D%220.52%22%20stop-color%3D%22%232563eb%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231e3a8a%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%22340%22%20height%3D%22124%22%20rx%3D%2234%22%20fill%3D%22url(%23button)%22%2F%3E%3Cpath%20d%3D%22M42%2025h276c18%200%2030%2012%2030%2030v6H12v-6c0-18%2012-30%2030-30z%22%20fill%3D%22rgba(255%2C255%2C255%2C0.28)%22%2F%3E%3Cpath%20d%3D%22M42%20126h276c18%200%2030-12%2030-30v-10H12v10c0%2018%2012%2030%2030%2030z%22%20fill%3D%22rgba(15%2C23%2C42%2C0.2)%22%2F%3E%3C%2Fsvg%3E', 'business', 'fixedAspect', '{"top":24,"right":24,"bottom":24,"left":24}', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
+
+INSERT INTO ui_stretch_visual_templates (id, name, source_data_url, kind, category, created_at, updated_at) VALUES
+  ('panel-demo-surface', '演示面板背景', 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22420%22%20height%3D%22280%22%20viewBox%3D%220%200%20420%20280%22%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%22396%22%20height%3D%22256%22%20rx%3D%2228%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%228%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2228%22%20width%3D%22364%22%20height%3D%2256%22%20rx%3D%2216%22%20fill%3D%22%23dbeafe%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2296%22%20width%3D%22364%22%20height%3D%22156%22%20rx%3D%2220%22%20fill%3D%22%23f8fafc%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E', 'panel', 'levelBackground', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('pattern-demo-star', '演示图案', 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%20viewBox%3D%220%200%20160%20160%22%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%2280%22%20r%3D%2256%22%20fill%3D%22%23fde68a%22%20stroke%3D%22%23f59e0b%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M80%2034l12%2028h29l-23%2018%209%2029-27-17-27%2017%209-29-23-18h29z%22%20fill%3D%22%23f97316%22%2F%3E%3C%2Fsvg%3E', 'pattern', 'button', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
