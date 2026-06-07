@@ -11,3 +11,4 @@ export * from "./ui/button-templates/GetButtonTemplateApi.js";
 export * from "./ui/button-templates/CreateButtonTemplateApi.js";
 export * from "./ui/button-templates/UpdateButtonTemplateApi.js";
 export * from "./ui/button-templates/DeleteButtonTemplateApi.js";
+export * from "./ui/stretch-visual-templates-api.js";

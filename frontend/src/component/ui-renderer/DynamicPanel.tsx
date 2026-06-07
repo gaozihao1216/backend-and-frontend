@@ -1,7 +1,8 @@
 import { useRef } from "react";
+import { useVisualAsset } from "../../hook/useVisualAsset.js";
 import { DynamicComponentRenderer } from "./DynamicComponentRenderer.js";
 import type { DynamicPanelProps } from "./ui-renderer-types.js";
-import { getComponentStyle, getPositionStyle } from "./ui-renderer-utils.js";
+import { getComponentStyle, getPositionStyle, getStretchVisualDesignStyle } from "./ui-renderer-utils.js";
 import type { PageComponent } from "../../objects/ui-customization/ui-customization-objects.js";
 
 const isRenderableChild = (component: PageComponent | undefined): component is PageComponent =>
@@ -75,14 +76,36 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
     }
   };
 
+  const backgroundDesign = panel.decoration?.backgroundDesign;
+  const resolvedBackgroundSource = useVisualAsset(
+    backgroundDesign?.templateId,
+    backgroundDesign?.sourceDataUrl,
+  );
+  const backgroundStyle = backgroundDesign
+    ? getStretchVisualDesignStyle({
+        ...backgroundDesign,
+        sourceDataUrl: resolvedBackgroundSource,
+      })
+    : null;
+
   return (
     <section
       className={`dynamic-ui-panel no-header kind-${panel.kind ?? "container"} decoration-${panel.decoration?.templateId ?? "plain"} effect-${panel.effect?.templateId ?? "none"} ${floating ? "floating" : ""}`}
       style={{
         ...getPositionStyle(panel.position),
         ...getComponentStyle(panel.style),
+        ...(panel.decoration?.accentColor
+          ? { ["--level-stage-accent" as string]: panel.decoration.accentColor }
+          : {}),
       }}
     >
+      {backgroundStyle ? (
+        <span
+          className="dynamic-ui-panel-background"
+          style={backgroundStyle}
+          aria-hidden="true"
+        />
+      ) : null}
       <div
         ref={scrollContainerRef}
         className={`dynamic-ui-panel-content ${contentSize ? "scrollable draggable" : ""}`}

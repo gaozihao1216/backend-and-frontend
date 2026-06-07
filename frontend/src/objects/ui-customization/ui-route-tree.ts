@@ -87,6 +87,16 @@ export const routeTrees: Record<UiEndpoint, RouteNode> = {
             label: "UI 美化配置",
             path: "/director_console/ui_customization",
           },
+          {
+            pageId: "director.levelInterface",
+            label: "关卡界面优化",
+            path: "/director_console/level_interface_optimization",
+          },
+          {
+            pageId: "shared.levelMap",
+            label: "关卡路径地图",
+            path: "/levels/map",
+          },
         ],
       },
     ],

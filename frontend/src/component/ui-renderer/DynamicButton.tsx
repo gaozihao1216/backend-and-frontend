@@ -1,5 +1,18 @@
-import type { ButtonComponent, ButtonStateOption } from "../../objects/ui-customization/ui-customization-objects.js";
+import type { ButtonComponent } from "../../objects/ui-customization/ui-customization-objects.js";
+import {
+  getButtonStateHasPatternLayers,
+  normalizeButtonStatePatternLayers,
+} from "../../lib/button-pattern-layers.js";
+import {
+  isButtonActionDisabled,
+  resolveActiveButtonState,
+} from "../../lib/ui-runtime/resolve-button-state.js";
+import { ButtonPatternLayers } from "./ButtonPatternLayers.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
+import {
+  getLevelSuffixFromNodeButton,
+  LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
+} from "../../lib/level-node-button-format.js";
 import {
   getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
@@ -15,14 +28,23 @@ type DynamicButtonProps = {
 };
 
 export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
-  const defaultState = button.stateDesign?.states.find((state: ButtonStateOption) => state.id === button.stateDesign?.defaultStateId)
-    ?? button.stateDesign?.states[0]
-    ?? null;
-  const label = interpolatePreviewText(defaultState?.label ?? button.label, context.previewUser);
-  const icon = defaultState?.icon ?? defaultState?.patternTemplateId ?? button.icon;
-  const stateStyle = defaultState?.style;
+  const uiData = context.uiRuntime?.uiData ?? {};
+  const activeState = resolveActiveButtonState(button, uiData);
+  const label = interpolatePreviewText(activeState?.label ?? button.label, context.previewUser);
+  const icon = activeState?.icon ?? activeState?.patternTemplateId ?? button.icon;
+  const stateStyle = activeState?.style;
+  const activeBaseDesign = activeState?.baseDesign ?? button.baseDesign;
+  const activePatternLayers = activeState ? normalizeButtonStatePatternLayers(activeState) : [];
+  const isPatternContent = activeState?.contentType === "pattern"
+    || (activeState?.contentType == null && activePatternLayers.length > 0);
   const isActivePanelTrigger = button.action.type === "openPanel" && context.openPanelIds.has(button.action.panelId);
-  const shouldShowContent = !button.imageDesign?.outputDataUrl;
+  const shouldShowContent = !button.imageDesign?.outputDataUrl
+    && !(isPatternContent && activeState && getButtonStateHasPatternLayers(activeState));
+  const actionDisabled = isButtonActionDisabled(button, activeState)
+    || button.action.type === "openModal"
+    || (button.action.type === "apiAction" && !context.uiRuntime);
+  const isLevelNodeButton = getLevelSuffixFromNodeButton(button) != null;
+  const mergedButtonStyle = { ...button.style, ...stateStyle };
 
   const handleClick = () => {
     switch (button.action.type) {
@@ -35,9 +57,14 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
       case "closePanel":
         context.onClosePanel(button.action.panelId ?? "");
         return;
+      case "apiAction":
+        void context.uiRuntime?.invokeUiAction(
+          button.action.apiKey,
+          button.action.params,
+        );
+        return;
       case "openModal":
       case "none":
-      case "apiAction":
         return;
     }
   };
@@ -45,25 +72,29 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   return (
     <button
       type="button"
-      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${defaultState?.baseTemplateId ?? "rounded"} pattern-${defaultState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}`}
+      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${activeState?.baseTemplateId ?? "rounded"} pattern-${activeState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}`}
       style={{
         ...getPositionStyle(button.position),
         ...getComponentStyle(button.style),
         ...getComponentStyle(stateStyle),
-        ...getButtonTextScaleStyle(button.position, button.style),
-        ...(button.baseDesign ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 } : {}),
+        ...getButtonTextScaleStyle(
+          button.position,
+          mergedButtonStyle,
+          isLevelNodeButton ? { maxFontSize: LEVEL_NODE_BUTTON_MAX_FONT_SIZE } : undefined,
+        ),
+        ...(activeBaseDesign ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 } : {}),
       }}
       onClick={handleClick}
-      disabled={button.action.type === "openModal"}
+      disabled={actionDisabled}
       title={button.action.type === "openModal" ? "openModal 暂未实现" : undefined}
     >
-      {button.baseDesign ? (
+      {activeBaseDesign ? (
         <span
           className="dynamic-ui-button-base"
-          style={getButtonBaseDesignStyle(button.baseDesign)}
+          style={getButtonBaseDesignStyle(activeBaseDesign)}
           aria-hidden="true"
         >
-          {button.baseDesign.scalingMode === "fixedAspect" ? <img src={button.baseDesign.sourceDataUrl} alt="" /> : null}
+          {activeBaseDesign.scalingMode === "fixedAspect" ? <img src={activeBaseDesign.sourceDataUrl} alt="" /> : null}
         </span>
       ) : null}
       {button.imageDesign ? (
@@ -72,6 +103,9 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
           style={getButtonImageDesignStyle(button.imageDesign)}
           aria-hidden="true"
         />
+      ) : null}
+      {isPatternContent && activePatternLayers.length > 0 && activeState ? (
+        <ButtonPatternLayers state={activeState} label={label} />
       ) : null}
       {shouldShowContent ? (
         <span className="dynamic-ui-button-content">

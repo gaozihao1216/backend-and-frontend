@@ -13,6 +13,14 @@ import microservice.ui.api.buttontemplates.{
   UpdateButtonTemplateAPIMessage,
   UpdateButtonTemplateBody
 }
+import microservice.ui.api.stretchtemplates.{
+  CreateStretchVisualTemplateAPIMessage,
+  CreateStretchVisualTemplateBody,
+  DeleteStretchVisualTemplateAPIMessage,
+  ListStretchVisualTemplatesAPIMessage,
+  UpdateStretchVisualTemplateAPIMessage,
+  UpdateStretchVisualTemplateBody
+}
 import microservice.ui.api.pagecomponents.{
   CreatePageComponentAPIMessage,
   CreatePageComponentBody,
@@ -29,7 +37,9 @@ import microservice.ui.api.pages.{
   UpdateUiPageAPIMessage,
   UpdateUiPageBody
 }
-import microservice.ui.objects.UiEndpoint
+import microservice.ui.api.panelworkflows.RegisterCheckInPanelRewardsBody
+import microservice.ui.objects.{StretchVisualTemplateKind, UiEndpoint}
+import microservice.player.runtime.{CheckInSlotReward, PlayerWeeklyCheckInService}
 import org.http4s.{HttpRoutes, Status}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
@@ -84,6 +94,70 @@ object UiCustomizationRouter {
       case req @ DELETE -> Root / "button-templates" / templateId =>
         withUserId(req) { userId =>
           DeleteButtonTemplateAPIMessage(userId, templateId)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
+        }
+
+      case req @ GET -> Root / "panel-templates" =>
+        withUserId(req) { userId =>
+          ListStretchVisualTemplatesAPIMessage(userId, StretchVisualTemplateKind.Panel)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(templates => ApiSuccess(templates))))
+        }
+
+      case req @ POST -> Root / "panel-templates" =>
+        withUserId(req) { userId =>
+          req.as[CreateStretchVisualTemplateBody].flatMap { body =>
+            CreateStretchVisualTemplateAPIMessage(userId, StretchVisualTemplateKind.Panel, body)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template)), successStatus = Status.Created))
+          }
+        }
+
+      case req @ PUT -> Root / "panel-templates" / templateId =>
+        withUserId(req) { userId =>
+          req.as[UpdateStretchVisualTemplateBody].flatMap { body =>
+            UpdateStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Panel, body)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
+          }
+        }
+
+      case req @ DELETE -> Root / "panel-templates" / templateId =>
+        withUserId(req) { userId =>
+          DeleteStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Panel)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
+        }
+
+      case req @ GET -> Root / "pattern-templates" =>
+        withUserId(req) { userId =>
+          ListStretchVisualTemplatesAPIMessage(userId, StretchVisualTemplateKind.Pattern)
+            .run(databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(templates => ApiSuccess(templates))))
+        }
+
+      case req @ POST -> Root / "pattern-templates" =>
+        withUserId(req) { userId =>
+          req.as[CreateStretchVisualTemplateBody].flatMap { body =>
+            CreateStretchVisualTemplateAPIMessage(userId, StretchVisualTemplateKind.Pattern, body)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template)), successStatus = Status.Created))
+          }
+        }
+
+      case req @ PUT -> Root / "pattern-templates" / templateId =>
+        withUserId(req) { userId =>
+          req.as[UpdateStretchVisualTemplateBody].flatMap { body =>
+            UpdateStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Pattern, body)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
+          }
+        }
+
+      case req @ DELETE -> Root / "pattern-templates" / templateId =>
+        withUserId(req) { userId =>
+          DeleteStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Pattern)
             .run(databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
         }
@@ -143,6 +217,17 @@ object UiCustomizationRouter {
           DeletePageComponentAPIMessage(userId, pageId, componentId)
             .run(databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
+        }
+
+      case req @ PUT -> Root / "panel-workflows" / panelId / "check-in-rewards" =>
+        withUserId(req) { _ =>
+          req.as[RegisterCheckInPanelRewardsBody].flatMap { body =>
+            PlayerWeeklyCheckInService.registerPanelRewards(
+              panelId,
+              body.slots.map(slot => CheckInSlotReward(slot.coins, slot.gems, slot.fragments))
+            )
+            Ok(ApiSuccess(io.circe.Json.obj("panelId" -> io.circe.Json.fromString(panelId))))
+          }
         }
     }
 

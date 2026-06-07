@@ -3,7 +3,8 @@ package microservice.infrastructure.database
 import microservice.auth.tables.UserRow
 import microservice.level.objects.Favorite
 import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
-import microservice.ui.tables.{ButtonTemplateRow, UiPageRow}
+import microservice.player.runtime.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
+import microservice.ui.tables.{ButtonTemplateRow, StretchVisualTemplateRow, UiPageRow}
 
 object InMemoryStore {
   var users: Vector[UserRow] = Vector.empty
@@ -14,6 +15,12 @@ object InMemoryStore {
   var submissions: Vector[SubmissionRow] = Vector.empty
   var uiPages: Vector[UiPageRow] = Vector.empty
   var buttonTemplates: Vector[ButtonTemplateRow] = Vector.empty
+  var stretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty
+  var playerCheckInStatus: Map[String, String] = Map.empty
+  var playerWallets: Map[String, PlayerWallet] = Map.empty
+  var playerWeeklyCheckIn: Map[String, WeeklyCheckInProgress] = Map.empty
+  var playerLevelProgress: Map[String, Set[String]] = Map.empty
+  var checkInPanelRewards: Map[String, Vector[CheckInSlotReward]] = Map.empty
 
   def reset(
     nextUsers: Vector[UserRow],
@@ -23,7 +30,8 @@ object InMemoryStore {
     nextFavorites: Vector[Favorite],
     nextSubmissions: Vector[SubmissionRow],
     nextUiPages: Vector[UiPageRow] = Vector.empty,
-    nextButtonTemplates: Vector[ButtonTemplateRow] = Vector.empty
+    nextButtonTemplates: Vector[ButtonTemplateRow] = Vector.empty,
+    nextStretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty
   ): Unit = {
     users = nextUsers
     levels = nextLevels
@@ -33,5 +41,6 @@ object InMemoryStore {
     submissions = nextSubmissions
     uiPages = nextUiPages
     buttonTemplates = nextButtonTemplates
+    stretchVisualTemplates = nextStretchVisualTemplates
   }
 }

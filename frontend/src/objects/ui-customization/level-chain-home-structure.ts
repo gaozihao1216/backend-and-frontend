@@ -1,4 +1,13 @@
 import type { ComponentAction, PageConfig } from "./page-config.js";
+import {
+  createLevelNodeButtonAction,
+  getDefaultLevelStageDecoration,
+  LEVEL_NODE_DEFINITIONS,
+} from "./level-map-structure.js";
+import {
+  createLevelNodeButtonStateDesign,
+  getDefaultLevelNodeButtonFormatSettings,
+} from "../../lib/level-node-button-format.js";
 
 const percentPosition = (x: number, y: number, width: number, height: number) => ({
   unit: "percent" as const,
@@ -24,19 +33,6 @@ type CreateLevelChainHomeComponentsInput = {
   actionOptions: LevelChainActionOption[];
 };
 
-const levelNodes = [
-  { suffix: "level01", label: "01 草地训练场", x: 7, y: 22, variant: "primary" as const },
-  { suffix: "level02", label: "02 风桥回旋点", x: 20, y: 42, variant: "primary" as const },
-  { suffix: "level03", label: "03 高塔猪舍", x: 34, y: 24, variant: "ghost" as const },
-  { suffix: "level04", label: "04 玻璃深谷", x: 48, y: 42, variant: "ghost" as const },
-  { suffix: "level05", label: "05 双城核心", x: 62, y: 24, variant: "ghost" as const },
-  { suffix: "level06", label: "06 暮色仓场", x: 78, y: 42, variant: "ghost" as const },
-  { suffix: "level07", label: "07 碎岩坡道", x: 36, y: 66, variant: "ghost" as const },
-  { suffix: "level08", label: "08 寒雾驿站", x: 92, y: 66, variant: "ghost" as const },
-  { suffix: "level09", label: "09 熔炉回廊", x: 112, y: 26, variant: "ghost" as const },
-  { suffix: "level10", label: "10 终章观测塔", x: 126, y: 46, variant: "ghost" as const },
-];
-
 export const createLevelChainHomeComponents = ({
   prefix,
   title,
@@ -45,6 +41,7 @@ export const createLevelChainHomeComponents = ({
   actionOptions,
 }: CreateLevelChainHomeComponentsInput): PageConfig["components"] => {
   const componentId = (suffix: string) => `${prefix}.${suffix}`;
+  const buttonFormat = getDefaultLevelNodeButtonFormatSettings();
   const actionOptionIds = actionOptions.map((option) => componentId(`action.${option.id}`));
 
   return [
@@ -137,19 +134,28 @@ export const createLevelChainHomeComponents = ({
         heightPercent: 125,
       },
       style: {
-        backgroundColor: "#f4f9ff",
+        backgroundColor: "transparent",
         borderRadius: 14,
       },
-      childComponentIds: levelNodes.map((level) => componentId(level.suffix)),
+      decoration: getDefaultLevelStageDecoration(),
+      childComponentIds: LEVEL_NODE_DEFINITIONS.map((level) => componentId(level.suffix)),
     },
-    ...levelNodes.map((level) => ({
+    ...LEVEL_NODE_DEFINITIONS.map((level) => ({
       id: componentId(level.suffix),
       type: "button" as const,
       label: level.label,
-      icon: "circle",
+      icon: buttonFormat.stateIcons.notCleared,
       position: percentPosition(level.x, level.y, 16, 12),
-      style: { variant: level.variant, borderRadius: 999 },
-      action: { type: "none" as const },
+      ...(buttonFormat.sharedDesign.baseDesign ? { baseDesign: buttonFormat.sharedDesign.baseDesign } : {}),
+      style: {
+        variant: buttonFormat.sharedDesign.variant,
+        backgroundColor: buttonFormat.sharedDesign.backgroundColor,
+        textColor: buttonFormat.sharedDesign.textColor,
+        borderRadius: buttonFormat.sharedDesign.borderRadius,
+        fontSize: Math.min(14, buttonFormat.sharedDesign.fontSize),
+      },
+      stateDesign: createLevelNodeButtonStateDesign(level.suffix, level.label, buttonFormat),
+      action: createLevelNodeButtonAction(level.suffix),
     })),
     {
       id: componentId("actionButton"),

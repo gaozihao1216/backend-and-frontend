@@ -4,7 +4,7 @@ import cats.effect.IO
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.LevelTag
 
-private[routes] object PlayerLevelRouteSupport {
+private[microservice] object PlayerLevelRouteSupport {
   def currentUserId(req: org.http4s.Request[IO]): Option[String] =
     req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
 

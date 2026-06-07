@@ -6,7 +6,7 @@ import microservice.auth.tables.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelTable, RatingTable, SubmissionTable}
 import microservice.routes.ApiRouter
-import microservice.ui.tables.{ButtonTemplateTable, UiPageTable}
+import microservice.ui.tables.{ButtonTemplateTable, StretchVisualTemplateTable, UiPageTable}
 import org.http4s.HttpRoutes
 
 object SystemDefaults {
@@ -44,6 +44,7 @@ object SystemDefaults {
         FavoriteTable.initialize(connection)
         UiPageTable.initialize(connection)
         ButtonTemplateTable.initialize(connection)
+        StretchVisualTemplateTable.initialize(connection)
       }
     }
 }

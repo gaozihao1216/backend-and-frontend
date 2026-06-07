@@ -1,10 +1,12 @@
 import type {
   ButtonBaseDesign,
   ButtonImageDesign,
+  ButtonImageFrame,
   ComponentPosition,
   ComponentStyle,
   PanelComponent,
   PageComponent,
+  StretchVisualDesign,
   UiPreviewUser,
 } from "../../objects/ui-customization/ui-customization-objects.js";
 import type { ComponentMap } from "./ui-renderer-types.js";
@@ -70,20 +72,27 @@ export const getComponentStyle = (style?: ComponentStyle): React.CSSProperties =
 export const getButtonTextScaleStyle = (
   position: ComponentPosition,
   style?: ComponentStyle,
+  options?: { maxFontSize?: number },
 ): React.CSSProperties => {
+  const maxFontSize = options?.maxFontSize ?? 42;
+
   if (typeof style?.textScalePercent === "number") {
     if (position.unit === "px") {
       return {
-        fontSize: `${Math.max(8, (position.height * style.textScalePercent) / 100)}px`,
+        fontSize: `${Math.min(maxFontSize, Math.max(8, (position.height * style.textScalePercent) / 100))}px`,
       };
     }
 
     return {
-      fontSize: `clamp(8px, ${(position.height * style.textScalePercent) / 100}cqh, 42px)`,
+      fontSize: `clamp(8px, ${(position.height * style.textScalePercent) / 100}cqh, ${maxFontSize}px)`,
     };
   }
 
-  return typeof style?.fontSize === "number" ? { fontSize: `${style.fontSize}px` } : {};
+  if (typeof style?.fontSize === "number") {
+    return { fontSize: `${Math.min(maxFontSize, style.fontSize)}px` };
+  }
+
+  return {};
 };
 
 export const getButtonImageDesignStyle = (imageDesign: ButtonImageDesign): React.CSSProperties => {
@@ -144,6 +153,38 @@ export const getButtonBaseDesignStyle = (baseDesign: ButtonBaseDesign): React.CS
 
   return {
     inset: 0,
+  };
+};
+
+export const DEFAULT_STRETCH_VISUAL_FRAME: ButtonImageFrame = {
+  x: 0,
+  y: 0,
+  width: 100,
+  height: 100,
+};
+
+export const getStretchVisualDesignStyle = (design: StretchVisualDesign): React.CSSProperties => {
+  if (!design.sourceDataUrl) {
+    return {};
+  }
+
+  const baseStyle: React.CSSProperties = {
+    backgroundImage: `url("${design.sourceDataUrl}")`,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "100% 100%",
+  };
+
+  if (!design.frame) {
+    return baseStyle;
+  }
+
+  return {
+    ...baseStyle,
+    left: `${design.frame.x}%`,
+    top: `${design.frame.y}%`,
+    width: `${design.frame.width}%`,
+    height: `${design.frame.height}%`,
   };
 };
 

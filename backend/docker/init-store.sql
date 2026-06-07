@@ -73,7 +73,19 @@ CREATE TABLE IF NOT EXISTS ui_button_templates (
 
 CREATE INDEX IF NOT EXISTS ui_button_templates_name_idx ON ui_button_templates(name);
 
-TRUNCATE TABLE ui_button_templates, favorites, comments, ratings, submissions, levels, users CASCADE;
+CREATE TABLE IF NOT EXISTS ui_stretch_visual_templates (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  source_data_url TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ui_stretch_visual_templates_kind_idx ON ui_stretch_visual_templates(kind);
+CREATE INDEX IF NOT EXISTS ui_stretch_visual_templates_name_idx ON ui_stretch_visual_templates(name);
+
+TRUNCATE TABLE ui_stretch_visual_templates, ui_button_templates, favorites, comments, ratings, submissions, levels, users CASCADE;
 
 INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
   ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),

@@ -45,9 +45,48 @@ export const ComponentVisualEffectSchema = z.object({
 });
 export type ComponentVisualEffect = z.infer<typeof ComponentVisualEffectSchema>;
 
+export const ButtonImageFrameSchema = z.object({
+  x: z.number().min(-25).max(125),
+  y: z.number().min(-25).max(125),
+  width: z.number().positive().max(125),
+  height: z.number().positive().max(125),
+});
+export type ButtonImageFrame = z.infer<typeof ButtonImageFrameSchema>;
+
+export const StretchVisualDesignSchema = z.object({
+  templateId: z.string().min(1),
+  sourceDataUrl: nullishToUndefined(z.string().min(1)),
+  frame: nullishToUndefined(ButtonImageFrameSchema),
+});
+export type StretchVisualDesign = z.infer<typeof StretchVisualDesignSchema>;
+
+export const ButtonPatternLayerKindSchema = z.enum(["pattern", "artText"]);
+export type ButtonPatternLayerKind = z.infer<typeof ButtonPatternLayerKindSchema>;
+
+export const ButtonPatternLayerSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  kind: ButtonPatternLayerKindSchema.default("pattern"),
+  design: StretchVisualDesignSchema,
+  artTextLabel: nullishToUndefined(z.string().min(1)),
+});
+export type ButtonPatternLayer = z.infer<typeof ButtonPatternLayerSchema>;
+
 export const PanelDecorationSchema = z.object({
-  templateId: z.enum(["plain", "paper", "reward", "glass", "notice"]).default("plain"),
+  templateId: z.enum([
+    "plain",
+    "paper",
+    "reward",
+    "glass",
+    "notice",
+    "levelSky",
+    "levelGrass",
+    "levelParchment",
+    "levelTwilight",
+    "levelInk",
+  ]).default("plain"),
   accentColor: nullishToUndefined(z.string().min(1)),
+  backgroundDesign: nullishToUndefined(StretchVisualDesignSchema),
 });
 export type PanelDecoration = z.infer<typeof PanelDecorationSchema>;
 
@@ -66,13 +105,35 @@ export const ComponentBindingSchema = z.object({
 });
 export type ComponentBinding = z.infer<typeof ComponentBindingSchema>;
 
+export const PlayerCurrencyRewardSchema = z.object({
+  coins: z.number().int().min(0).default(0),
+  gems: z.number().int().min(0).default(0),
+  fragments: z.number().int().min(0).default(0),
+});
+export type PlayerCurrencyReward = z.infer<typeof PlayerCurrencyRewardSchema>;
+
+export const ButtonBaseDesignSchema = z.object({
+  templateId: z.string().min(1),
+  sourceDataUrl: z.string().min(1),
+  scalingMode: z.enum(["fixedAspect", "nineSlice"]).default("fixedAspect"),
+  slice: ButtonTemplateSliceSchema.optional(),
+});
+export type ButtonBaseDesign = z.infer<typeof ButtonBaseDesignSchema>;
+
+export const ButtonStateContentTypeSchema = z.enum(["text", "pattern"]);
+export type ButtonStateContentType = z.infer<typeof ButtonStateContentTypeSchema>;
+
 export const ButtonStateOptionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   label: z.string().min(1),
+  contentType: nullishToUndefined(ButtonStateContentTypeSchema),
   icon: nullishToUndefined(z.string().min(1)),
   baseTemplateId: nullishToUndefined(z.enum(["rounded", "pill", "beveled", "flat", "glass"])),
   patternTemplateId: nullishToUndefined(z.enum(["none", "gift", "check", "lock", "coin", "calendar", "star"])),
+  baseDesign: nullishToUndefined(ButtonBaseDesignSchema),
+  patternDesign: nullishToUndefined(StretchVisualDesignSchema),
+  patternLayers: nullishToUndefined(z.array(ButtonPatternLayerSchema).min(1)),
   style: ComponentStyleSchema,
 });
 export type ButtonStateOption = z.infer<typeof ButtonStateOptionSchema>;
@@ -80,6 +141,10 @@ export type ButtonStateOption = z.infer<typeof ButtonStateOptionSchema>;
 export const ButtonStateDesignSchema = z.object({
   defaultStateId: z.string().min(1),
   states: z.array(ButtonStateOptionSchema).min(1),
+  stateSource: nullishToUndefined(z.object({
+    apiKey: z.string().min(1),
+    field: z.string().min(1).default("status"),
+  })),
 });
 export type ButtonStateDesign = z.infer<typeof ButtonStateDesignSchema>;
 
@@ -90,14 +155,6 @@ export const ImageCropSchema = z.object({
   height: z.number().positive().max(100),
 });
 export type ImageCrop = z.infer<typeof ImageCropSchema>;
-
-export const ButtonImageFrameSchema = z.object({
-  x: z.number().min(-25).max(125),
-  y: z.number().min(-25).max(125),
-  width: z.number().positive().max(125),
-  height: z.number().positive().max(125),
-});
-export type ButtonImageFrame = z.infer<typeof ButtonImageFrameSchema>;
 
 export const ImagePolygonPointSchema = z.object({
   x: z.number().min(0).max(100),
@@ -117,14 +174,6 @@ export const ButtonImageDesignSchema = z.object({
   outputDataUrl: nullishToUndefined(z.string().min(1)),
 });
 export type ButtonImageDesign = z.infer<typeof ButtonImageDesignSchema>;
-
-export const ButtonBaseDesignSchema = z.object({
-  templateId: z.string().min(1),
-  sourceDataUrl: z.string().min(1),
-  scalingMode: z.enum(["fixedAspect", "nineSlice"]).default("fixedAspect"),
-  slice: ButtonTemplateSliceSchema.optional(),
-});
-export type ButtonBaseDesign = z.infer<typeof ButtonBaseDesignSchema>;
 
 export const NavigateActionSchema = z.object({
   type: z.literal("navigate"),
@@ -179,6 +228,7 @@ export const ButtonComponentSchema = z.object({
   imageDesign: nullishToUndefined(ButtonImageDesignSchema),
   stateDesign: nullishToUndefined(ButtonStateDesignSchema),
   effect: nullishToUndefined(ComponentVisualEffectSchema),
+  rewardGrant: nullishToUndefined(PlayerCurrencyRewardSchema),
   dataSource: nullishToUndefined(UiDataSourceSchema),
   binding: nullishToUndefined(ComponentBindingSchema),
   action: ComponentActionSchema,
@@ -220,12 +270,46 @@ export const PanelComponentSchema = z.object({
 });
 export type PanelComponent = z.infer<typeof PanelComponentSchema>;
 
+export const TextArtPresetSchema = z.enum([
+  "plain",
+  "goldGradient",
+  "inkBrush",
+  "runningScript",
+  "sealCinnabar",
+]);
+export type TextArtPreset = z.infer<typeof TextArtPresetSchema>;
+
+export const TextArtGradientDirectionSchema = z.enum([
+  "toBottom",
+  "toTop",
+  "toRight",
+  "toLeft",
+  "diagonal",
+]);
+export type TextArtGradientDirection = z.infer<typeof TextArtGradientDirectionSchema>;
+
+export const TextArtGradientIntensitySchema = z.enum([
+  "soft",
+  "normal",
+  "strong",
+]);
+export type TextArtGradientIntensity = z.infer<typeof TextArtGradientIntensitySchema>;
+
+export const TextArtDesignSchema = z.object({
+  preset: TextArtPresetSchema.default("goldGradient"),
+  accentColor: nullishToUndefined(z.string().min(1)),
+  gradientDirection: nullishToUndefined(TextArtGradientDirectionSchema),
+  gradientIntensity: nullishToUndefined(TextArtGradientIntensitySchema),
+});
+export type TextArtDesign = z.infer<typeof TextArtDesignSchema>;
+
 export const TextComponentSchema = z.object({
   id: z.string().min(1),
   type: z.literal("text"),
   text: z.string(),
   position: ComponentPositionSchema,
   style: nullishToUndefined(ComponentStyleSchema),
+  artTextDesign: nullishToUndefined(TextArtDesignSchema),
   binding: nullishToUndefined(ComponentBindingSchema),
 });
 export type TextComponent = z.infer<typeof TextComponentSchema>;

@@ -125,7 +125,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
         </div>
         <div className="director-ui-header-actions">
           <button type="button" className="secondary" onClick={() => onNavigate("/director_console/ui_customization/button_templates")}>
-            查看按钮模板
+            查看模板
           </button>
           <button type="button" className="secondary" onClick={() => setManualOpen((current) => !current)}>
             说明书

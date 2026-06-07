@@ -5,10 +5,11 @@ import { getUiPreviewUser } from "../objects/ui-customization/ui-customization-o
 type DynamicPageHostProps = {
   pageId: string | null;
   useDefaultConfig?: boolean | undefined;
+  runtimeUserId?: string | undefined;
   onNavigate: (path: string) => void;
 };
 
-export const DynamicPageHost = ({ pageId, useDefaultConfig = false, onNavigate }: DynamicPageHostProps) => {
+export const DynamicPageHost = ({ pageId, useDefaultConfig = false, runtimeUserId, onNavigate }: DynamicPageHostProps) => {
   const pageConfig = pageId ? (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId)) : null;
   const previewUser = pageConfig ? getUiPreviewUser(pageConfig.roleScope) : null;
 
@@ -60,6 +61,7 @@ export const DynamicPageHost = ({ pageId, useDefaultConfig = false, onNavigate }
         <DynamicPageRenderer
           page={pageConfig}
           previewUser={previewUser ?? undefined}
+          runtimeUserId={runtimeUserId}
           onNavigate={onNavigate}
         />
       </div>

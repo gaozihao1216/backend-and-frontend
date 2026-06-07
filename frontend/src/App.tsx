@@ -14,12 +14,19 @@ import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
 import { DirectorButtonConfigPage } from "./page/DirectorButtonConfigPage.js";
 import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
 import { DirectorPanelCreatePage } from "./page/DirectorPanelCreatePage.js";
+import { DirectorLevelInterfacePage } from "./page/DirectorLevelInterfacePage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { DirectorWorkbenchPage } from "./page/DirectorWorkbenchPage.js";
 import { DirectorUiCustomizationPage } from "./page/DirectorUiCustomizationPage.js";
 import { DynamicPageHost } from "./page/DynamicPageHost.js";
 import { UserProfilePage } from "./page/UserProfilePage.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
+import { compactStoredPageConfigVisualAssets } from "./lib/ui-customization.js";
+import {
+  getLevelScreenPageId,
+  LEVEL_MAP_PAGE_ID,
+  LEVEL_MAP_PATH,
+} from "./objects/ui-customization/level-map-structure.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
 // 这样实现足够轻量，也方便把设计器页面与主页逻辑拆开。
@@ -36,6 +43,8 @@ const PLAYER_SHOP_PATH = "/player_shop";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
+const DIRECTOR_LEVEL_INTERFACE_PATH = "/director_console/level_interface_optimization";
+const LEVEL_SCREEN_PATH_PREFIX = "/levels/";
 const DIRECTOR_BUTTON_TEMPLATES_PATH = "/director_console/ui_customization/button_templates";
 const DYNAMIC_PAGE_PATH = "/dynamic_page";
 const PAGE_BUILDER_UPDATE_SUFFIX = "/update";
@@ -52,6 +61,10 @@ export const App = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pathname, setPathname] = useState(readPathname);
   const [search, setSearch] = useState(readSearch);
+
+  useEffect(() => {
+    void compactStoredPageConfigVisualAssets();
+  }, []);
 
   useEffect(() => {
     // 每次用户变化后立即持久化，避免刷新丢失当前登录角色。
@@ -163,12 +176,39 @@ export const App = () => {
       <BackendBindingPanel title={title} user={user} onBound={setCurrentUser} />
     );
 
+  const resolveLevelDynamicPageId = (path: string): string | null => {
+    if (path === LEVEL_MAP_PATH) {
+      return LEVEL_MAP_PAGE_ID;
+    }
+
+    const levelMatch = path.match(/^\/levels\/(level\d{2})$/);
+    return levelMatch?.[1] ? getLevelScreenPageId(levelMatch[1]) : null;
+  };
+
   const renderStandaloneRoute = (user: AuthUser) => {
+    const levelDynamicPageId = resolveLevelDynamicPageId(pathname);
+    if (levelDynamicPageId) {
+      return (
+        <DynamicPageHost
+          pageId={levelDynamicPageId}
+          runtimeUserId={user.apiUserId ?? undefined}
+          onNavigate={navigate}
+        />
+      );
+    }
+
     if (pathname === DYNAMIC_PAGE_PATH) {
       const searchParams = new URLSearchParams(search);
       const pageId = searchParams.get("pageId") ?? "designer.home";
       const useDefaultConfig = searchParams.get("source") === "default";
-      return <DynamicPageHost pageId={pageId} useDefaultConfig={useDefaultConfig} onNavigate={navigate} />;
+      return (
+        <DynamicPageHost
+          pageId={pageId}
+          useDefaultConfig={useDefaultConfig}
+          runtimeUserId={user.apiUserId ?? undefined}
+          onNavigate={navigate}
+        />
+      );
     }
 
     if (
@@ -190,8 +230,9 @@ export const App = () => {
       const searchParams = new URLSearchParams(search);
       if (pathname.endsWith(PANEL_CREATE_SUFFIX)) {
         const targetPath = pathname.slice(0, -PANEL_CREATE_SUFFIX.length) || "/";
-        return renderBoundPage(user, "创建小面板", () => (
+        return renderBoundPage(user, "创建小面板", (apiUserId) => (
           <DirectorPanelCreatePage
+            userId={apiUserId}
             pageId={pageId}
             targetPath={targetPath}
             parentPanelId={searchParams.get("parentPanelId")}
@@ -288,7 +329,12 @@ export const App = () => {
       return renderBoundPage(user, "提案处理", (apiUserId) => <AdminPage userId={apiUserId} />);
     }
 
-    if (pathname === DIRECTOR_CONSOLE_PATH || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH) {
+    if (
+      pathname === DIRECTOR_CONSOLE_PATH
+      || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
+      || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
+      || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
+    ) {
       if (user.role !== "admin") {
         return (
           <section className="panel">
@@ -298,6 +344,16 @@ export const App = () => {
         );
       }
 
+      if (pathname === DIRECTOR_LEVEL_INTERFACE_PATH) {
+        return renderBoundPage(user, "关卡界面优化", (apiUserId) => (
+          <DirectorLevelInterfacePage
+            userId={apiUserId}
+            onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
+            onNavigate={navigate}
+          />
+        ));
+      }
+
       if (pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
         return renderBoundPage(user, "UI 美化配置", () => (
           <DirectorUiCustomizationPage onNavigate={navigate} />
@@ -305,7 +361,7 @@ export const App = () => {
       }
 
       if (pathname === DIRECTOR_BUTTON_TEMPLATES_PATH) {
-        return renderBoundPage(user, "按钮模板", (apiUserId) => (
+        return renderBoundPage(user, "模板库", (apiUserId) => (
           <DirectorButtonTemplatesPage
             userId={apiUserId}
             onBack={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
@@ -317,6 +373,7 @@ export const App = () => {
         <DirectorWorkbenchPage
           userId={apiUserId}
           onOpenUiCustomization={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
+          onOpenLevelInterfaceOptimization={() => navigate(DIRECTOR_LEVEL_INTERFACE_PATH)}
         />
       ));
     }
@@ -339,6 +396,8 @@ export const App = () => {
         : pathname.endsWith(BUTTON_DESIGN_SUFFIX)
           ? "按钮美化"
           : pathname.endsWith(PANEL_CREATE_SUFFIX) ? "创建小面板" : "页面优化"
+      : pathname.startsWith(LEVEL_SCREEN_PATH_PREFIX)
+        ? "关卡界面"
       : pathname === DYNAMIC_PAGE_PATH
         ? "动态页面"
       : pathname === OWN_PAGE_PATH
@@ -352,9 +411,14 @@ export const App = () => {
           : pathname === DIRECTOR_CONSOLE_PATH
           || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
           || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
+          || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
             ? pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
-              ? "按钮模板"
-              : pathname === DIRECTOR_UI_CUSTOMIZATION_PATH ? "UI 美化配置" : "总监控制台"
+              ? "模板库"
+              : pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
+                ? "UI 美化配置"
+                : pathname === DIRECTOR_LEVEL_INTERFACE_PATH
+                  ? "关卡界面优化"
+                  : "总监控制台"
           : "";
 
   return (

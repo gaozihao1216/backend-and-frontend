@@ -6,12 +6,17 @@ import { syncLocalAdminLevelsFromBackend } from "../lib/auth.js";
 type DirectorWorkbenchPageProps = {
   userId: string;
   onOpenUiCustomization: () => void;
+  onOpenLevelInterfaceOptimization: () => void;
 };
 
 const getTransferCandidateAdmins = (users: User[], currentUserId: string) =>
   users.filter((user) => user.role === "admin" && user.adminLevel === "standard" && user.id !== currentUserId);
 
-export const DirectorWorkbenchPage = ({ userId, onOpenUiCustomization }: DirectorWorkbenchPageProps) => {
+export const DirectorWorkbenchPage = ({
+  userId,
+  onOpenUiCustomization,
+  onOpenLevelInterfaceOptimization,
+}: DirectorWorkbenchPageProps) => {
   const [permissions, setPermissions] = useState<DirectorPermissionSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
@@ -177,7 +182,12 @@ export const DirectorWorkbenchPage = ({ userId, onOpenUiCustomization }: Directo
 
         <section className="feature-card director-option-row">
           <h3>地图界面配置</h3>
-          <p className="panel-copy">预留章节地图、节点样式和玩家路径体验的高级配置入口。</p>
+          <p className="panel-copy">调整各端共用的关卡路径地图背景、路径样式与节点样式。</p>
+          <div className="actions">
+            <button type="button" onClick={onOpenLevelInterfaceOptimization}>
+              进入关卡界面的优化
+            </button>
+          </div>
         </section>
 
         <section className="feature-card director-option-row">

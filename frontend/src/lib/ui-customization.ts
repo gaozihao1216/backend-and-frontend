@@ -2,16 +2,22 @@ import {
   PageConfigSchema,
   getDefaultPageConfigs,
   type PageConfig,
+  type PanelDecoration,
   type UiEndpoint,
 } from "../objects/ui-customization/ui-customization-objects.js";
 import { normalizePageComponentIds } from "../objects/ui-customization/page-config-normalizer.js";
+import { sanitizePageConfigLevelNodeButtons } from "./level-node-button-format.js";
+import { saveVisualAsset } from "./ui-visual-asset-store.js";
 
 const UI_PAGE_CONFIG_STORAGE_KEY = "ugc-level-platform.ui-page-configs.v1";
 
 const canUseStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
 const parsePageConfigs = (value: unknown): PageConfig[] =>
-  PageConfigSchema.array().parse(value).map(normalizePageComponentIds);
+  PageConfigSchema.array()
+    .parse(value)
+    .map(normalizePageComponentIds)
+    .map(sanitizePageConfigLevelNodeButtons);
 
 const getStoredPageConfigs = (): PageConfig[] => {
   if (!canUseStorage()) {
@@ -36,6 +42,70 @@ const persistStoredPageConfigs = (configs: PageConfig[]) => {
   }
 
   window.localStorage.setItem(UI_PAGE_CONFIG_STORAGE_KEY, JSON.stringify(parsePageConfigs(configs)));
+};
+
+const compactStagePanelDecoration = async (decoration: PanelDecoration | undefined): Promise<PanelDecoration | undefined> => {
+  if (!decoration?.backgroundDesign?.sourceDataUrl) {
+    return decoration;
+  }
+
+  await saveVisualAsset(decoration.backgroundDesign.templateId, decoration.backgroundDesign.sourceDataUrl);
+
+  return {
+    ...decoration,
+    backgroundDesign: {
+      templateId: decoration.backgroundDesign.templateId,
+      ...(decoration.backgroundDesign.frame ? { frame: decoration.backgroundDesign.frame } : {}),
+    },
+  };
+};
+
+const compactPageConfigStageBackgrounds = async (config: PageConfig): Promise<PageConfig> => {
+  let changed = false;
+
+  const components = await Promise.all(config.components.map(async (component) => {
+    if (component.type !== "panel" || component.kind !== "stage" || !component.decoration?.backgroundDesign?.sourceDataUrl) {
+      return component;
+    }
+
+    changed = true;
+    const nextDecoration = await compactStagePanelDecoration(component.decoration);
+    return {
+      ...component,
+      ...(nextDecoration ? { decoration: nextDecoration } : {}),
+    };
+  }));
+
+  return changed ? { ...config, components } : config;
+};
+
+export const compactStoredPageConfigVisualAssets = async (): Promise<boolean> => {
+  const storedConfigs = getStoredPageConfigs();
+  if (storedConfigs.length === 0) {
+    return false;
+  }
+
+  const nextStoredConfigs = await Promise.all(
+    storedConfigs.map((config) => compactPageConfigStageBackgrounds(config)),
+  );
+
+  const changed = nextStoredConfigs.some((config, index) => config !== storedConfigs[index]);
+  if (!changed) {
+    return false;
+  }
+
+  try {
+    persistStoredPageConfigs(nextStoredConfigs);
+  } catch (error) {
+    if (!(error instanceof DOMException) || error.name !== "QuotaExceededError" || !canUseStorage()) {
+      throw error;
+    }
+
+    window.localStorage.removeItem(UI_PAGE_CONFIG_STORAGE_KEY);
+    persistStoredPageConfigs(nextStoredConfigs);
+  }
+
+  return true;
 };
 
 const mergePageConfigs = (baseConfigs: PageConfig[], overrideConfigs: PageConfig[]) => {
@@ -68,6 +138,15 @@ export const savePageConfig = (config: PageConfig): PageConfig => {
     parsedConfig,
   ];
 
-  persistStoredPageConfigs(nextStoredConfigs);
+  try {
+    persistStoredPageConfigs(nextStoredConfigs);
+  } catch (error) {
+    if (!(error instanceof DOMException) || error.name !== "QuotaExceededError") {
+      throw error;
+    }
+
+    throw new Error("本地存储空间不足，无法保存页面配置。请先清理浏览器站点数据后重试。");
+  }
+
   return parsedConfig;
 };

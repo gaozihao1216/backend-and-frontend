@@ -6,11 +6,15 @@ import {
   updateButtonTemplate,
 } from "../api/index.js";
 import type { UiButtonTemplate } from "../api/api-contracts.js";
+import { SimpleStretchTemplateSection } from "../component/director/SimpleStretchTemplateSection.js";
+import { processTemplateImage, readFileAsDataUrl } from "../lib/template-image-utils.js";
 
 type DirectorButtonTemplatesPageProps = {
   userId: string;
   onBack: () => void;
 };
+
+type TemplateTab = "button" | "panel" | "pattern";
 
 type EditorMode = "create" | "update";
 
@@ -37,16 +41,6 @@ type ImageBounds = ImageSize & {
   y: number;
 };
 
-const templateBackgroundTolerance = 22;
-
-const isTemplateBackgroundPixel = (red: number, green: number, blue: number, alpha: number): boolean =>
-  alpha <= 8
-  || (
-    red >= 255 - templateBackgroundTolerance
-    && green >= 255 - templateBackgroundTolerance
-    && blue >= 255 - templateBackgroundTolerance
-  );
-
 const defaultTemplateDataUrl = (() => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="360" height="144" viewBox="0 0 360 144">
@@ -64,6 +58,33 @@ const defaultTemplateDataUrl = (() => {
   `.trim();
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 })();
+
+const defaultPanelTemplateDataUrl = (() => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="420" height="280" viewBox="0 0 420 280">
+      <rect x="12" y="12" width="396" height="256" rx="28" fill="#ffffff" stroke="#94a3b8" stroke-width="8"/>
+      <rect x="28" y="28" width="364" height="56" rx="16" fill="#dbeafe"/>
+      <rect x="28" y="96" width="364" height="156" rx="20" fill="#f8fafc" stroke="#cbd5e1" stroke-width="4"/>
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+})();
+
+const defaultPatternTemplateDataUrl = (() => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+      <circle cx="80" cy="80" r="56" fill="#fde68a" stroke="#f59e0b" stroke-width="8"/>
+      <path d="M80 34l12 28h29l-23 18 9 29-27-17-27 17 9-29-23-18h29z" fill="#f97316"/>
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+})();
+
+const templateTabs: Array<{ id: TemplateTab; label: string }> = [
+  { id: "button", label: "按钮模板" },
+  { id: "panel", label: "面板模板" },
+  { id: "pattern", label: "图案模板" },
+];
 
 const createDefaultDraft = (): TemplateDraft => ({
   id: `button-template-${Date.now()}`,
@@ -99,69 +120,15 @@ const createTemplateFromDraft = (draft: TemplateDraft): UiButtonTemplate => ({
   },
 });
 
-const processTemplateImage = async (dataUrl: string): Promise<string> => {
-  const image = new Image();
-  image.src = dataUrl;
-  await image.decode();
+const templateBackgroundTolerance = 22;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-  const context = canvas.getContext("2d");
-  if (!context) {
-    return dataUrl;
-  }
-
-  context.drawImage(image, 0, 0);
-  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = imageData.data;
-  const visited = new Uint8Array(canvas.width * canvas.height);
-  const queue: Array<[number, number]> = [];
-  const enqueue = (x: number, y: number) => {
-    if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) {
-      return;
-    }
-    const pixelIndex = y * canvas.width + x;
-    if (visited[pixelIndex]) {
-      return;
-    }
-    const dataIndex = pixelIndex * 4;
-    const red = pixels[dataIndex] ?? 0;
-    const green = pixels[dataIndex + 1] ?? 0;
-    const blue = pixels[dataIndex + 2] ?? 0;
-    const alpha = pixels[dataIndex + 3] ?? 0;
-    if (!isTemplateBackgroundPixel(red, green, blue, alpha)) {
-      return;
-    }
-    visited[pixelIndex] = 1;
-    queue.push([x, y]);
-  };
-
-  for (let x = 0; x < canvas.width; x += 1) {
-    enqueue(x, 0);
-    enqueue(x, canvas.height - 1);
-  }
-  for (let y = 0; y < canvas.height; y += 1) {
-    enqueue(0, y);
-    enqueue(canvas.width - 1, y);
-  }
-
-  for (let index = 0; index < queue.length; index += 1) {
-    const [x, y] = queue[index] ?? [0, 0];
-    enqueue(x + 1, y);
-    enqueue(x - 1, y);
-    enqueue(x, y + 1);
-    enqueue(x, y - 1);
-  }
-
-  for (let pixelIndex = 0; pixelIndex < visited.length; pixelIndex += 1) {
-    if (visited[pixelIndex]) {
-      pixels[(pixelIndex * 4) + 3] = 0;
-    }
-  }
-  context.putImageData(imageData, 0, 0);
-  return canvas.toDataURL("image/png");
-};
+const isTemplateBackgroundPixel = (red: number, green: number, blue: number, alpha: number): boolean =>
+  alpha <= 8
+  || (
+    red >= 255 - templateBackgroundTolerance
+    && green >= 255 - templateBackgroundTolerance
+    && blue >= 255 - templateBackgroundTolerance
+  );
 
 const detectVisibleImageBounds = async (dataUrl: string): Promise<{ imageSize: ImageSize; bounds: ImageBounds }> => {
   const image = new Image();
@@ -233,21 +200,8 @@ const detectVisibleImageBounds = async (dataUrl: string): Promise<{ imageSize: I
   };
 };
 
-const readFileAsDataUrl = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("图片读取失败。"));
-      }
-    };
-    reader.onerror = () => reject(new Error("图片读取失败。"));
-    reader.readAsDataURL(file);
-  });
-
 export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTemplatesPageProps) => {
+  const [activeTab, setActiveTab] = useState<TemplateTab>("button");
   const [templates, setTemplates] = useState<UiButtonTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -515,19 +469,66 @@ export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTe
     <section className="panel button-template-page">
       <div className="feature-header">
         <div>
-          <h2>按钮模板</h2>
-          <p className="panel-copy">管理可复用的按钮图像模板，模板用于按钮渲染后会锁定按钮宽高比例。</p>
+          <h2>模板库</h2>
+          <p className="panel-copy">管理按钮、面板与图案模板。按钮模板支持九宫格压缩；面板与图案模板统一采用整体拉伸。</p>
         </div>
         <div className="director-ui-header-actions">
           <button type="button" className="secondary" onClick={onBack}>
             返回 UI 美化配置
           </button>
-          <button type="button" onClick={openCreateEditor}>
-            新增模板
-          </button>
+          {activeTab === "button" ? (
+            <button type="button" onClick={openCreateEditor}>
+              新增按钮模板
+            </button>
+          ) : null}
         </div>
       </div>
 
+      <div className="director-template-tabs" role="tablist" aria-label="模板类型">
+        {templateTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={activeTab === tab.id ? "selected" : ""}
+            onClick={() => {
+              setActiveTab(tab.id);
+              setMessage("");
+              setError("");
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "panel" ? (
+        <SimpleStretchTemplateSection
+          userId={userId}
+          kind="panel"
+          title="面板模板"
+          description="用于面板背景与装饰，统一设为可压缩，采用整体拉伸缩放。"
+          idPrefix="panel-template"
+          defaultName="新面板模板"
+          defaultDataUrl={defaultPanelTemplateDataUrl}
+        />
+      ) : null}
+
+      {activeTab === "pattern" ? (
+        <SimpleStretchTemplateSection
+          userId={userId}
+          kind="pattern"
+          title="图案模板"
+          description="用于按钮图案与图标装饰，统一设为可压缩，采用整体拉伸缩放。"
+          idPrefix="pattern-template"
+          defaultName="新图案模板"
+          defaultDataUrl={defaultPatternTemplateDataUrl}
+        />
+      ) : null}
+
+      {activeTab !== "button" ? null : (
+        <>
       {message ? <p className="feedback success">{message}</p> : null}
       {error ? <p className="feedback error">{error}</p> : null}
 
@@ -724,6 +725,8 @@ export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTe
           </section>
         </div>
       ) : null}
+        </>
+      )}
     </section>
   );
 };

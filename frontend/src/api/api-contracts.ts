@@ -232,3 +232,30 @@ export const UpdateButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 export const DeleteButtonTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
 export const DeleteButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 
+export {
+  StretchVisualTemplateKindSchema,
+  StretchVisualTemplateSchema,
+} from "../objects/ui-customization/stretch-visual-template.js";
+export type {
+  StretchVisualTemplateKind,
+  StretchVisualTemplate as UiStretchVisualTemplate,
+} from "../objects/ui-customization/stretch-visual-template.js";
+
+import { StretchVisualTemplateSchema } from "../objects/ui-customization/stretch-visual-template.js";
+
+export const ListStretchVisualTemplatesResponseDataSchema = z.array(StretchVisualTemplateSchema);
+
+export const CreateStretchVisualTemplateRequestBodySchema = z.object({
+  template: StretchVisualTemplateSchema,
+});
+export type CreateStretchVisualTemplateRequestBody = z.infer<typeof CreateStretchVisualTemplateRequestBodySchema>;
+export const CreateStretchVisualTemplateResponseDataSchema = StretchVisualTemplateSchema;
+
+export const UpdateStretchVisualTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
+export const UpdateStretchVisualTemplateRequestBodySchema = CreateStretchVisualTemplateRequestBodySchema;
+export type UpdateStretchVisualTemplateRequestBody = z.infer<typeof UpdateStretchVisualTemplateRequestBodySchema>;
+export const UpdateStretchVisualTemplateResponseDataSchema = StretchVisualTemplateSchema;
+
+export const DeleteStretchVisualTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
+export const DeleteStretchVisualTemplateResponseDataSchema = StretchVisualTemplateSchema;
+

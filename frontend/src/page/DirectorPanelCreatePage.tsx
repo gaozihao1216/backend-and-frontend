@@ -1,6 +1,34 @@
-import { useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useDirectorTemplateLibrary } from "../hook/useDirectorTemplateLibrary.js";
+import {
+  createButtonStateDraftPatchFromBaseTemplate,
+  createButtonStateDraftPatchFromPatternTemplate,
+  createLibraryTemplateSelectOptions,
+  getButtonBaseTemplateSelectValue,
+  getPanelDecorationSelectValue,
+  getPatternLayerTemplateSelectValue,
+  resolvePanelDecoration,
+} from "../lib/director-template-select.js";
+import {
+  createDefaultArtTextLayerDraft,
+  createEmptyPatternLayerDraft,
+  getArtTextLayerFrameBoxStyle,
+  getArtTextLayerLabel,
+  getArtTextLayerStyle,
+  getButtonStateHasPatternLayers,
+  getPatternLayerFrame,
+  getPatternLayerFrameBoxStyle,
+  normalizeButtonStatePatternLayerDrafts,
+  serializePatternLayersForStateOption,
+  usesPatternLayerImage,
+  type ButtonPatternLayerDraft,
+  type PatternLayerResizeHandle,
+} from "../lib/button-pattern-layers.js";
 import { getPageConfig, savePageConfig } from "../lib/ui-customization.js";
+import { getButtonBaseDesignStyle, DEFAULT_STRETCH_VISUAL_FRAME, getStretchVisualDesignStyle } from "../component/ui-renderer/ui-renderer-utils.js";
 import type {
+  ButtonBaseDesign,
+  ButtonImageFrame,
   ButtonStateOption,
   ComponentPosition,
   ComponentStyle,
@@ -8,9 +36,43 @@ import type {
   PageConfig,
   PanelComponent,
   PanelDecoration,
+  PlayerCurrencyReward,
+  StretchVisualDesign,
+  TextArtDesign,
+  TextArtGradientDirection,
+  TextArtGradientIntensity,
+  TextArtPreset,
 } from "../objects/ui-customization/ui-customization-objects.js";
+import { registerCheckInPanelRewards } from "../api/ui/RegisterCheckInPanelRewardsApi.js";
+import {
+  getPanelTextArtContainerClassName,
+  getPanelTextArtContainerStyle,
+  getPanelTextArtContentClassName,
+  getPanelTextArtContentStyle,
+  getTextArtAccentColor,
+  getTextArtAccentHint,
+  getTextArtAccentLabel,
+  getTextArtGradientDirection,
+  getTextArtGradientIntensity,
+  isArtTextPreset,
+  patchTextArtDesign,
+  TEXT_ART_GRADIENT_DIRECTION_OPTIONS,
+  TEXT_ART_GRADIENT_INTENSITY_OPTIONS,
+  TEXT_ART_PRESET_OPTIONS,
+  resolveTextArtDesign,
+  usesTextArtGradient,
+} from "../lib/art-text-styles.js";
+import {
+  applyWeeklyCheckInRewards,
+  createDefaultWeeklyCheckInChildDrafts,
+  defaultWeeklyCheckInRewards,
+  extractWeeklyCheckInRewards,
+  weeklyCheckInButtonStates,
+  WEEKLY_CHECK_IN_DAY_COUNT,
+} from "../lib/weekly-check-in-panel.js";
 
 type DirectorPanelCreatePageProps = {
+  userId: string;
   pageId: string | null;
   targetPath: string;
   parentPanelId: string | null;
@@ -18,9 +80,9 @@ type DirectorPanelCreatePageProps = {
   onNavigate: (nextPath: string) => void;
 };
 
-type CreateStep = "basic" | "beauty" | "buttonDesign";
+type CreateStep = "basic" | "beauty" | "rewardConfig" | "buttonDesign";
 type PanelPreset = "checkIn" | "blank";
-type ResizeHandle = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+type ResizeHandle = PatternLayerResizeHandle;
 type PositionDraft = Pick<ComponentPosition, "x" | "y" | "width" | "height">;
 type DragState =
   | {
@@ -42,36 +104,149 @@ type DragState =
       stageWidth: number;
       stageHeight: number;
     };
-type ChildDragState =
+type ChildPointerGesture =
   | {
-      mode: "move";
-      childId: string;
+      mode: "click";
+      x: number;
+      y: number;
       pointerId: number;
-      startX: number;
-      startY: number;
-      startPosition: PositionDraft;
-      stageWidth: number;
-      stageHeight: number;
+      childId: string | null;
     }
   | {
-      mode: "resize";
+      mode: "move-selected";
+      childId: string;
+      x: number;
+      y: number;
+      lastX: number;
+      lastY: number;
+      pointerId: number;
+      parentWidth: number;
+      parentHeight: number;
+    }
+  | {
+      mode: "resize-selected";
       childId: string;
       handle: ResizeHandle;
+      x: number;
+      y: number;
+      lastX: number;
+      lastY: number;
       pointerId: number;
-      startX: number;
-      startY: number;
-      startPosition: PositionDraft;
-      stageWidth: number;
-      stageHeight: number;
+      parentWidth: number;
+      parentHeight: number;
     };
+
+const CLICK_DRAG_THRESHOLD_PX = 6;
+
+const escapeSelectorValue = (value: string) =>
+  typeof CSS !== "undefined" && CSS.escape
+    ? CSS.escape(value)
+    : value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+
+const getPanelCreateResizeTarget = (
+  root: HTMLElement,
+  point: { x: number; y: number },
+  selectedChildId: string | null,
+) => {
+  if (!selectedChildId) {
+    return null;
+  }
+
+  const handleElements = [...root.querySelectorAll<HTMLElement>("[data-panel-create-resize-handle]")];
+  const matchedHandle = handleElements.find((handleElement) => {
+    const outline = handleElement.closest<HTMLElement>("[data-panel-create-outline-id]");
+    if (outline?.dataset.panelCreateOutlineId !== selectedChildId) {
+      return false;
+    }
+
+    const rect = handleElement.getBoundingClientRect();
+    return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+  });
+
+  const handle = matchedHandle?.dataset.panelCreateResizeHandle as ResizeHandle | undefined;
+  if (!matchedHandle || !handle) {
+    return null;
+  }
+
+  return {
+    childId: selectedChildId,
+    handle,
+    parentWidth: root.clientWidth,
+    parentHeight: root.clientHeight,
+  };
+};
+
+const getPanelCreateMoveTarget = (
+  root: HTMLElement,
+  point: { x: number; y: number },
+  selectedChildId: string | null,
+) => {
+  if (!selectedChildId) {
+    return null;
+  }
+
+  const node = root.querySelector<HTMLElement>(
+    `[data-panel-create-child-id="${escapeSelectorValue(selectedChildId)}"]`,
+  );
+  if (!node) {
+    return null;
+  }
+
+  const rect = node.getBoundingClientRect();
+  if (point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom) {
+    return null;
+  }
+
+  return {
+    childId: selectedChildId,
+    parentWidth: root.clientWidth,
+    parentHeight: root.clientHeight,
+  };
+};
+
+const hitTestPanelCreateChild = (root: HTMLElement, point: { x: number; y: number }) => {
+  const nodes = [...root.querySelectorAll<HTMLElement>("[data-panel-create-child-id]")];
+  for (let index = nodes.length - 1; index >= 0; index -= 1) {
+    const node = nodes[index];
+    if (!node) {
+      continue;
+    }
+
+    const rect = node.getBoundingClientRect();
+    if (point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom) {
+      return node.dataset.panelCreateChildId ?? null;
+    }
+  }
+
+  return null;
+};
+
+const PanelCreateChildOutline = ({ childId }: { childId: string }) => (
+  <div
+    className="panel-create-node-outline state-selected"
+    data-panel-create-outline-id={childId}
+    aria-hidden="true"
+  >
+    <span className="panel-create-corner top-left" data-panel-create-resize-handle="top-left" />
+    <span className="panel-create-corner top-right" data-panel-create-resize-handle="top-right" />
+    <span className="panel-create-corner bottom-left" data-panel-create-resize-handle="bottom-left" />
+    <span className="panel-create-corner bottom-right" data-panel-create-resize-handle="bottom-right" />
+  </div>
+);
 
 type ButtonStateDraft = {
   id: string;
   name: string;
   label: string;
+  contentType: "text" | "pattern";
   icon: string;
-  baseTemplateId: NonNullable<ButtonStateOption["baseTemplateId"]>;
-  patternTemplateId: NonNullable<ButtonStateOption["patternTemplateId"]>;
+  baseTemplateValue: string;
+  patternTemplateValue: string;
+  baseTemplateId?: NonNullable<ButtonStateOption["baseTemplateId"]>;
+  patternTemplateId?: NonNullable<ButtonStateOption["patternTemplateId"]>;
+  baseDesign?: ButtonBaseDesign;
+  patternDesign?: StretchVisualDesign;
+  patternLayers: ButtonPatternLayerDraft[];
   variant: NonNullable<ComponentStyle["variant"]>;
   backgroundColor: string;
   textColor: string;
@@ -83,12 +258,13 @@ type PanelChildDraft =
       type: "text";
       text: string;
       position: PositionDraft;
+      artTextDesign?: TextArtDesign;
     }
   | {
       id: string;
       type: "subPanel";
       title: string;
-      templateId: NonNullable<PanelDecoration["templateId"]>;
+      decoration: PanelDecoration;
       position: PositionDraft;
     }
   | {
@@ -98,104 +274,12 @@ type PanelChildDraft =
       position: PositionDraft;
       defaultStateId: string;
       states: ButtonStateDraft[];
+      rewardGrant?: PlayerCurrencyReward;
     };
 
-const defaultCheckInStates: ButtonStateDraft[] = [
-  {
-    id: "ready",
-    name: "正常",
-    label: "领取奖励",
-    icon: "gift",
-    baseTemplateId: "rounded",
-    patternTemplateId: "gift",
-    variant: "primary",
-    backgroundColor: "#2c68a8",
-    textColor: "#ffffff",
-  },
-  {
-    id: "claimed",
-    name: "已签到",
-    label: "已领取",
-    icon: "check",
-    baseTemplateId: "pill",
-    patternTemplateId: "check",
-    variant: "secondary",
-    backgroundColor: "#dceeff",
-    textColor: "#12385f",
-  },
-  {
-    id: "locked",
-    name: "暂不可签到",
-    label: "明日再来",
-    icon: "lock",
-    baseTemplateId: "flat",
-    patternTemplateId: "lock",
-    variant: "ghost",
-    backgroundColor: "#f0f3f6",
-    textColor: "#6b7785",
-  },
-];
+const createDefaultPanelChildDrafts = (): PanelChildDraft[] => createDefaultWeeklyCheckInChildDrafts() as PanelChildDraft[];
 
-const buttonBaseTemplateOptions: Array<{ id: ButtonStateDraft["baseTemplateId"]; label: string }> = [
-  { id: "rounded", label: "圆角底座" },
-  { id: "pill", label: "胶囊底座" },
-  { id: "beveled", label: "斜切底座" },
-  { id: "flat", label: "平面底座" },
-  { id: "glass", label: "玻璃底座" },
-];
-
-const buttonPatternTemplateOptions: Array<{ id: ButtonStateDraft["patternTemplateId"]; label: string }> = [
-  { id: "none", label: "无图案" },
-  { id: "gift", label: "礼物" },
-  { id: "check", label: "完成" },
-  { id: "lock", label: "锁定" },
-  { id: "coin", label: "金币" },
-  { id: "calendar", label: "日历" },
-  { id: "star", label: "星星" },
-];
-
-const createDefaultPanelChildDrafts = (): PanelChildDraft[] => [
-  {
-    id: "title",
-    type: "text",
-    text: "每日签到",
-    position: { x: 8, y: 8, width: 62, height: 12 },
-  },
-  {
-    id: "hint",
-    type: "text",
-    text: "今日签到可领取 30 金币，连续签到第 7 天额外获得一次道具抽取。",
-    position: { x: 8, y: 26, width: 84, height: 24 },
-  },
-  {
-    id: "reward",
-    type: "multiStateButton",
-    name: "签到奖励",
-    position: { x: 8, y: 62, width: 38, height: 14 },
-    defaultStateId: "ready",
-    states: defaultCheckInStates,
-  },
-  {
-    id: "close",
-    type: "multiStateButton",
-    name: "关闭按钮",
-    position: { x: 70, y: 62, width: 22, height: 14 },
-    defaultStateId: "close",
-    states: [
-      {
-        id: "close",
-        name: "正常",
-        label: "关闭",
-        icon: "x",
-        baseTemplateId: "flat",
-        patternTemplateId: "none",
-        variant: "secondary",
-        backgroundColor: "#dceeff",
-        textColor: "#12385f",
-      },
-    ],
-  },
-];
+const pagePreviewAspectRatio = 16 / 9;
 
 const canUseAsParentPanel = (component: PageComponent): component is PanelComponent =>
   component.type === "panel";
@@ -232,13 +316,21 @@ const clamp = (value: number, min: number, max: number) =>
 const createButtonStateOptions = (stateDrafts: ButtonStateDraft[], stateCount: number): ButtonStateOption[] =>
   stateDrafts.slice(0, stateCount).map((state) => {
     const icon = state.icon.trim();
+    const contentType = getButtonStateContentType(state);
+    const serializedLayers = serializePatternLayersForStateOption(normalizeButtonStatePatternLayerDrafts(state));
     return {
       id: state.id,
       name: state.name,
       label: state.label,
-      ...(icon ? { icon } : {}),
-      baseTemplateId: state.baseTemplateId,
-      patternTemplateId: state.patternTemplateId,
+      contentType,
+      ...(icon && contentType === "text" ? { icon } : {}),
+      ...(state.baseDesign ? { baseDesign: state.baseDesign } : {}),
+      ...(contentType === "pattern" && serializedLayers
+        ? {
+            patternLayers: serializedLayers,
+            patternDesign: serializedLayers[0]?.design,
+          }
+        : {}),
       style: {
         variant: state.variant,
         backgroundColor: state.backgroundColor,
@@ -248,7 +340,30 @@ const createButtonStateOptions = (stateDrafts: ButtonStateDraft[], stateCount: n
     };
   });
 
-const pagePreviewAspectRatio = 16 / 9;
+const getButtonStateContentType = (state: ButtonStateDraft): "text" | "pattern" =>
+  state.contentType ?? (getButtonStateHasPatternLayers(state) ? "pattern" : "text");
+
+const applyButtonStateContentType = (
+  state: ButtonStateDraft,
+  contentType: "text" | "pattern",
+): ButtonStateDraft => {
+  if (contentType === "pattern") {
+    const layers = normalizeButtonStatePatternLayerDrafts(state);
+    return {
+      ...state,
+      contentType: "pattern",
+      patternLayers: layers.length > 0 ? layers : [createEmptyPatternLayerDraft(1)],
+    };
+  }
+
+  const { patternDesign, patternTemplateId, patternTemplateValue, patternLayers, ...rest } = state;
+  return {
+    ...rest,
+    contentType: "text",
+    patternTemplateValue: "",
+    patternLayers: [],
+  };
+};
 
 const findParentPanel = (pageConfig: PageConfig, childComponentId: string): PanelComponent | null =>
   pageConfig.components.find(
@@ -320,6 +435,153 @@ const getDecorationStyle = (decoration: PanelDecoration): ComponentStyle => {
   }
 };
 
+const renderPanelBackgroundLayer = (decoration: PanelDecoration) =>
+  decoration.backgroundDesign ? (
+    <span
+      className="panel-create-background-layer dynamic-ui-panel-background"
+      style={getStretchVisualDesignStyle(decoration.backgroundDesign)}
+      aria-hidden="true"
+    />
+  ) : null;
+
+const getButtonStatePreviewClassName = (state: ButtonStateDraft) => {
+  const baseId = state.baseDesign ? "library" : "rounded";
+  const patternId = getButtonStateHasPatternLayers(state) ? "library" : "none";
+  return `${state.variant} base-${baseId} pattern-${patternId}`;
+};
+
+const getButtonPreviewStyle = (state: ButtonStateDraft, positionStyle?: CSSProperties): CSSProperties => ({
+  ...(positionStyle ?? {}),
+  ...(state.baseDesign
+    ? { backgroundColor: "#ffffff", borderColor: "transparent", borderRadius: 0, padding: 0 }
+    : { backgroundColor: state.backgroundColor, color: state.textColor, borderRadius: 12 }),
+});
+
+const resizePatternFrame = (
+  startFrame: ButtonImageFrame,
+  handle: ResizeHandle,
+  deltaX: number,
+  deltaY: number,
+): ButtonImageFrame => {
+  const minSize = 4;
+  const isLeft = handle === "top-left" || handle === "bottom-left";
+  const isTop = handle === "top-left" || handle === "top-right";
+  let nextX = startFrame.x;
+  let nextY = startFrame.y;
+  let nextWidth = startFrame.width;
+  let nextHeight = startFrame.height;
+
+  if (isLeft) {
+    nextX = clamp(startFrame.x + deltaX, -25, startFrame.x + startFrame.width - minSize);
+    nextWidth = startFrame.width + startFrame.x - nextX;
+  } else {
+    nextWidth = clamp(startFrame.width + deltaX, minSize, 125);
+  }
+
+  if (isTop) {
+    nextY = clamp(startFrame.y + deltaY, -25, startFrame.y + startFrame.height - minSize);
+    nextHeight = startFrame.height + startFrame.y - nextY;
+  } else {
+    nextHeight = clamp(startFrame.height + deltaY, minSize, 125);
+  }
+
+  return { x: nextX, y: nextY, width: nextWidth, height: nextHeight };
+};
+
+const renderButtonPreviewLayers = (
+  state: ButtonStateDraft,
+  options?: {
+    patternAdjustable?: boolean;
+    activeLayerId?: string;
+    onPatternMovePointerDown?: (layerId: string) => (event: PointerEvent<HTMLSpanElement>) => void;
+    onPatternResizePointerDown?: (layerId: string, handle: ResizeHandle) => (event: PointerEvent<HTMLSpanElement>) => void;
+  },
+) => {
+  const layers = normalizeButtonStatePatternLayerDrafts(state);
+  const activeLayerId = options?.activeLayerId ?? layers[layers.length - 1]?.id;
+
+  return (
+    <>
+      {state.baseDesign ? (
+        <span
+          className="dynamic-ui-button-base"
+          style={getButtonBaseDesignStyle(state.baseDesign)}
+          aria-hidden="true"
+        >
+          {state.baseDesign.scalingMode === "fixedAspect" ? <img src={state.baseDesign.sourceDataUrl} alt="" /> : null}
+        </span>
+      ) : null}
+      {layers.map((layer, index) => {
+        if (!layer.design && layer.kind !== "artText") {
+          return null;
+        }
+
+        const frame = getPatternLayerFrame(layer);
+        const isActive = options?.patternAdjustable && layer.id === activeLayerId;
+        const usesImage = usesPatternLayerImage(layer);
+        const artTextLabel = getArtTextLayerLabel(layer, state.label);
+
+        return (
+          <span
+            key={layer.id}
+            className={`panel-create-button-pattern-frame dynamic-ui-button-pattern-layer ${usesImage ? "" : "dynamic-ui-button-art-text-frame"} ${isActive ? "selected" : ""}`}
+            style={usesImage ? getPatternLayerFrameBoxStyle(frame, index) : getArtTextLayerFrameBoxStyle(frame, index)}
+            aria-hidden="true"
+          >
+            {usesImage ? (
+              <span
+                className={`dynamic-ui-button-pattern ${isActive ? "panel-create-button-pattern-draggable" : ""}`}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: layer.design ? `url("${layer.design.sourceDataUrl}")` : undefined,
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "100% 100%",
+                }}
+                onPointerDown={isActive ? options?.onPatternMovePointerDown?.(layer.id) : undefined}
+              />
+            ) : (
+              <span
+                className={`dynamic-ui-button-art-text ${isActive ? "panel-create-button-pattern-draggable" : ""}`}
+                style={{
+                  ...getArtTextLayerStyle({ textColor: state.textColor }),
+                  ...(isActive ? { touchAction: "none" as const } : {}),
+                }}
+                onPointerDown={isActive ? options?.onPatternMovePointerDown?.(layer.id) : undefined}
+              >
+                {artTextLabel}
+              </span>
+            )}
+            {isActive
+              ? (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((handle) => (
+                  <span
+                    key={handle}
+                    className={`panel-create-pattern-frame-handle ${handle}`}
+                    onPointerDown={options?.onPatternResizePointerDown?.(layer.id, handle)}
+                  />
+                ))
+              : null}
+          </span>
+        );
+      })}
+    </>
+  );
+};
+
+const renderButtonPreviewContent = (state: ButtonStateDraft, label?: string) => {
+  if (getButtonStateContentType(state) === "pattern" && getButtonStateHasPatternLayers(state)) {
+    return null;
+  }
+
+  return (
+    <span className="dynamic-ui-button-content">
+      {state.icon ? <span className="dynamic-ui-button-icon">{state.icon}</span> : null}
+      <span>{label ?? state.label}</span>
+    </span>
+  );
+};
+
 const createPanelChildren = (
   panelId: string,
   childDrafts: PanelChildDraft[],
@@ -327,12 +589,17 @@ const createPanelChildren = (
   return childDrafts.map((draft): PageComponent => {
     const position = { unit: "percent" as const, ...draft.position };
     if (draft.type === "text") {
+      const artTextDesign = draft.artTextDesign;
+      const usesArtText = isArtTextPreset(resolveTextArtDesign(artTextDesign).preset);
       return {
         id: `${panelId}.${draft.id}`,
         type: "text",
         text: draft.text,
         position,
-        style: { backgroundColor: "#ffffff", textColor: "#203040", borderRadius: 10 },
+        style: usesArtText
+          ? { backgroundColor: "transparent" }
+          : { backgroundColor: "transparent", textColor: "#203040" },
+        ...(artTextDesign ? { artTextDesign } : {}),
       };
     }
 
@@ -344,14 +611,18 @@ const createPanelChildren = (
         panelRole: "static",
         title: draft.title,
         position,
-        decoration: { templateId: draft.templateId },
-        style: getDecorationStyle({ templateId: draft.templateId }),
+        decoration: draft.decoration,
+        style: getDecorationStyle(draft.decoration),
         childComponentIds: [],
       };
     }
 
     const stateOptions = createButtonStateOptions(draft.states, draft.states.length);
     const firstState = stateOptions[0];
+    const weeklyDayMatch = draft.id.match(/^day(\d+)$/);
+    const isWeeklyDayButton = Boolean(weeklyDayMatch);
+    const dayIndex = weeklyDayMatch ? Number(weeklyDayMatch[1]) : 0;
+    const fallbackStates = weeklyCheckInButtonStates() as ButtonStateDraft[];
     return {
       id: `${panelId}.${draft.id}`,
       type: "button",
@@ -361,33 +632,106 @@ const createPanelChildren = (
       style: { variant: firstState?.style.variant ?? "primary", borderRadius: 12 },
       stateDesign: {
         defaultStateId: draft.defaultStateId,
-        states: stateOptions.length > 0 ? stateOptions : createButtonStateOptions(defaultCheckInStates, 1),
+        states: stateOptions.length > 0 ? stateOptions : createButtonStateOptions(fallbackStates, 1),
+        ...(isWeeklyDayButton
+          ? { stateSource: { apiKey: "player.weeklyCheckIn", field: `slots.${dayIndex}` } }
+          : {}),
       },
-      action: draft.id === "close" ? { type: "closePanel", panelId } : { type: "none" },
+      ...(draft.rewardGrant ? { rewardGrant: draft.rewardGrant } : {}),
+      ...(isWeeklyDayButton
+        ? { dataSource: { type: "api", apiKey: "player.weeklyCheckIn", refreshMode: "onOpen" } }
+        : {}),
+      action: draft.id === "close"
+        ? { type: "closePanel", panelId }
+        : isWeeklyDayButton
+          ? {
+              type: "apiAction",
+              apiKey: "player.weeklyCheckIn.claim",
+              params: { panelId, slot: String(dayIndex) },
+            }
+          : { type: "none" },
     };
   });
 };
 
 export const DirectorPanelCreatePage = ({
+  userId,
   pageId,
   targetPath,
   parentPanelId,
   onBack,
   onNavigate,
 }: DirectorPanelCreatePageProps) => {
+  const { buttonTemplates, panelTemplates, patternTemplates, loading: templatesLoading, error: templatesError } =
+    useDirectorTemplateLibrary(userId);
+  const buttonTemplateMap = useMemo(
+    () => new Map(buttonTemplates.map((template) => [template.id, template])),
+    [buttonTemplates],
+  );
+  const panelTemplateMap = useMemo(
+    () => new Map(panelTemplates.map((template) => [template.id, template])),
+    [panelTemplates],
+  );
+  const patternTemplateMap = useMemo(
+    () => new Map(patternTemplates.map((template) => [template.id, template])),
+    [patternTemplates],
+  );
+  const panelTemplateSelectOptions = useMemo(
+    () => createLibraryTemplateSelectOptions(panelTemplates),
+    [panelTemplates],
+  );
+  const buttonBaseTemplateSelectOptions = useMemo(
+    () => createLibraryTemplateSelectOptions(buttonTemplates),
+    [buttonTemplates],
+  );
+  const patternTemplateSelectOptions = useMemo(
+    () => createLibraryTemplateSelectOptions(patternTemplates),
+    [patternTemplates],
+  );
   const [pageConfig, setPageConfig] = useState<PageConfig | null>(() => pageId ? getPageConfig(pageId) : null);
   const [step, setStep] = useState<CreateStep>("basic");
   const [panelPickerOpen, setPanelPickerOpen] = useState(false);
   const [preset, setPreset] = useState<PanelPreset>("checkIn");
-  const [panelTitle, setPanelTitle] = useState("每日签到");
+  const [panelTitle, setPanelTitle] = useState("每周签到");
   const [idSeed, setIdSeed] = useState("check-in");
   const [panelPosition, setPanelPosition] = useState<PositionDraft>({ x: 58, y: 12, width: 34, height: 34 });
   const [decoration, setDecoration] = useState<PanelDecoration>({ templateId: "reward", accentColor: "#2c68a8" });
   const [panelChildDrafts, setPanelChildDrafts] = useState<PanelChildDraft[]>(() => createDefaultPanelChildDrafts());
-  const [selectedChildDraftId, setSelectedChildDraftId] = useState("reward");
+  const [selectedChildDraftId, setSelectedChildDraftId] = useState("day1");
   const [feedback, setFeedback] = useState("");
+  const [previewStateId, setPreviewStateId] = useState("");
+  const [selectedPatternLayerId, setSelectedPatternLayerId] = useState("");
+  const [collapsedPatternLayerKeys, setCollapsedPatternLayerKeys] = useState<Set<string>>(() => new Set());
   const dragStateRef = useRef<DragState | null>(null);
-  const childDragStateRef = useRef<ChildDragState | null>(null);
+  const childPointerGestureRef = useRef<ChildPointerGesture | null>(null);
+  const beautyPreviewCanvasRef = useRef<HTMLDivElement>(null);
+  const buttonPreviewStageRef = useRef<HTMLDivElement>(null);
+  const patternAdjustRef = useRef<
+    | {
+        mode: "move";
+        stateId: string;
+        layerId: string;
+        pointerId: number;
+        startX: number;
+        startY: number;
+        startFrame: ButtonImageFrame;
+        stageWidth: number;
+        stageHeight: number;
+      }
+    | {
+        mode: "resize";
+        handle: ResizeHandle;
+        stateId: string;
+        layerId: string;
+        pointerId: number;
+        startX: number;
+        startY: number;
+        startFrame: ButtonImageFrame;
+        stageWidth: number;
+        stageHeight: number;
+      }
+    | null
+  >(null);
 
   const availablePanels = useMemo(
     () => pageConfig?.components.filter(canUseAsParentPanel) ?? [],
@@ -409,6 +753,82 @@ export const DirectorPanelCreatePage = ({
     4,
   );
   const selectedChildDraft = panelChildDrafts.find((draft) => draft.id === selectedChildDraftId) ?? panelChildDrafts[0] ?? null;
+
+  useEffect(() => {
+    if (selectedChildDraft?.type !== "multiStateButton") {
+      return;
+    }
+
+    setPreviewStateId((current) =>
+      selectedChildDraft.states.some((state) => state.id === current)
+        ? current
+        : selectedChildDraft.defaultStateId,
+    );
+  }, [selectedChildDraft]);
+
+  const previewButtonState =
+    selectedChildDraft?.type === "multiStateButton"
+      ? selectedChildDraft.states.find((state) => state.id === previewStateId)
+        ?? selectedChildDraft.states.find((state) => state.id === selectedChildDraft.defaultStateId)
+        ?? selectedChildDraft.states[0]
+        ?? null
+      : null;
+
+  useEffect(() => {
+    if (!previewButtonState) {
+      return;
+    }
+
+    const layers = normalizeButtonStatePatternLayerDrafts(previewButtonState);
+    setSelectedPatternLayerId((current) =>
+      layers.some((layer) => layer.id === current) ? current : layers[layers.length - 1]?.id ?? "",
+    );
+  }, [previewButtonState]);
+
+  const getPatternLayerCardKey = (childId: string, stateId: string, layerId: string) =>
+    `${childId}:${stateId}:${layerId}`;
+
+  const isPatternLayerCollapsed = (childId: string, stateId: string, layerId: string) =>
+    collapsedPatternLayerKeys.has(getPatternLayerCardKey(childId, stateId, layerId));
+
+  const expandPatternLayerCard = (childId: string, stateId: string, layerId: string) => {
+    setCollapsedPatternLayerKeys((current) => {
+      const next = new Set(current);
+      next.delete(getPatternLayerCardKey(childId, stateId, layerId));
+      return next;
+    });
+  };
+
+  const togglePatternLayerCollapsed = (childId: string, stateId: string, layerId: string) => {
+    const key = getPatternLayerCardKey(childId, stateId, layerId);
+    setCollapsedPatternLayerKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const selectPatternLayerForPreview = (childId: string, stateId: string, layerId: string) => {
+    setPreviewStateId(stateId);
+    setSelectedPatternLayerId(layerId);
+    expandPatternLayerCard(childId, stateId, layerId);
+  };
+
+  const buttonDesignPreviewAspectRatio = useMemo(() => {
+    if (selectedChildDraft?.type !== "multiStateButton") {
+      return 1;
+    }
+
+    return clamp(
+      panelPreviewAspectRatio * (selectedChildDraft.position.width / selectedChildDraft.position.height),
+      0.25,
+      4,
+    );
+  }, [panelPreviewAspectRatio, selectedChildDraft]);
 
   const updateChildDraft = (childId: string, updater: (draft: PanelChildDraft) => PanelChildDraft) => {
     setPanelChildDrafts((current) =>
@@ -435,7 +855,7 @@ export const DirectorPanelCreatePage = ({
         id,
         type: "subPanel",
         title: `子面板 ${current.filter((draft) => draft.type === "subPanel").length + 1}`,
-        templateId: "notice",
+        decoration: { templateId: "notice" },
         position: { x: 12, y: 44, width: 34, height: 28 },
       },
     ]);
@@ -458,8 +878,10 @@ export const DirectorPanelCreatePage = ({
             name: "默认",
             label: "按钮",
             icon: "star",
-            baseTemplateId: "rounded",
-            patternTemplateId: "star",
+            contentType: "text",
+            baseTemplateValue: "",
+            patternTemplateValue: "",
+            patternLayers: [],
             variant: "primary",
             backgroundColor: "#2c68a8",
             textColor: "#ffffff",
@@ -485,6 +907,222 @@ export const DirectorPanelCreatePage = ({
     );
   };
 
+  const applyBaseTemplateSelection = (state: ButtonStateDraft, value: string): ButtonStateDraft => {
+    const resolved = createButtonStateDraftPatchFromBaseTemplate(value, buttonTemplateMap);
+    if ("baseDesign" in resolved) {
+      const { baseTemplateId: _removed, ...rest } = state;
+      return { ...rest, ...resolved };
+    }
+
+    const { baseDesign: _removed, ...rest } = state;
+    return { ...rest, ...resolved };
+  };
+
+  const updatePatternLayers = (
+    childId: string,
+    stateId: string,
+    updater: (layers: ButtonPatternLayerDraft[]) => ButtonPatternLayerDraft[],
+  ) => {
+    updateChildDraft(childId, (draft) =>
+      draft.type === "multiStateButton"
+        ? {
+            ...draft,
+            states: draft.states.map((state) =>
+              state.id === stateId
+                ? { ...state, patternLayers: updater(normalizeButtonStatePatternLayerDrafts(state)) }
+                : state,
+            ),
+          }
+        : draft,
+    );
+  };
+
+  const applyPatternLayerTemplateSelection = (
+    layer: ButtonPatternLayerDraft,
+    value: string,
+  ): ButtonPatternLayerDraft => {
+    const resolved = createButtonStateDraftPatchFromPatternTemplate(value, patternTemplateMap);
+    if ("patternDesign" in resolved && resolved.patternDesign) {
+      return {
+        ...layer,
+        templateValue: value,
+        design: {
+          ...resolved.patternDesign,
+          frame: layer.design?.frame ?? resolved.patternDesign.frame ?? DEFAULT_STRETCH_VISUAL_FRAME,
+        },
+      };
+    }
+
+    if (!value && layer.kind === "artText") {
+      return {
+        ...layer,
+        templateValue: "",
+        design: createDefaultArtTextLayerDraft(1, layer.artTextLabel ?? "").design!,
+      };
+    }
+
+    if (!value && layer.kind === "pattern") {
+      const { design: _removed, ...rest } = layer;
+      return {
+        ...rest,
+        templateValue: "",
+      };
+    }
+
+    return {
+      ...layer,
+      templateValue: value,
+    };
+  };
+
+  const updatePatternLayerFrame = (
+    childId: string,
+    stateId: string,
+    layerId: string,
+    frame: ButtonImageFrame,
+  ) => {
+    updatePatternLayers(childId, stateId, (layers) =>
+      layers.map((layer) =>
+        layer.id === layerId && layer.design
+          ? { ...layer, design: { ...layer.design, frame } }
+          : layer.id === layerId && layer.kind === "artText"
+            ? {
+                ...layer,
+                design: {
+                  ...(layer.design ?? createDefaultArtTextLayerDraft(1, layer.artTextLabel ?? "").design!),
+                  frame,
+                },
+              }
+            : layer,
+      ),
+    );
+  };
+
+  const addPatternLayerDraft = (childId: string, stateId: string, kind: ButtonPatternLayerDraft["kind"]) => {
+    updatePatternLayers(childId, stateId, (layers) => {
+      const nextIndex = layers.length + 1;
+      const nextLayer = kind === "artText"
+        ? createDefaultArtTextLayerDraft(nextIndex)
+        : createEmptyPatternLayerDraft(nextIndex);
+      selectPatternLayerForPreview(childId, stateId, nextLayer.id);
+      return [...layers, nextLayer];
+    });
+  };
+
+  const removePatternLayerDraft = (childId: string, stateId: string, layerId: string) => {
+    updatePatternLayers(childId, stateId, (layers) => {
+      if (layers.length <= 1) {
+        return layers;
+      }
+
+      const nextLayers = layers.filter((layer) => layer.id !== layerId);
+      setSelectedPatternLayerId(nextLayers[nextLayers.length - 1]?.id ?? "");
+      return nextLayers;
+    });
+  };
+
+  const beginPatternAdjust = (
+    stateId: string,
+    layerId: string,
+    event: PointerEvent<HTMLSpanElement>,
+    mode: "move" | "resize",
+    handle?: ResizeHandle,
+  ) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const stage = buttonPreviewStageRef.current;
+    const state = selectedChildDraft?.type === "multiStateButton"
+      ? selectedChildDraft.states.find((candidate) => candidate.id === stateId)
+      : null;
+    const layer = state ? normalizeButtonStatePatternLayerDrafts(state).find((candidate) => candidate.id === layerId) : null;
+    if (!stage || !layer) {
+      return;
+    }
+
+    event.stopPropagation();
+    event.preventDefault();
+    setSelectedPatternLayerId(layerId);
+    expandPatternLayerCard(selectedChildDraft?.id ?? "", stateId, layerId);
+    const rect = stage.getBoundingClientRect();
+    const startFrame = getPatternLayerFrame(layer);
+    if (mode === "resize" && handle) {
+      patternAdjustRef.current = {
+        mode: "resize",
+        handle,
+        stateId,
+        layerId,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startFrame,
+        stageWidth: rect.width,
+        stageHeight: rect.height,
+      };
+    } else {
+      patternAdjustRef.current = {
+        mode: "move",
+        stateId,
+        layerId,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startFrame,
+        stageWidth: rect.width,
+        stageHeight: rect.height,
+      };
+    }
+    stage.setPointerCapture(event.pointerId);
+  };
+
+  const handleButtonPreviewPatternMovePointerDown = (stateId: string, layerId: string) =>
+    (event: PointerEvent<HTMLSpanElement>) => {
+      beginPatternAdjust(stateId, layerId, event, "move");
+    };
+
+  const handleButtonPreviewPatternResizePointerDown = (stateId: string, layerId: string, handle: ResizeHandle) =>
+    (event: PointerEvent<HTMLSpanElement>) => {
+      beginPatternAdjust(stateId, layerId, event, "resize", handle);
+    };
+
+  const handleButtonPreviewPatternPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const adjust = patternAdjustRef.current;
+    if (
+      !adjust
+      || adjust.pointerId !== event.pointerId
+      || selectedChildDraft?.type !== "multiStateButton"
+    ) {
+      return;
+    }
+
+    const deltaX = ((event.clientX - adjust.startX) / adjust.stageWidth) * 100;
+    const deltaY = ((event.clientY - adjust.startY) / adjust.stageHeight) * 100;
+    if (adjust.mode === "move") {
+      updatePatternLayerFrame(selectedChildDraft.id, adjust.stateId, adjust.layerId, {
+        ...adjust.startFrame,
+        x: clamp(adjust.startFrame.x + deltaX, -25, 125),
+        y: clamp(adjust.startFrame.y + deltaY, -25, 125),
+      });
+      return;
+    }
+
+    updatePatternLayerFrame(
+      selectedChildDraft.id,
+      adjust.stateId,
+      adjust.layerId,
+      resizePatternFrame(adjust.startFrame, adjust.handle, deltaX, deltaY),
+    );
+  };
+
+  const handleButtonPreviewPatternPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    patternAdjustRef.current = null;
+    const stage = buttonPreviewStageRef.current;
+    if (stage?.hasPointerCapture(event.pointerId)) {
+      stage.releasePointerCapture(event.pointerId);
+    }
+  };
+
   const addButtonStateDraft = (childId: string) => {
     updateChildDraft(childId, (draft) => {
       if (draft.type !== "multiStateButton") {
@@ -502,8 +1140,10 @@ export const DirectorPanelCreatePage = ({
             name: `状态 ${index}`,
             label: `状态 ${index}`,
             icon: "star",
-            baseTemplateId: "rounded",
-            patternTemplateId: "star",
+            contentType: "text",
+            baseTemplateValue: "",
+            patternTemplateValue: "",
+            patternLayers: [],
             variant: "secondary",
             backgroundColor: "#dceeff",
             textColor: "#12385f",
@@ -513,114 +1153,237 @@ export const DirectorPanelCreatePage = ({
     });
   };
 
-  const startMoveChildDraft = (childId: string) => (event: PointerEvent<HTMLElement>) => {
-    if (event.button !== 0) {
-      return;
-    }
-
-    const childDraft = panelChildDrafts.find((draft) => draft.id === childId);
-    const stage = event.currentTarget.closest<HTMLElement>(".panel-create-beauty-preview");
-    const rect = stage?.getBoundingClientRect();
-    if (!childDraft || !stage || !rect) {
-      return;
-    }
-
-    setSelectedChildDraftId(childId);
-    childDragStateRef.current = {
-      mode: "move",
-      childId,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startPosition: childDraft.position,
-      stageWidth: rect.width,
-      stageHeight: rect.height,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const startResizeChildDraft = (childId: string, handle: ResizeHandle) => (event: PointerEvent<HTMLSpanElement>) => {
-    if (event.button !== 0) {
-      return;
-    }
-
-    event.stopPropagation();
-    const childDraft = panelChildDrafts.find((draft) => draft.id === childId);
-    const stage = event.currentTarget.closest<HTMLElement>(".panel-create-beauty-preview");
-    const rect = stage?.getBoundingClientRect();
-    if (!childDraft || !stage || !rect) {
-      return;
-    }
-
-    setSelectedChildDraftId(childId);
-    childDragStateRef.current = {
-      mode: "resize",
-      childId,
-      handle,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startPosition: childDraft.position,
-      stageWidth: rect.width,
-      stageHeight: rect.height,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handleChildDraftPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const dragState = childDragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) {
-      return;
-    }
-
-    const deltaX = ((event.clientX - dragState.startX) / dragState.stageWidth) * 100;
-    const deltaY = ((event.clientY - dragState.startY) / dragState.stageHeight) * 100;
-    const start = dragState.startPosition;
-
-    if (dragState.mode === "move") {
-      updateChildDraft(dragState.childId, (draft) => ({
-        ...draft,
-        position: {
-          ...start,
-          x: clamp(start.x + deltaX, 0, 100 - start.width),
-          y: clamp(start.y + deltaY, 0, 100 - start.height),
-        },
-      } as PanelChildDraft));
-      return;
-    }
-
-    const minSize = 4;
-    const isLeft = dragState.handle === "top-left" || dragState.handle === "bottom-left";
-    const isTop = dragState.handle === "top-left" || dragState.handle === "top-right";
-    let nextX = start.x;
-    let nextY = start.y;
-    let nextWidth = start.width;
-    let nextHeight = start.height;
-
-    if (isLeft) {
-      nextX = clamp(start.x + deltaX, 0, start.x + start.width - minSize);
-      nextWidth = start.width + start.x - nextX;
-    } else {
-      nextWidth = clamp(start.width + deltaX, minSize, 100 - start.x);
-    }
-
-    if (isTop) {
-      nextY = clamp(start.y + deltaY, 0, start.y + start.height - minSize);
-      nextHeight = start.height + start.y - nextY;
-    } else {
-      nextHeight = clamp(start.height + deltaY, minSize, 100 - start.y);
-    }
-
-    updateChildDraft(dragState.childId, (draft) => ({
+  const moveChildDraftByDelta = (
+    childId: string,
+    deltaX: number,
+    deltaY: number,
+    parentWidth: number,
+    parentHeight: number,
+  ) => {
+    updateChildDraft(childId, (draft) => ({
       ...draft,
-      position: { x: nextX, y: nextY, width: nextWidth, height: nextHeight },
+      position: {
+        ...draft.position,
+        x: Math.max(0, draft.position.x + (deltaX / parentWidth) * 100),
+        y: Math.max(0, draft.position.y + (deltaY / parentHeight) * 100),
+      },
     } as PanelChildDraft));
   };
 
-  const stopChildDraftPointer = (event: PointerEvent<HTMLElement>) => {
-    childDragStateRef.current = null;
+  const resizeChildDraftByDelta = (
+    childId: string,
+    handle: ResizeHandle,
+    deltaX: number,
+    deltaY: number,
+    parentWidth: number,
+    parentHeight: number,
+  ) => {
+    updateChildDraft(childId, (draft) => {
+      const position = draft.position;
+      const deltaUnitX = (deltaX / parentWidth) * 100;
+      const deltaUnitY = (deltaY / parentHeight) * 100;
+      const minWidth = 2;
+      const minHeight = 2;
+      const isLeftHandle = handle === "top-left" || handle === "bottom-left";
+      const isTopHandle = handle === "top-left" || handle === "top-right";
+
+      let nextX = position.x;
+      let nextY = position.y;
+      let nextWidth = position.width;
+      let nextHeight = position.height;
+
+      if (isLeftHandle) {
+        const effectiveDeltaX = Math.min(deltaUnitX, position.width - minWidth);
+        nextX = Math.max(0, position.x + effectiveDeltaX);
+        nextWidth = Math.max(minWidth, position.width - effectiveDeltaX);
+      } else {
+        nextWidth = Math.max(minWidth, position.width + deltaUnitX);
+      }
+
+      if (isTopHandle) {
+        const effectiveDeltaY = Math.min(deltaUnitY, position.height - minHeight);
+        nextY = Math.max(0, position.y + effectiveDeltaY);
+        nextHeight = Math.max(minHeight, position.height - effectiveDeltaY);
+      } else {
+        nextHeight = Math.max(minHeight, position.height + deltaUnitY);
+      }
+
+      return {
+        ...draft,
+        position: {
+          x: nextX,
+          y: nextY,
+          width: nextWidth,
+          height: nextHeight,
+        },
+      } as PanelChildDraft;
+    });
+  };
+
+  const handleBeautyPreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const canvas = beautyPreviewCanvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    const point = { x: event.clientX, y: event.clientY };
+    const selectedResizeTarget = getPanelCreateResizeTarget(canvas, point, selectedChildDraftId || null);
+    if (selectedResizeTarget) {
+      childPointerGestureRef.current = {
+        mode: "resize-selected",
+        childId: selectedResizeTarget.childId,
+        handle: selectedResizeTarget.handle,
+        x: event.clientX,
+        y: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        pointerId: event.pointerId,
+        parentWidth: selectedResizeTarget.parentWidth,
+        parentHeight: selectedResizeTarget.parentHeight,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
+
+    const selectedMoveTarget = getPanelCreateMoveTarget(canvas, point, selectedChildDraftId || null);
+    if (selectedMoveTarget) {
+      childPointerGestureRef.current = {
+        mode: "move-selected",
+        childId: selectedMoveTarget.childId,
+        x: event.clientX,
+        y: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        pointerId: event.pointerId,
+        parentWidth: selectedMoveTarget.parentWidth,
+        parentHeight: selectedMoveTarget.parentHeight,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
+
+    childPointerGestureRef.current = {
+      mode: "click",
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+      childId: hitTestPanelCreateChild(canvas, point),
+    };
+    if (childPointerGestureRef.current.childId) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const handleBeautyPreviewPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    let pointerStart = childPointerGestureRef.current;
+    if (!pointerStart || pointerStart.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (pointerStart.mode === "click") {
+      if (!pointerStart.childId) {
+        return;
+      }
+
+      const dragDistance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+      if (dragDistance <= CLICK_DRAG_THRESHOLD_PX) {
+        return;
+      }
+
+      const canvas = beautyPreviewCanvasRef.current;
+      if (!canvas) {
+        return;
+      }
+
+      setSelectedChildDraftId(pointerStart.childId);
+      const deltaX = event.clientX - pointerStart.x;
+      const deltaY = event.clientY - pointerStart.y;
+      pointerStart = {
+        mode: "move-selected",
+        childId: pointerStart.childId,
+        x: pointerStart.x,
+        y: pointerStart.y,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        pointerId: event.pointerId,
+        parentWidth: canvas.clientWidth,
+        parentHeight: canvas.clientHeight,
+      };
+      childPointerGestureRef.current = pointerStart;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+      moveChildDraftByDelta(
+        pointerStart.childId,
+        deltaX,
+        deltaY,
+        pointerStart.parentWidth,
+        pointerStart.parentHeight,
+      );
+    }
+
+    if (pointerStart.mode !== "move-selected" && pointerStart.mode !== "resize-selected") {
+      return;
+    }
+
+    const deltaX = event.clientX - pointerStart.lastX;
+    const deltaY = event.clientY - pointerStart.lastY;
+    if (deltaX === 0 && deltaY === 0) {
+      return;
+    }
+
+    if (pointerStart.mode === "move-selected") {
+      moveChildDraftByDelta(
+        pointerStart.childId,
+        deltaX,
+        deltaY,
+        pointerStart.parentWidth,
+        pointerStart.parentHeight,
+      );
+    } else {
+      resizeChildDraftByDelta(
+        pointerStart.childId,
+        pointerStart.handle,
+        deltaX,
+        deltaY,
+        pointerStart.parentWidth,
+        pointerStart.parentHeight,
+      );
+    }
+
+    childPointerGestureRef.current = {
+      ...pointerStart,
+      lastX: event.clientX,
+      lastY: event.clientY,
+    };
+  };
+
+  const handleBeautyPreviewPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const pointerStart = childPointerGestureRef.current;
+    childPointerGestureRef.current = null;
+    if (!pointerStart || pointerStart.pointerId !== event.pointerId) {
+      return;
+    }
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (pointerStart.mode === "move-selected" || pointerStart.mode === "resize-selected") {
+      return;
+    }
+
+    const dragDistance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+    if (dragDistance > CLICK_DRAG_THRESHOLD_PX) {
+      return;
+    }
+
+    if (pointerStart.childId) {
+      setSelectedChildDraftId(pointerStart.childId);
     }
   };
 
@@ -723,7 +1486,29 @@ export const DirectorPanelCreatePage = ({
     }
   };
 
-  const handleSave = () => {
+  const weeklyCheckInRewards = useMemo(
+    () => extractWeeklyCheckInRewards(panelChildDrafts),
+    [panelChildDrafts],
+  );
+  const isCheckInPreset = preset === "checkIn";
+
+  const updateWeeklyCheckInReward = (
+    dayIndex: number,
+    field: keyof PlayerCurrencyReward,
+    value: number,
+  ) => {
+    setPanelChildDrafts((current) => {
+      const nextRewards = extractWeeklyCheckInRewards(current);
+      const currentReward = nextRewards[dayIndex - 1] ?? defaultWeeklyCheckInRewards()[dayIndex - 1]!;
+      nextRewards[dayIndex - 1] = {
+        ...currentReward,
+        [field]: Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0,
+      };
+      return applyWeeklyCheckInRewards(current, nextRewards);
+    });
+  };
+
+  const handleSave = async () => {
     if (!pageConfig || !selectedParentPanel) {
       setFeedback("请选择小面板显示时所属的父界面。");
       setStep("basic");
@@ -766,7 +1551,17 @@ export const DirectorPanelCreatePage = ({
 
     const savedConfig = savePageConfig(nextPageConfig);
     setPageConfig(savedConfig);
-    setFeedback("小面板已创建，返回页面编辑器后可通过按钮配置连接。");
+
+    if (isCheckInPreset) {
+      try {
+        await registerCheckInPanelRewards(userId, panelId, extractWeeklyCheckInRewards(panelChildDrafts));
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : "签到奖励配置同步到后端失败。");
+        return;
+      }
+    }
+
+    setFeedback("小面板已创建，签到规则由系统自动判定，奖励会在领取时写入玩家金币/钻石/碎片。");
     window.setTimeout(() => {
       const builderPath = targetPath === "/" ? "/update" : `${targetPath}/update`;
       onNavigate(`${builderPath}?pageId=${encodeURIComponent(savedConfig.id)}`);
@@ -790,17 +1585,42 @@ export const DirectorPanelCreatePage = ({
               返回基础数据
             </button>
           ) : null}
-          {step === "buttonDesign" ? (
+          {step === "rewardConfig" ? (
             <button type="button" className="secondary" onClick={() => setStep("beauty")}>
               返回美化信息
+            </button>
+          ) : null}
+          {step === "buttonDesign" ? (
+            <button type="button" className="secondary" onClick={() => setStep(isCheckInPreset ? "rewardConfig" : "beauty")}>
+              返回{isCheckInPreset ? "奖励配置" : "美化信息"}
             </button>
           ) : null}
           <button
             type="button"
             disabled={!pageConfig || !selectedParentPanel}
-            onClick={step === "basic" ? () => setStep("beauty") : handleSave}
+            onClick={() => {
+              if (step === "basic") {
+                setStep("beauty");
+                return;
+              }
+              if (step === "beauty") {
+                setStep(isCheckInPreset ? "rewardConfig" : "buttonDesign");
+                return;
+              }
+              if (step === "rewardConfig") {
+                setStep("buttonDesign");
+                return;
+              }
+              void handleSave();
+            }}
           >
-            {step === "basic" ? "进入美化面板" : "创建小面板"}
+            {step === "basic"
+              ? "进入美化面板"
+              : step === "beauty"
+                ? isCheckInPreset ? "进入奖励配置" : "进入按钮设计"
+                : step === "rewardConfig"
+                  ? "进入按钮设计"
+                  : "创建小面板"}
           </button>
         </div>
       </div>
@@ -808,13 +1628,16 @@ export const DirectorPanelCreatePage = ({
       {!pageId ? <p className="feedback error">缺少 pageId，无法创建小面板。</p> : null}
       {pageId && !pageConfig ? <p className="feedback error">该页面配置不存在。</p> : null}
       {feedback ? <p className="feedback">{feedback}</p> : null}
+      {templatesError ? <p className="feedback error">{templatesError}</p> : null}
+      {templatesLoading ? <p className="meta">正在加载模板库…</p> : null}
 
       {pageConfig ? (
         <>
           <div className="panel-create-step-tabs" aria-label="创建阶段">
             <span className={step === "basic" ? "active" : ""}>1 基础数据</span>
             <span className={step === "beauty" ? "active" : ""}>2 美化信息</span>
-            <span className={step === "buttonDesign" ? "active" : ""}>按钮设计</span>
+            {isCheckInPreset ? <span className={step === "rewardConfig" ? "active" : ""}>3 奖励配置</span> : null}
+            <span className={step === "buttonDesign" ? "active" : ""}>{isCheckInPreset ? "4" : "3"} 按钮设计</span>
           </div>
 
           {step === "basic" ? (
@@ -838,11 +1661,11 @@ export const DirectorPanelCreatePage = ({
                       const nextPreset = event.target.value as PanelPreset;
                         setPreset(nextPreset);
                       if (nextPreset === "checkIn") {
-                        setPanelTitle("每日签到");
+                        setPanelTitle("每周签到");
                         setIdSeed("check-in");
                         setDecoration({ templateId: "reward", accentColor: "#2c68a8" });
                         setPanelChildDrafts(createDefaultPanelChildDrafts());
-                        setSelectedChildDraftId("reward");
+                        setSelectedChildDraftId("day1");
                       } else {
                         setPanelTitle("空白小面板");
                         setIdSeed("custom-panel");
@@ -939,14 +1762,33 @@ export const DirectorPanelCreatePage = ({
                 <label className="button-design-field">
                   <span>面板模板</span>
                   <select
-                    value={decoration.templateId}
-                    onChange={(event) => setDecoration({ ...decoration, templateId: event.target.value as PanelDecoration["templateId"] })}
+                    value={getPanelDecorationSelectValue(decoration)}
+                    disabled={templatesLoading}
+                    onChange={(event) => {
+                      if (!event.target.value) {
+                        setDecoration({
+                          templateId: decoration.templateId,
+                          ...(decoration.accentColor ? { accentColor: decoration.accentColor } : {}),
+                        });
+                        return;
+                      }
+
+                      const nextDecoration = resolvePanelDecoration(
+                        event.target.value,
+                        panelTemplateMap,
+                        decoration.accentColor,
+                      );
+                      if (nextDecoration) {
+                        setDecoration(nextDecoration);
+                      }
+                    }}
                   >
-                    <option value="plain">普通</option>
-                    <option value="paper">纸张</option>
-                    <option value="reward">奖励</option>
-                    <option value="glass">玻璃</option>
-                    <option value="notice">公告</option>
+                    <option value="">
+                      {panelTemplateSelectOptions.length > 0 ? "请选择模板" : "暂无模板，请先到模板库创建"}
+                    </option>
+                    {panelTemplateSelectOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </label>
                 <label className="button-design-color-field">
@@ -1011,15 +1853,129 @@ export const DirectorPanelCreatePage = ({
                     </div>
 
                     {selectedChildDraft.type === "text" ? (
-                      <label className="button-design-field">
-                        <span>文本</span>
-                        <input
-                          value={selectedChildDraft.text}
-                          onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
-                            draft.type === "text" ? { ...draft, text: event.target.value } : draft,
-                          )}
-                        />
-                      </label>
+                      (() => {
+                        const textArtDesign = resolveTextArtDesign(selectedChildDraft.artTextDesign);
+                        const textPreset = textArtDesign.preset;
+                        const showGradientControls = usesTextArtGradient(textPreset);
+
+                        return (
+                      <>
+                        <label className="button-design-field">
+                          <span>文本</span>
+                          <input
+                            value={selectedChildDraft.text}
+                            onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
+                              draft.type === "text" ? { ...draft, text: event.target.value } : draft,
+                            )}
+                          />
+                        </label>
+                        <label className="button-design-field">
+                          <span>艺术字样式</span>
+                          <select
+                            value={textPreset}
+                            onChange={(event) => {
+                              const nextPreset = event.target.value as TextArtPreset;
+                              updateChildDraft(selectedChildDraft.id, (draft) => {
+                                if (draft.type !== "text") {
+                                  return draft;
+                                }
+
+                                return {
+                                  ...draft,
+                                  artTextDesign: patchTextArtDesign(draft.artTextDesign, { preset: nextPreset }),
+                                };
+                              });
+                            }}
+                          >
+                            {TEXT_ART_PRESET_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <p className="meta panel-create-art-text-hint">
+                          {TEXT_ART_PRESET_OPTIONS.find((option) => option.value === textPreset)?.description
+                            ?? "选择书法体或渐变艺术字样式。"}
+                        </p>
+                        {showGradientControls ? (
+                          <>
+                            <label className="button-design-field">
+                              <span>渐变方向</span>
+                              <select
+                                value={getTextArtGradientDirection(textArtDesign)}
+                                onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) => {
+                                  if (draft.type !== "text") {
+                                    return draft;
+                                  }
+
+                                  return {
+                                    ...draft,
+                                    artTextDesign: patchTextArtDesign(draft.artTextDesign, {
+                                      gradientDirection: event.target.value as TextArtGradientDirection,
+                                    }),
+                                  };
+                                })}
+                              >
+                                {TEXT_ART_GRADIENT_DIRECTION_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="button-design-field">
+                              <span>渐变强度</span>
+                              <select
+                                value={getTextArtGradientIntensity(textArtDesign)}
+                                onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) => {
+                                  if (draft.type !== "text") {
+                                    return draft;
+                                  }
+
+                                  return {
+                                    ...draft,
+                                    artTextDesign: patchTextArtDesign(draft.artTextDesign, {
+                                      gradientIntensity: event.target.value as TextArtGradientIntensity,
+                                    }),
+                                  };
+                                })}
+                              >
+                                {TEXT_ART_GRADIENT_INTENSITY_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <p className="meta panel-create-art-text-hint">
+                              {TEXT_ART_GRADIENT_INTENSITY_OPTIONS.find(
+                                (option) => option.value === getTextArtGradientIntensity(textArtDesign),
+                              )?.description ?? "控制渐变过渡的对比度。"}
+                            </p>
+                          </>
+                        ) : null}
+                        {isArtTextPreset(textPreset) ? (
+                          <>
+                            <label className="button-design-color-field">
+                              <span>{getTextArtAccentLabel(textPreset)}</span>
+                              <input
+                                type="color"
+                                value={getTextArtAccentColor(textArtDesign)}
+                                onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) => {
+                                  if (draft.type !== "text") {
+                                    return draft;
+                                  }
+
+                                  return {
+                                    ...draft,
+                                    artTextDesign: patchTextArtDesign(draft.artTextDesign, {
+                                      accentColor: event.target.value,
+                                    }),
+                                  };
+                                })}
+                              />
+                            </label>
+                            <p className="meta panel-create-art-text-hint">{getTextArtAccentHint(textPreset)}</p>
+                          </>
+                        ) : null}
+                      </>
+                        );
+                      })()
                     ) : null}
 
                     {selectedChildDraft.type === "subPanel" ? (
@@ -1036,18 +1992,42 @@ export const DirectorPanelCreatePage = ({
                         <label className="button-design-field">
                           <span>模板</span>
                           <select
-                            value={selectedChildDraft.templateId}
-                            onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
-                              draft.type === "subPanel"
-                                ? { ...draft, templateId: event.target.value as PanelDecoration["templateId"] }
-                                : draft,
-                            )}
+                            value={getPanelDecorationSelectValue(selectedChildDraft.decoration)}
+                            disabled={templatesLoading}
+                            onChange={(event) => {
+                              if (!event.target.value) {
+                                updateChildDraft(selectedChildDraft.id, (draft) =>
+                                  draft.type === "subPanel"
+                                    ? {
+                                        ...draft,
+                                        decoration: {
+                                          templateId: draft.decoration.templateId,
+                                          ...(draft.decoration.accentColor
+                                            ? { accentColor: draft.decoration.accentColor }
+                                            : {}),
+                                        },
+                                      }
+                                    : draft,
+                                );
+                                return;
+                              }
+
+                              const nextDecoration = resolvePanelDecoration(event.target.value, panelTemplateMap);
+                              if (!nextDecoration) {
+                                return;
+                              }
+
+                              updateChildDraft(selectedChildDraft.id, (draft) =>
+                                draft.type === "subPanel" ? { ...draft, decoration: nextDecoration } : draft,
+                              );
+                            }}
                           >
-                            <option value="plain">普通</option>
-                            <option value="paper">纸张</option>
-                            <option value="reward">奖励</option>
-                            <option value="glass">玻璃</option>
-                            <option value="notice">公告</option>
+                            <option value="">
+                              {panelTemplateSelectOptions.length > 0 ? "请选择模板" : "暂无模板，请先到模板库创建"}
+                            </option>
+                            {panelTemplateSelectOptions.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
                           </select>
                         </label>
                       </>
@@ -1083,218 +2063,531 @@ export const DirectorPanelCreatePage = ({
                       aspectRatio: panelPreviewAspectRatio,
                       borderColor: decoration.accentColor,
                     }}
-                    onPointerMove={handleChildDraftPointerMove}
-                    onPointerUp={stopChildDraftPointer}
-                    onPointerCancel={stopChildDraftPointer}
                   >
-                    {panelChildDrafts.map((draft) => {
-                      const positionStyle = {
-                        left: `${draft.position.x}%`,
-                        top: `${draft.position.y}%`,
-                        width: `${draft.position.width}%`,
-                        height: `${draft.position.height}%`,
-                      };
-                      const selected = draft.id === selectedChildDraft?.id;
-                      if (draft.type === "text") {
+                    {renderPanelBackgroundLayer(decoration)}
+                    <div
+                      ref={beautyPreviewCanvasRef}
+                      className="panel-create-beauty-canvas"
+                      onPointerDown={handleBeautyPreviewPointerDown}
+                      onPointerMove={handleBeautyPreviewPointerMove}
+                      onPointerUp={handleBeautyPreviewPointerUp}
+                      onPointerCancel={handleBeautyPreviewPointerUp}
+                    >
+                      {panelChildDrafts.map((draft) => {
+                        const positionStyle = {
+                          left: `${draft.position.x}%`,
+                          top: `${draft.position.y}%`,
+                          width: `${draft.position.width}%`,
+                          height: `${draft.position.height}%`,
+                        };
+                        const selected = draft.id === selectedChildDraft?.id;
+                        if (draft.type === "text") {
+                          const artTextDesign = draft.artTextDesign;
+                          const usesArtText = isArtTextPreset(resolveTextArtDesign(artTextDesign).preset);
+                          return (
+                            <div
+                              key={draft.id}
+                              data-panel-create-child-id={draft.id}
+                              className={`panel-create-preview-text ${usesArtText ? "is-art-text" : ""} ${selected ? "selected" : ""}`.trim()}
+                              style={{
+                                ...positionStyle,
+                                ...getPanelTextArtContainerStyle(artTextDesign),
+                              }}
+                            >
+                              {usesArtText ? (
+                                <span
+                                  className={getPanelTextArtContentClassName(artTextDesign)}
+                                  style={getPanelTextArtContentStyle(artTextDesign, { interactive: true })}
+                                >
+                                  {draft.text}
+                                </span>
+                              ) : draft.text}
+                              {selected ? <PanelCreateChildOutline childId={draft.id} /> : null}
+                            </div>
+                          );
+                        }
+                        if (draft.type === "subPanel") {
+                          return (
+                            <div
+                              key={draft.id}
+                              data-panel-create-child-id={draft.id}
+                              className={`panel-create-preview-subpanel decoration-${draft.decoration.templateId} ${selected ? "selected" : ""}`}
+                              style={{
+                                ...positionStyle,
+                                ...getDecorationStyle(draft.decoration),
+                              }}
+                            >
+                              {renderPanelBackgroundLayer(draft.decoration)}
+                              {draft.title}
+                              {selected ? <PanelCreateChildOutline childId={draft.id} /> : null}
+                            </div>
+                          );
+                        }
+                        const state = draft.states.find((candidate) => candidate.id === draft.defaultStateId) ?? draft.states[0];
+                        if (!state) {
+                          return null;
+                        }
+
                         return (
-                          <button
+                          <div
                             key={draft.id}
-                            type="button"
-                            className={`panel-create-preview-text ${selected ? "selected" : ""}`}
-                            style={positionStyle}
-                            onPointerDown={startMoveChildDraft(draft.id)}
-                            onPointerUp={stopChildDraftPointer}
-                            onPointerCancel={stopChildDraftPointer}
-                            onClick={() => setSelectedChildDraftId(draft.id)}
+                            data-panel-create-child-id={draft.id}
+                            className={`dynamic-ui-button panel-create-preview-button ${getButtonStatePreviewClassName(state)} ${selected ? "selected" : ""}`}
+                            style={getButtonPreviewStyle(state, positionStyle)}
                           >
-                            {draft.text}
-                            {selected ? (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((handle) => (
-                              <span
-                                key={handle}
-                                className={`panel-create-frame-handle ${handle}`}
-                                onPointerDown={startResizeChildDraft(draft.id, handle)}
-                                onPointerUp={stopChildDraftPointer}
-                                onPointerCancel={stopChildDraftPointer}
-                              />
-                            )) : null}
-                          </button>
+                            {renderButtonPreviewLayers(state)}
+                            {renderButtonPreviewContent(state, draft.name)}
+                            {selected ? <PanelCreateChildOutline childId={draft.id} /> : null}
+                          </div>
                         );
-                      }
-                      if (draft.type === "subPanel") {
-                        return (
-                          <button
-                            key={draft.id}
-                            type="button"
-                            className={`panel-create-preview-subpanel decoration-${draft.templateId} ${selected ? "selected" : ""}`}
-                            style={positionStyle}
-                            onPointerDown={startMoveChildDraft(draft.id)}
-                            onPointerUp={stopChildDraftPointer}
-                            onPointerCancel={stopChildDraftPointer}
-                            onClick={() => setSelectedChildDraftId(draft.id)}
-                          >
-                            {draft.title}
-                            {selected ? (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((handle) => (
-                              <span
-                                key={handle}
-                                className={`panel-create-frame-handle ${handle}`}
-                                onPointerDown={startResizeChildDraft(draft.id, handle)}
-                                onPointerUp={stopChildDraftPointer}
-                                onPointerCancel={stopChildDraftPointer}
-                              />
-                            )) : null}
-                          </button>
-                        );
-                      }
-                      const state = draft.states.find((candidate) => candidate.id === draft.defaultStateId) ?? draft.states[0];
-                      return (
-                        <button
-                          key={draft.id}
-                          type="button"
-                          className={`dynamic-ui-button panel-create-preview-button ${state?.variant ?? "primary"} base-${state?.baseTemplateId ?? "rounded"} pattern-${state?.patternTemplateId ?? "none"} ${selected ? "selected" : ""}`}
-                          style={{
-                            ...positionStyle,
-                            backgroundColor: state?.backgroundColor,
-                            color: state?.textColor,
-                            borderRadius: 12,
-                          }}
-                          onPointerDown={startMoveChildDraft(draft.id)}
-                          onPointerUp={stopChildDraftPointer}
-                          onPointerCancel={stopChildDraftPointer}
-                          onClick={() => setSelectedChildDraftId(draft.id)}
-                        >
-                          <span className="dynamic-ui-button-content">
-                            {state?.icon ? <span className="dynamic-ui-button-icon">{state.icon}</span> : null}
-                            <span>{state?.label ?? draft.name}</span>
-                          </span>
-                          {selected ? (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((handle) => (
-                            <span
-                              key={handle}
-                              className={`panel-create-frame-handle ${handle}`}
-                              onPointerDown={startResizeChildDraft(draft.id, handle)}
-                              onPointerUp={stopChildDraftPointer}
-                              onPointerCancel={stopChildDraftPointer}
-                            />
-                          )) : null}
-                        </button>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
                 </div>
               </section>
             </div>
+          ) : step === "rewardConfig" ? (
+            <section className="panel-create-form panel-create-reward-config">
+              <h3>每周签到奖励配置</h3>
+              <p className="meta">
+                签到规则（例如本周已签 3 次、今天未签，则第 4 个按钮可领）由系统自动判定，不需要在这里可视化编辑。
+                你只需配置每个按钮领取时增加到玩家账户的金币、钻石、碎片。
+              </p>
+              <div className="panel-create-reward-table-wrap">
+                <table className="panel-create-reward-table">
+                  <thead>
+                    <tr>
+                      <th>签到按钮</th>
+                      <th>金币</th>
+                      <th>钻石</th>
+                      <th>碎片</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: WEEKLY_CHECK_IN_DAY_COUNT }, (_, index) => {
+                      const dayIndex = index + 1;
+                      const reward = weeklyCheckInRewards[index] ?? defaultWeeklyCheckInRewards()[index]!;
+                      return (
+                        <tr key={dayIndex}>
+                          <th scope="row">第 {dayIndex} 天</th>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={reward.coins}
+                              onChange={(event) => updateWeeklyCheckInReward(dayIndex, "coins", Number(event.target.value))}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={reward.gems}
+                              onChange={(event) => updateWeeklyCheckInReward(dayIndex, "gems", Number(event.target.value))}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={reward.fragments}
+                              onChange={(event) => updateWeeklyCheckInReward(dayIndex, "fragments", Number(event.target.value))}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="meta panel-create-reward-footnote">
+                示例：玩家本周已签到 3 次且今天还没签，则第 4 个按钮变为可领取；点击后会按上表奖励增加玩家资产，并切换到已领取状态。
+              </p>
+            </section>
           ) : (
             <div className="panel-create-button-design-layout">
               {selectedChildDraft?.type === "multiStateButton" ? (
                 <>
-                  <section className="panel-create-form">
-                    <h3>按钮设计</h3>
-                    <label className="button-design-field">
-                      <span>按钮名</span>
-                      <input
-                        value={selectedChildDraft.name}
-                        onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
-                          draft.type === "multiStateButton" ? { ...draft, name: event.target.value } : draft,
-                        )}
-                      />
-                    </label>
-                    <label className="button-design-field">
-                      <span>默认状态</span>
-                      <select
-                        value={selectedChildDraft.defaultStateId}
-                        onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
-                          draft.type === "multiStateButton" ? { ...draft, defaultStateId: event.target.value } : draft,
-                        )}
-                      >
-                        {selectedChildDraft.states.map((state) => (
-                          <option key={state.id} value={state.id}>{state.name}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <button type="button" onClick={() => addButtonStateDraft(selectedChildDraft.id)}>
-                      添加状态
-                    </button>
-                    <div className="panel-create-state-list">
-                      {selectedChildDraft.states.map((state) => (
-                        <section key={state.id} className="panel-create-state-card">
-                          <div>
+                  <section className="panel-create-button-design-header">
+                    <div className="panel-create-button-design-basics panel-create-form">
+                      <h3>按钮设计</h3>
+                      <label className="button-design-field">
+                        <span>按钮名</span>
+                        <input
+                          value={selectedChildDraft.name}
+                          onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
+                            draft.type === "multiStateButton" ? { ...draft, name: event.target.value } : draft,
+                          )}
+                        />
+                      </label>
+                      <div className="panel-create-button-meta-row">
+                        <label className="button-design-field">
+                          <span>状态数</span>
+                          <input value={selectedChildDraft.states.length} readOnly />
+                        </label>
+                        <label className="button-design-field">
+                          <span>默认状态</span>
+                          <select
+                            value={selectedChildDraft.defaultStateId}
+                            onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
+                              draft.type === "multiStateButton" ? { ...draft, defaultStateId: event.target.value } : draft,
+                            )}
+                          >
+                            {selectedChildDraft.states.map((state) => (
+                              <option key={state.id} value={state.id}>{state.name}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="button-design-field">
+                          <span>预览状态</span>
+                          <select
+                            value={previewStateId}
+                            onChange={(event) => setPreviewStateId(event.target.value)}
+                          >
+                            {selectedChildDraft.states.map((state) => (
+                              <option key={state.id} value={state.id}>{state.name}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <div className="panel-create-button-state-names">
+                        <span className="panel-create-button-state-names-label">状态命名</span>
+                        <div className="panel-create-button-state-names-grid">
+                          {selectedChildDraft.states.map((state, index) => (
+                            <label key={state.id} className="panel-create-button-state-name-field">
+                              <span>状态 {index + 1}</span>
+                              <input
+                                value={state.name}
+                                onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { name: event.target.value })}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => addButtonStateDraft(selectedChildDraft.id)}>
+                        添加状态
+                      </button>
+                    </div>
+                    <section className="panel-create-button-design-preview panel-create-preview">
+                      <h3>按钮预览</h3>
+                      <p className="meta">
+                        预览比例与「美化信息」中该按钮一致。艺术字以文本框为边界，拖动框体移动位置，拖拽四角放大缩小字框（字号随框体同步变化）。
+                      </p>
+                      {previewButtonState && selectedChildDraft.type === "multiStateButton" ? (
+                        <div className="panel-create-button-single-preview">
+                          <div
+                            ref={buttonPreviewStageRef}
+                            className="panel-create-button-single-preview-stage"
+                            style={{ aspectRatio: buttonDesignPreviewAspectRatio }}
+                            onPointerMove={handleButtonPreviewPatternPointerMove}
+                            onPointerUp={handleButtonPreviewPatternPointerUp}
+                            onPointerCancel={handleButtonPreviewPatternPointerUp}
+                          >
+                            <div
+                              className={`dynamic-ui-button panel-create-button-state-sample ${getButtonStatePreviewClassName(previewButtonState)}`}
+                              style={{
+                                ...getButtonPreviewStyle(previewButtonState),
+                                position: "absolute",
+                                inset: 0,
+                                width: "auto",
+                                height: "auto",
+                              }}
+                            >
+                              {renderButtonPreviewLayers(previewButtonState, {
+                                patternAdjustable: getButtonStateContentType(previewButtonState) === "pattern",
+                                activeLayerId: selectedPatternLayerId,
+                                onPatternMovePointerDown: (layerId) =>
+                                  handleButtonPreviewPatternMovePointerDown(previewButtonState.id, layerId),
+                                onPatternResizePointerDown: (layerId, handle) =>
+                                  handleButtonPreviewPatternResizePointerDown(previewButtonState.id, layerId, handle),
+                              })}
+                              {renderButtonPreviewContent(previewButtonState)}
+                            </div>
+                          </div>
+                          <code className="panel-create-button-aspect-readout">
+                            宽高比 {selectedChildDraft.position.width}:{selectedChildDraft.position.height}
+                          </code>
+                        </div>
+                      ) : null}
+                    </section>
+                  </section>
+
+                  <section className="panel-create-button-design-states panel-create-form">
+                    <h3>状态设计</h3>
+                    <p className="meta">
+                      每个状态一列。文本型只需配置显示文字和底座模板；图案型可叠加多个图案/艺术字图层，并分别调节位置与大小。
+                    </p>
+                    <div className="panel-create-button-state-columns">
+                      {selectedChildDraft.states.map((state) => {
+                        const contentType = getButtonStateContentType(state);
+                        return (
+                        <section key={state.id} className="panel-create-button-state-column">
+                          <header
+                            className="panel-create-button-state-column-header"
+                            onClick={() => setPreviewStateId(state.id)}
+                          >
                             <strong>{state.name}</strong>
                             <code>{state.id}</code>
-                          </div>
-                          <label>
-                            <span>状态名</span>
-                            <input value={state.name} onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { name: event.target.value })} />
+                          </header>
+                          <label className="button-design-field">
+                            <span>按钮类型</span>
+                            <select
+                              value={contentType}
+                              onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
+                                draft.type === "multiStateButton"
+                                  ? {
+                                      ...draft,
+                                      states: draft.states.map((candidate) =>
+                                        candidate.id === state.id
+                                          ? applyButtonStateContentType(candidate, event.target.value as "text" | "pattern")
+                                          : candidate,
+                                      ),
+                                    }
+                                  : draft,
+                              )}
+                            >
+                              <option value="text">文本型</option>
+                              <option value="pattern">图案型</option>
+                            </select>
                           </label>
-                          <label>
-                            <span>显示文字</span>
-                            <input value={state.label} onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { label: event.target.value })} />
-                          </label>
-                          <label>
+                          <label className="button-design-field">
                             <span>底座模板</span>
                             <select
-                              value={state.baseTemplateId}
-                              onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { baseTemplateId: event.target.value as ButtonStateDraft["baseTemplateId"] })}
+                              value={getButtonBaseTemplateSelectValue(state)}
+                              disabled={templatesLoading}
+                              onChange={(event) => updateChildDraft(selectedChildDraft.id, (draft) =>
+                                draft.type === "multiStateButton"
+                                  ? {
+                                      ...draft,
+                                      states: draft.states.map((candidate) =>
+                                        candidate.id === state.id
+                                          ? applyBaseTemplateSelection(candidate, event.target.value)
+                                          : candidate,
+                                      ),
+                                    }
+                                  : draft,
+                              )}
                             >
-                              {buttonBaseTemplateOptions.map((option) => (
-                                <option key={option.id} value={option.id}>{option.label}</option>
+                              <option value="">
+                                {buttonBaseTemplateSelectOptions.length > 0 ? "请选择底座模板" : "暂无底座模板"}
+                              </option>
+                              {buttonBaseTemplateSelectOptions.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
                               ))}
                             </select>
                           </label>
-                          <label>
-                            <span>图案模板</span>
-                            <select
-                              value={state.patternTemplateId}
-                              onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, {
-                                patternTemplateId: event.target.value as ButtonStateDraft["patternTemplateId"],
-                                icon: event.target.value === "none" ? "" : event.target.value,
+                          {contentType === "text" ? (
+                            <label className="button-design-field">
+                              <span>显示文字</span>
+                              <input
+                                value={state.label}
+                                onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { label: event.target.value })}
+                              />
+                            </label>
+                          ) : (
+                            <div className="panel-create-pattern-layers">
+                              {normalizeButtonStatePatternLayerDrafts(state).map((layer, layerIndex) => {
+                                const layerFrame = getPatternLayerFrame(layer);
+                                const layerCollapsed = isPatternLayerCollapsed(selectedChildDraft.id, state.id, layer.id);
+                                return (
+                                <article
+                                  key={layer.id}
+                                  className={`panel-create-pattern-layer-card ${selectedPatternLayerId === layer.id && previewStateId === state.id ? "selected" : ""} ${layerCollapsed ? "collapsed" : ""}`}
+                                >
+                                  <header className="panel-create-pattern-layer-card-header">
+                                    <div className="panel-create-pattern-layer-card-title-row">
+                                      <button
+                                        type="button"
+                                        className="panel-create-pattern-layer-toggle secondary"
+                                        aria-expanded={!layerCollapsed}
+                                        onClick={() => togglePatternLayerCollapsed(selectedChildDraft.id, state.id, layer.id)}
+                                      >
+                                        {layerCollapsed ? "展开" : "收起"}
+                                      </button>
+                                      <strong className="panel-create-pattern-layer-card-title">{layer.name}</strong>
+                                      <code className="panel-create-pattern-layer-kind-badge">
+                                        {layer.kind === "artText" ? "艺术字" : "图案"}
+                                      </code>
+                                    </div>
+                                    {layerCollapsed ? (
+                                      <p className="meta panel-create-pattern-layer-summary">
+                                        {layer.kind === "artText"
+                                          ? `文案：${layer.artTextLabel?.trim() || state.label}`
+                                          : getPatternLayerTemplateSelectValue(layer)
+                                            ? "已选模板"
+                                            : "未选模板"}
+                                        {" · "}
+                                        X {layerFrame.x}% · Y {layerFrame.y}% · 字框 {layerFrame.width}%×{layerFrame.height}%
+                                      </p>
+                                    ) : null}
+                                    <div className="panel-create-pattern-layer-card-actions">
+                                      <button
+                                        type="button"
+                                        className="secondary"
+                                        onClick={() => selectPatternLayerForPreview(selectedChildDraft.id, state.id, layer.id)}
+                                      >
+                                        编辑
+                                      </button>
+                                      {normalizeButtonStatePatternLayerDrafts(state).length > 1 ? (
+                                        <button
+                                          type="button"
+                                          className="secondary"
+                                          onClick={() => removePatternLayerDraft(selectedChildDraft.id, state.id, layer.id)}
+                                        >
+                                          删除
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                  </header>
+                                  {!layerCollapsed ? (
+                                  <div className="panel-create-pattern-layer-card-body">
+                                  <label className="panel-create-button-state-name-field">
+                                    <span>图层名</span>
+                                    <input
+                                      value={layer.name}
+                                      onChange={(event) => updatePatternLayers(selectedChildDraft.id, state.id, (layers) =>
+                                        layers.map((candidate) =>
+                                          candidate.id === layer.id ? { ...candidate, name: event.target.value } : candidate,
+                                        ),
+                                      )}
+                                    />
+                                  </label>
+                                  <label className="button-design-field">
+                                    <span>图层类型</span>
+                                    <select
+                                      value={layer.kind}
+                                      onChange={(event) => updatePatternLayers(selectedChildDraft.id, state.id, (layers) =>
+                                        layers.map((candidate) => {
+                                          if (candidate.id !== layer.id) {
+                                            return candidate;
+                                          }
+
+                                          const kind = event.target.value as ButtonPatternLayerDraft["kind"];
+                                          if (kind === "artText") {
+                                            return {
+                                              ...createDefaultArtTextLayerDraft(layerIndex + 1, state.label),
+                                              id: candidate.id,
+                                              name: candidate.name,
+                                            };
+                                          }
+
+                                          return {
+                                            ...createEmptyPatternLayerDraft(layerIndex + 1),
+                                            id: candidate.id,
+                                            name: candidate.name,
+                                          };
+                                        }),
+                                      )}
+                                    >
+                                      <option value="pattern">图案</option>
+                                      <option value="artText">艺术字</option>
+                                    </select>
+                                  </label>
+                                  {layer.kind === "artText" ? (
+                                    <label className="button-design-field">
+                                      <span>艺术字文案</span>
+                                      <input
+                                        value={layer.artTextLabel ?? state.label}
+                                        onChange={(event) => updatePatternLayers(selectedChildDraft.id, state.id, (layers) =>
+                                          layers.map((candidate) =>
+                                            candidate.id === layer.id
+                                              ? { ...candidate, artTextLabel: event.target.value }
+                                              : candidate,
+                                          ),
+                                        )}
+                                      />
+                                    </label>
+                                  ) : null}
+                                  <label className="button-design-field">
+                                    <span>{layer.kind === "artText" ? "艺术字图片（可选）" : "图案模板"}</span>
+                                    <select
+                                      value={getPatternLayerTemplateSelectValue(layer)}
+                                      disabled={templatesLoading}
+                                      onChange={(event) => updatePatternLayers(selectedChildDraft.id, state.id, (layers) =>
+                                        layers.map((candidate) =>
+                                          candidate.id === layer.id
+                                            ? applyPatternLayerTemplateSelection(candidate, event.target.value)
+                                            : candidate,
+                                        ),
+                                      )}
+                                    >
+                                      <option value="">
+                                        {layer.kind === "artText"
+                                          ? "使用 CSS 渐变艺术字"
+                                          : patternTemplateSelectOptions.length > 0
+                                            ? "请选择图案模板"
+                                            : "暂无图案模板"}
+                                      </option>
+                                      {patternTemplateSelectOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                  <div className="panel-create-pattern-frame-grid">
+                                    {(["x", "y", "width", "height"] as const).map((field) => (
+                                      <label key={field} className="panel-create-button-state-name-field">
+                                        <span>
+                                          {layer.kind === "artText"
+                                            ? field === "x"
+                                              ? "字框 X"
+                                              : field === "y"
+                                                ? "字框 Y"
+                                                : field === "width"
+                                                  ? "字框宽"
+                                                  : "字框高"
+                                            : field === "x"
+                                              ? "X"
+                                              : field === "y"
+                                                ? "Y"
+                                                : field === "width"
+                                                  ? "宽"
+                                                  : "高"}
+                                        </span>
+                                        <input
+                                          type="number"
+                                          min={field === "x" || field === "y" ? -25 : 4}
+                                          max={125}
+                                          step={0.5}
+                                          value={layerFrame[field]}
+                                          onChange={(event) => {
+                                            const nextValue = Number(event.target.value);
+                                            if (!Number.isFinite(nextValue)) {
+                                              return;
+                                            }
+
+                                            updatePatternLayerFrame(selectedChildDraft.id, state.id, layer.id, {
+                                              ...layerFrame,
+                                              [field]: nextValue,
+                                            });
+                                          }}
+                                        />
+                                      </label>
+                                    ))}
+                                  </div>
+                                  </div>
+                                  ) : null}
+                                </article>
+                                );
                               })}
-                            >
-                              {buttonPatternTemplateOptions.map((option) => (
-                                <option key={option.id} value={option.id}>{option.label}</option>
-                              ))}
-                            </select>
-                          </label>
-                          <label>
-                            <span>样式</span>
-                            <select value={state.variant} onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { variant: event.target.value as ButtonStateDraft["variant"] })}>
-                              <option value="primary">primary</option>
-                              <option value="secondary">secondary</option>
-                              <option value="ghost">ghost</option>
-                            </select>
-                          </label>
-                          <div className="panel-create-state-colors">
-                            <label>
-                              <span>背景</span>
-                              <input type="color" value={state.backgroundColor} onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { backgroundColor: event.target.value })} />
-                            </label>
-                            <label>
-                              <span>文字</span>
-                              <input type="color" value={state.textColor} onChange={(event) => updateButtonStateDraft(selectedChildDraft.id, state.id, { textColor: event.target.value })} />
-                            </label>
-                          </div>
+                              <div className="panel-create-pattern-layer-add-actions">
+                                <button type="button" onClick={() => addPatternLayerDraft(selectedChildDraft.id, state.id, "pattern")}>
+                                  添加图案图层
+                                </button>
+                                <button type="button" className="secondary" onClick={() => addPatternLayerDraft(selectedChildDraft.id, state.id, "artText")}>
+                                  添加艺术字图层
+                                </button>
+                              </div>
+                              <p className="meta panel-create-art-text-hint">
+                                CSS 艺术字会把文案放进可编辑的字框里：字框越大字越大。也可上传 PNG 艺术字图片替代。
+                              </p>
+                            </div>
+                          )}
                         </section>
-                      ))}
-                    </div>
-                  </section>
-                  <section className="panel-create-preview panel-create-preview-major">
-                    <h3>状态预览</h3>
-                    <div className="panel-create-button-state-preview">
-                      {selectedChildDraft.states.map((state) => (
-                        <button
-                          key={state.id}
-                          type="button"
-                          className={`dynamic-ui-button panel-create-button-state-sample ${state.variant} base-${state.baseTemplateId} pattern-${state.patternTemplateId}`}
-                          style={{
-                            backgroundColor: state.backgroundColor,
-                            color: state.textColor,
-                            borderRadius: 12,
-                          }}
-                        >
-                          <span className="dynamic-ui-button-content">
-                            {state.icon ? <span className="dynamic-ui-button-icon">{state.icon}</span> : null}
-                            <span>{state.label}</span>
-                          </span>
-                        </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   </section>
                 </>

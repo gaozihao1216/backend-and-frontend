@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap");
+
 :root {
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   color: #25423c;
@@ -2454,6 +2456,63 @@ fieldset {
   z-index: 1;
 }
 
+.director-template-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.director-template-tabs button {
+  border: 1px solid rgba(18, 32, 47, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.director-template-tabs button.selected {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.director-template-section {
+  display: grid;
+  gap: 16px;
+}
+
+.director-template-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stretch-template-image {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.stretch-template-preview {
+  min-height: 120px;
+}
+
+.button-template-stretch-frame {
+  width: min(100%, 360px);
+  aspect-ratio: 4 / 3;
+  border: 1px dashed rgba(18, 32, 47, 0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.stretch-template-sample img {
+  object-fit: fill;
+}
+
 .dynamic-ui-page {
   position: relative;
   box-sizing: border-box;
@@ -2512,6 +2571,22 @@ fieldset {
   object-fit: contain;
 }
 
+.dynamic-ui-button-pattern,
+.dynamic-ui-panel-background,
+.panel-create-background-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.panel-create-beauty-preview > :not(.panel-create-background-layer):not(.panel-create-beauty-canvas),
+.panel-create-preview-subpanel > :not(.panel-create-background-layer):not(.panel-create-node-outline) {
+  position: relative;
+  z-index: 1;
+}
+
 .dynamic-ui-button-content {
   position: relative;
   z-index: 2;
@@ -2558,6 +2633,55 @@ fieldset {
   color: #344944;
 }
 
+.dynamic-ui-text.dynamic-ui-text-art {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dynamic-ui-text-art-content {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dynamic-ui-text-art-content.is-gradient {
+  background-color: transparent;
+  background-image: var(--text-art-gradient);
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.dynamic-ui-text-art-content.preset-goldGradient {
+  font-size: min(72cqw, 88cqh);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.dynamic-ui-text-art-content.preset-inkBrush {
+  font-size: min(68cqw, 84cqh);
+}
+
+.dynamic-ui-text-art-content.preset-runningScript {
+  font-size: min(74cqw, 90cqh);
+}
+
+.dynamic-ui-text-art-content.preset-sealCinnabar {
+  font-size: min(64cqw, 80cqh);
+  text-transform: none;
+}
+
 .dynamic-ui-panel {
   box-sizing: border-box;
   display: grid;
@@ -2588,6 +2712,7 @@ fieldset {
 
 .dynamic-ui-panel-content {
   position: relative;
+  z-index: 2;
   height: 100%;
   min-height: 100%;
   overflow: hidden;
@@ -2680,6 +2805,422 @@ fieldset {
 .page-builder-layout {
   display: grid;
   gap: 0.75rem;
+}
+
+.level-interface-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.42fr) minmax(420px, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.level-interface-structure-panel {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.level-interface-structure-panel h3,
+.level-interface-structure-panel p {
+  margin: 0;
+}
+
+.level-interface-tree,
+.level-interface-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.level-interface-tree ul {
+  margin-left: 0.85rem;
+  padding-left: 0.65rem;
+  border-left: 1px dashed rgba(18, 32, 47, 0.14);
+}
+
+.level-interface-tree-item + .level-interface-tree-item {
+  margin-top: 0.35rem;
+}
+
+.level-interface-tree-node {
+  width: 100%;
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.level-interface-tree-node.selected {
+  border-color: rgba(44, 104, 168, 0.42);
+  background: #dceeff;
+}
+
+.level-interface-tree-node strong {
+  color: #12385f;
+  font-size: 0.92rem;
+}
+
+.level-interface-tree-node span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.level-interface-tree-node code {
+  border-radius: 999px;
+  background: rgba(18, 32, 47, 0.06);
+  padding: 0.12rem 0.45rem;
+  font-size: 0.74rem;
+}
+
+.level-interface-tree-node small {
+  color: #66867c;
+  font-size: 0.74rem;
+  word-break: break-all;
+}
+
+.level-interface-tree-footnote {
+  margin: 0;
+}
+
+.level-interface-preview-panel {
+  min-width: 0;
+}
+
+.level-interface-background-editor {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.level-interface-background-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.level-interface-background-editor-header h3 {
+  margin: 0 0 0.35rem;
+}
+
+.level-interface-background-mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.level-interface-background-mode-tabs button {
+  border-radius: 999px;
+}
+
+.level-interface-background-mode-tabs button.active {
+  background: #12202f;
+  color: #fff8ef;
+}
+
+.level-interface-background-style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.level-interface-background-style-card {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid rgba(18, 32, 47, 0.12);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.65rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.level-interface-background-style-card.selected {
+  border-color: rgba(44, 104, 168, 0.55);
+  box-shadow: 0 0 0 2px rgba(109, 184, 255, 0.25);
+}
+
+.level-interface-background-style-card strong {
+  color: #12385f;
+  font-size: 0.92rem;
+}
+
+.level-interface-background-style-card span:last-child {
+  color: #66867c;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.level-interface-background-style-sample {
+  display: block;
+  width: 100%;
+  height: 72px;
+  border-radius: 10px;
+  border: 1px solid rgba(18, 32, 47, 0.08);
+}
+
+.level-interface-background-style-sample.preset-levelSky {
+  background: linear-gradient(180deg, #b8e4ff 0%, #dff3ff 42%, #c8e8a8 100%);
+}
+
+.level-interface-background-style-sample.preset-levelGrass {
+  background: linear-gradient(180deg, #d8f2c2 0%, #9fd06a 55%, #6fae4a 100%);
+}
+
+.level-interface-background-style-sample.preset-levelParchment {
+  background: linear-gradient(180deg, #fff6df 0%, #f0ddb0 52%, #d8bc7a 100%);
+}
+
+.level-interface-background-style-sample.preset-levelTwilight {
+  background: linear-gradient(180deg, #ffd2a1 0%, #ff9a62 38%, #8f6fd8 100%);
+}
+
+.level-interface-background-style-sample.preset-levelInk {
+  background: linear-gradient(180deg, #eef3f6 0%, #c8d5dc 48%, #8aa0ad 100%);
+}
+
+.level-interface-background-image-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.level-interface-background-image-preview {
+  width: 100%;
+  min-height: 160px;
+  border-radius: 14px;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  background-color: #f4f9ff;
+  background-size: cover;
+  background-position: center;
+}
+
+.level-interface-background-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.level-interface-background-save-style-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 0.75rem;
+  border: 1px dashed rgba(44, 104, 168, 0.28);
+  border-radius: 14px;
+  background: rgba(220, 238, 255, 0.35);
+}
+
+.level-interface-background-save-style-panel .button-design-field {
+  flex: 1 1 220px;
+}
+
+.level-interface-background-custom-styles {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.level-interface-background-custom-styles h4 {
+  margin: 0;
+  color: #12385f;
+  font-size: 0.92rem;
+}
+
+.level-interface-background-style-sample.preset-custom {
+  background-size: cover;
+  background-position: center;
+}
+
+.level-interface-background-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.dynamic-ui-panel.kind-stage.decoration-levelSky {
+  border-color: color-mix(in srgb, var(--level-stage-accent, #6db8ff) 35%, rgba(18, 32, 47, 0.14));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--level-stage-accent, #6db8ff) 55%, #ffffff) 0%,
+    #dff3ff 38%,
+    #c8e8a8 100%
+  );
+}
+
+.dynamic-ui-panel.kind-stage.decoration-levelGrass {
+  border-color: color-mix(in srgb, var(--level-stage-accent, #7fbf5b) 35%, rgba(18, 32, 47, 0.14));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--level-stage-accent, #7fbf5b) 35%, #ffffff) 0%,
+    #b8e58a 48%,
+    #6fae4a 100%
+  );
+}
+
+.dynamic-ui-panel.kind-stage.decoration-levelParchment {
+  border-color: color-mix(in srgb, var(--level-stage-accent, #c9a45c) 35%, rgba(18, 32, 47, 0.14));
+  background: linear-gradient(
+    180deg,
+    #fff8ea 0%,
+    color-mix(in srgb, var(--level-stage-accent, #c9a45c) 28%, #f0ddb0) 52%,
+    #d8bc7a 100%
+  );
+}
+
+.dynamic-ui-panel.kind-stage.decoration-levelTwilight {
+  border-color: color-mix(in srgb, var(--level-stage-accent, #ff9a62) 35%, rgba(18, 32, 47, 0.14));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--level-stage-accent, #ff9a62) 45%, #ffd2a1) 0%,
+    #ff9a62 38%,
+    #8f6fd8 100%
+  );
+}
+
+.dynamic-ui-panel.kind-stage.decoration-levelInk {
+  border-color: color-mix(in srgb, var(--level-stage-accent, #5f7f93) 35%, rgba(18, 32, 47, 0.14));
+  background: linear-gradient(
+    180deg,
+    #f5f8fa 0%,
+    color-mix(in srgb, var(--level-stage-accent, #5f7f93) 22%, #d8e2e8) 48%,
+    color-mix(in srgb, var(--level-stage-accent, #5f7f93) 55%, #8aa0ad) 100%
+  );
+}
+
+.level-interface-button-format-editor {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 18px;
+  background: #fffdfa;
+  padding: 1rem;
+}
+
+.level-interface-button-format-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.level-interface-button-format-states {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.level-interface-button-format-state-row {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.level-interface-button-format-state-row strong {
+  color: #12385f;
+}
+
+.level-interface-button-format-preview-panel {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px dashed rgba(44, 104, 168, 0.24);
+  border-radius: 14px;
+  background: rgba(220, 238, 255, 0.28);
+  padding: 0.85rem;
+}
+
+.level-interface-button-format-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.level-interface-button-format-preview-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.level-interface-button-format-preview-tabs button {
+  border-radius: 999px;
+}
+
+.level-interface-button-format-preview-tabs button.active {
+  background: #12202f;
+  color: #fff8ef;
+}
+
+.level-interface-button-format-preview-sample {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: start;
+}
+
+.level-interface-button-format-template-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.level-interface-button-format-preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.level-interface-button-format-preview-stage .dynamic-ui-button {
+  position: relative;
+}
+
+.level-interface-button-format-preview-sample .dynamic-ui-button {
+  position: relative;
+  min-width: 220px;
+  min-height: 56px;
+  padding: 0.65rem 1rem;
+}
+
+.dynamic-ui-panel.kind-stage .dynamic-ui-button {
+  white-space: normal;
+  line-height: 1.15;
+  text-align: center;
+  padding: 0.28rem 0.45rem;
+}
+
+.dynamic-ui-panel.kind-stage .dynamic-ui-button-content {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
+}
+
+.dynamic-ui-panel.kind-stage[class*="decoration-level"] .dynamic-ui-panel-content-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.85) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 18%, rgba(255, 255, 255, 0.7) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 46% 68%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px);
 }
 
 .page-builder-preview-meta {
@@ -2925,6 +3466,17 @@ fieldset {
   background: rgba(255, 255, 255, 0.72);
   padding: 0.5rem;
   color: #344944;
+}
+
+.page-builder-preview-text.is-art-text {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .page-builder-preview-text-content {
@@ -3332,9 +3884,337 @@ fieldset {
 
 .panel-create-button-design-layout {
   display: grid;
-  grid-template-columns: minmax(360px, 0.75fr) minmax(520px, 1.25fr);
   gap: 1rem;
   align-items: start;
+}
+
+.panel-create-button-design-header {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(280px, 1.05fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel-create-button-design-basics {
+  min-width: 0;
+}
+
+.panel-create-button-meta-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.panel-create-button-state-names {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.panel-create-button-state-names-label {
+  color: #3e544f;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.panel-create-button-state-names-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.45rem;
+}
+
+.panel-create-button-state-name-field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.panel-create-button-state-name-field span {
+  color: #66867c;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.panel-create-button-state-name-field input {
+  min-width: 0;
+}
+
+.panel-create-button-design-preview {
+  min-height: 280px;
+}
+
+.panel-create-button-single-preview {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.panel-create-button-single-preview-stage {
+  position: relative;
+  width: min(100%, 360px);
+  margin: 0 auto;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 12px;
+  background:
+    linear-gradient(rgba(18, 32, 47, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 32, 47, 0.045) 1px, transparent 1px),
+    #f7faf5;
+  background-size: 32px 32px;
+  touch-action: none;
+}
+
+.panel-create-button-single-preview-stage .dynamic-ui-button {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  min-height: 0;
+  max-width: none;
+}
+
+.panel-create-button-pattern-draggable {
+  cursor: move;
+  touch-action: none;
+}
+
+.panel-create-button-pattern-frame {
+  pointer-events: none;
+}
+
+.panel-create-button-pattern-frame:has(.panel-create-button-pattern-draggable) {
+  outline: 1px dashed rgba(44, 104, 168, 0.55);
+  outline-offset: -1px;
+}
+
+.dynamic-ui-button-art-text-frame {
+  box-sizing: border-box;
+}
+
+.panel-create-button-pattern-frame.dynamic-ui-button-art-text-frame {
+  border: 1px dashed rgba(44, 104, 168, 0.28);
+  border-radius: 4px;
+  background: rgba(44, 104, 168, 0.04);
+}
+
+.panel-create-button-pattern-frame.dynamic-ui-button-art-text-frame.selected {
+  border-color: rgba(44, 104, 168, 0.72);
+  background: rgba(44, 104, 168, 0.08);
+}
+
+.dynamic-ui-button-art-text-frame .dynamic-ui-button-art-text {
+  position: relative;
+}
+
+.panel-create-button-pattern-frame .dynamic-ui-button-pattern.panel-create-button-pattern-draggable,
+.panel-create-button-pattern-frame .panel-create-pattern-frame-handle {
+  pointer-events: auto;
+}
+
+.panel-create-button-pattern-frame .dynamic-ui-button-art-text.panel-create-button-pattern-draggable {
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+}
+
+.panel-create-pattern-frame-handle {
+  position: absolute;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 2px solid rgba(44, 104, 168, 0.95);
+  border-radius: 999px;
+  background: #fffdfa;
+  box-shadow: 0 2px 8px rgba(18, 32, 47, 0.18);
+  touch-action: none;
+  z-index: 3;
+}
+
+.panel-create-pattern-frame-handle::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+}
+
+.panel-create-pattern-frame-handle.top-left {
+  top: -0.42rem;
+  left: -0.42rem;
+  cursor: nwse-resize;
+}
+
+.panel-create-pattern-frame-handle.top-right {
+  top: -0.42rem;
+  right: -0.42rem;
+  cursor: nesw-resize;
+}
+
+.panel-create-pattern-frame-handle.bottom-left {
+  bottom: -0.42rem;
+  left: -0.42rem;
+  cursor: nesw-resize;
+}
+
+.panel-create-pattern-frame-handle.bottom-right {
+  right: -0.42rem;
+  bottom: -0.42rem;
+  cursor: nwse-resize;
+}
+
+.panel-create-button-aspect-readout {
+  justify-self: center;
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  padding: 0.25rem 0.45rem;
+  color: #66867c;
+  font-size: 0.78rem;
+}
+
+.panel-create-pattern-frame-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.panel-create-pattern-layers {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.panel-create-pattern-layer-card {
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 253, 250, 0.88);
+  padding: 0.55rem;
+}
+
+.panel-create-pattern-layer-card.collapsed {
+  gap: 0.35rem;
+}
+
+.panel-create-pattern-layer-card.selected {
+  border-color: rgba(44, 104, 168, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(44, 104, 168, 0.18);
+}
+
+.panel-create-pattern-layer-card-header {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.panel-create-pattern-layer-card-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.panel-create-pattern-layer-toggle {
+  padding: 0.22rem 0.45rem;
+  font-size: 0.76rem;
+}
+
+.panel-create-pattern-layer-card-title {
+  min-width: 0;
+  font-size: 0.92rem;
+}
+
+.panel-create-pattern-layer-kind-badge {
+  border-radius: 999px;
+  background: rgba(44, 104, 168, 0.1);
+  padding: 0.12rem 0.42rem;
+  color: #2c5078;
+  font-size: 0.72rem;
+}
+
+.panel-create-pattern-layer-summary {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.panel-create-pattern-layer-card-body {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.panel-create-pattern-layer-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.panel-create-pattern-layer-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.panel-create-art-text-hint {
+  margin: 0;
+}
+
+.panel-create-button-pattern-frame.selected {
+  outline-color: rgba(44, 104, 168, 0.85);
+}
+
+.dynamic-ui-button-art-text {
+  pointer-events: none;
+  user-select: none;
+}
+
+.dynamic-ui-button-art-text-frame {
+  container-type: size;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.panel-create-button-design-states {
+  min-width: 0;
+}
+
+.panel-create-button-state-columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.panel-create-button-state-column {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  min-width: 220px;
+  border: 1px solid rgba(18, 32, 47, 0.09);
+  border-radius: 12px;
+  background: #f7faf5;
+  padding: 0.75rem;
+}
+
+.panel-create-button-state-column-header {
+  display: grid;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.panel-create-button-state-column-header strong {
+  color: #12202f;
+}
+
+.panel-create-button-state-column-header code {
+  justify-self: start;
+  border-radius: 8px;
+  background: rgba(18, 32, 47, 0.06);
+  padding: 0.2rem 0.4rem;
+}
+
+.panel-create-button-state-column-colors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.panel-create-button-state-column-colors .button-design-field input[type="color"] {
+  width: 100%;
+  min-height: 2.2rem;
+  padding: 0.15rem;
 }
 
 .panel-create-step-tabs {
@@ -3356,6 +4236,48 @@ fieldset {
   border-color: rgba(44, 104, 168, 0.42);
   background: #dceeff;
   color: #12385f;
+}
+
+.panel-create-reward-config {
+  max-width: 760px;
+}
+
+.panel-create-reward-table-wrap {
+  overflow-x: auto;
+}
+
+.panel-create-reward-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.panel-create-reward-table th,
+.panel-create-reward-table td {
+  border: 1px solid rgba(18, 32, 47, 0.1);
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+}
+
+.panel-create-reward-table thead th {
+  background: #f3f8f2;
+  color: #12385f;
+  font-weight: 800;
+}
+
+.panel-create-reward-table tbody th[scope="row"] {
+  background: #fffdfa;
+  color: #203040;
+  white-space: nowrap;
+}
+
+.panel-create-reward-table input[type="number"] {
+  width: 100%;
+  min-width: 5rem;
+}
+
+.panel-create-reward-footnote {
+  margin: 0;
 }
 
 .panel-create-form,
@@ -3559,6 +4481,13 @@ fieldset {
   border-radius: 999px;
   background: #fffdfa;
   box-shadow: 0 2px 8px rgba(18, 32, 47, 0.18);
+  touch-action: none;
+}
+
+.panel-create-frame-handle::before {
+  content: "";
+  position: absolute;
+  inset: -0.55rem;
 }
 
 .panel-create-frame-handle.top-left {
@@ -3778,9 +4707,8 @@ fieldset {
 
 .panel-create-beauty-preview {
   position: relative;
-  display: grid;
-  gap: 0.8rem;
-  align-content: start;
+  display: block;
+  overflow: hidden;
   width: min(100%, 860px);
   min-width: 280px;
   min-height: 360px;
@@ -3791,13 +4719,69 @@ fieldset {
   box-shadow: 0 18px 42px rgba(18, 32, 47, 0.14);
 }
 
+.panel-create-beauty-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  touch-action: none;
+}
+
+.panel-create-node-outline {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  box-sizing: border-box;
+  border: 2px solid rgba(42, 98, 168, 0.95);
+  border-radius: 0;
+  pointer-events: none;
+}
+
+.panel-create-preview-button .panel-create-node-outline {
+  border-color: rgba(57, 112, 80, 0.78);
+}
+
+.panel-create-corner {
+  position: absolute;
+  display: block;
+  width: 8px;
+  height: 8px;
+  border: 2px solid rgba(42, 98, 168, 0.95);
+  background: #fffdfa;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.panel-create-corner.top-left {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}
+
+.panel-create-corner.top-right {
+  right: 0;
+  top: 0;
+  cursor: nesw-resize;
+}
+
+.panel-create-corner.bottom-left {
+  left: 0;
+  bottom: 0;
+  cursor: nesw-resize;
+}
+
+.panel-create-corner.bottom-right {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}
+
 .panel-create-preview-text,
 .panel-create-preview-subpanel,
 .panel-create-preview-button {
   position: absolute;
   box-sizing: border-box;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   text-align: left;
   cursor: move;
   touch-action: none;
@@ -3805,12 +4789,31 @@ fieldset {
 }
 
 .panel-create-preview-text {
-  border: 1px solid rgba(18, 32, 47, 0.08);
+  border: 1px dashed rgba(18, 32, 47, 0.16);
   border-radius: 10px;
-  background: #ffffff;
+  background: transparent;
   color: #203040;
   padding: 0.5rem;
   box-shadow: none;
+}
+
+.panel-create-preview-text.is-art-text {
+  padding: 0;
+  color: inherit;
+  text-align: center;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-create-preview-text.is-art-text .dynamic-ui-text-art-content {
+  pointer-events: auto;
+}
+
+.panel-create-preview-text.selected {
+  border-style: solid;
+  border-color: rgba(44, 104, 168, 0.35);
 }
 
 .panel-create-preview-subpanel {
@@ -3825,14 +4828,7 @@ fieldset {
 .panel-create-preview-text.selected,
 .panel-create-preview-subpanel.selected,
 .panel-create-preview-button.selected {
-  outline: 2px solid rgba(44, 104, 168, 0.84);
-  outline-offset: 3px;
-}
-
-.panel-create-preview-text .panel-create-frame-handle,
-.panel-create-preview-subpanel .panel-create-frame-handle,
-.panel-create-preview-button .panel-create-frame-handle {
-  z-index: 8;
+  z-index: 10;
 }
 
 .panel-create-button-state-preview {
@@ -4272,9 +5268,21 @@ fieldset {
   }
 
   .panel-create-basic-layout,
-  .panel-create-beauty-layout,
-  .panel-create-button-design-layout {
+  .panel-create-beauty-layout {
     grid-template-columns: 1fr;
+  }
+
+  .panel-create-button-design-header {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-create-button-meta-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-create-button-state-columns {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
   }
 
   .button-design-source-panel {
@@ -4301,8 +5309,13 @@ fieldset {
   .director-ui-endpoint-grid,
   .director-ui-config-summary,
   .director-ui-button-row,
-  .director-ui-manual {
+  .director-ui-manual,
+  .level-interface-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .level-interface-layout {
+    grid-template-columns: 1fr;
   }
 }
 

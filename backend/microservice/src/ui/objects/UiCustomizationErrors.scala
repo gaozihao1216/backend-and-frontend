@@ -46,4 +46,24 @@ object UiCustomizationErrors {
     override def toHttpError: HttpError =
       HttpError.badRequest("UI_BUTTON_TEMPLATE_INVALID", reason)
   }
+
+  final case class StretchVisualTemplateNotFound(templateId: String) extends UiCustomizationApiError {
+    override def toHttpError: HttpError =
+      HttpError.notFound("UI_STRETCH_TEMPLATE_NOT_FOUND", s"UI stretch visual template not found: $templateId")
+  }
+
+  final case class StretchVisualTemplateAlreadyExists(templateId: String) extends UiCustomizationApiError {
+    override def toHttpError: HttpError =
+      HttpError.conflict("UI_STRETCH_TEMPLATE_ALREADY_EXISTS", s"UI stretch visual template already exists: $templateId")
+  }
+
+  final case class InvalidStretchVisualTemplate(reason: String) extends UiCustomizationApiError {
+    override def toHttpError: HttpError =
+      HttpError.badRequest("UI_STRETCH_TEMPLATE_INVALID", reason)
+  }
+
+  final case class StretchVisualTemplateKindMismatch(expected: String, actual: String) extends UiCustomizationApiError {
+    override def toHttpError: HttpError =
+      HttpError.badRequest("UI_STRETCH_TEMPLATE_KIND_MISMATCH", s"Expected template kind $expected but got $actual")
+  }
 }

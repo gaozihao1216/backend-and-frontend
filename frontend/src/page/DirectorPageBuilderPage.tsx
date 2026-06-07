@@ -1,6 +1,13 @@
 import { useEffect, useRef, useMemo, useState, type PointerEvent, type WheelEvent } from "react";
 import { getPageConfig, savePageConfig } from "../lib/ui-customization.js";
 import {
+  getPanelTextArtContainerStyle,
+  getPanelTextArtContentClassName,
+  getPanelTextArtContentStyle,
+  isArtTextPreset,
+  resolveTextArtDesign,
+} from "../lib/art-text-styles.js";
+import {
   getUiPreviewUser,
   type PageComponent,
   type PageConfig,
@@ -491,6 +498,8 @@ const PageBuilderTextNode = ({
 }: PageBuilderTextNodeProps) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const wasEditingRef = useRef(false);
+  const artTextDesign = component.artTextDesign;
+  const usesArtText = isArtTextPreset(resolveTextArtDesign(artTextDesign).preset);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -520,20 +529,22 @@ const PageBuilderTextNode = ({
 
   return (
     <div
-      className={`page-builder-preview-node page-builder-preview-text ${isEditing ? "editing" : ""}`}
+      className={`page-builder-preview-node page-builder-preview-text ${isEditing ? "editing" : ""} ${usesArtText ? "is-art-text" : ""}`.trim()}
       data-page-builder-component-id={component.id}
       data-page-builder-selected={isSelected ? "true" : undefined}
       style={{
         ...getPositionStyle(component.position),
         ...getComponentStyle(component.style),
+        ...(usesArtText ? getPanelTextArtContainerStyle(artTextDesign) : {}),
       }}
     >
       <div
         ref={editorRef}
-        className="page-builder-preview-text-content"
+        className={`page-builder-preview-text-content ${usesArtText && !isEditing ? getPanelTextArtContentClassName(artTextDesign) : ""}`.trim()}
         data-page-builder-text-editing={isEditing ? "true" : undefined}
         contentEditable={isEditing}
         suppressContentEditableWarning={isEditing}
+        style={usesArtText && !isEditing ? getPanelTextArtContentStyle(artTextDesign) : undefined}
         onBlur={(event) => {
           if (isEditing) {
             onTextChange(component.id, event.currentTarget.textContent ?? "");

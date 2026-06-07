@@ -1,6 +1,32 @@
 import { PageConfigSchema, type PageConfig, type UiEndpoint } from "./page-config.js";
 import { normalizePageComponentIds } from "./page-config-normalizer.js";
 import { createLevelChainHomeComponents } from "./level-chain-home-structure.js";
+import {
+  createAllLevelScreenPageConfigs,
+  createLevelMapStageComponents,
+  LEVEL_MAP_PAGE_ID,
+  LEVEL_MAP_PATH,
+} from "./level-map-structure.js";
+import {
+  applyLevelNodeButtonFormat,
+  getDefaultLevelNodeButtonFormatSettings,
+} from "../../lib/level-node-button-format.js";
+
+const applyDefaultLevelNodeButtonFormat = (
+  pageId: string,
+  components: PageConfig["components"],
+): PageConfig["components"] =>
+  applyLevelNodeButtonFormat(
+    {
+      id: pageId,
+      name: "",
+      path: "",
+      roleScope: "player",
+      layout: { type: "freeform" },
+      components,
+    },
+    getDefaultLevelNodeButtonFormatSettings(),
+  ).components;
 
 const percentPosition = (x: number, y: number, width: number, height: number) => ({
   unit: "percent" as const,
@@ -27,6 +53,17 @@ const createPageConfig = (
 
 export const defaultPageConfigs = [
   createPageConfig("shared.profile", "个人主页", "/own_page", "player"),
+  createPageConfig(
+    LEVEL_MAP_PAGE_ID,
+    "关卡路径地图",
+    LEVEL_MAP_PATH,
+    "player",
+    applyDefaultLevelNodeButtonFormat(
+      LEVEL_MAP_PAGE_ID,
+      createLevelMapStageComponents(LEVEL_MAP_PAGE_ID),
+    ),
+  ),
+  ...createAllLevelScreenPageConfigs(),
   createPageConfig("player.home", "玩家主界面", "/", "player", createLevelChainHomeComponents({
     prefix: "player.home",
     title: "玩家主界面",
