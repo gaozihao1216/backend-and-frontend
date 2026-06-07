@@ -1,4 +1,5 @@
 import type { Level } from "../../lib/level-contracts.js";
+import type { BirdPool } from "../../objects/level/bird-pool.js";
 import { createPublishedLevelSource, type LevelSource } from "../../lib/level-repository.js";
 import { PlayableLevelSurface } from "./PlayableLevelSurface.js";
 
@@ -6,6 +7,7 @@ type LevelPreviewCardProps = {
   level?: Level;
   source?: LevelSource;
   userId?: string;
+  birdPool?: BirdPool;
   defaultOpen?: boolean;
   onExit?: () => void;
 };
@@ -14,6 +16,7 @@ export const LevelPreviewCard = ({
   level,
   source,
   userId,
+  birdPool,
   defaultOpen = false,
   onExit,
 }: LevelPreviewCardProps) => {
@@ -27,6 +30,7 @@ export const LevelPreviewCard = ({
     <PlayableLevelSurface
       source={resolvedSource}
       {...(userId ? { userId } : {})}
+      {...(birdPool ? { birdPool } : {})}
       defaultOpen={defaultOpen}
       {...(onExit ? { onExit } : {})}
     />

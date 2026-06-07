@@ -41,7 +41,7 @@ button {
 
 button.secondary {
   background: linear-gradient(180deg, #f6ffe9 0%, #dff3bb 100%);
-  color: #5f7f42;
+  color: #1f2937;
   box-shadow:
     0 10px 20px rgba(139, 181, 94, 0.16),
     inset 0 2px 0 rgba(255, 255, 255, 0.8);
@@ -583,6 +583,126 @@ fieldset {
   position: relative;
   z-index: 1;
   background: transparent !important;
+}
+
+.game-bird-picker {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 3;
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  max-width: min(100% - 2rem, 420px);
+}
+
+.game-bird-picker-copy {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #334155;
+}
+
+.game-bird-picker-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.game-bird-picker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 41, 55, 0.14);
+  background: #fff;
+  cursor: pointer;
+}
+
+.game-bird-picker-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+}
+
+.game-bird-picker-count {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.bird-pool-config-panel {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(83, 139, 121, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.bird-pool-config-head h4 {
+  margin: 0 0 0.35rem;
+}
+
+.bird-pool-config-total {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 180px;
+}
+
+.bird-pool-config-types {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.bird-pool-config-type-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bird-pool-config-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bird-pool-config-cap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bird-pool-config-cap input {
+  width: 72px;
+}
+
+.bird-pool-config-designer-group {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(31, 41, 55, 0.08);
+}
+
+.bird-pool-config-group-label {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.bird-pool-config-designer-badge {
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #6d28d9;
+  font-size: 0.75rem;
 }
 
 .designer-ground-label,
@@ -2106,6 +2226,351 @@ fieldset {
   .director-level-assignment-page .director-level-assignment-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.director-bird-skill-lab-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.director-bird-skill-list-items {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.director-bird-skill-list-item {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: #fff;
+  color: #1f2937;
+  box-shadow: none;
+}
+
+.director-bird-skill-list-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+.director-bird-skill-list-item .meta {
+  color: #475569;
+}
+
+.director-bird-skill-list-item.active {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: rgba(219, 234, 254, 0.45);
+  color: #1e3a8a;
+}
+
+.director-bird-skill-list-item.active .director-bird-skill-list-name {
+  color: #1e3a8a;
+}
+
+.bird-skill-scratch-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.bird-skill-scratch-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.bird-skill-scratch-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 300px);
+  gap: 1rem;
+}
+
+.bird-skill-scratch-reference,
+.bird-skill-scratch-workspace,
+.bird-skill-scratch-palette,
+.director-bird-skill-list,
+.director-bird-skill-editor-pane .bird-skill-scratch-editor {
+  background: #fff;
+  border: 1px solid rgba(31, 41, 55, 0.1);
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.bird-skill-reference-list {
+  display: grid;
+  gap: 0.55rem;
+  padding-left: 1rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.bird-skill-reference-list li {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.bird-skill-model-preview {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(241, 245, 249, 0.9);
+  margin: 0.75rem 0;
+  overflow: hidden;
+}
+
+.bird-skill-model-preview img {
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+}
+
+.bird-skill-model-upload {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.bird-skill-stage-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bird-skill-stage-tab {
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: #f8fafc;
+  color: #1f2937;
+  box-shadow: none;
+}
+
+.bird-skill-stage-tab.active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.bird-skill-stage-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.bird-skill-stage-meta label,
+.skill-block-field,
+.bird-skill-model-upload {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.bird-skill-stage-reference {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(239, 246, 255, 0.9);
+  color: #1e3a8a;
+}
+
+.bird-skill-block-order {
+  font-weight: 700;
+  color: #1f2937;
+  margin-right: 0.35rem;
+}
+
+.skill-block-field-hint {
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.bird-skill-block-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  list-style: none;
+}
+
+.bird-skill-block-summary li {
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.9);
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.bird-skill-palette-defaults {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  color: #475569;
+  font-size: 0.76rem;
+}
+
+.bird-skill-palette-defaults li + li {
+  margin-top: 0.12rem;
+}
+
+.bird-skill-block-stack {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(241, 245, 249, 0.95), rgba(248, 250, 252, 0.85));
+  min-height: 320px;
+}
+
+.bird-skill-stack-label {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.bird-skill-empty-stack {
+  padding: 1.5rem;
+  border: 2px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 14px;
+  color: #64748b;
+  text-align: center;
+}
+
+.bird-skill-block {
+  border-radius: 16px;
+  padding: 0.85rem;
+  background: #fff;
+  border: 2px solid rgba(59, 130, 246, 0.18);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.bird-skill-block.selected {
+  border-color: rgba(37, 99, 235, 0.55);
+}
+
+.bird-skill-block-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
+}
+
+.bird-skill-block-title {
+  font-weight: 700;
+  margin-bottom: 0.55rem;
+}
+
+.skill-block-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.bird-skill-palette-group + .bird-skill-palette-group {
+  margin-top: 1rem;
+}
+
+.bird-skill-palette-group-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.bird-skill-palette-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bird-skill-palette-block {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(31, 41, 55, 0.12);
+  background: #f8fafc;
+  color: #1f2937;
+  box-shadow: none;
+}
+
+.bird-skill-palette-block strong {
+  color: #1e3a8a;
+}
+
+.bird-skill-palette-block span {
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.bird-skill-block-toolbar button.secondary {
+  color: #1f2937;
+  background: #e2e8f0;
+  box-shadow: none;
+}
+
+.bird-skill-scratch-head-actions button {
+  color: #1f2937;
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%);
+  box-shadow:
+    0 8px 16px rgba(180, 83, 9, 0.18),
+    inset 0 2px 0 rgba(255, 251, 235, 0.7);
+}
+
+@media (max-width: 1180px) {
+  .director-bird-skill-lab-layout,
+  .bird-skill-scratch-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .bird-skill-stage-meta,
+  .skill-block-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bird-skill-test-arena {
+  margin-top: 1rem;
+}
+
+.bird-skill-test-arena-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.85rem;
+}
+
+.bird-skill-test-arena-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.bird-skill-test-tier {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 96px;
+}
+
+.bird-skill-test-arena-canvas-wrap {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.bird-skill-test-arena-legend {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding-left: 1.1rem;
 }
 
 .director-level-background-page .director-level-background-layout {

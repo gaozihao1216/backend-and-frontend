@@ -1,5 +1,9 @@
 package microservice.level.tables
 
+import io.circe.parser.decode
+import io.circe.syntax._
+import microservice.level.objects.BirdPool
+
 private[tables] object LevelSlotAssignmentTableCodec {
   val baseSelect: String =
     """
@@ -10,9 +14,17 @@ private[tables] object LevelSlotAssignmentTableCodec {
         source_level_id,
         assigned_by_id,
         assigned_at,
-        note
+        note,
+        bird_pool_json
       FROM level_slot_assignments
     """
+
+  def encodeBirdPool(pool: Option[BirdPool]): String =
+    pool.asJson.noSpaces
+
+  def decodeBirdPool(raw: String): Option[BirdPool] =
+    if (raw == null || raw.trim.isEmpty) None
+    else decode[BirdPool](raw).toOption
 
   def rowFromResultSet(resultSet: java.sql.ResultSet): LevelSlotAssignmentRow =
     LevelSlotAssignmentRow(
@@ -22,6 +34,7 @@ private[tables] object LevelSlotAssignmentTableCodec {
       sourceLevelId = resultSet.getString("source_level_id"),
       assignedById = resultSet.getString("assigned_by_id"),
       assignedAt = resultSet.getString("assigned_at"),
-      note = Option(resultSet.getString("note"))
+      note = Option(resultSet.getString("note")),
+      birdPool = decodeBirdPool(resultSet.getString("bird_pool_json"))
     )
 }

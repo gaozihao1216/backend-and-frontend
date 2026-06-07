@@ -27,6 +27,7 @@ const { Body, Vector } = Matter;
 export type CombatResolverDeps = {
   removeBody: (body: GameBody) => void;
   shouldApplyDamage: () => boolean;
+  onStructureSupportLost?: (body: GameBody) => void;
 };
 
 export type CombatResolver = {
@@ -102,6 +103,7 @@ export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver =
     entity.pendingRemoval = true;
     entity.collisionCooldownUntil = nowMs + fracture.breakDuration;
     updateDamageVisuals(targetBody);
+    deps.onStructureSupportLost?.(targetBody);
 
     if (otherBody.renderKind === "bird") {
       applyImpulseDampingToBird(otherBody, normal, impactImpulse, fracture.effectiveImpulse);

@@ -7,3 +7,4 @@ export * from "./admin/DeleteCommentApi.js";
 export * from "./admin/GetDirectorPermissionsApi.js";
 export * from "./admin/TransferDirectorPermissionApi.js";
 export * from "./admin/DirectorLevelAssignmentApi.js";
+export * from "./admin/DirectorBirdSkillApi.js";

@@ -2,7 +2,7 @@ package microservice.admin.objects
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.level.objects.SubmissionWithLevel
+import microservice.level.objects.{BirdPool, SubmissionWithLevel}
 import microservice.level.tables.LevelSlotAssignmentRow
 
 final case class LevelSlotAssignment(
@@ -12,7 +12,8 @@ final case class LevelSlotAssignment(
   sourceLevelId: String,
   assignedById: String,
   assignedAt: String,
-  note: Option[String]
+  note: Option[String],
+  birdPool: Option[BirdPool] = None
 )
 
 object LevelSlotAssignment {
@@ -24,7 +25,8 @@ object LevelSlotAssignment {
       sourceLevelId = row.sourceLevelId,
       assignedById = row.assignedById,
       assignedAt = row.assignedAt,
-      note = row.note
+      note = row.note,
+      birdPool = row.birdPool
     )
 
   implicit val encoder: Encoder[LevelSlotAssignment] = deriveEncoder
@@ -41,9 +43,22 @@ object LevelSlotAssignmentDetail {
   implicit val decoder: Decoder[LevelSlotAssignmentDetail] = deriveDecoder
 }
 
+final case class DirectorBirdPoolOption(
+  birdType: String,
+  name: String,
+  source: String,
+  authorId: Option[String] = None
+)
+
+object DirectorBirdPoolOption {
+  implicit val encoder: Encoder[DirectorBirdPoolOption] = deriveEncoder
+  implicit val decoder: Decoder[DirectorBirdPoolOption] = deriveDecoder
+}
+
 final case class DirectorLevelAssignmentBoard(
   assignments: List[LevelSlotAssignmentDetail],
-  pendingApproved: List[SubmissionWithLevel]
+  pendingApproved: List[SubmissionWithLevel],
+  birdPoolOptions: List[DirectorBirdPoolOption] = Nil
 )
 
 object DirectorLevelAssignmentBoard {

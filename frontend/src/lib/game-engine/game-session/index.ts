@@ -31,11 +31,18 @@ import { createCombatResolver } from "./combat-resolver.js";
 import {
   applyCombatProfileToBird,
 } from "../combat-profile.js";
+import { createCombatEffects } from "../skills/combat-effects.js";
+import { createSkillEngine } from "../skills/skill-engine.js";
 import {
-  buildBirdQueue,
+  createBirdPoolTracker,
+  type BirdPoolLaunchConfig,
+} from "../bird-pool-session.js";
+import {
   DEFAULT_BIRD_DEFINITION,
+  listSystemBirdDefinitions,
   type BirdDefinition,
 } from "../bird-definition.js";
+import { normalizeBirdPool } from "../../bird-pool.js";
 import {
   applyBeamSupportStabilization,
   applyBlockSupportStabilization,
@@ -49,6 +56,11 @@ import {
   manageBodySleep,
   updateDynamicCollisionFilters,
   applyBirdCollisionFilter,
+  markSettlingSupport,
+  releaseStructureSupport,
+  wakeDependentBodies,
+  clearSupportCollapseOnContact,
+  isCrackingBlock,
 } from "./physics.js";
 import type { GameBody, GameSession, GameSnapshot } from "../types.js";
 import type { LevelData } from "../../level-contracts.js";
@@ -58,7 +70,7 @@ const { Bodies, Body, Engine, Events, Sleeping, World } = Matter;
 
 export type CreateGameSessionInput = {
   levelData?: LevelData;
-  birdQueue?: BirdDefinition[];
+  birdPoolConfig?: BirdPoolLaunchConfig;
 };
 
 const normalizeSessionInput = (input?: CreateGameSessionInput | LevelData): CreateGameSessionInput => {
@@ -74,9 +86,14 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
   const sessionInput = normalizeSessionInput(input);
   const engine = Engine.create();
   const levelData = sessionInput.levelData ?? DEFAULT_LEVEL_DATA;
-  const birdQueue = sessionInput.birdQueue && sessionInput.birdQueue.length > 0
-    ? sessionInput.birdQueue
-    : buildBirdQueue(levelData.birdInventory, DEFAULT_BIRD_DEFINITION);
+  const normalizedPool = normalizeBirdPool(levelData);
+  const birdPoolConfig: BirdPoolLaunchConfig = sessionInput.birdPoolConfig ?? {
+    totalBirds: normalizedPool.totalBirds,
+    allowedBirdTypes: normalizedPool.allowedBirdTypes,
+    caps: normalizedPool.caps,
+    catalog: listSystemBirdDefinitions(),
+  };
+  const poolTracker = createBirdPoolTracker(birdPoolConfig);
   engine.enableSleeping = true;
   engine.gravity.y = (levelData.world.gravity / LEVEL_GRAVITY_REFERENCE) * GRAVITY_Y;
   engine.positionIterations = 16;
@@ -156,11 +173,32 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     "bird",
   );
 
+  applyBirdCollisionFilter(bird);
   Body.setStatic(bird, true);
 
-  let consumedBirds = 0;
+  let awaitingBirdSelection = false;
+  let birdReadyOnSlingshot = false;
+  let activeBirdDefinition: BirdDefinition = DEFAULT_BIRD_DEFINITION;
+  let shotBirdBodies: GameBody[] = [bird];
+
+  const registerShotBird = (body: GameBody) => {
+    if (!shotBirdBodies.includes(body)) {
+      shotBirdBodies.push(body);
+    }
+  };
+
+  const getActiveShotBirds = () => shotBirdBodies.filter((body) => !body.destroyed);
+
+  const getSkillBird = () => {
+    if (!bird.destroyed) {
+      return bird;
+    }
+
+    return getActiveShotBirds()[0] ?? null;
+  };
 
   const equipBird = (definition: BirdDefinition) => {
+    activeBirdDefinition = definition;
     Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
     Body.setStatic(bird, true);
     Body.setVelocity(bird, { x: 0, y: 0 });
@@ -175,9 +213,16 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       fillColor: definition.fillColor,
     });
     applyCombatProfileToBird(bird, definition.combatProfile);
+    applyBirdCollisionFilter(bird);
   };
 
-  equipBird(birdQueue[0] ?? DEFAULT_BIRD_DEFINITION);
+  attachGameEntity(bird, {
+    kind: "bird",
+    combatProfile: DEFAULT_BIRD_DEFINITION.combatProfile,
+    birdType: DEFAULT_BIRD_DEFINITION.birdType,
+    name: "",
+    fillColor: DEFAULT_BIRD_DEFINITION.fillColor,
+  });
 
   const obstacleBodies = levelData.obstacles.map((obstacle) => createObstacleBody(obstacle, levelData));
   const enemyBodies = levelData.enemies.map((enemy) => createEnemyBody(enemy, levelData));
@@ -197,11 +242,11 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     y: SLINGSHOT_Y,
   };
 
-  const getBirdsRemaining = () => birdQueue.length - consumedBirds - (birdLaunched ? 1 : 0);
+  const getShotsRemaining = () => poolTracker.getShotsRemaining() - (birdLaunched ? 1 : 0);
 
   const getActiveBirdPresentation = () => {
     const entity = bird.plugin.gameEntity;
-    if (entity?.kind === "bird") {
+    if (entity?.kind === "bird" && birdReadyOnSlingshot) {
       return {
         activeBirdName: entity.name,
         activeBirdType: entity.birdType,
@@ -209,21 +254,48 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     }
 
     return {
-      activeBirdName: DEFAULT_BIRD_DEFINITION.name,
-      activeBirdType: DEFAULT_BIRD_DEFINITION.birdType,
+      activeBirdName: "",
+      activeBirdType: "",
     };
   };
 
-  const spendCurrentBird = () => {
-    consumedBirds += 1;
-    if (consumedBirds >= birdQueue.length) {
-      return false;
-    }
-
-    equipBird(birdQueue[consumedBirds]!);
+  const finishCurrentShot = () => {
+    const entity = bird.plugin.gameEntity;
+    const birdType = entity?.kind === "bird" ? entity.birdType : DEFAULT_BIRD_DEFINITION.birdType;
+    poolTracker.consumeShot(birdType);
     birdLaunched = false;
     isDragging = false;
     settleTimeMs = 0;
+    birdReadyOnSlingshot = false;
+    skillEngine.clearShotState();
+    shotBirdBodies = [bird];
+
+    if (poolTracker.getShotsRemaining() > 0) {
+      awaitingBirdSelection = true;
+      Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
+      Body.setStatic(bird, true);
+      Body.setVelocity(bird, { x: 0, y: 0 });
+      Body.setAngularVelocity(bird, 0);
+      status = "ready";
+      return true;
+    }
+
+    return false;
+  };
+
+  const selectBird = (birdType: string) => {
+    if (!worldPrimed || birdLaunched || !awaitingBirdSelection || !poolTracker.canSelect(birdType)) {
+      return false;
+    }
+
+    const definition = birdPoolConfig.catalog.find((entry) => entry.birdType === birdType);
+    if (!definition) {
+      return false;
+    }
+
+    equipBird(definition);
+    birdReadyOnSlingshot = true;
+    awaitingBirdSelection = false;
     status = "ready";
     return true;
   };
@@ -254,6 +326,8 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       return;
     }
 
+    wakeDependentBodies(body, bodies);
+
     const blockEntity = getBlockEntity(body);
     if (blockEntity) {
       blockEntity.state = "broken";
@@ -264,13 +338,52 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     World.remove(engine.world, body);
   };
 
+  const addBody = (body: GameBody) => {
+    if (body.destroyed) {
+      return;
+    }
+
+    bodies.push(body);
+    World.add(engine.world, body);
+    if (!body.plugin.skillProjectile) {
+      registerShotBird(body);
+    }
+  };
+
+  const combatEffects = createCombatEffects({ removeBody });
+
+  const skillEngine = createSkillEngine({
+    getBird: getSkillBird,
+    getBirdDefinition: () => activeBirdDefinition,
+    getBodies: () => bodies,
+    getNowMs: () => engine.timing.timestamp,
+    isSkillAllowed: () => worldPrimed && birdLaunched && status === "running",
+    combat: combatEffects,
+    addBody,
+    removeBody,
+  });
+
   const combatResolver = createCombatResolver({
     removeBody,
     shouldApplyDamage: () => worldPrimed && birdLaunched,
+    onStructureSupportLost: (body) => {
+      releaseStructureSupport(body, bodies);
+    },
   });
 
   // Collision event handlers
   const onCollisionStart = (event: IEventCollision<MatterEngine>) => {
+    for (const pair of event.pairs) {
+      const bodyA = pair.bodyA as GameBody;
+      const bodyB = pair.bodyB as GameBody;
+
+      if (!worldPrimed) {
+        markSettlingSupport(bodyA, bodyB);
+      } else {
+        clearSupportCollapseOnContact(bodyA, bodyB);
+      }
+    }
+
     combatResolver.handleCollisionStart(event, engine.timing.timestamp);
   };
 
@@ -293,6 +406,10 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
         && bodyA.renderKind !== "ground"
         && bodyB.renderKind !== "ground"
       ) {
+        continue;
+      }
+
+      if (isCrackingBlock(bodyA) || isCrackingBlock(bodyB)) {
         continue;
       }
 
@@ -348,12 +465,14 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
         continue;
       }
 
-      if (body === bird && body.position.y > height + 300) {
-        if (spendCurrentBird()) {
-          continue;
-        }
-
+      if (shotBirdBodies.includes(body) && body.position.y > height + 300) {
         removeBody(body);
+        if (birdLaunched && getActiveShotBirds().length === 0) {
+          if (finishCurrentShot()) {
+            continue;
+          }
+          status = "lost";
+        }
         continue;
       }
 
@@ -366,6 +485,8 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       applyPenetrationCorrection(bodies);
     }
 
+    skillEngine.tick(engine.timing.lastDelta);
+
     const movingBodies = bodies.filter((body) => !body.destroyed && !body.isStatic);
     const isSettled = movingBodies.every(
       (body) => body.speed < SETTLE_SPEED_THRESHOLD && Math.abs(body.angularVelocity) < SETTLE_SPEED_THRESHOLD,
@@ -377,6 +498,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
         initialSettleTimeMs += engine.timing.lastDelta;
         if (initialSettleTimeMs >= SETTLE_TIME_MS) {
           worldPrimed = true;
+          awaitingBirdSelection = true;
         }
       } else {
         initialSettleTimeMs = 0;
@@ -388,7 +510,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     }
 
     const livingPigs = bodies.filter((body) => body.renderKind === "pig" && !body.destroyed);
-    const activeBird = !bird.destroyed;
+    const activeShotBirds = getActiveShotBirds();
 
     if (livingPigs.length === 0) {
       status = "won";
@@ -401,7 +523,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       return;
     }
 
-    if (!activeBird) {
+    if (!activeShotBirds.length) {
       status = "lost";
       return;
     }
@@ -414,7 +536,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
           return;
         }
 
-        if (spendCurrentBird()) {
+        if (finishCurrentShot()) {
           return;
         }
 
@@ -449,15 +571,21 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     isDragging,
     status,
     slingshotAnchor,
-    birdsRemaining: getBirdsRemaining(),
+    birdsRemaining: getShotsRemaining(),
+    shotsRemaining: getShotsRemaining(),
+    awaitingBirdSelection,
+    birdReadyOnSlingshot,
+    selectableBirds: awaitingBirdSelection ? poolTracker.getSelectableBirds() : [],
     ...getActiveBirdPresentation(),
+    skillVisuals: skillEngine.getVisuals(),
   });
 
   return {
     engine,
     getSnapshot,
+    selectBird,
     beginDrag: (x, y) => {
-      if (birdLaunched || !worldPrimed) {
+      if (birdLaunched || !worldPrimed || !birdReadyOnSlingshot || awaitingBirdSelection) {
         return false;
       }
 
@@ -495,6 +623,8 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       birdLaunched = true;
       settleTimeMs = 0;
       status = "running";
+      shotBirdBodies = [bird];
+      skillEngine.clearShotState();
       applyBirdCollisionFilter(bird);
       Body.setStatic(bird, false);
       Sleeping.set(bird, false);
@@ -503,6 +633,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
         y: (slingshotAnchor.y - bird.position.y) * LAUNCH_POWER,
       });
     },
+    activateSkill: () => skillEngine.activateSkill(),
     step: (deltaMs: number) => {
       accumulatedTimeMs = Math.min(accumulatedTimeMs + deltaMs, MAX_ACCUMULATED_TIME_MS);
       // 固定步长更新可降低不同帧率下的物理差异。

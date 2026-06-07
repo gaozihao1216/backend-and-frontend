@@ -1,5 +1,7 @@
 package microservice.player.preparation
 
+import io.circe.Json
+
 final case class BirdStatsView(
   attack: Int,
   impact: Int,
@@ -22,7 +24,9 @@ final case class BirdUpgradeView(
   nextCostCoins: Int,
   nextCostFragments: Int,
   source: String,
-  authorId: Option[String]
+  authorId: Option[String],
+  skills: Option[Json] = None,
+  modelImageUrl: Option[String] = None
 )
 
 final case class SlingshotUpgradeView(

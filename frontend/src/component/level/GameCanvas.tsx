@@ -1,22 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { drawScene } from "../../lib/game-engine/draw-scene.js";
 import { createGameSession } from "../../lib/game-engine/game-session/index.js";
-import type { BirdDefinition } from "../../lib/game-engine/bird-definition.js";
+import type { BirdPoolLaunchConfig } from "../../lib/game-engine/bird-pool-session.js";
+import type { GameSnapshot } from "../../lib/game-engine/types.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
 import type { LevelData } from "../../lib/level-contracts.js";
 
 type GameCanvasProps = {
   levelKey: string;
   levelData?: LevelData;
-  birdQueue?: BirdDefinition[];
+  birdPoolConfig?: BirdPoolLaunchConfig;
   restartToken?: number;
   transparentBackground?: boolean;
+};
+
+const emptyHud: Pick<
+  GameSnapshot,
+  "awaitingBirdSelection" | "selectableBirds" | "shotsRemaining" | "status"
+> = {
+  awaitingBirdSelection: false,
+  selectableBirds: [],
+  shotsRemaining: 0,
+  status: "ready",
 };
 
 export const GameCanvas = ({
   levelKey,
   levelData,
-  birdQueue,
+  birdPoolConfig,
   restartToken = 0,
   transparentBackground = false,
 }: GameCanvasProps) => {
@@ -32,9 +43,10 @@ export const GameCanvas = ({
   const draggingRef = useRef(false);
   const [view, setView] = useState(defaultView);
   const viewRef = useRef(view);
+  const [hud, setHud] = useState(emptyHud);
+  const hudKeyRef = useRef("");
 
   useEffect(() => {
-    // 动画帧里读取的是 ref，避免每次缩放都重建整条渲染循环。
     viewRef.current = view;
   }, [view]);
 
@@ -53,10 +65,9 @@ export const GameCanvas = ({
       return undefined;
     }
 
-    // 每次切关卡或重开时，重新创建一个全新的游戏 session。
     const session = createGameSession({
       ...(levelData ? { levelData } : {}),
-      ...(birdQueue ? { birdQueue } : {}),
+      ...(birdPoolConfig ? { birdPoolConfig } : {}),
     });
     sessionRef.current = session;
     let animationFrameId = 0;
@@ -66,12 +77,28 @@ export const GameCanvas = ({
       const deltaMs = Math.min(timestamp - lastTimestamp, 32);
       lastTimestamp = timestamp;
 
-      // session 负责推进物理世界，drawScene 负责把快照画出来。
       session.step(deltaMs);
       const snapshot = session.getSnapshot();
       drawScene(context, snapshot, viewRef.current.zoom, viewRef.current.center, {
         skipSky: transparentBackground,
       });
+
+      const nextHudKey = [
+        snapshot.awaitingBirdSelection,
+        snapshot.shotsRemaining,
+        snapshot.status,
+        snapshot.selectableBirds.map((bird) => `${bird.birdType}:${bird.remaining}`).join("|"),
+      ].join(":");
+      if (nextHudKey !== hudKeyRef.current) {
+        hudKeyRef.current = nextHudKey;
+        setHud({
+          awaitingBirdSelection: snapshot.awaitingBirdSelection,
+          selectableBirds: snapshot.selectableBirds,
+          shotsRemaining: snapshot.shotsRemaining,
+          status: snapshot.status,
+        });
+      }
+
       animationFrameId = window.requestAnimationFrame(renderFrame);
     };
 
@@ -81,8 +108,10 @@ export const GameCanvas = ({
       window.cancelAnimationFrame(animationFrameId);
       sessionRef.current = null;
       session.destroy();
+      hudKeyRef.current = "";
+      setHud(emptyHud);
     };
-  }, [levelKey, restartToken, levelData, birdQueue, transparentBackground]);
+  }, [levelKey, restartToken, levelData, birdPoolConfig, transparentBackground]);
 
   const getCanvasPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -98,7 +127,6 @@ export const GameCanvas = ({
     const canvasY = (event.clientY - rect.top) * scaleY;
 
     return {
-      // 视图变成“缩放 + 中心点”后，屏幕坐标需要围绕当前视口中心反算。
       x: (canvasX - WORLD_WIDTH / 2) / viewRef.current.zoom + viewRef.current.center.x,
       y: (canvasY - WORLD_HEIGHT / 2) / viewRef.current.zoom + viewRef.current.center.y,
     };
@@ -111,9 +139,14 @@ export const GameCanvas = ({
       return;
     }
 
+    const snapshot = session.getSnapshot();
+    if (snapshot.birdLaunched && snapshot.status === "running") {
+      session.activateSkill();
+      return;
+    }
+
     if (session.beginDrag(point.x, point.y)) {
       draggingRef.current = true;
-      // 成功拖拽后锁定 pointer，保证拖出 canvas 也能持续收到事件。
       event.currentTarget.setPointerCapture(event.pointerId);
     }
   };
@@ -174,8 +207,35 @@ export const GameCanvas = ({
     });
   };
 
+  const handleSelectBird = (birdType: string) => {
+    sessionRef.current?.selectBird(birdType);
+  };
+
   return (
     <div style={{ width: "100%", overflowX: "auto", position: "relative" }}>
+      {hud.awaitingBirdSelection && hud.status !== "won" && hud.status !== "lost" ? (
+        <div className="game-bird-picker" aria-label="选择小鸟">
+          <p className="game-bird-picker-copy">选择下一只小鸟（剩余 {hud.shotsRemaining} 次）</p>
+          <div className="game-bird-picker-list">
+            {hud.selectableBirds.map((bird) => (
+              <button
+                key={bird.birdType}
+                type="button"
+                className="game-bird-picker-item"
+                onClick={() => handleSelectBird(bird.birdType)}
+              >
+                <span
+                  className="game-bird-picker-swatch"
+                  style={{ background: bird.fillColor }}
+                  aria-hidden="true"
+                />
+                <span>{bird.name}</span>
+                <span className="game-bird-picker-count">×{bird.remaining}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <canvas
         ref={canvasRef}
         width={WORLD_WIDTH}

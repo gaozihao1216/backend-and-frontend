@@ -15,6 +15,7 @@ import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
 import { PlayerSocialPage } from "./page/PlayerSocialPage.js";
 import { PlayerPreparationPage } from "./page/PlayerPreparationPage.js";
+import { DirectorBirdSkillLabPage } from "./page/DirectorBirdSkillLabPage.js";
 import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
 import { DirectorButtonConfigPage } from "./page/DirectorButtonConfigPage.js";
 import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
@@ -57,6 +58,7 @@ const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
 const DIRECTOR_LEVEL_INTERFACE_PATH = "/director_console/level_interface_optimization";
 const DIRECTOR_LEVEL_ASSIGNMENT_PATH = "/director_console/level_assignment";
+const DIRECTOR_BIRD_SKILL_LAB_PATH = "/director_console/bird_skill_lab";
 const DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH = "/director_console/level_background_templates";
 const LEVEL_SCREEN_PATH_PREFIX = "/levels/";
 const DIRECTOR_BUTTON_TEMPLATES_PATH = "/director_console/ui_customization/button_templates";
@@ -433,6 +435,7 @@ export const App = () => {
       || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
       || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
       || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
+      || pathname === DIRECTOR_BIRD_SKILL_LAB_PATH
       || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
     ) {
       if (user.role !== "admin") {
@@ -469,6 +472,15 @@ export const App = () => {
         ));
       }
 
+      if (pathname === DIRECTOR_BIRD_SKILL_LAB_PATH) {
+        return renderBoundPage(user, "鸟类技能实验室", (apiUserId) => (
+          <DirectorBirdSkillLabPage
+            userId={apiUserId}
+            onBack={() => navigate(DIRECTOR_CONSOLE_PATH)}
+          />
+        ));
+      }
+
       if (pathname === DIRECTOR_UI_CUSTOMIZATION_PATH) {
         return renderBoundPage(user, "UI 美化配置", () => (
           <DirectorUiCustomizationPage onNavigate={navigate} />
@@ -490,6 +502,7 @@ export const App = () => {
           onOpenUiCustomization={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
           onOpenLevelInterfaceOptimization={() => navigate(DIRECTOR_LEVEL_INTERFACE_PATH)}
           onOpenLevelAssignment={() => navigate(DIRECTOR_LEVEL_ASSIGNMENT_PATH)}
+          onOpenBirdSkillLab={() => navigate(DIRECTOR_BIRD_SKILL_LAB_PATH)}
           onOpenLevelBackgroundTemplates={() => navigate(DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH)}
         />
       ));
@@ -534,6 +547,7 @@ export const App = () => {
           || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
           || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
           || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
+          || pathname === DIRECTOR_BIRD_SKILL_LAB_PATH
           || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
             ? pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
               ? "模板库"
@@ -543,6 +557,8 @@ export const App = () => {
                   ? "关卡界面优化"
                   : pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
                     ? "关卡细节分配"
+                    : pathname === DIRECTOR_BIRD_SKILL_LAB_PATH
+                      ? "鸟类技能实验室"
                     : pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH
                       ? "关卡背景模板"
                   : "总监控制台"

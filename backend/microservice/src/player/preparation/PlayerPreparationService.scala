@@ -3,6 +3,7 @@ package microservice.player.preparation
 import microservice.infrastructure.http.HttpError
 import microservice.player.runtime.PlayerWallet
 import microservice.player.tables.{PlayerPreparationTable, PlayerWalletTable}
+import microservice.bird.tables.BirdSkillConfigTable
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
@@ -113,7 +114,9 @@ object PlayerPreparationService {
       "nextCostCoins" -> Json.fromInt(bird.nextCostCoins),
       "nextCostFragments" -> Json.fromInt(bird.nextCostFragments),
       "source" -> Json.fromString(bird.source),
-      "authorId" -> bird.authorId.fold(Json.Null)(Json.fromString)
+      "authorId" -> bird.authorId.fold(Json.Null)(Json.fromString),
+      "skills" -> bird.skills.fold(Json.Null)(identity),
+      "modelImageUrl" -> bird.modelImageUrl.fold(Json.Null)(Json.fromString)
     )
 
   private def buildResponse(connection: Connection, userId: String, wallet: PlayerWallet): PlayerPreparationResponse = {
@@ -122,11 +125,13 @@ object PlayerPreparationService {
     val birdLevels = PlayerPreparationTable.listBirdLevels(connection, userId)
     val birdTiers = PlayerPreparationTable.listBirdTiers(connection, userId)
     val slingshotLevel = PlayerPreparationTable.getSlingshotLevel(connection, userId)
+    val skillConfigs = BirdSkillConfigTable.skillsJsonMap(connection)
     PlayerPreparationResponse(
       birds = catalogEntries.map { entry =>
         val level = birdLevels.getOrElse(entry.birdType, 1)
         val tier = birdTiers.getOrElse(entry.birdType, 1)
         val stats = BirdPreparationCatalog.statsFor(level, entry.baseStats)
+        val skillConfig = skillConfigs.get(entry.birdType)
         BirdUpgradeView(
           birdType = entry.birdType,
           name = entry.name,
@@ -143,7 +148,9 @@ object PlayerPreparationService {
           nextCostCoins = if (level >= PlayerPreparationTable.maxLevel) 0 else PlayerPreparationTable.upgradeCost(level),
           nextCostFragments = if (tier >= PlayerPreparationTable.maxTier) 0 else PlayerPreparationTable.ascendCost(tier),
           source = entry.source,
-          authorId = entry.authorId
+          authorId = entry.authorId,
+          skills = skillConfig.map(_.skills),
+          modelImageUrl = skillConfig.flatMap(_.modelImageUrl).orElse(Some(entry.previewImageUrl))
         )
       }.toList,
       slingshot = SlingshotUpgradeView(

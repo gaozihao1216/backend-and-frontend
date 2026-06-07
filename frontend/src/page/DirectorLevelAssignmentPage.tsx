@@ -4,10 +4,13 @@ import {
   abolishDirectorSubmission,
   getDirectorLevelAssignmentBoard,
   unassignLevelSlot,
+  updateLevelSlotBirdPool,
 } from "../api/index.js";
+import { BirdPoolConfigPanel } from "../component/level/BirdPoolConfigPanel.js";
 import { LevelPreviewCard } from "../component/level/LevelPreviewCard.js";
 import { createSubmissionLevelSource } from "../lib/level-repository.js";
 import type { DirectorLevelAssignmentBoard, LevelSlotAssignmentDetail } from "../objects/admin/level-slot-assignment.js";
+import { DEFAULT_BIRD_POOL, type BirdPool } from "../objects/level/bird-pool.js";
 import { LEVEL_NODE_DEFINITIONS } from "../objects/ui-customization/level-map-structure.js";
 
 type DirectorLevelAssignmentPageProps = {
@@ -23,6 +26,7 @@ export const DirectorLevelAssignmentPage = ({ userId, onBack }: DirectorLevelAss
   const [selectedSuffix, setSelectedSuffix] = useState(LEVEL_NODE_DEFINITIONS[0]?.suffix ?? "level01");
   const [selectedSubmissionId, setSelectedSubmissionId] = useState("");
   const [assignmentNote, setAssignmentNote] = useState("");
+  const [birdPool, setBirdPool] = useState<BirdPool>(DEFAULT_BIRD_POOL);
   const [abolishNotes, setAbolishNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -62,6 +66,10 @@ export const DirectorLevelAssignmentPage = ({ userId, onBack }: DirectorLevelAss
     void loadBoard();
   }, [loadBoard]);
 
+  useEffect(() => {
+    setBirdPool(selectedAssignment?.assignment.birdPool ?? DEFAULT_BIRD_POOL);
+  }, [selectedSuffix, selectedAssignment?.assignment.id, selectedAssignment?.assignment.birdPool]);
+
   const handleAssign = async () => {
     if (!selectedSubmissionId) {
       setMessage("请先选择一个已通过审核的提案。");
@@ -76,13 +84,34 @@ export const DirectorLevelAssignmentPage = ({ userId, onBack }: DirectorLevelAss
       const note = assignmentNote.trim();
       await assignLevelSlot(userId, selectedSuffix, {
         submissionId: selectedSubmissionId,
+        birdPool,
         ...(note ? { note } : {}),
       });
       setAssignmentNote("");
-      setMessage(`已将提案分配到 ${selectedSlot?.label ?? selectedSuffix}。`);
+      setMessage(`已将提案分配到 ${selectedSlot?.label ?? selectedSuffix}，并写入鸟池配置。`);
       await loadBoard();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "分配提案失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateBirdPool = async () => {
+    if (!selectedAssignment) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await updateLevelSlotBirdPool(userId, selectedSuffix, { birdPool });
+      setMessage(`已更新 ${selectedSlot?.label ?? selectedSuffix} 的鸟池配置。`);
+      await loadBoard();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "更新鸟池配置失败");
     } finally {
       setSaving(false);
     }
@@ -137,7 +166,7 @@ export const DirectorLevelAssignmentPage = ({ userId, onBack }: DirectorLevelAss
         <div>
           <h2>关卡细节分配</h2>
           <p className="panel-copy">
-            将管理员审核通过的设计师提案，分配到关卡路径地图中的对应关卡槽位。分配后可在后续流程中用于关卡内部细节加载。
+            将管理员审核通过的设计师提案分配到关卡路径地图中的对应槽位，并由总监配置该关卡的鸟池规则。
           </p>
         </div>
         <div className="actions">
@@ -191,7 +220,23 @@ export const DirectorLevelAssignmentPage = ({ userId, onBack }: DirectorLevelAss
               {selectedAssignment.assignment.note ? (
                 <p className="meta">备注：{selectedAssignment.assignment.note}</p>
               ) : null}
-              <LevelPreviewCard source={createSubmissionLevelSource(selectedAssignment.submission.level)} />
+              <BirdPoolConfigPanel
+                pool={birdPool}
+                birdOptions={board?.birdPoolOptions ?? []}
+                onChange={setBirdPool}
+                disabled={saving}
+                title="关卡鸟池"
+                description="该配置由总监维护，决定玩家在本槽位关卡中的可选鸟种与总发射次数。"
+              />
+              <div className="actions">
+                <button type="button" onClick={() => void handleUpdateBirdPool()} disabled={saving}>
+                  保存鸟池配置
+                </button>
+              </div>
+              <LevelPreviewCard
+                source={createSubmissionLevelSource(selectedAssignment.submission.level)}
+                birdPool={birdPool}
+              />
               <label>
                 <span>废除备注（可选）</span>
                 <textarea
@@ -242,6 +287,14 @@ export const DirectorLevelAssignmentPage = ({ userId, onBack }: DirectorLevelAss
                   )}
                 </select>
               </label>
+              <BirdPoolConfigPanel
+                pool={birdPool}
+                birdOptions={board?.birdPoolOptions ?? []}
+                onChange={setBirdPool}
+                disabled={saving}
+                title="关卡鸟池"
+                description="分配提案时一并设定本关卡的鸟池规则。"
+              />
               <label>
                 <span>分配备注（可选）</span>
                 <textarea

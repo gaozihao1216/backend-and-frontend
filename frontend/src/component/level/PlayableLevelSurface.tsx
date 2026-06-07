@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import type { LevelSource } from "../../lib/level-repository.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
-import type { BirdDefinition } from "../../lib/game-engine/bird-definition.js";
-import { resolveBirdQueueForLevel } from "../../lib/player-bird-queue.js";
+import type { BirdPoolLaunchConfig } from "../../lib/game-engine/bird-pool-session.js";
+import type { BirdPool } from "../../objects/level/bird-pool.js";
+import { resolveBirdPoolForLevel } from "../../lib/player-bird-pool.js";
 import { useLevelBackgroundTemplateResolution } from "../../hook/useLevelBackgroundTemplateResolution.js";
 import { LevelBackgroundStageLayer } from "../designer-page/LevelBackgroundStageLayer.js";
 import { GameCanvas } from "./GameCanvas.js";
@@ -10,6 +11,7 @@ import { GameCanvas } from "./GameCanvas.js";
 type PlayableLevelSurfaceProps = {
   source: LevelSource;
   userId?: string;
+  birdPool?: BirdPool;
   defaultOpen?: boolean;
   onExit?: () => void;
 };
@@ -17,12 +19,13 @@ type PlayableLevelSurfaceProps = {
 export const PlayableLevelSurface = ({
   source,
   userId,
+  birdPool,
   defaultOpen = false,
   onExit,
 }: PlayableLevelSurfaceProps) => {
   const [open, setOpen] = useState(defaultOpen);
   const [instanceKey, setInstanceKey] = useState(0);
-  const [birdQueue, setBirdQueue] = useState<BirdDefinition[] | null>(null);
+  const [birdPoolConfig, setBirdPoolConfig] = useState<BirdPoolLaunchConfig | null>(null);
   const {
     template: levelBackgroundTemplate,
     panelBackgroundDesign,
@@ -38,16 +41,16 @@ export const PlayableLevelSurface = ({
     }
 
     let cancelled = false;
-    void resolveBirdQueueForLevel(userId, source.level.data.birdInventory).then((queue) => {
+    void resolveBirdPoolForLevel(userId, source.level.data, birdPool).then((config) => {
       if (!cancelled) {
-        setBirdQueue(queue);
+        setBirdPoolConfig(config);
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [open, userId, source.level.data.birdInventory, instanceKey]);
+  }, [open, userId, source.level.data, birdPool, instanceKey]);
 
   const handleExit = () => {
     setOpen(false);
@@ -75,7 +78,7 @@ export const PlayableLevelSurface = ({
           <GameCanvas
             levelKey={source.key}
             levelData={source.level.data}
-            {...(birdQueue ? { birdQueue } : {})}
+            {...(birdPoolConfig ? { birdPoolConfig } : {})}
             restartToken={instanceKey}
             transparentBackground={Boolean(levelBackgroundTemplate)}
           />

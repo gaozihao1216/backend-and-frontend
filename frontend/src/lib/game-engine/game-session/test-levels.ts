@@ -48,3 +48,24 @@ export const createPigBesideWoodDropLevel = (): LevelData => ({
     },
   ],
 });
+
+export const createStackedWoodDropLevel = (): LevelData => ({
+  world: { width: WORLD_WIDTH, height: WORLD_HEIGHT, gravity: 9.8 },
+  ground: createDropTestGround(),
+  birdInventory: { basic: 1 },
+  obstacles: [
+    {
+      id: "stack-base",
+      material: "wood",
+      position: { x: WORLD_WIDTH * 0.5, y: DROP_TEST_GROUND_Y - 40 },
+      size: { width: 72, height: 72 },
+    },
+    {
+      id: "stack-top",
+      material: "wood",
+      position: { x: WORLD_WIDTH * 0.5, y: DROP_TEST_GROUND_Y - 112 },
+      size: { width: 72, height: 72 },
+    },
+  ],
+  enemies: [],
+});

@@ -1,6 +1,9 @@
 import type { Body, Engine } from "matter-js";
 import type { LevelGround, Position } from "../level-contracts.js";
 import type { CombatProfile } from "./combat-profile.js";
+import type { BirdSkillSet } from "./skills/skill-spec.js";
+import type { StatusEffectInstance } from "./skills/status-effects.js";
+import type { SkillVisualEffect } from "./skills/skill-executors.js";
 
 export type GameBodyKind = "ground" | "block" | "pig" | "bird";
 
@@ -58,6 +61,20 @@ export type GameBody = Body & {
   renderHeight?: number;
   plugin: Body["plugin"] & {
     gameEntity?: GameEntity;
+    physicsSettling?: {
+      supported: boolean;
+    };
+    supportCollapse?: boolean;
+    statusEffects?: StatusEffectInstance[];
+    skillProjectile?: {
+      kind: "vertical_bomb";
+      blastRadius: number;
+      structureDamage: number;
+      pigDamage: number;
+      sourceBirdId: number;
+      spawnAtMs: number;
+      armed: boolean;
+    };
   };
 };
 
@@ -75,16 +92,28 @@ export type GameSnapshot = {
     y: number;
   };
   birdsRemaining: number;
+  shotsRemaining: number;
+  awaitingBirdSelection: boolean;
+  birdReadyOnSlingshot: boolean;
+  selectableBirds: Array<{
+    birdType: string;
+    name: string;
+    fillColor: string;
+    remaining: number;
+  }>;
   activeBirdName: string;
   activeBirdType: string;
+  skillVisuals: SkillVisualEffect[];
 };
 
 export type GameSession = {
   engine: Engine;
   getSnapshot: () => GameSnapshot;
+  selectBird: (birdType: string) => boolean;
   beginDrag: (x: number, y: number) => boolean;
   updateDrag: (x: number, y: number) => void;
   endDrag: () => void;
   step: (deltaMs: number) => void;
+  activateSkill: () => boolean;
   destroy: () => void;
 };

@@ -1,4 +1,5 @@
 import type { GameBody, GameSnapshot } from "./types.js";
+import type { StatusEffectInstance } from "./skills/status-effects.js";
 import { getGroundSurfaceYAtX } from "../ground.js";
 
 const GROUND_STRIPE_WIDTH = 8;
@@ -757,6 +758,13 @@ const drawBody = (ctx: CanvasRenderingContext2D, body: GameBody) => {
           ctx.stroke();
         }
       }
+
+      if (body.plugin.statusEffects?.some((effect: StatusEffectInstance) => effect.kind === "burn")) {
+        ctx.fillStyle = "rgba(251, 146, 60, 0.18)";
+        if (traceRenderRectangle(ctx, body) || traceBodyPolygon(ctx, body)) {
+          ctx.fill();
+        }
+      }
       break;
     }
     case "pig":
@@ -805,6 +813,14 @@ const drawBody = (ctx: CanvasRenderingContext2D, body: GameBody) => {
         ctx.arc(radius * 0.29, radius * 0.06, radius * 0.05, 0, Math.PI * 2);
         ctx.arc(radius * 0.45, radius * 0.06, radius * 0.05, 0, Math.PI * 2);
         ctx.fill();
+      } else if (body.plugin.skillProjectile?.kind === "vertical_bomb") {
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#111827";
+        ctx.fill();
+        ctx.strokeStyle = "#fbbf24";
+        ctx.lineWidth = 2;
+        ctx.stroke();
       } else {
         const entity = body.plugin.gameEntity;
         const fillColor = entity?.kind === "bird" ? entity.fillColor : "#d84a3f";
@@ -812,6 +828,14 @@ const drawBody = (ctx: CanvasRenderingContext2D, body: GameBody) => {
         ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.fillStyle = fillColor;
         ctx.fill();
+      }
+
+      if (body.plugin.statusEffects?.some((effect: StatusEffectInstance) => effect.kind === "poison")) {
+        ctx.strokeStyle = "rgba(74, 222, 128, 0.72)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.12, 0, Math.PI * 2);
+        ctx.stroke();
       }
       break;
     }
@@ -830,8 +854,40 @@ const drawBirdHud = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) => {
   ctx.strokeRect(12, 12, 220, 34);
   ctx.fillStyle = "#1f2937";
   ctx.font = "14px sans-serif";
-  ctx.fillText(`${snapshot.activeBirdName} · 剩余 ${snapshot.birdsRemaining}`, 22, 34);
+  const hudLine = snapshot.awaitingBirdSelection
+    ? `选择小鸟 · 剩余 ${snapshot.shotsRemaining} 次`
+    : snapshot.activeBirdName
+      ? `${snapshot.activeBirdName} · 剩余 ${snapshot.shotsRemaining} 次`
+      : `剩余 ${snapshot.shotsRemaining} 次`;
+  ctx.fillText(hudLine, 22, 34);
   ctx.restore();
+};
+
+const SKILL_VISUAL_COLORS: Record<string, string> = {
+  speed_boost: "rgba(56, 189, 248, 0.35)",
+  split: "rgba(125, 211, 252, 0.35)",
+  balloon_push: "rgba(248, 113, 113, 0.28)",
+  vertical_bomb_drop: "rgba(55, 65, 81, 0.25)",
+  bomb_blast: "rgba(251, 191, 36, 0.42)",
+  forward_shockwave: "rgba(96, 165, 250, 0.32)",
+  radial_shockwave: "rgba(147, 197, 253, 0.34)",
+  point_blast: "rgba(249, 115, 22, 0.38)",
+  lightning_storm: "rgba(167, 139, 250, 0.34)",
+  burn_aura: "rgba(251, 146, 60, 0.24)",
+  poison_aura: "rgba(74, 222, 128, 0.22)",
+};
+
+const drawSkillVisuals = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) => {
+  for (const visual of snapshot.skillVisuals) {
+    const fill = SKILL_VISUAL_COLORS[visual.kind] ?? "rgba(255,255,255,0.2)";
+    ctx.beginPath();
+    ctx.arc(visual.x, visual.y, visual.radius, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
 };
 
 export const drawScene = (
@@ -863,10 +919,16 @@ export const drawScene = (
   drawSlingshot(ctx, snapshot);
 
   for (const body of snapshot.bodies) {
+    if (body.renderKind === "bird" && !snapshot.birdReadyOnSlingshot && !snapshot.birdLaunched) {
+      continue;
+    }
+
     if (body.renderKind !== "ground") {
       drawBody(ctx, body);
     }
   }
+
+  drawSkillVisuals(ctx, snapshot);
 
   ctx.restore();
   drawBirdHud(ctx, snapshot);

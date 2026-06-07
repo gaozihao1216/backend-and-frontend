@@ -8,6 +8,7 @@ type DirectorWorkbenchPageProps = {
   onOpenUiCustomization: () => void;
   onOpenLevelInterfaceOptimization: () => void;
   onOpenLevelAssignment: () => void;
+  onOpenBirdSkillLab: () => void;
   onOpenLevelBackgroundTemplates: () => void;
 };
 
@@ -19,6 +20,7 @@ export const DirectorWorkbenchPage = ({
   onOpenUiCustomization,
   onOpenLevelInterfaceOptimization,
   onOpenLevelAssignment,
+  onOpenBirdSkillLab,
   onOpenLevelBackgroundTemplates,
 }: DirectorWorkbenchPageProps) => {
   const [permissions, setPermissions] = useState<DirectorPermissionSummary | null>(null);
@@ -210,6 +212,16 @@ export const DirectorWorkbenchPage = ({
           <div className="actions">
             <button type="button" onClick={onOpenLevelAssignment}>
               进入分配
+            </button>
+          </div>
+        </section>
+
+        <section className="feature-card director-option-row">
+          <h3>鸟类技能实验室</h3>
+          <p className="panel-copy">用积木式编辑器将设计师文案落实为点击技能，并上传小鸟建模图。</p>
+          <div className="actions">
+            <button type="button" onClick={onOpenBirdSkillLab}>
+              进入技能实验室
             </button>
           </div>
         </section>

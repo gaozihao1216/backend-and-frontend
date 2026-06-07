@@ -16,8 +16,9 @@ private[tables] object LevelSlotAssignmentTableJdbcWrite {
           source_level_id,
           assigned_by_id,
           assigned_at,
-          note
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          note,
+          bird_pool_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       """
     )
     try {
@@ -28,6 +29,7 @@ private[tables] object LevelSlotAssignmentTableJdbcWrite {
       statement.setString(5, row.assignedById)
       statement.setString(6, row.assignedAt)
       statement.setString(7, row.note.orNull)
+      statement.setString(8, LevelSlotAssignmentTableCodec.encodeBirdPool(row.birdPool))
       statement.executeUpdate()
       row
     } finally {

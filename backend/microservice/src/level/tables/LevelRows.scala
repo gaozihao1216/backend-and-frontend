@@ -1,6 +1,6 @@
 package microservice.level.tables
 
-import microservice.level.objects.LevelData
+import microservice.level.objects.{BirdPool, LevelData}
 import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
 
 final case class LevelRow(
@@ -54,5 +54,6 @@ final case class LevelSlotAssignmentRow(
   sourceLevelId: String,
   assignedById: String,
   assignedAt: String,
-  note: Option[String]
+  note: Option[String],
+  birdPool: Option[BirdPool] = None
 )

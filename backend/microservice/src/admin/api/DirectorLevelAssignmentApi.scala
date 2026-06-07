@@ -4,6 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.{
   AssignLevelSlotErrors,
+  DirectorBirdPoolOption,
   DirectorLevelAssignmentBoard,
   LevelSlotAssignment,
   LevelSlotAssignmentDetail,
@@ -12,9 +13,10 @@ import microservice.admin.objects.{
 import microservice.auth.utils.AccessControl
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
-import microservice.level.tables.LevelRowMapper
-import microservice.level.objects.SubmissionWithLevel
-import microservice.level.tables.{LevelSlotAssignmentRow, LevelSlotAssignmentTable, LevelTable, SubmissionTable}
+import microservice.bird.tables.{BirdDesignTable, BirdRowMapper}
+import microservice.player.preparation.BirdPreparationCatalog
+import microservice.level.objects.{BirdPool, SubmissionWithLevel}
+import microservice.level.tables.{LevelRowMapper, LevelSlotAssignmentRow, LevelSlotAssignmentTable, LevelTable, SubmissionTable}
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
 
 object DirectorLevelAssignmentSupport {
@@ -24,6 +26,34 @@ object DirectorLevelAssignmentSupport {
         SubmissionWithLevel.from(LevelRowMapper.toSubmission(submission), LevelRowMapper.toLevel(level))
       }
     }
+
+  def buildBirdPoolOptions(connection: Connection): List[DirectorBirdPoolOption] = {
+    val systemOptions =
+      BirdPreparationCatalog.entries.map { entry =>
+        DirectorBirdPoolOption(
+          birdType = entry.birdType,
+          name = entry.name,
+          source = "system",
+          authorId = None
+        )
+      }.toList
+
+    val designerOptions =
+      BirdDesignTable
+        .listPublished(connection)
+        .map(BirdRowMapper.toBirdDesign)
+        .map { design =>
+          DirectorBirdPoolOption(
+            birdType = design.id,
+            name = design.name,
+            source = "designer",
+            authorId = Some(design.authorId)
+          )
+        }
+        .toList
+
+    systemOptions ++ designerOptions
+  }
 
   def buildBoard(connection: Connection): DirectorLevelAssignmentBoard = {
     val assignedSubmissionIds =
@@ -48,7 +78,8 @@ object DirectorLevelAssignmentSupport {
 
     DirectorLevelAssignmentBoard(
       assignments = assignments,
-      pendingApproved = pendingApproved
+      pendingApproved = pendingApproved,
+      birdPoolOptions = buildBirdPoolOptions(connection)
     )
   }
 }
@@ -68,7 +99,8 @@ final case class GetDirectorLevelAssignmentBoardAPIMessage(
 
 final case class AssignLevelSlotBody(
   submissionId: String,
-  note: Option[String]
+  note: Option[String],
+  birdPool: Option[BirdPool] = None
 )
 
 object AssignLevelSlotBody {
@@ -114,7 +146,8 @@ final case class AssignLevelSlotAPIMessage(
           sourceLevelId = submission.levelId,
           assignedById = user.id,
           assignedAt = timestamp,
-          note = body.note
+          note = body.note,
+          birdPool = Some(body.birdPool.getOrElse(BirdPool.default))
         )
         LevelSlotAssignmentTable.upsert(connection, row)
         val submissionWithLevel =
@@ -148,6 +181,52 @@ final case class UnassignLevelSlotAPIMessage(
           if (LevelSlotAssignmentTable.deleteBySuffix(connection, levelSuffix)) Right(())
           else Left(AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError)
       } yield LevelSlotAssignment.from(existing)
+    }
+}
+
+final case class UpdateLevelSlotBirdPoolBody(
+  birdPool: BirdPool
+)
+
+object UpdateLevelSlotBirdPoolBody {
+  import io.circe.generic.semiauto._
+  import io.circe.{Decoder, Encoder}
+  import org.http4s.EntityDecoder
+  import org.http4s.circe.jsonOf
+
+  implicit val encoder: Encoder[UpdateLevelSlotBirdPoolBody] = deriveEncoder
+  implicit val decoder: Decoder[UpdateLevelSlotBirdPoolBody] = deriveDecoder
+  implicit val entityDecoder: EntityDecoder[IO, UpdateLevelSlotBirdPoolBody] = jsonOf
+}
+
+final case class UpdateLevelSlotBirdPoolAPIMessage(
+  userId: String,
+  levelSuffix: String,
+  body: UpdateLevelSlotBirdPoolBody
+) extends APIWithTokenMessage[LevelSlotAssignmentDetail] {
+  override def token: String = userId
+
+  override def plan(connection: Connection): IO[Either[HttpError, LevelSlotAssignmentDetail]] =
+    IO.pure {
+      for {
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
+        _ <-
+          if (LevelSlotCatalog.isSupported(levelSuffix)) Right(())
+          else Left(AssignLevelSlotErrors.InvalidLevelSuffix(levelSuffix).toHttpError)
+        existing <- LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix).toRight(
+          AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError
+        )
+      } yield {
+        val updated = existing.copy(birdPool = Some(body.birdPool))
+        LevelSlotAssignmentTable.upsert(connection, updated)
+        val submissionWithLevel =
+          DirectorLevelAssignmentSupport
+            .submissionWithLevel(connection, updated.submissionId)
+            .getOrElse(
+              throw new IllegalStateException(s"Submission level missing after bird pool update: ${updated.submissionId}")
+            )
+        LevelSlotAssignmentDetail(LevelSlotAssignment.from(updated), submissionWithLevel)
+      }
     }
 }
 

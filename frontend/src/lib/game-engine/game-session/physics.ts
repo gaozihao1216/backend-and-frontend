@@ -18,6 +18,7 @@ import {
   COLLISION_CATEGORY_CEILING,
   COLLISION_CATEGORY_DYNAMIC,
   COLLISION_CATEGORY_GROUND,
+  COLLISION_GROUP_FREE_FALL,
   COLLISION_MASK_BOUNDARY,
   COLLISION_MASK_DYNAMIC_FULL,
   COLLISION_MASK_FREE_FALL,
@@ -85,6 +86,10 @@ const shouldKeepBodyAwake = (
     return true;
   }
 
+  if (body.plugin.supportCollapse) {
+    return true;
+  }
+
   return body.speed > BODY_SLEEP_LINEAR_THRESHOLD || Math.abs(body.angularVelocity) > BODY_SLEEP_ANGULAR_THRESHOLD;
 };
 
@@ -119,6 +124,10 @@ export const isInFreeFall = (body: GameBody) => {
     return false;
   }
 
+  if (body.plugin.physicsSettling?.supported) {
+    return false;
+  }
+
   if (body.speed <= FREE_FALL_MAX_REST_SPEED && Math.abs(body.angularVelocity) <= FREE_FALL_MAX_REST_ANGULAR) {
     return false;
   }
@@ -126,11 +135,136 @@ export const isInFreeFall = (body: GameBody) => {
   return body.velocity.y >= FREE_FALL_MIN_DOWNWARD || body.speed >= FREE_FALL_MAX_REST_SPEED;
 };
 
+const markBodySupported = (body: GameBody) => {
+  if (body.isStatic || body.destroyed || body.renderKind === "bird" || body.renderKind === "ground") {
+    return;
+  }
+
+  body.plugin.physicsSettling = { supported: true };
+};
+
+/** 初始落稳阶段：触地或被已支撑结构托住后，立即切换为可承载碰撞体 */
+export const markSettlingSupport = (bodyA: GameBody, bodyB: GameBody) => {
+  if (bodyA.renderKind === "ground") {
+    markBodySupported(bodyB);
+    return;
+  }
+
+  if (bodyB.renderKind === "ground") {
+    markBodySupported(bodyA);
+    return;
+  }
+
+  const dynamicA = bodyA.renderKind === "block" || bodyA.renderKind === "pig";
+  const dynamicB = bodyB.renderKind === "block" || bodyB.renderKind === "pig";
+  if (!dynamicA || !dynamicB) {
+    return;
+  }
+
+  if (bodyA.plugin.physicsSettling?.supported) {
+    markBodySupported(bodyB);
+  }
+
+  if (bodyB.plugin.physicsSettling?.supported) {
+    markBodySupported(bodyA);
+  }
+};
+
+const horizontalOverlapAmount = (bodyA: GameBody, bodyB: GameBody) =>
+  Math.min(bodyA.bounds.max.x, bodyB.bounds.max.x) - Math.max(bodyA.bounds.min.x, bodyB.bounds.min.x);
+
+export const isCrackingBlock = (body: GameBody) => getBlockEntity(body)?.state === "cracking";
+
+/** 支撑体失效后，唤醒其上方/与之接触的结构，避免睡眠体悬空或钉死 */
+export const wakeDependentBodies = (supportBody: GameBody, bodies: GameBody[]) => {
+  const supportBounds = supportBody.bounds;
+  const supportHalfWidth = (supportBounds.max.x - supportBounds.min.x) * 0.5;
+
+  for (const body of bodies) {
+    if (
+      body === supportBody
+      || body.destroyed
+      || body.isStatic
+      || body.renderKind === "ground"
+      || body.renderKind === "bird"
+    ) {
+      continue;
+    }
+
+    const bodyHalfWidth = (body.bounds.max.x - body.bounds.min.x) * 0.5;
+    const overlapX = horizontalOverlapAmount(body, supportBody);
+    if (overlapX <= Math.min(supportHalfWidth, bodyHalfWidth) * 0.2) {
+      continue;
+    }
+
+    const restingOnSupport =
+      body.bounds.max.y >= supportBounds.min.y - 12
+      && body.bounds.min.y <= supportBounds.min.y + 8;
+    const stackedAbove =
+      body.bounds.min.y < supportBounds.min.y
+      && body.bounds.max.y >= supportBounds.min.y - 16;
+
+    if (!restingOnSupport && !stackedAbove) {
+      continue;
+    }
+
+    Sleeping.set(body, false);
+    delete body.plugin.physicsSettling;
+    body.plugin.supportCollapse = true;
+
+    if (body.speed < 0.35 && body.velocity.y < 1.2) {
+      Body.setVelocity(body, {
+        x: body.velocity.x,
+        y: Math.max(body.velocity.y, 1.6),
+      });
+    }
+  }
+};
+
+export const clearSupportCollapseOnContact = (bodyA: GameBody, bodyB: GameBody) => {
+  for (const [body, other] of [[bodyA, bodyB], [bodyB, bodyA]] as const) {
+    if (!body.plugin.supportCollapse || body.destroyed) {
+      continue;
+    }
+
+    if (other.renderKind === "ground") {
+      delete body.plugin.supportCollapse;
+      continue;
+    }
+
+    if (other.renderKind === "block" && !isCrackingBlock(other)) {
+      delete body.plugin.supportCollapse;
+    }
+  }
+};
+
+/** 方块开始碎裂或即将移除：释放对其上方结构的支撑，触发连锁坍塌 */
+export const releaseStructureSupport = (supportBody: GameBody, bodies: GameBody[]) => {
+  if (supportBody.destroyed || supportBody.isStatic) {
+    return;
+  }
+
+  wakeDependentBodies(supportBody, bodies);
+
+  if (isCrackingBlock(supportBody)) {
+    Sleeping.set(supportBody, false);
+    Body.set(supportBody, {
+      isSensor: true,
+      collisionFilter: {
+        group: 0,
+        category: COLLISION_CATEGORY_DYNAMIC,
+        mask: 0,
+      },
+    });
+  }
+};
+
 const applyDynamicCollisionFilter = (body: GameBody, freeFall: boolean) => {
   Body.set(body, {
     collisionFilter: {
+      group: freeFall ? COLLISION_GROUP_FREE_FALL : 0,
       category: COLLISION_CATEGORY_DYNAMIC,
-      mask: freeFall ? COLLISION_MASK_FREE_FALL : COLLISION_MASK_DYNAMIC_FULL,
+      mask: COLLISION_MASK_DYNAMIC_FULL,
     },
   });
 };
@@ -138,6 +272,7 @@ const applyDynamicCollisionFilter = (body: GameBody, freeFall: boolean) => {
 export const applyBirdCollisionFilter = (body: GameBody) => {
   Body.set(body, {
     collisionFilter: {
+      group: 0,
       category: COLLISION_CATEGORY_BIRD,
       mask: COLLISION_MASK_DYNAMIC_FULL,
     },
@@ -260,6 +395,10 @@ export const applyPenetrationCorrection = (bodies: GameBody[]) => {
 
 // 这层是工程化的低速稳定器，不追求严格守恒，只避免长时间微抖。
 export const applyRestingContactStabilization = (bodyA: GameBody, bodyB: GameBody, normal: MatterVector) => {
+  if (isCrackingBlock(bodyA) || isCrackingBlock(bodyB)) {
+    return;
+  }
+
   const inverseMassA = bodyA.isStatic || bodyA.destroyed ? 0 : bodyA.inverseMass;
   const inverseMassB = bodyB.isStatic || bodyB.destroyed ? 0 : bodyB.inverseMass;
   const inverseMassSum = inverseMassA + inverseMassB;
@@ -321,7 +460,7 @@ export const applyGroundSupportStabilization = (
       ? bodyB
       : null;
   const ground = block === bodyA ? bodyB : block === bodyB ? bodyA : null;
-  if (!block || !ground || block.destroyed) {
+  if (!block || !ground || block.destroyed || isCrackingBlock(block)) {
     return false;
   }
 
@@ -413,6 +552,10 @@ export const applyBlockSupportStabilization = (
     return false;
   }
 
+  if (isCrackingBlock(bodyA) || isCrackingBlock(bodyB)) {
+    return false;
+  }
+
   const inverseMassA = bodyA.isStatic ? 0 : bodyA.inverseMass;
   const inverseMassB = bodyB.isStatic ? 0 : bodyB.inverseMass;
   const inverseMassSum = inverseMassA + inverseMassB;
@@ -483,6 +626,10 @@ export const applyPigSupportStabilization = (
   }
 
   if (support.renderKind !== "block" && support.renderKind !== "ground") {
+    return false;
+  }
+
+  if (support.renderKind === "block" && isCrackingBlock(support)) {
     return false;
   }
 

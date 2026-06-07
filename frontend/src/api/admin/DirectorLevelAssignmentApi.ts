@@ -9,6 +9,8 @@ import {
   type DirectorLevelAssignmentBoard,
   type LevelSlotAssignment,
   type LevelSlotAssignmentDetail,
+  UpdateLevelSlotBirdPoolRequestBodySchema,
+  type UpdateLevelSlotBirdPoolRequestBody,
 } from "../../objects/admin/level-slot-assignment.js";
 import { SubmissionWithLevelSchema, type SubmissionWithLevel } from "../../objects/level/submission-with-level.js";
 import { request } from "../client.js";
@@ -81,6 +83,37 @@ export const unassignLevelSlotApi = new UnassignLevelSlotApi();
 
 export const unassignLevelSlot = async (userId: string, levelSuffix: string): Promise<LevelSlotAssignment> =>
   unassignLevelSlotApi.execute(userId, levelSuffix);
+
+export class UpdateLevelSlotBirdPoolApi {
+  static pathFor(levelSuffix: string) {
+    return `/admin/director/level-assignments/${encodeURIComponent(levelSuffix)}/bird-pool` as const;
+  }
+
+  async execute(
+    userId: string,
+    levelSuffix: string,
+    body: UpdateLevelSlotBirdPoolRequestBody,
+  ): Promise<LevelSlotAssignmentDetail> {
+    UpdateLevelSlotBirdPoolRequestBodySchema.parse(body);
+    return request(
+      UpdateLevelSlotBirdPoolApi.pathFor(levelSuffix),
+      {
+        method: "PUT",
+        headers: { "x-user-id": userId, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+      LevelSlotAssignmentDetailSchema,
+    );
+  }
+}
+
+export const updateLevelSlotBirdPoolApi = new UpdateLevelSlotBirdPoolApi();
+
+export const updateLevelSlotBirdPool = async (
+  userId: string,
+  levelSuffix: string,
+  body: UpdateLevelSlotBirdPoolRequestBody,
+): Promise<LevelSlotAssignmentDetail> => updateLevelSlotBirdPoolApi.execute(userId, levelSuffix, body);
 
 export class AbolishDirectorSubmissionApi {
   static pathFor(submissionId: string) {

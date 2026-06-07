@@ -24,6 +24,8 @@ const BirdUpgradeSchema = z.object({
   nextCostFragments: z.number(),
   source: z.enum(["system", "designer"]),
   authorId: z.string().nullable(),
+  skills: z.unknown().nullable().optional(),
+  modelImageUrl: z.string().nullable().optional(),
 });
 
 const SlingshotUpgradeSchema = z.object({

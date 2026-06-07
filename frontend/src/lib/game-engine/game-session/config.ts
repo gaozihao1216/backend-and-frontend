@@ -47,6 +47,8 @@ export const COLLISION_CATEGORY_CEILING = 0x0002;
 export const COLLISION_CATEGORY_DYNAMIC = 0x0004;
 export const COLLISION_CATEGORY_BIRD = 0x0008;
 export const COLLISION_MASK_FREE_FALL = COLLISION_CATEGORY_GROUND | COLLISION_CATEGORY_CEILING;
+/** 同组下落物体互不碰撞；与边界、鸟、已落稳结构仍按 mask 碰撞 */
+export const COLLISION_GROUP_FREE_FALL = -1;
 export const COLLISION_MASK_DYNAMIC_FULL =
   COLLISION_MASK_FREE_FALL | COLLISION_CATEGORY_DYNAMIC | COLLISION_CATEGORY_BIRD;
 export const COLLISION_MASK_BOUNDARY = COLLISION_MASK_DYNAMIC_FULL;
@@ -360,8 +362,9 @@ export const createObstacleBody = (obstacle: LevelObstacle, levelData: LevelData
       density: physics.density,
       slop: 0.014,
       collisionFilter: {
+        group: COLLISION_GROUP_FREE_FALL,
         category: COLLISION_CATEGORY_DYNAMIC,
-        mask: COLLISION_MASK_FREE_FALL,
+        mask: COLLISION_MASK_DYNAMIC_FULL,
       },
     }),
     "block",
@@ -387,8 +390,9 @@ export const createEnemyBody = (enemy: LevelEnemy, levelData: LevelData) => {
       density: 0.0015,
       slop: 0.01,
       collisionFilter: {
+        group: COLLISION_GROUP_FREE_FALL,
         category: COLLISION_CATEGORY_DYNAMIC,
-        mask: COLLISION_MASK_FREE_FALL,
+        mask: COLLISION_MASK_DYNAMIC_FULL,
       },
     }),
     "pig",

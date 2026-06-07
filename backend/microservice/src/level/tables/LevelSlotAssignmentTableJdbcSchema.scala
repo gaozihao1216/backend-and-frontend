@@ -15,8 +15,15 @@ private[tables] object LevelSlotAssignmentTableJdbcSchema {
             source_level_id TEXT NOT NULL REFERENCES levels(id),
             assigned_by_id TEXT NOT NULL REFERENCES users(id),
             assigned_at TEXT NOT NULL,
-            note TEXT
+            note TEXT,
+            bird_pool_json TEXT
           )
+        """
+      )
+      statement.executeUpdate(
+        """
+          ALTER TABLE level_slot_assignments
+          ADD COLUMN IF NOT EXISTS bird_pool_json TEXT
         """
       )
     } finally {

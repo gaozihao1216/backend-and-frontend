@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.time.Instant
 import microservice.auth.tables.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
-import microservice.bird.tables.{BirdDesignTable, BirdSubmissionTable}
+import microservice.bird.tables.{BirdDesignTable, BirdSkillConfigTable, BirdSubmissionTable}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelSlotAssignmentTable, LevelTable, RatingTable, SubmissionTable}
 import microservice.player.tables.{
   CheckInPanelRewardTable,
@@ -66,6 +66,7 @@ object SystemDefaults {
         ShopTable.initialize(connection)
         BirdDesignTable.initialize(connection)
         BirdSubmissionTable.initialize(connection)
+        BirdSkillConfigTable.initialize(connection)
         PlayerFriendTable.initialize(connection)
         PlayerPrivateMessageTable.initialize(connection)
         PlayerPreparationTable.initialize(connection)
