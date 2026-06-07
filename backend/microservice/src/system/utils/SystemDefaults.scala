@@ -5,6 +5,17 @@ import java.time.Instant
 import microservice.auth.tables.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
 import microservice.level.tables.{CommentTable, FavoriteTable, LevelSlotAssignmentTable, LevelTable, RatingTable, SubmissionTable}
+import microservice.player.tables.{
+  CheckInPanelRewardTable,
+  PlayerFriendTable,
+  PlayerLegacyCheckInTable,
+  PlayerLevelProgressTable,
+  PlayerPreparationTable,
+  PlayerPrivateMessageTable,
+  PlayerWalletTable,
+  PlayerWeeklyCheckInTable,
+  ShopTable
+}
 import microservice.routes.ApiRouter
 import microservice.ui.tables.{ButtonTemplateTable, StretchVisualTemplateTable, UiPageTable}
 import org.http4s.HttpRoutes
@@ -46,6 +57,15 @@ object SystemDefaults {
         UiPageTable.initialize(connection)
         ButtonTemplateTable.initialize(connection)
         StretchVisualTemplateTable.initialize(connection)
+        PlayerWalletTable.initialize(connection)
+        PlayerWeeklyCheckInTable.initialize(connection)
+        PlayerLevelProgressTable.initialize(connection)
+        PlayerLegacyCheckInTable.initialize(connection)
+        CheckInPanelRewardTable.initialize(connection)
+        ShopTable.initialize(connection)
+        PlayerFriendTable.initialize(connection)
+        PlayerPrivateMessageTable.initialize(connection)
+        PlayerPreparationTable.initialize(connection)
       }
     }
 }

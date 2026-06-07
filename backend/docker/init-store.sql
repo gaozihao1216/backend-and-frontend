@@ -97,7 +97,104 @@ CREATE TABLE IF NOT EXISTS ui_stretch_visual_templates (
 CREATE INDEX IF NOT EXISTS ui_stretch_visual_templates_kind_idx ON ui_stretch_visual_templates(kind);
 CREATE INDEX IF NOT EXISTS ui_stretch_visual_templates_name_idx ON ui_stretch_visual_templates(name);
 
-TRUNCATE TABLE ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
+CREATE TABLE IF NOT EXISTS player_wallets (
+  user_id TEXT PRIMARY KEY REFERENCES users(id),
+  coins INTEGER NOT NULL DEFAULT 0,
+  gems INTEGER NOT NULL DEFAULT 0,
+  fragments INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS player_weekly_check_ins (
+  user_id TEXT NOT NULL REFERENCES users(id),
+  week_key TEXT NOT NULL,
+  signed_slots TEXT NOT NULL DEFAULT '',
+  signed_today BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, week_key)
+);
+
+CREATE TABLE IF NOT EXISTS check_in_panel_rewards (
+  panel_id TEXT NOT NULL,
+  slot_index INTEGER NOT NULL,
+  coins INTEGER NOT NULL DEFAULT 0,
+  gems INTEGER NOT NULL DEFAULT 0,
+  fragments INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (panel_id, slot_index)
+);
+
+CREATE TABLE IF NOT EXISTS shop_items (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  currency TEXT NOT NULL,
+  catalog_index INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS shop_purchases (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  item_id TEXT NOT NULL REFERENCES shop_items(id),
+  price INTEGER NOT NULL,
+  currency TEXT NOT NULL,
+  purchased_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS shop_purchases_user_id_idx ON shop_purchases (user_id, purchased_at DESC);
+
+CREATE TABLE IF NOT EXISTS player_level_progress (
+  user_id TEXT NOT NULL REFERENCES users(id),
+  level_suffix TEXT NOT NULL,
+  cleared_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, level_suffix)
+);
+
+CREATE TABLE IF NOT EXISTS player_legacy_check_ins (
+  user_id TEXT PRIMARY KEY REFERENCES users(id),
+  status TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS player_friends (
+  user_id TEXT NOT NULL REFERENCES users(id),
+  friend_user_id TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, friend_user_id),
+  CHECK (user_id <> friend_user_id)
+);
+
+CREATE TABLE IF NOT EXISTS player_private_messages (
+  id TEXT PRIMARY KEY,
+  sender_id TEXT NOT NULL REFERENCES users(id),
+  receiver_id TEXT NOT NULL REFERENCES users(id),
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS player_private_messages_pair_idx
+  ON player_private_messages (sender_id, receiver_id, created_at);
+
+CREATE TABLE IF NOT EXISTS player_bird_upgrades (
+  user_id TEXT NOT NULL REFERENCES users(id),
+  bird_type TEXT NOT NULL,
+  level INTEGER NOT NULL DEFAULT 1,
+  tier INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, bird_type)
+);
+
+CREATE TABLE IF NOT EXISTS player_slingshot_upgrades (
+  user_id TEXT PRIMARY KEY REFERENCES users(id),
+  level INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL
+);
+
+TRUNCATE TABLE player_private_messages, player_slingshot_upgrades, player_bird_upgrades, player_friends, shop_purchases, shop_items, check_in_panel_rewards, player_legacy_check_ins, player_level_progress, player_weekly_check_ins, player_wallets, ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
 
 INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
   ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
@@ -176,3 +273,40 @@ INSERT INTO ui_button_templates (id, name, source_data_url, category, scaling_mo
 INSERT INTO ui_stretch_visual_templates (id, name, source_data_url, kind, category, created_at, updated_at) VALUES
   ('panel-demo-surface', '演示面板背景', 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22420%22%20height%3D%22280%22%20viewBox%3D%220%200%20420%20280%22%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%22396%22%20height%3D%22256%22%20rx%3D%2228%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%228%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2228%22%20width%3D%22364%22%20height%3D%2256%22%20rx%3D%2216%22%20fill%3D%22%23dbeafe%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2296%22%20width%3D%22364%22%20height%3D%22156%22%20rx%3D%2220%22%20fill%3D%22%23f8fafc%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E', 'panel', 'levelBackground', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
   ('pattern-demo-star', '演示图案', 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22160%22%20height%3D%22160%22%20viewBox%3D%220%200%20160%20160%22%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%2280%22%20r%3D%2256%22%20fill%3D%22%23fde68a%22%20stroke%3D%22%23f59e0b%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M80%2034l12%2028h29l-23%2018%209%2029-27-17-27%2017%209-29-23-18h29z%22%20fill%3D%22%23f97316%22%2F%3E%3C%2Fsvg%3E', 'pattern', 'button', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');
+
+INSERT INTO player_wallets (user_id, coins, gems, fragments, updated_at) VALUES
+  ('player-1', 1280, 96, 32, '2026-06-03T00:00:00Z');
+
+INSERT INTO player_friends (user_id, friend_user_id, created_at) VALUES
+  ('player-1', 'designer-1', '2026-06-03T00:00:00Z'),
+  ('designer-1', 'player-1', '2026-06-03T00:00:00Z');
+
+INSERT INTO player_bird_upgrades (user_id, bird_type, level, tier, updated_at) VALUES
+  ('player-1', 'basic', 1, 1, '2026-06-03T00:00:00Z'),
+  ('player-1', 'split', 1, 1, '2026-06-03T00:00:00Z'),
+  ('player-1', 'bomb', 1, 1, '2026-06-03T00:00:00Z');
+
+INSERT INTO player_slingshot_upgrades (user_id, level, updated_at) VALUES
+  ('player-1', 1, '2026-06-03T00:00:00Z');
+
+INSERT INTO player_level_progress (user_id, level_suffix, cleared_at) VALUES
+  ('player-1', 'level01', '2026-06-03T00:00:00Z');
+
+INSERT INTO check_in_panel_rewards (panel_id, slot_index, coins, gems, fragments) VALUES
+  ('player.home.checkIn', 1, 10, 0, 0),
+  ('player.home.checkIn', 2, 15, 0, 0),
+  ('player.home.checkIn', 3, 20, 0, 1),
+  ('player.home.checkIn', 4, 30, 0, 0),
+  ('player.home.checkIn', 5, 35, 0, 2),
+  ('player.home.checkIn', 6, 40, 1, 0),
+  ('player.home.checkIn', 7, 50, 2, 5);
+
+INSERT INTO shop_items (id, name, description, price, currency, catalog_index, active, sort_order, created_at, updated_at) VALUES
+  ('shop-scope', '精准瞄准镜', '下一次发射获得更稳定的落点辅助。', 120, 'coins', 0, TRUE, 1, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-coupon', '双倍奖励券', '本日通关金币奖励翻倍一次。', 8, 'gems', 0, TRUE, 2, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-steel', '钢羽皮肤', '为基础鸟解锁金属风格外观。', 260, 'coins', 0, TRUE, 3, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-starter', '新手补给包', '包含金币、钻石和一次关卡复活机会。', 18, 'gems', 0, TRUE, 4, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-booster', '爆裂推进器', '短时间提升冲击力，适合拆高塔关卡。', 420, 'coins', 1, TRUE, 1, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-feather', '流光羽饰', '稀有外观部件，提升测试服收藏感。', 24, 'gems', 1, TRUE, 2, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-crate', '工程物资箱', '解锁更多练习素材和试验配置。', 360, 'coins', 1, TRUE, 3, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+  ('shop-vip', '测试员礼包', '内含钻石、金币和限定称号。', 32, 'gems', 1, TRUE, 4, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z');

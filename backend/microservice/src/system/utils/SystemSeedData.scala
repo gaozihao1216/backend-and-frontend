@@ -18,6 +18,7 @@ private[utils] object SystemSeedData {
       nextButtonTemplates = SystemUiTemplateSeedData.buttonTemplates(createdAt),
       nextStretchVisualTemplates = SystemUiTemplateSeedData.stretchVisualTemplates(createdAt)
     )
+    PlayerRuntimeSeed.reset()
 
   private def users(createdAt: String): Vector[UserRow] =
     Vector(

@@ -7027,3 +7027,159 @@ textarea {
     align-items: stretch;
   }
 }
+
+.player-social-header,
+.player-preparation-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.player-social-add,
+.player-social-compose {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.player-social-add input,
+.player-social-compose input {
+  min-width: 220px;
+}
+
+.player-social-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 420px;
+}
+
+.player-social-friends,
+.player-social-chat {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.player-social-friend-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.player-social-friend-list button {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.player-social-friend-list button.is-active {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: rgba(219, 234, 254, 0.85);
+}
+
+.player-social-chat-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.player-social-messages {
+  min-height: 280px;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-right: 0.25rem;
+}
+
+.player-social-message-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.player-social-message-row.is-mine {
+  justify-content: flex-end;
+}
+
+.player-social-message {
+  width: fit-content;
+  max-width: min(72%, 420px);
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.player-social-message p {
+  margin: 0;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.player-social-message.is-mine {
+  background: rgba(191, 219, 254, 0.95);
+}
+
+.player-preparation-wallet {
+  display: grid;
+  gap: 0.15rem;
+  justify-items: end;
+}
+
+.player-preparation-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.player-preparation-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.player-preparation-card {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.player-preparation-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.player-preparation-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.95);
+  overflow: hidden;
+}
+
+.player-preparation-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #2563eb);
+}
+
+@media (max-width: 900px) {
+  .player-social-layout {
+    grid-template-columns: 1fr;
+  }
+}

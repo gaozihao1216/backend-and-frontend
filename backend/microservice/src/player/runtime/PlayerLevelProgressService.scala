@@ -1,9 +1,10 @@
 package microservice.player.runtime
 
-import microservice.infrastructure.database.InMemoryStore
 import microservice.infrastructure.http.HttpError
+import microservice.player.tables.PlayerLevelProgressTable
 import io.circe.Json
 import io.circe.syntax._
+import java.sql.Connection
 
 object PlayerLevelProgressService {
   private val LevelProgressDataKey = "player.levelProgress"
@@ -15,11 +16,11 @@ object PlayerLevelProgressService {
 
   val dataApiKey: String = LevelProgressDataKey
 
-  def getData(userId: String): Either[HttpError, Json] =
-    Right(buildPayload(userId))
+  def getData(connection: Connection, userId: String): Either[HttpError, Json] =
+    Right(buildPayload(connection, userId))
 
-  private def buildPayload(userId: String): Json = {
-    val clearedLevels = currentClearedLevels(userId)
+  private def buildPayload(connection: Connection, userId: String): Json = {
+    val clearedLevels = PlayerLevelProgressTable.listClearedSuffixes(connection, userId)
     val levelStatuses = LevelSuffixes.map { suffix =>
       suffix -> Json.fromString(resolveStatus(clearedLevels, suffix))
     }.toMap
@@ -48,7 +49,4 @@ object PlayerLevelProgressService {
       clearedLevels.contains(LevelSuffixes(index - 1))
     }
   }
-
-  private def currentClearedLevels(userId: String): Set[String] =
-    InMemoryStore.playerLevelProgress.getOrElse(userId, Set("level01"))
 }

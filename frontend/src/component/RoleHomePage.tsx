@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getPlayerUiData, invokePlayerUiAction } from "../api/player-ui-api.js";
 import { type AuthRole, type AuthUser } from "../lib/auth.js";
 import { BackendBindingPanel } from "./BackendBindingPanel.js";
 import { LevelPreviewCard } from "./level/LevelPreviewCard.js";
@@ -22,6 +23,8 @@ type DetailView =
   | "player-levels"
   | "player-community"
   | "player-shop"
+  | "player-social"
+  | "player-preparation"
   | "designer-map"
   | "designer-portfolio"
   | "designer-birds"
@@ -135,14 +138,13 @@ const chainLevels = [
   },
 ] as const;
 
-const CHECK_IN_REWARD = {
-  coins: 10_000_000,
-  gems: 10_000_000,
-} as const;
+const ROLE_HOME_CHECK_IN_PANEL_ID = "player.home.checkIn";
 
 const OWN_PAGE_PATH = "/own_page";
 const COMMUNITY_HALL_PATH = "/community_hall";
 const PLAYER_SHOP_PATH = "/player_shop";
+const PLAYER_SOCIAL_PATH = "/player_social";
+const PLAYER_PREPARATION_PATH = "/player_preparation";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 
@@ -263,6 +265,8 @@ const getActionOptions = (user: AuthUser) => {
         { id: "user-profile" as const, label: "个人主页" },
         { id: "player-levels" as const, label: "关卡大厅" },
         { id: "player-community" as const, label: "社区大厅" },
+        { id: "player-social" as const, label: "好友私聊" },
+        { id: "player-preparation" as const, label: "备战区域" },
         { id: "player-shop" as const, label: "商店" },
       ];
     case "designer":
@@ -298,6 +302,10 @@ const getDetailTitle = (detailView: Exclude<DetailView, null>) => {
       return "关卡大厅";
     case "player-shop":
       return "商店";
+    case "player-social":
+      return "好友与私聊";
+    case "player-preparation":
+      return "备战区域";
     case "designer-map":
       return "创造地图";
     case "designer-birds":
@@ -322,19 +330,14 @@ const renderDetailContent = (
     case "user-profile":
     case "player-community":
     case "player-shop":
+    case "player-social":
+    case "player-preparation":
       return null;
     case "player-levels":
       return hasBoundApiUser && user.apiUserId ? (
         <PlayerPage userId={user.apiUserId} />
       ) : (
         <BackendBindingPanel title="关卡大厅" user={user} onBound={onUserUpdated} />
-      );
-    case "player-shop":
-      return (
-        <section className="panel">
-          <h2>商店</h2>
-          <p className="panel-copy">这里预留给金币消费、道具购买和限时礼包的玩家商店入口。</p>
-        </section>
       );
     case "designer-map":
       return hasBoundApiUser && user.apiUserId ? (
@@ -383,8 +386,8 @@ export const RoleHomePage = ({
   const [actionOpen, setActionOpen] = useState(false);
   const [detailView, setDetailView] = useState<DetailView>(null);
   const [wallet, setWallet] = useState<PlayerWallet>({
-    coins: 1280,
-    gems: 96,
+    coins: 0,
+    gems: 0,
     checkedIn: false,
   });
   const [shopMessage, setShopMessage] = useState("");
@@ -403,6 +406,27 @@ export const RoleHomePage = ({
     viewport.scrollTop = Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 3);
   }, []);
 
+  useEffect(() => {
+    if (user.role !== "player" || !user.apiUserId) {
+      return;
+    }
+
+    const loadPlayerWallet = async () => {
+      const [walletData, checkInData] = await Promise.all([
+        getPlayerUiData(user.apiUserId!, "player.wallet"),
+        getPlayerUiData(user.apiUserId!, "player.weeklyCheckIn"),
+      ]);
+
+      setWallet({
+        coins: typeof walletData.coins === "number" ? walletData.coins : 0,
+        gems: typeof walletData.gems === "number" ? walletData.gems : 0,
+        checkedIn: Boolean(checkInData.signedToday),
+      });
+    };
+
+    void loadPlayerWallet().catch(() => undefined);
+  }, [user.apiUserId, user.role]);
+
   const openDetail = (nextView: Exclude<DetailView, null>) => {
     if (nextView === "user-profile") {
       onNavigate(OWN_PAGE_PATH);
@@ -418,6 +442,18 @@ export const RoleHomePage = ({
 
     if (nextView === "player-shop") {
       onNavigate(PLAYER_SHOP_PATH);
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "player-social") {
+      onNavigate(PLAYER_SOCIAL_PATH);
+      setActionOpen(false);
+      return;
+    }
+
+    if (nextView === "player-preparation") {
+      onNavigate(PLAYER_PREPARATION_PATH);
       setActionOpen(false);
       return;
     }
@@ -451,22 +487,45 @@ export const RoleHomePage = ({
   };
 
   const handleCheckIn = () => {
-    if (user.role !== "player") {
+    if (user.role !== "player" || !user.apiUserId) {
       return;
     }
 
-    if (wallet.checkedIn) {
-      setShopMessage("本轮测试登录已完成签到");
-      return;
-    }
+    void (async () => {
+      if (wallet.checkedIn) {
+        setShopMessage("今日已完成签到");
+        return;
+      }
 
-    setWallet((current) => ({
-      coins: current.coins + CHECK_IN_REWARD.coins,
-      gems: current.gems + CHECK_IN_REWARD.gems,
-      checkedIn: true,
-    }));
-    setShopMessage("签到成功，已发放测试期金币和钻石奖励");
-    setStatusOpen(true);
+      try {
+        const checkInData = await getPlayerUiData(user.apiUserId!, "player.weeklyCheckIn");
+        const activeSlot = typeof checkInData.activeSlot === "number" ? checkInData.activeSlot : -1;
+        if (activeSlot <= 0) {
+          setShopMessage("今日暂无可领取的签到奖励");
+          return;
+        }
+
+        const result = await invokePlayerUiAction(user.apiUserId!, "player.weeklyCheckIn.claim", {
+          panelId: ROLE_HOME_CHECK_IN_PANEL_ID,
+          slot: String(activeSlot),
+        });
+        const resultWallet = result.wallet;
+        if (resultWallet && typeof resultWallet === "object") {
+          const walletRecord = resultWallet as Record<string, unknown>;
+          setWallet({
+            coins: typeof walletRecord.coins === "number" ? walletRecord.coins : wallet.coins,
+            gems: typeof walletRecord.gems === "number" ? walletRecord.gems : wallet.gems,
+            checkedIn: true,
+          });
+        } else {
+          setWallet((current) => ({ ...current, checkedIn: true }));
+        }
+        setShopMessage("签到成功，奖励已同步到后端");
+        setStatusOpen(true);
+      } catch (caught) {
+        setShopMessage(caught instanceof Error ? caught.message : "签到失败");
+      }
+    })();
   };
 
   const openLevelOverlay = (levelId: string) => {
@@ -768,7 +827,10 @@ export const RoleHomePage = ({
         </div>
       </section>
 
-      {detailView && detailView !== "player-shop" ? (
+      {detailView
+        && detailView !== "player-shop"
+        && detailView !== "player-social"
+        && detailView !== "player-preparation" ? (
         <section className={`detail-shell ${detailView === "player-community" ? "community-detail-shell" : ""}`}>
           <div className="detail-shell-header">
             <div>

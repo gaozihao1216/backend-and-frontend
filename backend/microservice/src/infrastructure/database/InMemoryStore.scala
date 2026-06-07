@@ -4,6 +4,16 @@ import microservice.auth.tables.UserRow
 import microservice.level.objects.Favorite
 import microservice.level.tables.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
 import microservice.player.runtime.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
+import microservice.player.tables.{
+  PlayerBirdUpgradeRow,
+  PlayerFriendRow,
+  PlayerLegacyCheckInRow,
+  PlayerLevelProgressRow,
+  PlayerPrivateMessageRow,
+  PlayerSlingshotUpgradeRow,
+  ShopItemRow,
+  ShopPurchaseRow
+}
 import microservice.ui.tables.{ButtonTemplateRow, StretchVisualTemplateRow, UiPageRow}
 
 object InMemoryStore {
@@ -17,11 +27,17 @@ object InMemoryStore {
   var uiPages: Vector[UiPageRow] = Vector.empty
   var buttonTemplates: Vector[ButtonTemplateRow] = Vector.empty
   var stretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty
-  var playerCheckInStatus: Map[String, String] = Map.empty
   var playerWallets: Map[String, PlayerWallet] = Map.empty
   var playerWeeklyCheckIn: Map[String, WeeklyCheckInProgress] = Map.empty
-  var playerLevelProgress: Map[String, Set[String]] = Map.empty
+  var playerLevelProgress: Vector[PlayerLevelProgressRow] = Vector.empty
+  var playerLegacyCheckIns: Vector[PlayerLegacyCheckInRow] = Vector.empty
   var checkInPanelRewards: Map[String, Vector[CheckInSlotReward]] = Map.empty
+  var shopItems: Vector[ShopItemRow] = Vector.empty
+  var shopPurchases: Vector[ShopPurchaseRow] = Vector.empty
+  var playerFriends: Vector[PlayerFriendRow] = Vector.empty
+  var playerPrivateMessages: Vector[PlayerPrivateMessageRow] = Vector.empty
+  var playerBirdUpgrades: Vector[PlayerBirdUpgradeRow] = Vector.empty
+  var playerSlingshotUpgrades: Vector[PlayerSlingshotUpgradeRow] = Vector.empty
 
   def reset(
     nextUsers: Vector[UserRow],

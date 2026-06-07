@@ -1,9 +1,10 @@
 package microservice.player.runtime
 
-import microservice.infrastructure.database.InMemoryStore
 import microservice.infrastructure.http.HttpError
+import microservice.player.tables.{CheckInPanelRewardTable, PlayerWalletTable, PlayerWeeklyCheckInTable}
 import io.circe.Json
 import io.circe.syntax._
+import java.sql.Connection
 import java.time.{DayOfWeek, LocalDate, ZoneOffset}
 
 object PlayerWeeklyCheckInService {
@@ -14,21 +15,22 @@ object PlayerWeeklyCheckInService {
 
   val claimActionKey: String = WeeklyCheckInClaimActionKey
 
-  def getData(userId: String): Either[HttpError, Json] =
-    Right(buildPayload(userId, panelId = None))
+  def getData(connection: Connection, userId: String): Either[HttpError, Json] =
+    Right(buildPayload(connection, userId, panelId = None))
 
-  def getDataForPanel(userId: String, panelId: String): Either[HttpError, Json] =
-    Right(buildPayload(userId, Some(panelId)))
+  def getDataForPanel(connection: Connection, userId: String, panelId: String): Either[HttpError, Json] =
+    Right(buildPayload(connection, userId, Some(panelId)))
 
-  def executeClaim(userId: String, params: Map[String, String]): Either[HttpError, Json] = {
-    val panelId = params.getOrElse("panelId", "")
+  def executeClaim(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
+    val panelId = params.getOrElse("panelId", PlayerRuntimeDefaults.roleHomeCheckInPanelId)
     val slot = params.get("slot").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
 
     if (panelId.isEmpty || slot < 1 || slot > 7) {
       return Left(HttpError.badRequest("INVALID_CHECK_IN_PARAMS", "panelId and slot (1-7) are required"))
     }
 
-    val progress = currentProgress(userId)
+    val weekKey = currentWeekKey()
+    val progress = currentProgress(connection, userId, weekKey)
     val signedCount = progress.signedSlots.size
     val activeSlot =
       if (!progress.signedToday && signedCount < 7) signedCount + 1
@@ -38,13 +40,14 @@ object PlayerWeeklyCheckInService {
       return Left(HttpError.conflict("CHECK_IN_SLOT_NOT_READY", s"Slot $slot is not claimable right now"))
     }
 
-    val rewards = InMemoryStore.checkInPanelRewards
-      .getOrElse(panelId, Vector.empty)
+    val rewards = CheckInPanelRewardTable
+      .listByPanelId(connection, panelId)
       .lift(slot - 1)
       .getOrElse(CheckInSlotReward())
 
-    val wallet = currentWallet(userId)
-    InMemoryStore.playerWallets = InMemoryStore.playerWallets.updated(
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+    PlayerWalletTable.save(
+      connection,
       userId,
       wallet.copy(
         coins = wallet.coins + rewards.coins,
@@ -53,7 +56,8 @@ object PlayerWeeklyCheckInService {
       )
     )
 
-    InMemoryStore.playerWeeklyCheckIn = InMemoryStore.playerWeeklyCheckIn.updated(
+    PlayerWeeklyCheckInTable.save(
+      connection,
       userId,
       progress.copy(
         signedSlots = progress.signedSlots + slot,
@@ -61,19 +65,20 @@ object PlayerWeeklyCheckInService {
       )
     )
 
-    Right(buildPayload(userId, Some(panelId)))
+    Right(buildPayload(connection, userId, Some(panelId)))
   }
 
-  def registerPanelRewards(panelId: String, slots: Vector[CheckInSlotReward]): Unit =
-    InMemoryStore.checkInPanelRewards = InMemoryStore.checkInPanelRewards.updated(panelId, slots)
+  def registerPanelRewards(connection: Connection, panelId: String, slots: Vector[CheckInSlotReward]): Unit =
+    CheckInPanelRewardTable.replacePanelRewards(connection, panelId, slots)
 
-  private def buildPayload(userId: String, panelId: Option[String]): Json = {
-    val progress = currentProgress(userId)
+  private def buildPayload(connection: Connection, userId: String, panelId: Option[String]): Json = {
+    val weekKey = currentWeekKey()
+    val progress = currentProgress(connection, userId, weekKey)
     val signedCount = progress.signedSlots.size
     val activeSlot =
       if (!progress.signedToday && signedCount < 7) signedCount + 1
       else -1
-    val wallet = currentWallet(userId)
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
     val slotStatuses = (1 to 7).map { slot =>
       val status =
         if (progress.signedSlots.contains(slot)) "claimed"
@@ -96,15 +101,8 @@ object PlayerWeeklyCheckInService {
     )
   }
 
-  private def currentWallet(userId: String): PlayerWallet =
-    InMemoryStore.playerWallets.getOrElse(userId, PlayerWallet(coins = 1280, gems = 96, fragments = 0))
-
-  private def currentProgress(userId: String): WeeklyCheckInProgress = {
-    val weekKey = currentWeekKey()
-    val stored = InMemoryStore.playerWeeklyCheckIn.getOrElse(userId, WeeklyCheckInProgress(weekKey = weekKey))
-    if (stored.weekKey != weekKey) WeeklyCheckInProgress(weekKey = weekKey)
-    else stored
-  }
+  private def currentProgress(connection: Connection, userId: String, weekKey: String): WeeklyCheckInProgress =
+    PlayerWeeklyCheckInTable.getOrCreate(connection, userId, weekKey)
 
   private def currentWeekKey(): String = {
     val today = LocalDate.now(ZoneOffset.UTC)

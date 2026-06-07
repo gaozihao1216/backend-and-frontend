@@ -222,11 +222,17 @@ object UiCustomizationRouter {
       case req @ PUT -> Root / "panel-workflows" / panelId / "check-in-rewards" =>
         withUserId(req) { _ =>
           req.as[RegisterCheckInPanelRewardsBody].flatMap { body =>
-            PlayerWeeklyCheckInService.registerPanelRewards(
-              panelId,
-              body.slots.map(slot => CheckInSlotReward(slot.coins, slot.gems, slot.fragments))
-            )
-            Ok(ApiSuccess(io.circe.Json.obj("panelId" -> io.circe.Json.fromString(panelId))))
+            databaseSession.withTransaction { connection =>
+              IO.blocking {
+                PlayerWeeklyCheckInService.registerPanelRewards(
+                  connection,
+                  panelId,
+                  body.slots.map(slot => CheckInSlotReward(slot.coins, slot.gems, slot.fragments))
+                )
+              }.flatMap { _ =>
+                Ok(ApiSuccess(io.circe.Json.obj("panelId" -> io.circe.Json.fromString(panelId))))
+              }
+            }
           }
         }
     }

@@ -17,6 +17,8 @@ export default defineConfig({
       "/player/levels": "http://localhost:3000",
       "/player/favorites": "http://localhost:3000",
       "/player/ui": "http://localhost:3000",
+      "/player/social": "http://localhost:3000",
+      "/player/preparation": "http://localhost:3000",
     },
   },
   build: {

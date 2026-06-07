@@ -23,7 +23,11 @@ object PlayerUiRuntimeRouter {
       case req @ GET -> Root / "ui" / "data" / apiKey =>
         PlayerLevelRouteSupport.currentUserId(req) match {
           case Some(userId) =>
-            IO.pure(PlayerUiRuntimeService.getData(userId, apiKey)).flatMap(HttpError.fromEither(_))
+            databaseSession.withTransaction { connection =>
+              IO.pure(
+                PlayerUiRuntimeService.getData(connection, userId, apiKey, req.uri.query.params)
+              ).flatMap(HttpError.fromEither(_))
+            }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
@@ -32,7 +36,11 @@ object PlayerUiRuntimeRouter {
         PlayerLevelRouteSupport.currentUserId(req) match {
           case Some(userId) =>
             req.as[UiActionRequest].flatMap { body =>
-              IO.pure(PlayerUiRuntimeService.executeAction(userId, apiKey, body.params)).flatMap(HttpError.fromEither(_))
+              databaseSession.withTransaction { connection =>
+                IO.pure(
+                  PlayerUiRuntimeService.executeAction(connection, userId, apiKey, body.params)
+                ).flatMap(HttpError.fromEither(_))
+              }
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))

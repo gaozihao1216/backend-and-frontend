@@ -1,0 +1,144 @@
+package microservice.player.preparation
+
+import microservice.infrastructure.http.HttpError
+import microservice.player.runtime.PlayerWallet
+import microservice.player.tables.{PlayerPreparationTable, PlayerWalletTable}
+import io.circe.Json
+import io.circe.syntax._
+import java.sql.Connection
+
+object PlayerPreparationService {
+  def getState(connection: Connection, userId: String): Either[HttpError, PlayerPreparationResponse] = {
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+    Right(buildResponse(connection, userId, wallet))
+  }
+
+  def upgradeBird(connection: Connection, userId: String, birdType: String): Either[HttpError, PlayerPreparationResponse] = {
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+    val currentLevel = PlayerPreparationTable.listBirdLevels(connection, userId).getOrElse(birdType, 1)
+    if (currentLevel >= PlayerPreparationTable.maxLevel) {
+      return Left(HttpError.conflict("MAX_LEVEL", "Bird is already at max level"))
+    }
+    val cost = PlayerPreparationTable.upgradeCost(currentLevel)
+    if (wallet.coins < cost) {
+      return Left(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
+    }
+
+    PlayerPreparationTable.upgradeBird(connection, userId, birdType) match {
+      case Left(message) => Left(HttpError.badRequest("INVALID_BIRD", message))
+      case Right(_) =>
+        PlayerWalletTable.save(connection, userId, wallet.copy(coins = wallet.coins - cost))
+        getState(connection, userId)
+    }
+  }
+
+  def ascendBird(connection: Connection, userId: String, birdType: String): Either[HttpError, PlayerPreparationResponse] = {
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+    val currentTier = PlayerPreparationTable.listBirdTiers(connection, userId).getOrElse(birdType, 1)
+    if (currentTier >= PlayerPreparationTable.maxTier) {
+      return Left(HttpError.conflict("MAX_TIER", "Bird is already at max tier"))
+    }
+    val cost = PlayerPreparationTable.ascendCost(currentTier)
+    if (wallet.fragments < cost) {
+      return Left(HttpError.conflict("INSUFFICIENT_FRAGMENTS", s"Need $cost fragments to ascend"))
+    }
+
+    PlayerPreparationTable.ascendBird(connection, userId, birdType) match {
+      case Left(message) => Left(HttpError.badRequest("INVALID_BIRD", message))
+      case Right(_) =>
+        PlayerWalletTable.save(connection, userId, wallet.copy(fragments = wallet.fragments - cost))
+        getState(connection, userId)
+    }
+  }
+
+  def upgradeSlingshot(connection: Connection, userId: String): Either[HttpError, PlayerPreparationResponse] = {
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+    val currentLevel = PlayerPreparationTable.getSlingshotLevel(connection, userId)
+    if (currentLevel >= PlayerPreparationTable.maxLevel) {
+      return Left(HttpError.conflict("MAX_LEVEL", "Slingshot is already at max level"))
+    }
+    val cost = PlayerPreparationTable.upgradeCost(currentLevel)
+    if (wallet.coins < cost) {
+      return Left(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
+    }
+
+    PlayerPreparationTable.upgradeSlingshot(connection, userId) match {
+      case Left(message) => Left(HttpError.badRequest("INVALID_SLINGSHOT", message))
+      case Right(_) =>
+        PlayerWalletTable.save(connection, userId, wallet.copy(coins = wallet.coins - cost))
+        getState(connection, userId)
+    }
+  }
+
+  def toJson(response: PlayerPreparationResponse): Json =
+    Json.obj(
+      "birds" -> Json.arr(response.birds.map(birdToJson): _*),
+      "slingshot" -> Json.obj(
+        "level" -> Json.fromInt(response.slingshot.level),
+        "maxLevel" -> Json.fromInt(response.slingshot.maxLevel),
+        "nextCostCoins" -> Json.fromInt(response.slingshot.nextCostCoins)
+      ),
+      "walletCoins" -> Json.fromInt(response.walletCoins),
+      "walletFragments" -> Json.fromInt(response.walletFragments)
+    )
+
+  private def birdToJson(bird: BirdUpgradeView): Json =
+    Json.obj(
+      "birdType" -> Json.fromString(bird.birdType),
+      "name" -> Json.fromString(bird.name),
+      "summary" -> Json.fromString(bird.summary),
+      "previewImageUrl" -> Json.fromString(bird.previewImageUrl),
+      "level" -> Json.fromInt(bird.level),
+      "maxLevel" -> Json.fromInt(bird.maxLevel),
+      "tier" -> Json.fromInt(bird.tier),
+      "maxTier" -> Json.fromInt(bird.maxTier),
+      "stats" -> Json.obj(
+        "attack" -> Json.fromInt(bird.stats.attack),
+        "impact" -> Json.fromInt(bird.stats.impact),
+        "speed" -> Json.fromInt(bird.stats.speed)
+      ),
+      "skillName" -> Json.fromString(bird.skillName),
+      "skillDescription" -> Json.fromString(bird.skillDescription),
+      "nextTierSkillPreview" -> bird.nextTierSkillPreview.fold(Json.Null)(Json.fromString),
+      "nextCostCoins" -> Json.fromInt(bird.nextCostCoins),
+      "nextCostFragments" -> Json.fromInt(bird.nextCostFragments)
+    )
+
+  private def buildResponse(connection: Connection, userId: String, wallet: PlayerWallet): PlayerPreparationResponse = {
+    val birdLevels = PlayerPreparationTable.listBirdLevels(connection, userId)
+    val birdTiers = PlayerPreparationTable.listBirdTiers(connection, userId)
+    val slingshotLevel = PlayerPreparationTable.getSlingshotLevel(connection, userId)
+    PlayerPreparationResponse(
+      birds = BirdPreparationCatalog.entries.map { entry =>
+        val level = birdLevels.getOrElse(entry.birdType, 1)
+        val tier = birdTiers.getOrElse(entry.birdType, 1)
+        val stats = BirdPreparationCatalog.statsFor(level, entry.baseStats)
+        BirdUpgradeView(
+          birdType = entry.birdType,
+          name = entry.name,
+          summary = entry.summary,
+          previewImageUrl = entry.previewImageUrl,
+          level = level,
+          maxLevel = PlayerPreparationTable.maxLevel,
+          tier = tier,
+          maxTier = PlayerPreparationTable.maxTier,
+          stats = BirdStatsView(stats.attack, stats.impact, stats.speed),
+          skillName = entry.skillName,
+          skillDescription = BirdPreparationCatalog.skillDescription(entry, tier),
+          nextTierSkillPreview = BirdPreparationCatalog.nextTierSkillPreview(entry, tier),
+          nextCostCoins = if (level >= PlayerPreparationTable.maxLevel) 0 else PlayerPreparationTable.upgradeCost(level),
+          nextCostFragments = if (tier >= PlayerPreparationTable.maxTier) 0 else PlayerPreparationTable.ascendCost(tier)
+        )
+      }.toList,
+      slingshot = SlingshotUpgradeView(
+        level = slingshotLevel,
+        maxLevel = PlayerPreparationTable.maxLevel,
+        nextCostCoins =
+          if (slingshotLevel >= PlayerPreparationTable.maxLevel) 0
+          else PlayerPreparationTable.upgradeCost(slingshotLevel)
+      ),
+      walletCoins = wallet.coins,
+      walletFragments = wallet.fragments
+    )
+  }
+}

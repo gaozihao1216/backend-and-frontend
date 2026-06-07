@@ -23,7 +23,7 @@ export const UiActualPagePreview = ({ page, previewUser }: UiActualPagePreviewPr
     case "player.community":
       return <PlayerCommunityPage nickname={previewUser.nickname} userId={previewUser.apiUserId} />;
     case "player.shop":
-      return <PlayerShopPage />;
+      return <PlayerShopPage userId="player-1" />;
     case "shared.profile":
       return <UserProfilePage viewerUserId={previewUser.apiUserId} profileUserId={previewUser.apiUserId} />;
     case "designer.home":

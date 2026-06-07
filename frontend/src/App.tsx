@@ -12,6 +12,8 @@ import { AdminPage } from "./page/AdminPage.js";
 import { AdminCommunityPage } from "./page/AdminCommunityPage.js";
 import { PlayerCommunityPage } from "./page/PlayerCommunityPage.js";
 import { PlayerShopPage } from "./page/PlayerShopPage.js";
+import { PlayerSocialPage } from "./page/PlayerSocialPage.js";
+import { PlayerPreparationPage } from "./page/PlayerPreparationPage.js";
 import { DirectorButtonDesignPage } from "./page/DirectorButtonDesignPage.js";
 import { DirectorButtonConfigPage } from "./page/DirectorButtonConfigPage.js";
 import { DirectorButtonTemplatesPage } from "./page/DirectorButtonTemplatesPage.js";
@@ -46,6 +48,8 @@ const DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX = "/json_check";
 const OWN_PAGE_PATH = "/own_page";
 const COMMUNITY_HALL_PATH = "/community_hall";
 const PLAYER_SHOP_PATH = "/player_shop";
+const PLAYER_SOCIAL_PATH = "/player_social";
+const PLAYER_PREPARATION_PATH = "/player_preparation";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
@@ -363,7 +367,33 @@ export const App = () => {
         );
       }
 
-      return <PlayerShopPage />;
+      return renderBoundPage(user, "玩家商店", (apiUserId) => <PlayerShopPage userId={apiUserId} />);
+    }
+
+    if (pathname === PLAYER_SOCIAL_PATH) {
+      if (user.role !== "player") {
+        return (
+          <section className="panel">
+            <h2>好友与私聊</h2>
+            <p className="panel-copy">当前账号不是玩家，无法访问好友系统。</p>
+          </section>
+        );
+      }
+
+      return renderBoundPage(user, "好友与私聊", (apiUserId) => <PlayerSocialPage userId={apiUserId} />);
+    }
+
+    if (pathname === PLAYER_PREPARATION_PATH) {
+      if (user.role !== "player") {
+        return (
+          <section className="panel">
+            <h2>备战区域</h2>
+            <p className="panel-copy">当前账号不是玩家，无法访问备战区域。</p>
+          </section>
+        );
+      }
+
+      return renderBoundPage(user, "备战区域", (apiUserId) => <PlayerPreparationPage userId={apiUserId} />);
     }
 
     if (pathname === ADMIN_PROPOSALS_PATH) {
@@ -475,6 +505,10 @@ export const App = () => {
         ? "社区"
       : pathname === PLAYER_SHOP_PATH
           ? "玩家商店"
+          : pathname === PLAYER_SOCIAL_PATH
+            ? "好友与私聊"
+            : pathname === PLAYER_PREPARATION_PATH
+              ? "备战区域"
           : pathname === ADMIN_PROPOSALS_PATH
             ? "提案处理"
           : pathname === DIRECTOR_CONSOLE_PATH
