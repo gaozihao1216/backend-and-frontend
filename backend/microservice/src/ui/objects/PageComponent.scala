@@ -67,6 +67,7 @@ final case class ButtonComponent(
   style: Option[ComponentStyle],
   baseDesign: Option[Json],
   imageDesign: Option[Json],
+  stateDesign: Option[Json],
   dataSource: Option[UiDataSource],
   binding: Option[ComponentBinding],
   action: ComponentAction
@@ -81,6 +82,8 @@ final case class PanelComponent(
   title: Option[String],
   position: ComponentPosition,
   style: Option[ComponentStyle],
+  decoration: Option[Json],
+  pathDesign: Option[Json],
   contentSize: Option[PanelContentSize],
   floating: Option[PanelFloating],
   dataSource: Option[UiDataSource],
@@ -124,6 +127,7 @@ object PageComponent {
         "style" -> component.style.asJson,
         "baseDesign" -> component.baseDesign.asJson,
         "imageDesign" -> component.imageDesign.asJson,
+        "stateDesign" -> component.stateDesign.asJson,
         "dataSource" -> component.dataSource.asJson,
         "binding" -> component.binding.asJson,
         "action" -> component.action.asJson
@@ -137,6 +141,8 @@ object PageComponent {
         "title" -> component.title.asJson,
         "position" -> component.position.asJson,
         "style" -> component.style.asJson,
+        "decoration" -> component.decoration.asJson,
+        "pathDesign" -> component.pathDesign.asJson,
         "contentSize" -> component.contentSize.asJson,
         "floating" -> component.floating.asJson,
         "dataSource" -> component.dataSource.asJson,
@@ -176,10 +182,11 @@ object PageComponent {
           style <- cursor.get[Option[ComponentStyle]]("style")
           baseDesign <- cursor.get[Option[Json]]("baseDesign")
           imageDesign <- cursor.get[Option[Json]]("imageDesign")
+          stateDesign <- cursor.get[Option[Json]]("stateDesign")
           dataSource <- cursor.get[Option[UiDataSource]]("dataSource")
           binding <- cursor.get[Option[ComponentBinding]]("binding")
           action <- cursor.get[ComponentAction]("action")
-        } yield ButtonComponent(id, label, icon, position, style, baseDesign, imageDesign, dataSource, binding, action)
+        } yield ButtonComponent(id, label, icon, position, style, baseDesign, imageDesign, stateDesign, dataSource, binding, action)
       case "panel" =>
         for {
           id <- cursor.get[String]("id")
@@ -188,12 +195,14 @@ object PageComponent {
           title <- cursor.get[Option[String]]("title")
           position <- cursor.get[ComponentPosition]("position")
           style <- cursor.get[Option[ComponentStyle]]("style")
+          decoration <- cursor.get[Option[Json]]("decoration")
+          pathDesign <- cursor.get[Option[Json]]("pathDesign")
           contentSize <- cursor.get[Option[PanelContentSize]]("contentSize")
           floating <- cursor.get[Option[PanelFloating]]("floating")
           dataSource <- cursor.get[Option[UiDataSource]]("dataSource")
           binding <- cursor.get[Option[ComponentBinding]]("binding")
           childComponentIds <- cursor.get[Option[List[String]]]("childComponentIds").map(_.getOrElse(Nil))
-        } yield PanelComponent(id, kind, panelRole, title, position, style, contentSize, floating, dataSource, binding, childComponentIds)
+        } yield PanelComponent(id, kind, panelRole, title, position, style, decoration, pathDesign, contentSize, floating, dataSource, binding, childComponentIds)
       case "text" =>
         for {
           id <- cursor.get[String]("id")

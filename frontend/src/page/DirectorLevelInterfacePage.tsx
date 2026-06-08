@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { LevelMapPathEditor } from "../component/director/LevelMapPathEditor.js";
 import { LevelMapLayoutPreview } from "../component/director/LevelMapLayoutPreview.js";
 import { LevelNodeButtonFormatEditor } from "../component/director/LevelNodeButtonFormatEditor.js";
 import { LevelStageBackgroundEditor } from "../component/director/LevelStageBackgroundEditor.js";
-import { getPageConfig } from "../lib/ui-customization.js";
+import { getPageConfig, getPageConfigRevision, subscribePageConfigStore } from "../lib/ui-customization.js";
 import { setSharedLevelMapPersistenceUser } from "../lib/shared-level-map-persistence.js";
 import {
   applyLevelNodeButtonFormat,
@@ -18,6 +18,7 @@ import {
   applyLevelStageDecoration,
   getDefaultLevelStageDecoration,
   getLevelStageDecorationFromStore,
+  normalizeLevelStageDecoration,
   syncLevelStageBackground,
 } from "../lib/level-stage-background.js";
 import {
@@ -52,6 +53,11 @@ import { getUiPreviewUser } from "../objects/ui-customization/ui-customization-o
 type ActiveEditor = "background" | "buttonFormat" | "pathDesign" | null;
 
 export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: DirectorLevelInterfacePageProps) => {
+  const pageConfigRevision = useSyncExternalStore(
+    subscribePageConfigStore,
+    getPageConfigRevision,
+    getPageConfigRevision,
+  );
   const [pageConfig, setPageConfig] = useState<PageConfig | null>(() => getPageConfig(LEVEL_MAP_PAGE_ID));
   const [activeEditor, setActiveEditor] = useState<ActiveEditor>(null);
   const [draftDecoration, setDraftDecoration] = useState<PanelDecoration>(() => getDefaultLevelStageDecoration());
@@ -91,6 +97,18 @@ export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: Direc
       cancelled = true;
     };
   }, [userId]);
+
+  useEffect(() => {
+    setPageConfig(getPageConfig(LEVEL_MAP_PAGE_ID));
+
+    if (activeEditor === "background") {
+      return;
+    }
+
+    void getLevelStageDecorationFromStore().then((decoration) => {
+      setDraftDecoration(decoration);
+    });
+  }, [activeEditor, pageConfigRevision]);
 
   const previewPageConfig = useMemo(() => {
     if (!pageConfig) {
@@ -149,8 +167,11 @@ export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: Direc
     setSavingBackground(true);
 
     try {
-      await syncLevelStageBackground(draftDecoration);
-      setPageConfig(getPageConfig(LEVEL_MAP_PAGE_ID));
+      await syncLevelStageBackground(normalizeLevelStageDecoration(draftDecoration));
+      const nextPageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);
+      setPageConfig(nextPageConfig);
+      const savedDecoration = await getLevelStageDecorationFromStore();
+      setDraftDecoration(savedDecoration);
       setSaveMessage("背景已保存，并同步到各端主界面的关卡路径地图。");
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "保存背景失败。");

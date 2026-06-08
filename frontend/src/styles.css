@@ -3493,7 +3493,7 @@ fieldset {
 .page-dual-mode-pane-dynamic .dynamic-ui-page[data-page-id$=".home"],
 .page-dual-mode-pane-static .dynamic-ui-page[data-page-id$=".home"] {
   min-height: 640px;
-  height: auto;
+  height: 640px;
   overflow: hidden;
   border: none;
   border-radius: 0;
@@ -3531,20 +3531,6 @@ fieldset {
   border-radius: 0 !important;
 }
 
-.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-stage {
-  overflow: visible;
-}
-
-.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-stage .dynamic-ui-panel-content.role-home-fit {
-  overflow: hidden;
-  height: 100%;
-  min-height: 100%;
-}
-
-.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-stage .dynamic-ui-panel-content.role-home-fit .dynamic-ui-panel-content-canvas {
-  will-change: transform;
-}
-
 .page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-text {
   background: transparent !important;
   box-shadow: none !important;
@@ -3557,7 +3543,7 @@ fieldset {
 }
 
 .page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-container > .dynamic-ui-widget.shared-level-map-stage-widget {
-  z-index: 1;
+  z-index: 2;
 }
 
 .shared-level-map-stage-widget {
@@ -3565,37 +3551,41 @@ fieldset {
   padding: 0;
   border: none;
   background: transparent;
-  border-radius: 0;
-}
-
-.shared-level-map-stage-widget > .dynamic-ui-page,
-.shared-level-map-stage-widget > .dynamic-ui-page.embedded-level-map-surface,
-.page-dual-mode-pane-dynamic .dynamic-ui-page.embedded-level-map-surface,
-.page-dual-mode-pane-static .dynamic-ui-page.embedded-level-map-surface {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
-  border: none;
-  background: transparent;
-  background-image: none;
-  overflow: hidden;
-  container-type: size;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0;
 }
 
-.shared-level-map-stage-widget .dynamic-ui-page > .dynamic-ui-panel.kind-stage {
+.shared-level-map-stage-widget > .level-map-layout-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.shared-level-map-stage-widget .level-map-layout-preview .dynamic-ui-page[data-page-id="shared.levelMap"] {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  container-type: size;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .shared-level-map-stage-widget .level-map-layout-preview .dynamic-ui-panel.kind-stage {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  min-height: 100%;
 }
 
-.shared-level-map-stage-widget .dynamic-ui-panel.kind-stage .dynamic-ui-panel-content.scrollable {
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface
+  .shared-level-map-stage-widget
+  .level-map-layout-preview
+  .dynamic-ui-panel.kind-stage
+  .dynamic-ui-panel-content.scrollable {
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-dual-mode-pane-dynamic .dynamic-ui-page[data-page-id="shared.levelMap"] > .dynamic-ui-panel,

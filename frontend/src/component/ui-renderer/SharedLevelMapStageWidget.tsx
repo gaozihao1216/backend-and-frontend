@@ -1,11 +1,9 @@
-import { useMemo, useSyncExternalStore } from "react";
-import { getSharedLevelMapStagePageConfig } from "../../lib/level-map-stage-page.js";
-import {
-  getPageConfigRevision,
-  subscribePageConfigStore,
-} from "../../lib/ui-customization.js";
+import { useSyncExternalStore } from "react";
+import { useSharedLevelMapPageConfig } from "../../hook/useSharedLevelMapPageConfig.js";
+import { findStagePanel } from "../../lib/level-stage-structure.js";
+import { getPageConfigRevision, subscribePageConfigStore } from "../../lib/ui-customization.js";
 import { getUiPreviewUser } from "../../objects/ui-customization/ui-customization-objects.js";
-import { DynamicPageRenderer } from "./DynamicPageRenderer.js";
+import { SharedLevelMapRenderer } from "./SharedLevelMapRenderer.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
 import { getComponentStyle, getPositionStyle } from "./ui-renderer-utils.js";
 import type { WidgetComponent } from "../../objects/ui-customization/ui-customization-objects.js";
@@ -15,24 +13,24 @@ type SharedLevelMapStageWidgetProps = {
   context: DynamicRendererContext;
 };
 
+const getStageDecorationKey = (page: NonNullable<ReturnType<typeof useSharedLevelMapPageConfig>>): string =>
+  JSON.stringify(findStagePanel(page)?.decoration ?? null);
+
 export const SharedLevelMapStageWidget = ({ widget, context }: SharedLevelMapStageWidgetProps) => {
   const pageConfigRevision = useSyncExternalStore(
     subscribePageConfigStore,
     getPageConfigRevision,
     getPageConfigRevision,
   );
-  const stagePage = useMemo(
-    () => getSharedLevelMapStagePageConfig(),
-    [pageConfigRevision],
-  );
-  const previewUser = stagePage ? getUiPreviewUser(stagePage.roleScope) : undefined;
+  const page = useSharedLevelMapPageConfig();
+  const previewUser = getUiPreviewUser("player");
 
   const style = {
     ...getPositionStyle(widget.position, context.layoutType),
     ...getComponentStyle(widget.style),
   };
 
-  if (!stagePage) {
+  if (!page) {
     return (
       <div className="dynamic-ui-widget shared-level-map-stage-widget" style={style}>
         <p className="feedback error">未找到共享关卡地图配置。</p>
@@ -42,12 +40,12 @@ export const SharedLevelMapStageWidget = ({ widget, context }: SharedLevelMapSta
 
   return (
     <div className="dynamic-ui-widget shared-level-map-stage-widget" style={style}>
-      <DynamicPageRenderer
-        page={stagePage}
+      <SharedLevelMapRenderer
+        key={`${pageConfigRevision}:${getStageDecorationKey(page)}`}
+        page={page}
         previewUser={previewUser}
         runtimeUserId={context.runtimeUserId}
         onNavigate={context.onNavigate}
-        embeddedLevelMapSurface
       />
     </div>
   );

@@ -8,7 +8,7 @@ const percentPosition = (x: number, y: number, width: number, height: number) =>
   height,
 });
 
-export const LEVEL_MAP_STAGE_WIDGET_POSITION = percentPosition(0, 0, 100, 100);
+export const LEVEL_MAP_STAGE_WIDGET_POSITION = percentPosition(0, 18, 100, 82);
 
 export const LEVEL_MAP_STAGE_WIDGET_STYLE = {
   borderRadius: 0,

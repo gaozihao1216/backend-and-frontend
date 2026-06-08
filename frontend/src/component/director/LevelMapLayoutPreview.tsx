@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { DynamicPageRenderer } from "../ui-renderer/index.js";
+import { SharedLevelMapRenderer } from "../ui-renderer/SharedLevelMapRenderer.js";
 import {
   moveComponentPosition,
   resizeComponentPosition,
@@ -170,16 +170,16 @@ export const LevelMapLayoutPreview = ({
   }), [beginAdjust, onSelectedLevelSuffixChange, selectedLevelSuffix]);
 
   return (
-    <div ref={rootRef} className="level-map-layout-preview is-editing">
-      <DynamicPageRenderer
-        page={page}
-        previewUser={previewUser}
-        previewUiData={previewUiData}
-        onNavigate={() => {}}
-        {...(pathEdit
-          ? { levelMapPathEdit: pathEdit }
-          : { levelMapLayoutEdit: layoutEdit })}
-      />
-    </div>
+    <SharedLevelMapRenderer
+      rootRef={rootRef}
+      page={page}
+      previewUser={previewUser}
+      previewUiData={previewUiData}
+      onNavigate={() => {}}
+      editing
+      {...(pathEdit
+        ? { levelMapPathEdit: pathEdit }
+        : { levelMapLayoutEdit: layoutEdit })}
+    />
   );
 };

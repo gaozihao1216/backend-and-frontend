@@ -134,6 +134,11 @@ export const getLevelSuffixFromNodeButton = (button: ButtonComponent): string | 
     return null;
   }
 
+  const levelScreenMatch = button.action.targetPageId.match(/^shared\.level\.(.+)$/);
+  if (levelScreenMatch?.[1]) {
+    return levelScreenMatch[1];
+  }
+
   const level = LEVEL_NODE_DEFINITIONS.find(
     (candidate) => button.action.type === "navigate"
       && button.action.targetPageId === getLevelScreenPageId(candidate.suffix),

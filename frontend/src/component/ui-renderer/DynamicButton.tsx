@@ -43,6 +43,7 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   const icon = activeState?.icon ?? activeState?.patternTemplateId ?? button.icon;
   const stateStyle = activeState?.style;
   const activeBaseDesign = activeState?.baseDesign ?? button.baseDesign;
+  const resolvedBaseDesign = activeBaseDesign?.sourceDataUrl ? activeBaseDesign : undefined;
   const activePatternLayers = activeState ? normalizeButtonStatePatternLayers(activeState) : [];
   const isPatternContent = activeState?.contentType === "pattern"
     || (activeState?.contentType == null && activePatternLayers.length > 0);
@@ -117,7 +118,7 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
   return (
     <button
       type="button"
-      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${activeState?.baseTemplateId ?? "rounded"} pattern-${activeState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}${activeBaseDesign ? " uses-template-base" : ""}${isLayoutSelected ? " level-map-layout-selected" : ""}${inLayoutEdit ? " level-map-layout-editable" : ""}${isPathConnectSource ? " level-map-path-connect-source" : ""}${inPathConnect && pathEdit?.connectFromSuffix ? " level-map-path-connect-target" : ""}`}
+      className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${activeState?.baseTemplateId ?? "rounded"} pattern-${activeState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}${resolvedBaseDesign ? " uses-template-base" : ""}${isLayoutSelected ? " level-map-layout-selected" : ""}${inLayoutEdit ? " level-map-layout-editable" : ""}${isPathConnectSource ? " level-map-path-connect-source" : ""}${inPathConnect && pathEdit?.connectFromSuffix ? " level-map-path-connect-target" : ""}`}
       style={{
         ...getPositionStyle(button.position, context.layoutType),
         ...getComponentStyle(button.style),
@@ -127,15 +128,15 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
           mergedButtonStyle,
           isLevelNodeButton ? { maxFontSize: LEVEL_NODE_BUTTON_MAX_FONT_SIZE } : undefined,
         ),
-        ...(activeBaseDesign ? getTemplateButtonShellStyle() : {}),
+        ...(resolvedBaseDesign ? getTemplateButtonShellStyle() : {}),
       }}
       onClick={handleClick}
       onPointerDown={inLayoutEdit ? handlePointerDown : undefined}
       disabled={actionDisabled}
       title={button.action.type === "openModal" ? "openModal 暂未实现" : undefined}
     >
-      {activeBaseDesign ? (
-        <ProcessedTemplateBase baseDesign={activeBaseDesign} />
+      {resolvedBaseDesign ? (
+        <ProcessedTemplateBase baseDesign={resolvedBaseDesign} />
       ) : null}
       {button.imageDesign ? (
         <span

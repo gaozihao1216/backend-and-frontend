@@ -99,6 +99,7 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
 
   return (
     <section
+      key={panel.kind === "stage" ? JSON.stringify(panel.decoration ?? null) : panel.id}
       className={`dynamic-ui-panel no-header kind-${panel.kind ?? "container"} decoration-${panel.decoration?.templateId ?? "plain"} effect-${panel.effect?.templateId ?? "none"} ${floating ? "floating" : ""}`}
       style={{
         ...getPositionStyle(panel.position, context.layoutType),

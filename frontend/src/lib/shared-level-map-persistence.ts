@@ -3,7 +3,8 @@ import { getSharedLevelMapPage } from "../api/ui/pages/GetSharedLevelMapPageApi.
 import { updateUiPage } from "../api/ui/pages/UpdateUiPageApi.js";
 import { LEVEL_MAP_PAGE_ID } from "../objects/ui-customization/level-map-structure.js";
 import type { PageConfig } from "../objects/ui-customization/ui-customization-objects.js";
-import { savePageConfig } from "./ui-customization.js";
+import { mergeSharedLevelMapPageConfig } from "./merge-shared-level-map-page.js";
+import { getPageConfig, getPageConfigRevision, savePageConfig } from "./ui-customization.js";
 
 let persistenceUserId: string | null = null;
 
@@ -32,10 +33,16 @@ const persistSharedLevelMapToApi = async (page: PageConfig) => {
 
 export const hydrateSharedLevelMapFromApi = async (userId: string): Promise<boolean> => {
   setSharedLevelMapPersistenceUser(userId);
+  const revisionBefore = getPageConfigRevision();
 
   try {
     const remotePage = await getSharedLevelMapPage(userId);
-    savePageConfig(remotePage);
+    if (getPageConfigRevision() !== revisionBefore) {
+      return true;
+    }
+
+    const localPage = getPageConfig(LEVEL_MAP_PAGE_ID);
+    savePageConfig(mergeSharedLevelMapPageConfig(localPage, remotePage));
     return true;
   } catch {
     return false;

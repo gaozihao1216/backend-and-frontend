@@ -13,8 +13,10 @@ import {
 import { LEVEL_MAP_PAGE_ID } from "./level-map-structure.js";
 import {
   createDefaultLevelMapPathDesign,
-  getDefaultLevelStageDecoration,
 } from "./level-map-structure.js";
+import {
+  normalizeLevelStageDecoration,
+} from "../../lib/level-stage-background.js";
 import { findStagePanel } from "../../lib/level-stage-structure.js";
 
 const isPanel = (component: PageComponent) => component.type === "panel";
@@ -109,17 +111,26 @@ const normalizeSharedLevelMapPageConfig = (pageConfig: PageConfig): PageConfig =
           widthPercent: 150,
           heightPercent: 125,
         },
-        decoration: component.decoration ?? getDefaultLevelStageDecoration(),
+        decoration: normalizeLevelStageDecoration(component.decoration),
         pathDesign: component.pathDesign ?? createDefaultLevelMapPathDesign(),
         style: {
           ...(component.style ?? {}),
           backgroundColor: component.style?.backgroundColor ?? "transparent",
+          borderRadius: 0,
         },
       };
     }),
   };
 
   if (!findStagePanel(withStageDefaults)) {
+    return withStageDefaults;
+  }
+
+  const needsButtonFormat = withStageDefaults.components.some(
+    (component) => isLevelNodeButtonComponent(component) && !component.stateDesign,
+  );
+
+  if (!needsButtonFormat) {
     return withStageDefaults;
   }
 
@@ -132,42 +143,41 @@ const normalizeSharedLevelMapPageConfig = (pageConfig: PageConfig): PageConfig =
 const normalizeRoleHomePageConfig = (pageConfig: PageConfig): PageConfig =>
   normalizeRoleHomeChrome(migrateRoleHomeToLevelMapWidget(pageConfig));
 
-const migrateRoleHomeToLevelMapWidget = (pageConfig: PageConfig): PageConfig => {
-  const widgetComponentId = `${pageConfig.id}.levelMapStage`;
-  const hasLevelMapWidget = pageConfig.components.some(
-    (component) => component.type === "widget" && component.widgetId === "levelMapStage",
-  );
-  const hasLegacyStage = pageConfig.components.some(
-    (component) => component.type === "panel" && component.kind === "stage",
-  );
-  const hasLegacyLevelButtons = pageConfig.components.some((component) =>
-    component.type === "button" && isLevelNodeButtonComponent(component),
-  );
-  const hasLegacyMapViewportRef = pageConfig.components.some(
-    (component) =>
-      component.type === "panel"
-      && component.kind === "container"
-      && component.childComponentIds.some((childId) => childId.endsWith(".mapViewport")),
-  );
+const isLegacyRoleHomeLevelMapComponent = (component: PageComponent): boolean => {
+  if (component.type === "panel") {
+    if (component.kind === "stage") {
+      return true;
+    }
 
-  if (hasLevelMapWidget && !hasLegacyStage && !hasLegacyLevelButtons && !hasLegacyMapViewportRef) {
-    return pageConfig;
+    if (component.id.endsWith(".mapViewport")) {
+      return true;
+    }
   }
 
-  const filteredComponents = pageConfig.components.filter((component) => {
-    if (component.type === "panel" && component.kind === "stage") {
-      return false;
+  if (component.type === "button") {
+    if (component.id.endsWith(".stageSettingsButton")) {
+      return true;
     }
 
-    if (component.type === "button") {
-      if (component.id.endsWith(".stageSettingsButton") || isLevelNodeButtonComponent(component)) {
-        return false;
-      }
+    if (
+      component.action.type === "navigate"
+      && component.action.targetPageId.startsWith("shared.level.")
+    ) {
+      return true;
     }
+  }
 
-    return true;
-  });
+  return false;
+};
 
+const migrateRoleHomeToLevelMapWidget = (pageConfig: PageConfig): PageConfig => {
+  const widgetComponentId = `${pageConfig.id}.levelMapStage`;
+
+  const filteredComponents = pageConfig.components.filter(
+    (component) => !isLegacyRoleHomeLevelMapComponent(component),
+  );
+
+  const nextComponentIds = new Set(filteredComponents.map((component) => component.id));
   const levelMapWidget: PageComponent = {
     id: widgetComponentId,
     type: "widget",
@@ -175,21 +185,24 @@ const migrateRoleHomeToLevelMapWidget = (pageConfig: PageConfig): PageConfig => 
     position: LEVEL_MAP_STAGE_WIDGET_POSITION,
     style: LEVEL_MAP_STAGE_WIDGET_STYLE,
   };
+  nextComponentIds.add(widgetComponentId);
 
-  const nextComponents = (hasLevelMapWidget
-    ? filteredComponents.map((component) =>
-        component.type === "widget" && component.widgetId === "levelMapStage"
-          ? {
-              ...component,
-              position: LEVEL_MAP_STAGE_WIDGET_POSITION,
-              style: {
-                ...(component.style ?? {}),
-                ...LEVEL_MAP_STAGE_WIDGET_STYLE,
-              },
-            }
-          : component,
-      )
-    : [...filteredComponents, levelMapWidget]);
+  const nextComponents = [
+    ...filteredComponents.filter(
+      (component) => !(component.type === "widget" && component.widgetId === "levelMapStage"),
+    ),
+    levelMapWidget,
+  ];
+
+  const chromeChildOrder = [
+    widgetComponentId,
+    `${pageConfig.id}.heroTitle`,
+    `${pageConfig.id}.heroCopy`,
+    `${pageConfig.id}.settingsButton`,
+    `${pageConfig.id}.statusButton`,
+    `${pageConfig.id}.actionButton`,
+    `${pageConfig.id}.actionPanel`,
+  ];
 
   return {
     ...pageConfig,
@@ -198,21 +211,19 @@ const migrateRoleHomeToLevelMapWidget = (pageConfig: PageConfig): PageConfig => 
         return component;
       }
 
-      const childComponentIds = component.childComponentIds
-        .filter(
-          (childId) =>
-            !childId.endsWith(".mapViewport")
-            && !childId.endsWith(".stageSettingsButton")
-            && !/\.level\d{2}$/.test(childId),
-        );
+      const preservedChildren = component.childComponentIds.filter((childId) => nextComponentIds.has(childId));
+      const orderedChildren = [
+        ...chromeChildOrder.filter((childId) => preservedChildren.includes(childId)),
+        ...preservedChildren.filter((childId) => !chromeChildOrder.includes(childId)),
+      ];
 
-      if (!childComponentIds.includes(widgetComponentId)) {
-        childComponentIds.push(widgetComponentId);
+      if (!orderedChildren.includes(widgetComponentId)) {
+        orderedChildren.unshift(widgetComponentId);
       }
 
       return {
         ...component,
-        childComponentIds,
+        childComponentIds: orderedChildren,
       };
     }),
   };

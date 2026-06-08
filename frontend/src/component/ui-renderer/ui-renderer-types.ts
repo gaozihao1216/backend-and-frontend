@@ -42,7 +42,6 @@ export type DynamicRendererContext = {
   controlledPanelIds: Set<string>;
   layoutType: PageLayoutType;
   roleHomeSurface?: boolean | undefined;
-  embeddedLevelMapSurface?: boolean | undefined;
   fitStageToHost?: boolean | undefined;
   previewUser?: UiPreviewUser | undefined;
   runtimeUserId?: string | undefined;
@@ -60,7 +59,6 @@ export type DynamicPageRendererProps = {
   runtimeUserId?: string | undefined;
   previewUiData?: Record<string, unknown> | undefined;
   onNavigate: (path: string) => void;
-  embeddedLevelMapSurface?: boolean | undefined;
   fitStageToHost?: boolean | undefined;
   levelMapLayoutEdit?: LevelMapLayoutEditContext | undefined;
   levelMapPathEdit?: LevelMapPathEditContext | undefined;

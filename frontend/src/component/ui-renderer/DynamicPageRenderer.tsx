@@ -12,7 +12,6 @@ export const DynamicPageRenderer = ({
   previewUiData,
   onNavigate,
   fitStageToHost,
-  embeddedLevelMapSurface,
   levelMapLayoutEdit,
   levelMapPathEdit,
 }: DynamicPageRendererProps) => {
@@ -72,7 +71,7 @@ export const DynamicPageRenderer = ({
 
   return (
     <div
-      className={`dynamic-ui-page layout-${page.layout.type}${/\.home$/.test(page.id) ? " role-home-surface" : ""}${embeddedLevelMapSurface ? " embedded-level-map-surface" : ""}`.trim()}
+      className={`dynamic-ui-page layout-${page.layout.type}${/\.home$/.test(page.id) ? " role-home-surface" : ""}`.trim()}
       data-page-id={page.id}
       style={
         page.layout.type === "stack" && typeof page.layout.gap === "number"

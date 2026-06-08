@@ -99,32 +99,29 @@ const compactPageConfigStageBackgrounds = async (config: PageConfig): Promise<Pa
 };
 
 export const compactStoredPageConfigVisualAssets = async (): Promise<boolean> => {
-  const storedConfigs = getStoredPageConfigs();
-  if (storedConfigs.length === 0) {
+  const pageIds = getStoredPageConfigs().map((config) => config.id);
+  if (pageIds.length === 0) {
     return false;
   }
 
-  const nextStoredConfigs = await Promise.all(
-    storedConfigs.map((config) => compactPageConfigStageBackgrounds(config)),
-  );
+  let changed = false;
 
-  const changed = nextStoredConfigs.some((config, index) => config !== storedConfigs[index]);
-  if (!changed) {
-    return false;
-  }
-
-  try {
-    persistStoredPageConfigs(nextStoredConfigs);
-  } catch (error) {
-    if (!(error instanceof DOMException) || error.name !== "QuotaExceededError" || !canUseStorage()) {
-      throw error;
+  for (const pageId of pageIds) {
+    const latest = getStoredPageConfigs().find((config) => config.id === pageId);
+    if (!latest) {
+      continue;
     }
 
-    window.localStorage.removeItem(UI_PAGE_CONFIG_STORAGE_KEY);
-    persistStoredPageConfigs(nextStoredConfigs);
+    const compacted = await compactPageConfigStageBackgrounds(latest);
+    if (compacted === latest) {
+      continue;
+    }
+
+    savePageConfig(compacted);
+    changed = true;
   }
 
-  return true;
+  return changed;
 };
 
 export const compactStoredRoleHomePageConfigs = (): boolean => {
@@ -155,13 +152,14 @@ export const compactStoredRoleHomePageConfigs = (): boolean => {
       return config;
     }
 
-    const normalized = PageConfigSchema.parse(normalizePageConfig(config));
+    const normalized = PageConfigSchema.parse(
+      sanitizePageConfigLevelNodeButtons(normalizePageConfig(config)),
+    );
     if (JSON.stringify(config) !== JSON.stringify(normalized)) {
       changed = true;
-      return normalized;
     }
 
-    return config;
+    return normalized;
   });
 
   if (!changed) {
@@ -169,7 +167,7 @@ export const compactStoredRoleHomePageConfigs = (): boolean => {
   }
 
   try {
-    persistStoredPageConfigs(nextConfigs.map((config) => sanitizePageConfigLevelNodeButtons(normalizePageConfig(config))));
+    persistStoredPageConfigs(nextConfigs);
   } catch {
     return false;
   }
@@ -199,6 +197,9 @@ export const listPageConfigsByEndpoint = (endpoint: UiEndpoint): PageConfig[] =>
 
 export const getPageConfig = (pageId: string): PageConfig | null =>
   listPageConfigs().find((config) => config.id === pageId) ?? null;
+
+export const hasStoredPageConfig = (pageId: string): boolean =>
+  getStoredPageConfigs().some((config) => config.id === pageId);
 
 export const getDefaultPageConfig = (pageId: string): PageConfig | null =>
   getDefaultPageConfigs().find((config) => config.id === pageId) ?? null;
