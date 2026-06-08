@@ -10,7 +10,8 @@ import { DirectorPanelCreatePage } from "./page/DirectorPanelCreatePage.js";
 import { DirectorPageBuilderPage } from "./page/DirectorPageBuilderPage.js";
 import { PageDualModeHost } from "./page/PageDualModeHost.js";
 import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
-import { compactStoredPageConfigVisualAssets } from "./lib/ui-customization.js";
+import { compactStoredPageConfigVisualAssets, compactStoredRoleHomePageConfigs } from "./lib/ui-customization.js";
+import { hydrateSharedLevelMapFromApi } from "./lib/shared-level-map-persistence.js";
 import { isPageBuilderPath, resolveHomePageId, resolvePageId } from "./lib/page-id-resolver.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
@@ -57,7 +58,16 @@ export const App = () => {
 
   useEffect(() => {
     void compactStoredPageConfigVisualAssets();
+    compactStoredRoleHomePageConfigs();
   }, []);
+
+  useEffect(() => {
+    if (!currentUser?.apiUserId) {
+      return;
+    }
+
+    void hydrateSharedLevelMapFromApi(currentUser.apiUserId);
+  }, [currentUser?.apiUserId]);
 
   useEffect(() => {
     // 每次用户变化后立即持久化，避免刷新丢失当前登录角色。

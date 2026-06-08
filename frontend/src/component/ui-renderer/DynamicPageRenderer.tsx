@@ -11,6 +11,8 @@ export const DynamicPageRenderer = ({
   runtimeUserId,
   previewUiData,
   onNavigate,
+  fitStageToHost,
+  embeddedLevelMapSurface,
   levelMapLayoutEdit,
   levelMapPathEdit,
 }: DynamicPageRendererProps) => {
@@ -37,6 +39,9 @@ export const DynamicPageRenderer = ({
     componentMap,
     openPanelIds,
     controlledPanelIds,
+    layoutType: page.layout.type,
+    roleHomeSurface: /\.home$/.test(page.id),
+    ...(fitStageToHost ? { fitStageToHost: true } : {}),
     previewUser,
     runtimeUserId,
     uiRuntime: {
@@ -66,7 +71,15 @@ export const DynamicPageRenderer = ({
   };
 
   return (
-    <div className={`dynamic-ui-page layout-${page.layout.type}`}>
+    <div
+      className={`dynamic-ui-page layout-${page.layout.type}${/\.home$/.test(page.id) ? " role-home-surface" : ""}${embeddedLevelMapSurface ? " embedded-level-map-surface" : ""}`.trim()}
+      data-page-id={page.id}
+      style={
+        page.layout.type === "stack" && typeof page.layout.gap === "number"
+          ? { ["--dynamic-ui-stack-gap" as string]: `${page.layout.gap}px` }
+          : undefined
+      }
+    >
       {rootComponents.map((component) => (
         <DynamicComponentRenderer key={component.id} component={component} context={context} />
       ))}

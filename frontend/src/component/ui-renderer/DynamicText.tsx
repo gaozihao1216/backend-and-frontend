@@ -30,7 +30,7 @@ export const DynamicText = ({ text, context }: DynamicTextProps) => {
     <div
       className={`dynamic-ui-text ${getPanelTextArtContainerClassName(artTextDesign)}`.trim()}
       style={{
-        ...getPositionStyle(text.position),
+        ...getPositionStyle(text.position, context.layoutType),
         ...getComponentStyle(text.style),
         ...getPanelTextArtContainerStyle(artTextDesign),
       }}

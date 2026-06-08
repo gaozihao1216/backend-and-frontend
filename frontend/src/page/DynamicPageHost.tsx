@@ -1,6 +1,13 @@
+import { useSyncExternalStore } from "react";
 import { DynamicPageRenderer } from "../component/ui-renderer/index.js";
-import { getDefaultPageConfig, getPageConfig } from "../lib/ui-customization.js";
+import {
+  getDefaultPageConfig,
+  getPageConfig,
+  getPageConfigRevision,
+  subscribePageConfigStore,
+} from "../lib/ui-customization.js";
 import { getUiPreviewUser } from "../objects/ui-customization/ui-customization-objects.js";
+import { isStaticPageSupported, renderStaticPage, type StaticPageRenderContext } from "./StaticPageRenderer.js";
 
 type DynamicPageHostProps = {
   pageId: string | null;
@@ -8,6 +15,7 @@ type DynamicPageHostProps = {
   runtimeUserId?: string | undefined;
   onNavigate: (path: string) => void;
   embedded?: boolean | undefined;
+  staticContext?: StaticPageRenderContext | undefined;
 };
 
 export const DynamicPageHost = ({
@@ -16,8 +24,17 @@ export const DynamicPageHost = ({
   runtimeUserId,
   onNavigate,
   embedded = false,
+  staticContext,
 }: DynamicPageHostProps) => {
-  const pageConfig = pageId ? (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId)) : null;
+  const pageConfigRevision = useSyncExternalStore(
+    subscribePageConfigStore,
+    getPageConfigRevision,
+    getPageConfigRevision,
+  );
+  const pageConfig = pageId
+    ? (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId))
+    : null;
+  void pageConfigRevision;
   const previewUser = pageConfig ? getUiPreviewUser(pageConfig.roleScope) : null;
 
   if (!pageId) {
@@ -38,6 +55,50 @@ export const DynamicPageHost = ({
     );
   }
 
+  const shouldRenderStaticEmbed =
+    pageConfig.surfaceMode === "staticEmbed"
+    || (pageConfig.components.length === 0 && staticContext && isStaticPageSupported(pageId));
+
+  if (shouldRenderStaticEmbed) {
+    if (!staticContext || !isStaticPageSupported(pageId)) {
+      return (
+        <section className={`panel dynamic-page-host ${embedded ? "embedded" : ""}`.trim()}>
+          <h2>动态页面渲染</h2>
+          <p className="feedback error">该页面配置为静态嵌入模式，但当前缺少静态页面上下文：{pageId}</p>
+        </section>
+      );
+    }
+
+    const staticEmbed = (
+      <div className="dynamic-ui-page dynamic-ui-page-static-embed">
+        {renderStaticPage(pageId, staticContext)}
+      </div>
+    );
+
+    if (embedded) {
+      return staticEmbed;
+    }
+
+    return (
+      <section className="panel dynamic-page-host">
+        <div className="feature-header dynamic-page-host-header">
+          <div>
+            <p className="eyebrow">Dynamic Page</p>
+            <h2>{pageConfig.name}</h2>
+            <p className="panel-copy">
+              该页面使用静态嵌入模式，直接渲染真实 React 页面，不再额外包裹演示用 Panel 壳层。
+            </p>
+          </div>
+          <div className="dynamic-page-host-meta">
+            <span>{pageConfig.id}</span>
+            <code>{pageConfig.path}</code>
+          </div>
+        </div>
+        {staticEmbed}
+      </section>
+    );
+  }
+
   if (pageConfig.components.length === 0) {
     return (
       <section className={`panel dynamic-page-host ${embedded ? "embedded" : ""}`.trim()}>
@@ -48,7 +109,7 @@ export const DynamicPageHost = ({
   }
 
   const canvas = (
-    <div className="dynamic-page-host-canvas">
+    <div className={`dynamic-page-host-canvas${embedded ? " is-embedded" : ""}`.trim()}>
       <DynamicPageRenderer
         page={pageConfig}
         previewUser={previewUser ?? undefined}
@@ -59,11 +120,7 @@ export const DynamicPageHost = ({
   );
 
   if (embedded) {
-    return (
-      <section className="panel dynamic-page-host embedded">
-        {canvas}
-      </section>
-    );
+    return canvas;
   }
 
   return (

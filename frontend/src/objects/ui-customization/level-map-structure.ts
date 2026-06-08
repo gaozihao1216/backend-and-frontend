@@ -270,5 +270,6 @@ export const createAllLevelScreenPageConfigs = (): PageConfig[] =>
     path: getLevelScreenPath(level.suffix),
     roleScope: "player" as const,
     layout: { type: "freeform" as const, gap: 12, padding: 24 },
+    surfaceMode: "composed" as const,
     components: createLevelScreenComponents(level.suffix),
   }));

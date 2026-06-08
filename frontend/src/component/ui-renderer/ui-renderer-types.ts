@@ -3,6 +3,7 @@ import type { ComponentResizeHandle } from "../../lib/component-position-adjust.
 import type {
   PageComponent,
   PageConfig,
+  PageLayoutType,
   PanelComponent,
   UiPreviewUser,
 } from "../../objects/ui-customization/ui-customization-objects.js";
@@ -39,6 +40,10 @@ export type DynamicRendererContext = {
   componentMap: ComponentMap;
   openPanelIds: Set<string>;
   controlledPanelIds: Set<string>;
+  layoutType: PageLayoutType;
+  roleHomeSurface?: boolean | undefined;
+  embeddedLevelMapSurface?: boolean | undefined;
+  fitStageToHost?: boolean | undefined;
   previewUser?: UiPreviewUser | undefined;
   runtimeUserId?: string | undefined;
   uiRuntime?: UiPageRuntime | undefined;
@@ -55,6 +60,8 @@ export type DynamicPageRendererProps = {
   runtimeUserId?: string | undefined;
   previewUiData?: Record<string, unknown> | undefined;
   onNavigate: (path: string) => void;
+  embeddedLevelMapSurface?: boolean | undefined;
+  fitStageToHost?: boolean | undefined;
   levelMapLayoutEdit?: LevelMapLayoutEditContext | undefined;
   levelMapPathEdit?: LevelMapPathEditContext | undefined;
 };

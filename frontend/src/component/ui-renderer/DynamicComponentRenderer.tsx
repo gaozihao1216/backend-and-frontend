@@ -1,4 +1,5 @@
 import { DynamicButton } from "./DynamicButton.js";
+import { DynamicWidget } from "./DynamicWidget.js";
 import { DynamicPanel } from "./DynamicPanel.js";
 import { DynamicText } from "./DynamicText.js";
 import type { DynamicComponentRendererProps } from "./ui-renderer-types.js";
@@ -33,5 +34,7 @@ export const DynamicComponentRenderer = ({
           {component.emptyStateText ?? "暂无数据"}
         </div>
       );
+    case "widget":
+      return <DynamicWidget widget={component} context={context} />;
   }
 };

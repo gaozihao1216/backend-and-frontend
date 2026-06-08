@@ -11,7 +11,7 @@ export const LevelSlotAssignmentSchema = z.object({
   assignedById: z.string().min(1),
   assignedAt: z.string(),
   note: nullishToUndefined(z.string().max(1000)),
-  birdPool: BirdPoolSchema.optional(),
+  birdPool: nullishToUndefined(BirdPoolSchema),
 });
 
 export type LevelSlotAssignment = z.infer<typeof LevelSlotAssignmentSchema>;
@@ -43,7 +43,7 @@ export type DirectorLevelAssignmentBoard = z.infer<typeof DirectorLevelAssignmen
 export const AssignLevelSlotRequestBodySchema = z.object({
   submissionId: z.string().min(1),
   note: z.string().max(1000).optional(),
-  birdPool: BirdPoolSchema.optional(),
+  birdPool: nullishToUndefined(BirdPoolSchema),
 });
 
 export type AssignLevelSlotRequestBody = z.infer<typeof AssignLevelSlotRequestBodySchema>;

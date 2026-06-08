@@ -4,6 +4,7 @@ import { LevelMapLayoutPreview } from "../component/director/LevelMapLayoutPrevi
 import { LevelNodeButtonFormatEditor } from "../component/director/LevelNodeButtonFormatEditor.js";
 import { LevelStageBackgroundEditor } from "../component/director/LevelStageBackgroundEditor.js";
 import { getPageConfig } from "../lib/ui-customization.js";
+import { setSharedLevelMapPersistenceUser } from "../lib/shared-level-map-persistence.js";
 import {
   applyLevelNodeButtonFormat,
   createPreviewLevelProgressUiData,
@@ -73,6 +74,8 @@ export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: Direc
   const [savingPathDesign, setSavingPathDesign] = useState(false);
 
   useEffect(() => {
+    setSharedLevelMapPersistenceUser(userId);
+
     let cancelled = false;
 
     void getLevelStageDecorationFromStore().then((decoration) => {
@@ -87,7 +90,7 @@ export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: Direc
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId]);
 
   const previewPageConfig = useMemo(() => {
     if (!pageConfig) {

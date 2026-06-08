@@ -36,7 +36,18 @@ const getComponentDisplayName = (component: PageComponent) => {
   if (component.type === "panel") {
     return getPanelDisplayName(component);
   }
-  return component.emptyStateText || component.dataPath || component.id;
+  if (component.type === "list") {
+    return component.emptyStateText || component.dataPath || component.id;
+  }
+  if (component.type === "widget") {
+    return component.widgetId === "adminProposalReview"
+      ? "提案审核"
+      : component.widgetId === "levelMapStage"
+        ? "关卡路径地图"
+        : component.widgetId;
+  }
+
+  return "";
 };
 
 const getComponentTypeLabel = (component: PageComponent) => {
@@ -48,6 +59,9 @@ const getComponentTypeLabel = (component: PageComponent) => {
   }
   if (component.type === "list") {
     return "列表";
+  }
+  if (component.type === "widget") {
+    return "功能组件";
   }
   return "面板";
 };

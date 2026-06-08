@@ -13,7 +13,7 @@ export const LevelDataSchema = z.object({
   ground: nullishToUndefined(LevelGroundSchema),
   terrain: nullishToUndefined(LevelTerrainSchema),
   birdInventory: BirdInventorySchema,
-  birdPool: BirdPoolSchema.optional(),
+  birdPool: nullishToUndefined(BirdPoolSchema),
   obstacles: z.array(LevelObstacleSchema),
   enemies: z.array(LevelEnemySchema),
   backgroundTemplateId: nullishToUndefined(z.string().min(1)),

@@ -8,6 +8,7 @@ import microservice.infrastructure.http.HttpError
 import microservice.level.routes.PlayerLevelRouteSupport
 import microservice.player.runtime.PlayerUiRuntimeService
 import microservice.system.objects.ApiSuccess
+import microservice.ui.api.pages.GetSharedLevelMapPageAPIMessage
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
@@ -21,6 +22,16 @@ object UiActionRequest {
 object PlayerUiRuntimeRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      case req @ GET -> Root / "ui" / "level-map" =>
+        PlayerLevelRouteSupport.currentUserId(req) match {
+          case Some(userId) =>
+            GetSharedLevelMapPageAPIMessage(userId)
+              .run(databaseSession)
+              .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
+          case None =>
+            HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
+        }
+
       case req @ GET -> Root / "ui" / "data" / apiKey =>
         PlayerLevelRouteSupport.currentUserId(req) match {
           case Some(userId) =>

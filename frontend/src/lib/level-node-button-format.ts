@@ -1,10 +1,10 @@
-import { getPageConfig, savePageConfig } from "./ui-customization.js";
+import { getPageConfig } from "./ui-customization.js";
+import { saveSharedLevelMapPage } from "./shared-level-map-persistence.js";
 import {
   LEVEL_MAP_PAGE_ID,
   LEVEL_NODE_DEFINITIONS,
   getLevelScreenPageId,
 } from "../objects/ui-customization/level-map-structure.js";
-import { LEVEL_STAGE_BACKGROUND_PAGE_IDS } from "./level-stage-background.js";
 import {
   getButtonStateContentType,
   normalizeButtonStatePatternLayerDrafts,
@@ -300,18 +300,12 @@ export const applyLevelNodeButtonFormat = (
 });
 
 export const syncLevelNodeButtonFormat = (settings: LevelNodeButtonFormatSettings): PageConfig[] => {
-  const savedConfigs: PageConfig[] = [];
+  const pageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);
+  if (!pageConfig) {
+    return [];
+  }
 
-  LEVEL_STAGE_BACKGROUND_PAGE_IDS.forEach((pageId) => {
-    const pageConfig = getPageConfig(pageId);
-    if (!pageConfig) {
-      return;
-    }
-
-    savedConfigs.push(savePageConfig(applyLevelNodeButtonFormat(pageConfig, settings)));
-  });
-
-  return savedConfigs;
+  return [saveSharedLevelMapPage(applyLevelNodeButtonFormat(pageConfig, settings))];
 };
 
 const extractStateDesignFromStateOption = (
@@ -469,20 +463,33 @@ const extractSettingsFromButton = (button: ButtonComponent): LevelNodeButtonForm
   };
 };
 
+export const extractLevelNodeButtonFormatSettings = (pageConfig: PageConfig): LevelNodeButtonFormatSettings => {
+  for (const level of LEVEL_NODE_DEFINITIONS) {
+    const button = findLevelNodeButton(pageConfig, level.suffix);
+    if (button?.stateDesign) {
+      return extractSettingsFromButton(button);
+    }
+  }
+
+  const fallbackButton = pageConfig.components.find(
+    (component): component is ButtonComponent =>
+      isLevelNodeButtonComponent(component) && Boolean(component.stateDesign),
+  );
+
+  if (fallbackButton) {
+    return extractSettingsFromButton(fallbackButton);
+  }
+
+  return getDefaultLevelNodeButtonFormatSettings();
+};
+
 export const getLevelNodeButtonFormatFromStore = (): LevelNodeButtonFormatSettings => {
   const pageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);
-  const firstLevel = LEVEL_NODE_DEFINITIONS[0];
-  if (!pageConfig || !firstLevel) {
+  if (!pageConfig) {
     return getDefaultLevelNodeButtonFormatSettings();
   }
 
-  const button = findLevelNodeButton(pageConfig, firstLevel.suffix);
-
-  if (!button) {
-    return getDefaultLevelNodeButtonFormatSettings();
-  }
-
-  return extractSettingsFromButton(button);
+  return extractLevelNodeButtonFormatSettings(pageConfig);
 };
 
 export const getStateDesignTemplateSelectValues = (design: LevelNodeStateButtonDesign) => ({

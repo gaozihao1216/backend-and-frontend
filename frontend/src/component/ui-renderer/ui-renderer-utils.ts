@@ -4,6 +4,7 @@ import type {
   ButtonImageFrame,
   ComponentPosition,
   ComponentStyle,
+  PageLayoutType,
   PanelComponent,
   PageComponent,
   StretchVisualDesign,
@@ -51,7 +52,18 @@ export const getRootComponents = (components: PageComponent[]): PageComponent[] 
   return components.filter((component) => !childIds.has(component.id) && !controlledPanelIds.has(component.id));
 };
 
-export const getPositionStyle = (position: ComponentPosition): React.CSSProperties => {
+export const getPositionStyle = (
+  position: ComponentPosition,
+  layoutType: PageLayoutType = "freeform",
+): React.CSSProperties => {
+  if (layoutType === "stack") {
+    return {
+      position: "relative",
+      width: "100%",
+      height: "auto",
+    };
+  }
+
   const unit = position.unit === "px" ? "px" : "%";
 
   return {

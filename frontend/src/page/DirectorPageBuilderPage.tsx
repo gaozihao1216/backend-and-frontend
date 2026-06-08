@@ -115,6 +115,12 @@ const getComponentLabel = (component: PageComponent) => {
       return component.text.trim() || "文本框";
     case "list":
       return component.emptyStateText ?? component.dataPath;
+    case "widget":
+      return component.widgetId === "adminProposalReview"
+        ? "提案审核"
+        : component.widgetId === "levelMapStage"
+          ? "关卡路径地图"
+          : component.widgetId;
   }
 };
 
@@ -128,6 +134,8 @@ const getComponentTypeLabel = (component: PageComponent) => {
       return "文本框";
     case "list":
       return "列表";
+    case "widget":
+      return "功能组件";
   }
 };
 
@@ -682,6 +690,33 @@ const PageBuilderComponentNode = ({
         {showOutline ? <PageBuilderOutline componentId={component.id} selectionState={selectionState} /> : null}
       </div>
     );
+  }
+
+  if (component.type === "widget") {
+    return (
+      <div
+        className="page-builder-preview-node page-builder-preview-text"
+        data-page-builder-component-id={component.id}
+        data-page-builder-selected={isSelected ? "true" : undefined}
+        style={{
+          ...getPositionStyle(component.position),
+          ...getComponentStyle(component.style),
+        }}
+      >
+        <div className="page-builder-preview-text-content">
+          {component.widgetId === "adminProposalReview"
+            ? "提案审核功能组件"
+            : component.widgetId === "levelMapStage"
+              ? "关卡路径地图组件"
+              : component.widgetId}
+        </div>
+        {showOutline ? <PageBuilderOutline componentId={component.id} selectionState={selectionState} /> : null}
+      </div>
+    );
+  }
+
+  if (component.type !== "panel") {
+    return null;
   }
 
   const contentSize = component.contentSize;

@@ -1,14 +1,4 @@
 import type { ComponentAction, PageConfig } from "./page-config.js";
-import {
-  createLevelNodeButtonAction,
-  createDefaultLevelMapPathDesign,
-  getDefaultLevelStageDecoration,
-  LEVEL_NODE_DEFINITIONS,
-} from "./level-map-structure.js";
-import {
-  createLevelNodeButtonStateDesign,
-  getDefaultLevelNodeButtonFormatSettings,
-} from "../../lib/level-node-button-format.js";
 
 const percentPosition = (x: number, y: number, width: number, height: number) => ({
   unit: "percent" as const,
@@ -17,6 +7,12 @@ const percentPosition = (x: number, y: number, width: number, height: number) =>
   width,
   height,
 });
+
+export const LEVEL_MAP_STAGE_WIDGET_POSITION = percentPosition(0, 0, 100, 100);
+
+export const LEVEL_MAP_STAGE_WIDGET_STYLE = {
+  borderRadius: 0,
+};
 
 type LevelChainActionOption = {
   id: string;
@@ -42,7 +38,6 @@ export const createLevelChainHomeComponents = ({
   actionOptions,
 }: CreateLevelChainHomeComponentsInput): PageConfig["components"] => {
   const componentId = (suffix: string) => `${prefix}.${suffix}`;
-  const buttonFormat = getDefaultLevelNodeButtonFormatSettings();
   const actionOptionIds = actionOptions.map((option) => componentId(`action.${option.id}`));
 
   return [
@@ -50,18 +45,17 @@ export const createLevelChainHomeComponents = ({
       id: componentId("dashboard"),
       type: "panel",
       kind: "container",
-      position: percentPosition(2, 3, 96, 94),
+      position: percentPosition(0, 0, 100, 100),
       style: {
-        backgroundColor: "#fffdfa",
-        borderRadius: 14,
+        backgroundColor: "transparent",
+        borderRadius: 0,
       },
       childComponentIds: [
+        componentId("levelMapStage"),
         componentId("heroTitle"),
         componentId("heroCopy"),
         componentId("settingsButton"),
-        componentId("mapViewport"),
         componentId("statusButton"),
-        componentId("stageSettingsButton"),
         componentId("actionButton"),
         componentId("actionPanel"),
       ],
@@ -72,9 +66,9 @@ export const createLevelChainHomeComponents = ({
       text: title,
       position: percentPosition(3, 3, 28, 8),
       style: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "transparent",
         textColor: "#12202f",
-        borderRadius: 10,
+        borderRadius: 0,
         fontSize: 22,
       },
     },
@@ -84,9 +78,9 @@ export const createLevelChainHomeComponents = ({
       text: "欢迎，{{nickname}}。链条式关卡是主舞台，功能以角落按钮展开。",
       position: percentPosition(3, 11, 62, 7),
       style: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "transparent",
         textColor: "#3e544f",
-        borderRadius: 10,
+        borderRadius: 0,
       },
     },
     {
@@ -102,6 +96,13 @@ export const createLevelChainHomeComponents = ({
       action: { type: "none" },
     },
     {
+      id: componentId("levelMapStage"),
+      type: "widget",
+      widgetId: "levelMapStage",
+      position: LEVEL_MAP_STAGE_WIDGET_POSITION,
+      style: LEVEL_MAP_STAGE_WIDGET_STYLE,
+    },
+    {
       id: componentId("statusButton"),
       type: "button",
       label: statusLabel,
@@ -113,54 +114,6 @@ export const createLevelChainHomeComponents = ({
       },
       action: { type: "none" },
     },
-    {
-      id: componentId("stageSettingsButton"),
-      type: "button",
-      label: "设置",
-      icon: "settings",
-      position: percentPosition(84, 36, 10, 6),
-      style: {
-        variant: "secondary",
-        borderRadius: 10,
-      },
-      action: { type: "none" },
-    },
-    {
-      id: componentId("mapViewport"),
-      type: "panel",
-      kind: "stage",
-      position: percentPosition(3, 22, 94, 74),
-      contentSize: {
-        widthPercent: 150,
-        heightPercent: 125,
-      },
-      style: {
-        backgroundColor: "transparent",
-        borderRadius: 14,
-      },
-      decoration: getDefaultLevelStageDecoration(),
-      pathDesign: createDefaultLevelMapPathDesign(),
-      childComponentIds: LEVEL_NODE_DEFINITIONS.map((level) => componentId(level.suffix)),
-    },
-    ...LEVEL_NODE_DEFINITIONS.map((level) => ({
-      id: componentId(level.suffix),
-      type: "button" as const,
-      label: level.label,
-      icon: buttonFormat.stateIcons.notCleared,
-      position: percentPosition(level.x, level.y, 16, 12),
-      ...(buttonFormat.stateDesigns.notCleared.baseDesign
-        ? { baseDesign: buttonFormat.stateDesigns.notCleared.baseDesign }
-        : {}),
-      style: {
-        variant: buttonFormat.stateDesigns.notCleared.variant,
-        backgroundColor: buttonFormat.stateDesigns.notCleared.backgroundColor,
-        textColor: buttonFormat.stateDesigns.notCleared.textColor,
-        borderRadius: buttonFormat.stateDesigns.notCleared.borderRadius,
-        fontSize: Math.min(14, buttonFormat.stateDesigns.notCleared.fontSize),
-      },
-      stateDesign: createLevelNodeButtonStateDesign(level.suffix, level.label, buttonFormat),
-      action: createLevelNodeButtonAction(level.suffix),
-    })),
     {
       id: componentId("actionButton"),
       type: "button",

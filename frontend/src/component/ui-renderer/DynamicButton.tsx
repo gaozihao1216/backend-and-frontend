@@ -119,7 +119,7 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
       type="button"
       className={`dynamic-ui-button ${stateStyle?.variant ?? button.style?.variant ?? "primary"} base-${activeState?.baseTemplateId ?? "rounded"} pattern-${activeState?.patternTemplateId ?? "none"} effect-${button.effect?.templateId ?? "none"} ${isActivePanelTrigger ? "active-panel-trigger" : ""}${activeBaseDesign ? " uses-template-base" : ""}${isLayoutSelected ? " level-map-layout-selected" : ""}${inLayoutEdit ? " level-map-layout-editable" : ""}${isPathConnectSource ? " level-map-path-connect-source" : ""}${inPathConnect && pathEdit?.connectFromSuffix ? " level-map-path-connect-target" : ""}`}
       style={{
-        ...getPositionStyle(button.position),
+        ...getPositionStyle(button.position, context.layoutType),
         ...getComponentStyle(button.style),
         ...getComponentStyle(stateStyle),
         ...getButtonTextScaleStyle(

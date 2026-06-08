@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { AuthUser } from "../lib/auth.js";
-import { getDefaultPageConfig, getPageConfig } from "../lib/ui-customization.js";
+import {
+  getDefaultPageConfig,
+  getPageConfig,
+  getPageConfigRevision,
+  subscribePageConfigStore,
+} from "../lib/ui-customization.js";
 import {
   readPageDisplayModeFromSearch,
   readStoredPageDisplayMode,
@@ -47,9 +52,14 @@ export const PageDualModeHost = ({
   onOpenDesignerDesign,
   onOpenDesignerPortfolio,
 }: PageDualModeHostProps) => {
+  const pageConfigRevision = useSyncExternalStore(
+    subscribePageConfigStore,
+    getPageConfigRevision,
+    getPageConfigRevision,
+  );
   const pageConfig = useMemo(
     () => (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId)),
-    [pageId, useDefaultConfig],
+    [pageId, useDefaultConfig, pageConfigRevision],
   );
   const staticAvailable = isStaticPageSupported(pageId);
   const dynamicAvailable = Boolean(pageConfig && pageConfig.components.length > 0);
@@ -110,6 +120,7 @@ export const PageDualModeHost = ({
         runtimeUserId={user.apiUserId ?? undefined}
         onNavigate={onNavigate}
         embedded
+        staticContext={staticContext}
       />
     </div>
   );

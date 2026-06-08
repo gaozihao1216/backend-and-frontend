@@ -34,18 +34,28 @@ final case class UpdateUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     IO.pure {
       AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
-        UiPageTable.findById(connection, pageId) match {
-          case None =>
-            Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-          case Some(existing) =>
-            if (body.page.name.trim.isEmpty || body.page.path.trim.isEmpty) {
-              Left(UiCustomizationErrors.InvalidPageConfig("name and path are required").toHttpError)
-            } else {
-              val updatedConfig = body.page.copy(
-                id = pageId,
-                name = body.page.name.trim,
-                path = body.page.path.trim
+        if (body.page.name.trim.isEmpty || body.page.path.trim.isEmpty) {
+          Left(UiCustomizationErrors.InvalidPageConfig("name and path are required").toHttpError)
+        } else {
+          val updatedConfig = body.page.copy(
+            id = pageId,
+            name = body.page.name.trim,
+            path = body.page.path.trim
+          )
+
+          UiPageTable.findById(connection, pageId) match {
+            case None =>
+              val timestamp = Instant.now().toString
+              val inserted = UiPageTable.insert(
+                connection,
+                UiPageRowMapper.fromPageConfig(
+                  updatedConfig,
+                  createdAt = timestamp,
+                  updatedAt = timestamp
+                )
               )
+              Right(UiPageRowMapper.toPageConfig(inserted))
+            case Some(existing) =>
               UiPageTable
                 .update(
                   connection,
@@ -57,7 +67,7 @@ final case class UpdateUiPageAPIMessage(
                 )
                 .map(row => Right(UiPageRowMapper.toPageConfig(row)))
                 .getOrElse(Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError))
-            }
+          }
         }
       }
     }

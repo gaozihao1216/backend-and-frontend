@@ -1,4 +1,21 @@
 import type { ComponentAction, PageComponent, PageConfig } from "./page-config.js";
+import { createAdminProposalsPageConfig } from "./admin-proposals-structure.js";
+import { isRoleLevelMapSyncPageId } from "../../lib/level-map-sync.js";
+import {
+  applyLevelNodeButtonFormat,
+  extractLevelNodeButtonFormatSettings,
+  isLevelNodeButtonComponent,
+} from "../../lib/level-node-button-format.js";
+import {
+  LEVEL_MAP_STAGE_WIDGET_POSITION,
+  LEVEL_MAP_STAGE_WIDGET_STYLE,
+} from "./level-chain-home-structure.js";
+import { LEVEL_MAP_PAGE_ID } from "./level-map-structure.js";
+import {
+  createDefaultLevelMapPathDesign,
+  getDefaultLevelStageDecoration,
+} from "./level-map-structure.js";
+import { findStagePanel } from "../../lib/level-stage-structure.js";
 
 const isPanel = (component: PageComponent) => component.type === "panel";
 
@@ -47,6 +64,205 @@ const remapAction = (action: ComponentAction, idMap: Map<string, string>): Compo
 
   return action;
 };
+
+const usesLegacyAdminProposalsShell = (pageConfig: PageConfig) =>
+  pageConfig.id === "admin.proposals"
+  && pageConfig.components.some((component) => component.id.includes(".shell"));
+
+const shouldMigrateAdminProposals = (pageConfig: PageConfig) =>
+  pageConfig.id === "admin.proposals"
+  && (
+    usesLegacyAdminProposalsShell
+    || pageConfig.surfaceMode === "staticEmbed"
+    || pageConfig.components.length === 0
+    || pageConfig.components.some((component) => component.type === "panel")
+    || pageConfig.layout.type !== "stack"
+  );
+
+export const normalizePageSurface = (pageConfig: PageConfig): PageConfig => {
+  if (shouldMigrateAdminProposals(pageConfig)) {
+    return createAdminProposalsPageConfig();
+  }
+
+  if (pageConfig.id === LEVEL_MAP_PAGE_ID) {
+    return normalizeSharedLevelMapPageConfig(pageConfig);
+  }
+
+  if (isRoleLevelMapSyncPageId(pageConfig.id)) {
+    return normalizeRoleHomePageConfig(pageConfig);
+  }
+
+  return pageConfig;
+};
+
+const normalizeSharedLevelMapPageConfig = (pageConfig: PageConfig): PageConfig => {
+  const withStageDefaults: PageConfig = {
+    ...pageConfig,
+    components: pageConfig.components.map((component) => {
+      if (component.type !== "panel" || component.kind !== "stage") {
+        return component;
+      }
+
+      return {
+        ...component,
+        contentSize: component.contentSize ?? {
+          widthPercent: 150,
+          heightPercent: 125,
+        },
+        decoration: component.decoration ?? getDefaultLevelStageDecoration(),
+        pathDesign: component.pathDesign ?? createDefaultLevelMapPathDesign(),
+        style: {
+          ...(component.style ?? {}),
+          backgroundColor: component.style?.backgroundColor ?? "transparent",
+        },
+      };
+    }),
+  };
+
+  if (!findStagePanel(withStageDefaults)) {
+    return withStageDefaults;
+  }
+
+  return applyLevelNodeButtonFormat(
+    withStageDefaults,
+    extractLevelNodeButtonFormatSettings(withStageDefaults),
+  );
+};
+
+const normalizeRoleHomePageConfig = (pageConfig: PageConfig): PageConfig =>
+  normalizeRoleHomeChrome(migrateRoleHomeToLevelMapWidget(pageConfig));
+
+const migrateRoleHomeToLevelMapWidget = (pageConfig: PageConfig): PageConfig => {
+  const widgetComponentId = `${pageConfig.id}.levelMapStage`;
+  const hasLevelMapWidget = pageConfig.components.some(
+    (component) => component.type === "widget" && component.widgetId === "levelMapStage",
+  );
+  const hasLegacyStage = pageConfig.components.some(
+    (component) => component.type === "panel" && component.kind === "stage",
+  );
+  const hasLegacyLevelButtons = pageConfig.components.some((component) =>
+    component.type === "button" && isLevelNodeButtonComponent(component),
+  );
+  const hasLegacyMapViewportRef = pageConfig.components.some(
+    (component) =>
+      component.type === "panel"
+      && component.kind === "container"
+      && component.childComponentIds.some((childId) => childId.endsWith(".mapViewport")),
+  );
+
+  if (hasLevelMapWidget && !hasLegacyStage && !hasLegacyLevelButtons && !hasLegacyMapViewportRef) {
+    return pageConfig;
+  }
+
+  const filteredComponents = pageConfig.components.filter((component) => {
+    if (component.type === "panel" && component.kind === "stage") {
+      return false;
+    }
+
+    if (component.type === "button") {
+      if (component.id.endsWith(".stageSettingsButton") || isLevelNodeButtonComponent(component)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const levelMapWidget: PageComponent = {
+    id: widgetComponentId,
+    type: "widget",
+    widgetId: "levelMapStage",
+    position: LEVEL_MAP_STAGE_WIDGET_POSITION,
+    style: LEVEL_MAP_STAGE_WIDGET_STYLE,
+  };
+
+  const nextComponents = (hasLevelMapWidget
+    ? filteredComponents.map((component) =>
+        component.type === "widget" && component.widgetId === "levelMapStage"
+          ? {
+              ...component,
+              position: LEVEL_MAP_STAGE_WIDGET_POSITION,
+              style: {
+                ...(component.style ?? {}),
+                ...LEVEL_MAP_STAGE_WIDGET_STYLE,
+              },
+            }
+          : component,
+      )
+    : [...filteredComponents, levelMapWidget]);
+
+  return {
+    ...pageConfig,
+    components: nextComponents.map((component) => {
+      if (component.type !== "panel" || component.kind !== "container") {
+        return component;
+      }
+
+      const childComponentIds = component.childComponentIds
+        .filter(
+          (childId) =>
+            !childId.endsWith(".mapViewport")
+            && !childId.endsWith(".stageSettingsButton")
+            && !/\.level\d{2}$/.test(childId),
+        );
+
+      if (!childComponentIds.includes(widgetComponentId)) {
+        childComponentIds.push(widgetComponentId);
+      }
+
+      return {
+        ...component,
+        childComponentIds,
+      };
+    }),
+  };
+};
+
+const normalizeRoleHomeChrome = (pageConfig: PageConfig): PageConfig => ({
+  ...pageConfig,
+  components: pageConfig.components.map((component) => {
+    if (component.type === "panel" && component.kind === "container") {
+      return {
+        ...component,
+        position: {
+          unit: "percent" as const,
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
+        },
+        style: {
+          ...(component.style ?? {}),
+          backgroundColor: "transparent",
+          borderRadius: 0,
+        },
+      };
+    }
+
+    if (component.type === "panel" && component.kind === "stage") {
+      return component;
+    }
+
+    if (
+      component.type === "text"
+      && (component.id.endsWith(".heroTitle") || component.id.endsWith(".heroCopy"))
+    ) {
+      return {
+        ...component,
+        style: {
+          ...(component.style ?? {}),
+          backgroundColor: "transparent",
+          borderRadius: 0,
+        },
+      };
+    }
+
+    return component;
+  }),
+});
+
+export const normalizePageConfig = (pageConfig: PageConfig): PageConfig =>
+  normalizePageSurface(normalizePageComponentIds(pageConfig));
 
 export const normalizePageComponentIds = (pageConfig: PageConfig): PageConfig => {
   const componentById = new Map(pageConfig.components.map((component) => [component.id, component]));

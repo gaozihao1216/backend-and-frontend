@@ -3454,6 +3454,161 @@ fieldset {
   background-size: 32px 32px;
 }
 
+.dynamic-ui-page.layout-stack {
+  display: grid;
+  gap: var(--dynamic-ui-stack-gap, 0.85rem);
+  align-content: start;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  border: none;
+  background: transparent;
+  background-image: none;
+  border-radius: 0;
+  container-type: normal;
+}
+
+.dynamic-ui-page.layout-stack[data-page-id="admin.proposals"] {
+  border: 1px solid rgba(83, 139, 121, 0.14);
+  border-radius: 24px;
+  background: rgba(255, 255, 251, 0.88);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 48px rgba(89, 145, 125, 0.12);
+  padding: 1.5rem;
+  margin-top: 0;
+}
+
+.dynamic-ui-page.layout-stack .dynamic-ui-text,
+.dynamic-ui-page.layout-stack .dynamic-ui-widget,
+.dynamic-ui-page.layout-stack .dynamic-ui-button,
+.dynamic-ui-page.layout-stack .dynamic-ui-panel {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.page-dual-mode-pane-dynamic .dynamic-ui-page[data-page-id$=".home"],
+.page-dual-mode-pane-static .dynamic-ui-page[data-page-id$=".home"] {
+  min-height: 640px;
+  height: auto;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  background-image: none;
+  container-type: size;
+  padding: 0;
+  margin-top: 0;
+}
+
+.page-dual-mode-pane-dynamic .dynamic-ui-page[data-page-id="shared.levelMap"],
+.page-dual-mode-pane-static .dynamic-ui-page[data-page-id="shared.levelMap"] {
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  border: none;
+  background: transparent;
+  background-image: none;
+  border-radius: 0;
+  container-type: normal;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface > .dynamic-ui-panel.kind-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  overflow: visible;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-stage {
+  overflow: visible;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-stage .dynamic-ui-panel-content.role-home-fit {
+  overflow: hidden;
+  height: 100%;
+  min-height: 100%;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-stage .dynamic-ui-panel-content.role-home-fit .dynamic-ui-panel-content-canvas {
+  will-change: transform;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-text {
+  background: transparent !important;
+  box-shadow: none !important;
+  z-index: 12;
+  text-shadow: 0 1px 12px rgba(255, 255, 251, 0.92);
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-container > .dynamic-ui-button {
+  z-index: 12;
+}
+
+.page-dual-mode-pane .dynamic-ui-page.role-home-surface .dynamic-ui-panel.kind-container > .dynamic-ui-widget.shared-level-map-stage-widget {
+  z-index: 1;
+}
+
+.shared-level-map-stage-widget {
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.shared-level-map-stage-widget > .dynamic-ui-page,
+.shared-level-map-stage-widget > .dynamic-ui-page.embedded-level-map-surface,
+.page-dual-mode-pane-dynamic .dynamic-ui-page.embedded-level-map-surface,
+.page-dual-mode-pane-static .dynamic-ui-page.embedded-level-map-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  background: transparent;
+  background-image: none;
+  overflow: hidden;
+  container-type: size;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.shared-level-map-stage-widget .dynamic-ui-page > .dynamic-ui-panel.kind-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.shared-level-map-stage-widget .dynamic-ui-panel.kind-stage .dynamic-ui-panel-content.scrollable {
+  overflow: auto;
+}
+
+.page-dual-mode-pane-dynamic .dynamic-ui-page[data-page-id="shared.levelMap"] > .dynamic-ui-panel,
+.page-dual-mode-pane-static .dynamic-ui-page[data-page-id="shared.levelMap"] > .dynamic-ui-panel {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  min-height: 560px;
+  overflow: visible;
+}
+
 .dynamic-ui-button {
   box-sizing: border-box;
   display: inline-flex;
@@ -3692,6 +3847,43 @@ fieldset {
   border-radius: 999px;
   background: rgba(18, 32, 47, 0.06);
   padding: 0.2rem 0.55rem;
+}
+
+.dynamic-ui-page-static-embed {
+  min-height: auto;
+}
+
+.dynamic-ui-widget {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: visible;
+  z-index: 4;
+}
+
+.admin-proposal-review-widget,
+.admin-review-widget,
+.admin-review-content {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.dynamic-ui-page-static-embed > .panel {
+  margin: 0;
+}
+
+.dynamic-page-host.embedded .dynamic-page-host-canvas,
+.dynamic-page-host-canvas.is-embedded,
+.page-dual-mode-pane-dynamic .dynamic-page-host-canvas {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.dynamic-page-host.embedded .dynamic-page-host-canvas .dynamic-ui-page,
+.dynamic-page-host-canvas.is-embedded .dynamic-ui-page,
+.page-dual-mode-pane-dynamic .dynamic-page-host-canvas .dynamic-ui-page {
+  min-height: 0;
 }
 
 .dynamic-page-host-canvas {

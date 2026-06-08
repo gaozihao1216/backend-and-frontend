@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import type { AuthUser } from "../lib/auth.js";
 import { LEVEL_MAP_PAGE_ID, LEVEL_NODE_DEFINITIONS, getLevelScreenPageId } from "../objects/ui-customization/level-map-structure.js";
-import { RoleHomePage } from "../component/RoleHomePage.js";
-import { StaticLevelMapPreview, StaticLevelScreenPreview } from "../component/static-level-previews.js";
+import { DynamicPageHost } from "./DynamicPageHost.js";
+import { StaticLevelScreenPreview } from "../component/static-level-previews.js";
 import { AdminCommunityPage } from "./AdminCommunityPage.js";
 import { AdminPage } from "./AdminPage.js";
 import { DesignerBirdLabPage } from "./DesignerBirdLabPage.js";
-import { DesignerHomePage } from "./DesignerHomePage.js";
 import { DesignerPortfolioPage } from "./DesignerPortfolioPage.js";
 import { DesignerPage } from "./DesignerPage/index.js";
 import { DirectorBirdSkillLabPage } from "./DirectorBirdSkillLabPage.js";
@@ -122,14 +121,13 @@ const staticPageIds = new Set([
   ...LEVEL_NODE_DEFINITIONS.map((node) => getLevelScreenPageId(node.suffix)),
 ]);
 
-const renderRoleHomePage = (user: AuthUser, context: StaticPageRenderContext) => (
-  <RoleHomePage
-    user={user}
-    onOpenSettings={context.onOpenSettings ?? (() => undefined)}
-    onUserUpdated={context.onUserUpdated ?? (() => undefined)}
+const renderConfigDrivenPage = (pageId: string, context: StaticPageRenderContext) => (
+  <DynamicPageHost
+    pageId={pageId}
+    runtimeUserId={context.user.apiUserId ?? undefined}
     onNavigate={context.onNavigate}
-    {...(context.onOpenDesignerDesign ? { onOpenDesignerDesign: context.onOpenDesignerDesign } : {})}
-    {...(context.onOpenDesignerPortfolio ? { onOpenDesignerPortfolio: context.onOpenDesignerPortfolio } : {})}
+    embedded
+    staticContext={context}
   />
 );
 
@@ -146,7 +144,7 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
   const apiUserId = user.apiUserId;
 
   if (pageId === LEVEL_MAP_PAGE_ID) {
-    return <StaticLevelMapPreview onNavigate={onNavigate} />;
+    return renderConfigDrivenPage(pageId, context);
   }
 
   const levelScreenMatch = pageId.match(/^shared\.level\.(level\d{2})$/);
@@ -156,9 +154,10 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
 
   switch (pageId) {
     case "player.home":
+    case "designer.home":
     case "admin.home":
     case "director.home":
-      return renderRoleHomePage(user, context);
+      return renderConfigDrivenPage(pageId, context);
     case "shared.profile":
       return apiUserId ? (
         <UserProfilePage viewerUserId={apiUserId} profileUserId={apiUserId} />
@@ -179,17 +178,6 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
       ) : unsupportedStaticPage(pageId);
     case "admin.proposals":
       return apiUserId ? <AdminPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
-    case "designer.home":
-      if (pathname === DESIGNER_HOME_PATH) {
-        return (
-          <DesignerHomePage
-            onOpenDesignWindow={() => onNavigate(DESIGNER_DESIGN_PATH)}
-            onOpenPortfolio={() => onNavigate(DESIGNER_PORTFOLIO_PATH)}
-          />
-        );
-      }
-
-      return renderRoleHomePage(user, context);
     case "designer.portfolio":
       return (
         <DesignerPortfolioPage

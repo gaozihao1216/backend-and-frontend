@@ -28,12 +28,16 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
   const nextVisitedComponentIds = new Set(visitedComponentIds);
   nextVisitedComponentIds.add(panel.id);
   const contentSize = panel.contentSize;
+  const stageFitScale = (context.roleHomeSurface || context.fitStageToHost) && contentSize
+    ? Math.min(100 / contentSize.widthPercent, 100 / contentSize.heightPercent)
+    : null;
+  const shouldFitStageToHost = panel.kind === "stage" && stageFitScale != null;
   const childComponents = panel.childComponentIds
     .map((childId) => context.componentMap.get(childId))
     .filter(isRenderableChild)
     .filter((component) => !context.controlledPanelIds.has(component.id) || context.openPanelIds.has(component.id))
     .filter((component) => !nextVisitedComponentIds.has(component.id));
-  const canDragScroll = Boolean(contentSize);
+  const canDragScroll = Boolean(contentSize) && !shouldFitStageToHost;
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!canDragScroll || event.button !== 0) {
@@ -97,7 +101,7 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
     <section
       className={`dynamic-ui-panel no-header kind-${panel.kind ?? "container"} decoration-${panel.decoration?.templateId ?? "plain"} effect-${panel.effect?.templateId ?? "none"} ${floating ? "floating" : ""}`}
       style={{
-        ...getPositionStyle(panel.position),
+        ...getPositionStyle(panel.position, context.layoutType),
         ...getComponentStyle(panel.style),
         ...(panel.decoration?.accentColor
           ? { ["--level-stage-accent" as string]: panel.decoration.accentColor }
@@ -113,7 +117,7 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
       ) : null}
       <div
         ref={scrollContainerRef}
-        className={`dynamic-ui-panel-content ${contentSize ? "scrollable draggable" : ""}`}
+        className={`dynamic-ui-panel-content ${canDragScroll ? "scrollable draggable" : ""}${shouldFitStageToHost ? " role-home-fit" : ""}`.trim()}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={stopDragScroll}
@@ -127,6 +131,12 @@ export const DynamicPanel = ({ panel, context, visitedComponentIds, floating = f
               ? {
                   width: `${contentSize.widthPercent}%`,
                   height: `${contentSize.heightPercent}%`,
+                  ...(shouldFitStageToHost && stageFitScale
+                    ? {
+                        transform: `scale(${stageFitScale})`,
+                        transformOrigin: "top left",
+                      }
+                    : {}),
                 }
               : undefined
           }

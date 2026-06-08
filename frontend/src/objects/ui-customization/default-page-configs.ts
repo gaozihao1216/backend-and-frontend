@@ -1,6 +1,7 @@
 import { PageConfigSchema, type PageConfig, type UiEndpoint } from "./page-config.js";
-import { normalizePageComponentIds } from "./page-config-normalizer.js";
+import { normalizePageConfig } from "./page-config-normalizer.js";
 import { createLevelChainHomeComponents } from "./level-chain-home-structure.js";
+import { createAdminProposalsPageConfig } from "./admin-proposals-structure.js";
 import {
   createAllLevelScreenPageConfigs,
   createLevelMapStageComponents,
@@ -23,6 +24,7 @@ const applyDefaultLevelNodeButtonFormat = (
       path: "",
       roleScope: "player",
       layout: { type: "freeform" },
+      surfaceMode: "composed",
       components,
     },
     getDefaultLevelNodeButtonFormatSettings(),
@@ -42,12 +44,14 @@ const createPageConfig = (
   path: string,
   roleScope: UiEndpoint,
   components: PageConfig["components"] = [],
+  surfaceMode: PageConfig["surfaceMode"] = "composed",
 ): PageConfig => ({
   id,
   name,
   path,
   roleScope,
   layout: { type: "freeform", gap: 12, padding: 24 },
+  surfaceMode,
   components,
 });
 
@@ -173,148 +177,7 @@ export const defaultPageConfigs = [
     ],
   })),
   createPageConfig("admin.community", "社区管理", "/community_hall", "admin"),
-  createPageConfig("admin.proposals", "提案处理", "/admin/proposals", "admin", [
-    {
-      id: "admin.proposals.shell",
-      type: "panel",
-      title: "{{nickname}}的提案处理工作区",
-      position: percentPosition(4, 6, 92, 86),
-      style: {
-        variant: "secondary",
-        backgroundColor: "#fffdfa",
-        borderRadius: 14,
-      },
-      childComponentIds: [
-        "admin.proposals.title",
-        "admin.proposals.refresh",
-        "admin.proposals.pendingPanel",
-        "admin.proposals.detailPanel",
-      ],
-    },
-    {
-      id: "admin.proposals.title",
-      type: "text",
-      text: "{{roleLabel}}预览账号 {{nickname}} 正在查看设计师提交的关卡提案。",
-      position: percentPosition(3, 5, 54, 10),
-      style: {
-        backgroundColor: "#f4f9ff",
-        textColor: "#12385f",
-        borderRadius: 10,
-      },
-    },
-    {
-      id: "admin.proposals.refresh",
-      type: "button",
-      label: "刷新提案",
-      icon: "refresh-cw",
-      position: percentPosition(73, 6, 20, 8),
-      style: {
-        variant: "primary",
-        borderRadius: 10,
-      },
-      action: { type: "none" },
-    },
-    {
-      id: "admin.proposals.pendingPanel",
-      type: "panel",
-      title: "待审核列表",
-      position: percentPosition(3, 20, 42, 72),
-      style: {
-        backgroundColor: "#f7faf5",
-        borderRadius: 12,
-      },
-      childComponentIds: [
-        "admin.proposals.pendingText",
-        "admin.proposals.openDetail",
-      ],
-    },
-    {
-      id: "admin.proposals.pendingText",
-      type: "text",
-      text: "待审核提案将按 {{apiUserId}} 的权限范围加载。这里用于检查真实账号视角下的列表排布。",
-      position: percentPosition(6, 10, 84, 28),
-      style: {
-        backgroundColor: "#ffffff",
-        textColor: "#3e544f",
-        borderRadius: 10,
-      },
-    },
-    {
-      id: "admin.proposals.openDetail",
-      type: "button",
-      label: "打开详情面板",
-      icon: "panel-right-open",
-      position: percentPosition(6, 70, 52, 12),
-      style: {
-        variant: "secondary",
-        borderRadius: 10,
-      },
-      action: { type: "openPanel", panelId: "admin.proposals.detailPanel" },
-    },
-    {
-      id: "admin.proposals.detailPanel",
-      type: "panel",
-      title: "提案详情",
-      position: percentPosition(49, 20, 48, 72),
-      style: {
-        backgroundColor: "#fff8ef",
-        borderRadius: 12,
-      },
-      childComponentIds: [
-        "admin.proposals.detailText",
-        "admin.proposals.reviewPanel",
-      ],
-    },
-    {
-      id: "admin.proposals.detailText",
-      type: "text",
-      text: "{{nickname}} 可以在这里预览提案、填写审核备注，并执行通过或拒绝。",
-      position: percentPosition(5, 8, 88, 18),
-      style: {
-        backgroundColor: "#ffffff",
-        textColor: "#5f4a2e",
-        borderRadius: 10,
-      },
-    },
-    {
-      id: "admin.proposals.reviewPanel",
-      type: "panel",
-      title: "审核操作",
-      position: percentPosition(5, 36, 88, 48),
-      style: {
-        backgroundColor: "#f4f9ff",
-        borderRadius: 12,
-      },
-      childComponentIds: [
-        "admin.proposals.approve",
-        "admin.proposals.reject",
-      ],
-    },
-    {
-      id: "admin.proposals.approve",
-      type: "button",
-      label: "通过",
-      icon: "check",
-      position: percentPosition(8, 22, 34, 18),
-      style: {
-        variant: "primary",
-        borderRadius: 10,
-      },
-      action: { type: "none" },
-    },
-    {
-      id: "admin.proposals.reject",
-      type: "button",
-      label: "拒绝",
-      icon: "x",
-      position: percentPosition(52, 22, 34, 18),
-      style: {
-        variant: "ghost",
-        borderRadius: 10,
-      },
-      action: { type: "none" },
-    },
-  ]),
+  createAdminProposalsPageConfig(),
 
   createPageConfig("director.home", "总监主界面", "/", "director", createLevelChainHomeComponents({
     prefix: "director.home",
@@ -369,4 +232,4 @@ export const defaultPageConfigs = [
 export const DefaultPageConfigsSchema = PageConfigSchema.array();
 
 export const getDefaultPageConfigs = (): PageConfig[] =>
-  DefaultPageConfigsSchema.parse(defaultPageConfigs.map(normalizePageComponentIds));
+  DefaultPageConfigsSchema.parse(defaultPageConfigs.map(normalizePageConfig));

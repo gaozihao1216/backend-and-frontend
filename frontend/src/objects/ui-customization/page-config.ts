@@ -359,13 +359,30 @@ export const ListComponentSchema = z.object({
 });
 export type ListComponent = z.infer<typeof ListComponentSchema>;
 
+export const WidgetIdSchema = z.enum(["adminProposalReview", "levelMapStage"]);
+export type WidgetId = z.infer<typeof WidgetIdSchema>;
+
+export const WidgetComponentSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("widget"),
+  widgetId: WidgetIdSchema,
+  position: ComponentPositionSchema,
+  style: nullishToUndefined(ComponentStyleSchema),
+  binding: nullishToUndefined(ComponentBindingSchema),
+});
+export type WidgetComponent = z.infer<typeof WidgetComponentSchema>;
+
 export const PageComponentSchema = z.discriminatedUnion("type", [
   ButtonComponentSchema,
   PanelComponentSchema,
   TextComponentSchema,
   ListComponentSchema,
+  WidgetComponentSchema,
 ]);
 export type PageComponent = z.infer<typeof PageComponentSchema>;
+
+export const PageSurfaceModeSchema = z.enum(["composed", "staticEmbed"]).default("composed");
+export type PageSurfaceMode = z.infer<typeof PageSurfaceModeSchema>;
 
 export const PageConfigSchema = z.object({
   id: z.string().min(1),
@@ -373,6 +390,7 @@ export const PageConfigSchema = z.object({
   path: z.string().min(1),
   roleScope: UiEndpointSchema,
   layout: PageLayoutSchema,
+  surfaceMode: PageSurfaceModeSchema,
   components: z.array(PageComponentSchema),
 });
 export type PageConfig = z.infer<typeof PageConfigSchema>;

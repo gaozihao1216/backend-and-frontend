@@ -1,5 +1,6 @@
-import { getPageConfig, savePageConfig } from "./ui-customization.js";
-import { LEVEL_STAGE_BACKGROUND_PAGE_IDS } from "./level-stage-background.js";
+import { getPageConfig } from "./ui-customization.js";
+import { saveSharedLevelMapPage } from "./shared-level-map-persistence.js";
+import { LEVEL_MAP_PAGE_ID } from "../objects/ui-customization/level-map-structure.js";
 import {
   getLevelSuffixFromNodeButton,
   isLevelNodeButtonComponent,
@@ -60,16 +61,10 @@ export const updateLevelNodeButtonPositionInPage = (
 });
 
 export const syncLevelNodeButtonLayout = (layouts: LevelNodeButtonLayoutMap): PageConfig[] => {
-  const savedConfigs: PageConfig[] = [];
+  const pageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);
+  if (!pageConfig) {
+    return [];
+  }
 
-  LEVEL_STAGE_BACKGROUND_PAGE_IDS.forEach((pageId) => {
-    const pageConfig = getPageConfig(pageId);
-    if (!pageConfig) {
-      return;
-    }
-
-    savedConfigs.push(savePageConfig(applyLevelNodeButtonLayouts(pageConfig, layouts)));
-  });
-
-  return savedConfigs;
+  return [saveSharedLevelMapPage(applyLevelNodeButtonLayouts(pageConfig, layouts))];
 };

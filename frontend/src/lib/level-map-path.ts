@@ -1,4 +1,5 @@
-import { getPageConfig, savePageConfig } from "./ui-customization.js";
+import { getPageConfig } from "./ui-customization.js";
+import { saveSharedLevelMapPage } from "./shared-level-map-persistence.js";
 import {
   getLevelSuffixFromNodeButton,
   isLevelNodeButtonComponent,
@@ -161,27 +162,13 @@ export const getLevelMapPathDesignFromStore = (): LevelMapPathDesign => {
   return getStagePanelPathDesign(pageConfig);
 };
 
-const LEVEL_MAP_SYNC_PAGE_IDS = [
-  LEVEL_MAP_PAGE_ID,
-  "player.home",
-  "designer.home",
-  "admin.home",
-  "director.home",
-] as const;
-
 export const syncLevelMapPathDesign = (pathDesign: LevelMapPathDesign): PageConfig[] => {
-  const savedConfigs: PageConfig[] = [];
+  const pageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);
+  if (!pageConfig) {
+    return [];
+  }
 
-  LEVEL_MAP_SYNC_PAGE_IDS.forEach((pageId) => {
-    const pageConfig = getPageConfig(pageId);
-    if (!pageConfig) {
-      return;
-    }
-
-    savedConfigs.push(savePageConfig(applyLevelMapPathDesign(pageConfig, pathDesign)));
-  });
-
-  return savedConfigs;
+  return [saveSharedLevelMapPage(applyLevelMapPathDesign(pageConfig, pathDesign))];
 };
 
 export const getLevelNodeAnchorPoint = (position: ComponentPosition): LevelMapPathPoint => ({

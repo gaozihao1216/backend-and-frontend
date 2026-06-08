@@ -5,18 +5,37 @@ import {
   type PanelDecoration,
   type UiEndpoint,
 } from "../objects/ui-customization/ui-customization-objects.js";
-import { normalizePageComponentIds } from "../objects/ui-customization/page-config-normalizer.js";
+import { normalizePageConfig } from "../objects/ui-customization/page-config-normalizer.js";
+import { LEVEL_MAP_PAGE_ID } from "../objects/ui-customization/level-map-structure.js";
+import { ROLE_LEVEL_MAP_SYNC_PAGE_IDS } from "./level-map-sync.js";
 import { sanitizePageConfigLevelNodeButtons } from "./level-node-button-format.js";
 import { saveVisualAsset } from "./ui-visual-asset-store.js";
 
 const UI_PAGE_CONFIG_STORAGE_KEY = "ugc-level-platform.ui-page-configs.v1";
+
+let pageConfigRevision = 0;
+const pageConfigListeners = new Set<() => void>();
+
+const notifyPageConfigListeners = () => {
+  pageConfigRevision += 1;
+  pageConfigListeners.forEach((listener) => listener());
+};
+
+export const subscribePageConfigStore = (listener: () => void) => {
+  pageConfigListeners.add(listener);
+  return () => {
+    pageConfigListeners.delete(listener);
+  };
+};
+
+export const getPageConfigRevision = () => pageConfigRevision;
 
 const canUseStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
 const parsePageConfigs = (value: unknown): PageConfig[] =>
   PageConfigSchema.array()
     .parse(value)
-    .map(normalizePageComponentIds)
+    .map(normalizePageConfig)
     .map(sanitizePageConfigLevelNodeButtons);
 
 const getStoredPageConfigs = (): PageConfig[] => {
@@ -108,6 +127,57 @@ export const compactStoredPageConfigVisualAssets = async (): Promise<boolean> =>
   return true;
 };
 
+export const compactStoredRoleHomePageConfigs = (): boolean => {
+  if (!canUseStorage()) {
+    return false;
+  }
+
+  const raw = window.localStorage.getItem(UI_PAGE_CONFIG_STORAGE_KEY);
+  if (!raw) {
+    return false;
+  }
+
+  let parsedConfigs: PageConfig[];
+  try {
+    parsedConfigs = PageConfigSchema.array().parse(JSON.parse(raw) as unknown);
+  } catch {
+    return false;
+  }
+
+  const pageIdsToCompact = new Set<string>([
+    LEVEL_MAP_PAGE_ID,
+    ...ROLE_LEVEL_MAP_SYNC_PAGE_IDS,
+  ]);
+
+  let changed = false;
+  const nextConfigs = parsedConfigs.map((config) => {
+    if (!pageIdsToCompact.has(config.id)) {
+      return config;
+    }
+
+    const normalized = PageConfigSchema.parse(normalizePageConfig(config));
+    if (JSON.stringify(config) !== JSON.stringify(normalized)) {
+      changed = true;
+      return normalized;
+    }
+
+    return config;
+  });
+
+  if (!changed) {
+    return false;
+  }
+
+  try {
+    persistStoredPageConfigs(nextConfigs.map((config) => sanitizePageConfigLevelNodeButtons(normalizePageConfig(config))));
+  } catch {
+    return false;
+  }
+
+  notifyPageConfigListeners();
+  return true;
+};
+
 const mergePageConfigs = (baseConfigs: PageConfig[], overrideConfigs: PageConfig[]) => {
   const mergedById = new Map(baseConfigs.map((config) => [config.id, config]));
 
@@ -121,6 +191,9 @@ const mergePageConfigs = (baseConfigs: PageConfig[], overrideConfigs: PageConfig
 export const listPageConfigs = (): PageConfig[] =>
   mergePageConfigs(getDefaultPageConfigs(), getStoredPageConfigs());
 
+export const getRawPageConfig = (pageId: string): PageConfig | null =>
+  listPageConfigs().find((config) => config.id === pageId) ?? null;
+
 export const listPageConfigsByEndpoint = (endpoint: UiEndpoint): PageConfig[] =>
   listPageConfigs().filter((config) => config.roleScope === endpoint);
 
@@ -131,7 +204,7 @@ export const getDefaultPageConfig = (pageId: string): PageConfig | null =>
   getDefaultPageConfigs().find((config) => config.id === pageId) ?? null;
 
 export const savePageConfig = (config: PageConfig): PageConfig => {
-  const parsedConfig = PageConfigSchema.parse(normalizePageComponentIds(config));
+  const parsedConfig = PageConfigSchema.parse(normalizePageConfig(config));
   const storedConfigs = getStoredPageConfigs();
   const nextStoredConfigs = [
     ...storedConfigs.filter((candidate) => candidate.id !== parsedConfig.id),
@@ -148,5 +221,6 @@ export const savePageConfig = (config: PageConfig): PageConfig => {
     throw new Error("本地存储空间不足，无法保存页面配置。请先清理浏览器站点数据后重试。");
   }
 
+  notifyPageConfigListeners();
   return parsedConfig;
 };

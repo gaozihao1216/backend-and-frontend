@@ -8,6 +8,7 @@ type PageDisplayModeBarProps = {
   staticAvailable: boolean;
   dynamicAvailable: boolean;
   componentCount?: number | undefined;
+  surfaceHint?: string | undefined;
   onModeChange: (mode: PageDisplayMode) => void;
 };
 
@@ -18,6 +19,7 @@ export const PageDisplayModeBar = ({
   staticAvailable,
   dynamicAvailable,
   componentCount,
+  surfaceHint,
   onModeChange,
 }: PageDisplayModeBarProps) => (
   <section className="page-display-mode-bar panel">
@@ -29,6 +31,7 @@ export const PageDisplayModeBar = ({
       </p>
       <div className="page-display-mode-bar-meta">
         <code>{pageId}</code>
+        {surfaceHint ? <span>{surfaceHint}</span> : null}
         {componentCount !== undefined ? (
           <span>{componentCount} 个动态组件</span>
         ) : null}
