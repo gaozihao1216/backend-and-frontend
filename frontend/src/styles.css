@@ -2228,11 +2228,40 @@ fieldset {
   }
 }
 
+.director-bird-skill-lab-page {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.director-bird-skill-lab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.director-bird-skill-lab-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
 .director-bird-skill-lab-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
+  align-items: start;
+}
+
+.director-bird-skill-section-head {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.director-bird-skill-section-head h3 {
+  margin: 0;
 }
 
 .director-bird-skill-list-items {
@@ -2243,7 +2272,7 @@ fieldset {
 
 .director-bird-skill-list-item {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.35rem;
   text-align: left;
   padding: 0.75rem 0.85rem;
   border-radius: 14px;
@@ -2258,8 +2287,23 @@ fieldset {
   font-weight: 600;
 }
 
-.director-bird-skill-list-item .meta {
+.director-bird-skill-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
   color: #475569;
+  font-size: 0.82rem;
+}
+
+.director-bird-skill-list-meta .is-configured {
+  color: #166534;
+  font-weight: 600;
+}
+
+.director-bird-skill-list-meta .is-pending {
+  color: #b45309;
+  font-weight: 600;
 }
 
 .director-bird-skill-list-item.active {
@@ -2270,6 +2314,12 @@ fieldset {
 
 .director-bird-skill-list-item.active .director-bird-skill-list-name {
   color: #1e3a8a;
+}
+
+.director-bird-skill-empty {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
 }
 
 .bird-skill-scratch-editor {
@@ -2284,15 +2334,46 @@ fieldset {
   align-items: flex-start;
 }
 
-.bird-skill-scratch-layout {
+.bird-skill-scratch-overview {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 300px);
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
   gap: 1rem;
+  align-items: start;
+}
+
+.bird-skill-scratch-overview h4,
+.bird-skill-workspace-head h4,
+.bird-skill-palette-head h4 {
+  margin: 0;
+}
+
+.bird-skill-scratch-overview-model,
+.bird-skill-scratch-overview-reference {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.bird-skill-scratch-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.bird-skill-workspace-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .bird-skill-scratch-reference,
 .bird-skill-scratch-workspace,
 .bird-skill-scratch-palette,
+.bird-skill-scratch-overview,
 .director-bird-skill-list,
 .director-bird-skill-editor-pane .bird-skill-scratch-editor {
   background: #fff;
@@ -2301,16 +2382,32 @@ fieldset {
   padding: 1rem;
 }
 
+.bird-skill-palette-head {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+
 .bird-skill-reference-list {
   display: grid;
   gap: 0.55rem;
-  padding-left: 1rem;
-  margin: 0.75rem 0 1rem;
+  padding-left: 0;
+  margin: 0;
+  list-style: none;
 }
 
 .bird-skill-reference-list li {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.bird-skill-reference-list li.active {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(219, 234, 254, 0.45);
 }
 
 .bird-skill-model-preview {
@@ -2526,7 +2623,8 @@ fieldset {
 
 @media (max-width: 1180px) {
   .director-bird-skill-lab-layout,
-  .bird-skill-scratch-layout {
+  .bird-skill-scratch-overview,
+  .bird-skill-scratch-main {
     grid-template-columns: 1fr;
   }
 
@@ -5409,6 +5507,8 @@ fieldset {
     linear-gradient(90deg, rgba(18, 32, 47, 0.035) 1px, transparent 1px),
     #f7faf5;
   background-size: 32px 32px;
+  user-select: none;
+  touch-action: none;
 }
 
 .page-builder-preview-node {
@@ -5430,6 +5530,7 @@ fieldset {
   text-overflow: ellipsis;
   box-shadow: none;
   z-index: 5;
+  user-select: none;
 }
 
 .page-builder-preview-button > span:not(.dynamic-ui-button-icon) {
@@ -5463,6 +5564,7 @@ fieldset {
   background: rgba(255, 255, 255, 0.72);
   padding: 0.5rem;
   color: #344944;
+  user-select: none;
 }
 
 .page-builder-preview-text.is-art-text {
@@ -5486,7 +5588,12 @@ fieldset {
 .page-builder-preview-text.editing {
   cursor: text;
   user-select: text;
+  touch-action: auto;
   outline: none;
+}
+
+.page-builder-preview-text.editing .page-builder-preview-text-content {
+  user-select: text;
 }
 
 .page-builder-preview-panel {
@@ -6640,6 +6747,46 @@ fieldset {
   padding-top: 0.85rem;
 }
 
+.panel-create-selected-editor-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.panel-create-selected-editor-header h3 {
+  margin: 0;
+}
+
+.panel-create-selected-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.panel-create-preview-subpanel {
+  position: relative;
+}
+
+.panel-create-preview-subpanel-actions {
+  position: absolute;
+  top: auto;
+  bottom: 0.35rem;
+  left: 0.35rem;
+  right: auto;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.panel-create-preview-subpanel-actions button {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.78rem;
+}
+
 .panel-create-position-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -7431,6 +7578,7 @@ fieldset {
 .settings-backdrop {
   position: fixed;
   inset: 0;
+  z-index: 1200;
   display: flex;
   justify-content: flex-end;
   background: rgba(18, 32, 47, 0.36);
@@ -8133,6 +8281,14 @@ textarea {
   .admin-bird-review-layout {
     grid-template-columns: 1fr;
   }
+
+  .designer-bird-lab-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .designer-bird-stat-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 .designer-bird-tabs,
@@ -8141,6 +8297,11 @@ textarea {
   flex-wrap: wrap;
   gap: 0.65rem;
   margin: 1rem 0;
+}
+
+.designer-bird-lab-page {
+  display: grid;
+  gap: 0.25rem;
 }
 
 .designer-bird-lab-header {
@@ -8163,8 +8324,60 @@ textarea {
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
-.designer-bird-editor-grid {
-  margin-top: 1rem;
+.designer-bird-lab-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+.designer-bird-form-card,
+.designer-bird-list-card {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.designer-bird-list-card-full {
+  margin-top: 0.5rem;
+}
+
+.designer-bird-section-head {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.designer-bird-section-head h3,
+.designer-bird-section-head h4 {
+  margin: 0;
+}
+
+.designer-bird-form-section {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(18, 32, 47, 0.08);
+}
+
+.designer-bird-form-section:first-of-type {
+  padding-top: 0;
+  border-top: none;
+}
+
+.designer-bird-form-section h4 {
+  margin: 0;
+  color: #446154;
+  font-size: 0.92rem;
+}
+
+.designer-bird-stat-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.designer-bird-card-grid {
+  display: grid;
+  gap: 0.85rem;
 }
 
 .designer-bird-form-actions,
@@ -8174,7 +8387,28 @@ textarea {
   gap: 0.65rem;
 }
 
-.designer-bird-card-layout,
+.designer-bird-card-layout {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.designer-bird-card-body {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.designer-bird-card-layout img,
+.admin-bird-review-layout img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.95);
+}
+
 .admin-bird-review-layout {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
@@ -8182,16 +8416,12 @@ textarea {
   align-items: start;
 }
 
-.designer-bird-card-layout img,
 .admin-bird-review-layout img {
   width: 120px;
   height: 120px;
-  object-fit: contain;
-  border-radius: 16px;
-  background: rgba(248, 250, 252, 0.95);
 }
 
 .designer-bird-tier-list {
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding-left: 1.1rem;
 }

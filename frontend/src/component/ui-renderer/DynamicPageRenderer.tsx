@@ -12,6 +12,8 @@ export const DynamicPageRenderer = ({
   previewUiData,
   onNavigate,
   fitStageToHost,
+  onOpenSettings,
+  onLogout,
   levelMapLayoutEdit,
   levelMapPathEdit,
 }: DynamicPageRendererProps) => {
@@ -67,6 +69,8 @@ export const DynamicPageRenderer = ({
         next.delete(panelId);
         return next;
       }),
+    ...(onOpenSettings ? { onOpenSettings } : {}),
+    ...(onLogout ? { onLogout } : {}),
   };
 
   return (

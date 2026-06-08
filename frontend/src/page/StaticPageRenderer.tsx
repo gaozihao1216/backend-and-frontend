@@ -45,6 +45,7 @@ export type StaticPageRenderContext = {
   onNavigate: (path: string) => void;
   onOpenSettings?: () => void;
   onUserUpdated?: (user: AuthUser) => void;
+  onLogout?: () => void;
   onOpenDesignerDesign?: () => void;
   onOpenDesignerPortfolio?: () => void;
 };

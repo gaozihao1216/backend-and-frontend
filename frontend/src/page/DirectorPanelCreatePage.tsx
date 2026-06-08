@@ -143,6 +143,16 @@ const escapeSelectorValue = (value: string) =>
     ? CSS.escape(value)
     : value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 
+const isPanelCreateCanvasInteractiveTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest("button, input, select, textarea, a, label, .panel-create-preview-subpanel-actions"),
+  );
+};
+
 const getPanelCreateResizeTarget = (
   root: HTMLElement,
   point: { x: number; y: number },
@@ -892,6 +902,72 @@ export const DirectorPanelCreatePage = ({
     setSelectedChildDraftId(id);
   };
 
+  const removeChildDraft = (childId: string) => {
+    setPanelChildDrafts((current) => {
+      const next = current.filter((draft) => draft.id !== childId);
+      setSelectedChildDraftId((selectedId) => {
+        if (selectedId !== childId) {
+          return selectedId;
+        }
+        return next[0]?.id ?? "";
+      });
+      return next;
+    });
+  };
+
+  const moveChildDraft = (childId: string, direction: -1 | 1) => {
+    setPanelChildDrafts((current) => {
+      const index = current.findIndex((draft) => draft.id === childId);
+      if (index < 0) {
+        return current;
+      }
+
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      const [movedDraft] = next.splice(index, 1);
+      if (!movedDraft) {
+        return current;
+      }
+
+      next.splice(targetIndex, 0, movedDraft);
+      return next;
+    });
+  };
+
+  const duplicateSubPanelDraft = (childId: string) => {
+    const sourceDraft = panelChildDrafts.find(
+      (draft): draft is Extract<PanelChildDraft, { type: "subPanel" }> =>
+        draft.id === childId && draft.type === "subPanel",
+    );
+    if (!sourceDraft) {
+      return;
+    }
+
+    const id = createChildDraftId("subPanel");
+    setPanelChildDrafts((current) => [
+      ...current,
+      {
+        ...sourceDraft,
+        id,
+        title: `${sourceDraft.title} 副本`,
+        position: {
+          ...sourceDraft.position,
+          x: Math.min(92, sourceDraft.position.x + 4),
+          y: Math.min(92, sourceDraft.position.y + 4),
+        },
+      },
+    ]);
+    setSelectedChildDraftId(id);
+  };
+
+  const selectedChildDraftIndex = selectedChildDraft
+    ? panelChildDrafts.findIndex((draft) => draft.id === selectedChildDraft.id)
+    : -1;
+
   const updateButtonStateDraft = (
     childId: string,
     stateId: string,
@@ -1222,6 +1298,10 @@ export const DirectorPanelCreatePage = ({
 
   const handleBeautyPreviewPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) {
+      return;
+    }
+
+    if (isPanelCreateCanvasInteractiveTarget(event.target)) {
       return;
     }
 
@@ -1827,7 +1907,46 @@ export const DirectorPanelCreatePage = ({
 
                 {selectedChildDraft ? (
                   <section className="panel-create-selected-editor">
-                    <h3>选中对象</h3>
+                    <div className="panel-create-selected-editor-header">
+                      <h3>选中对象</h3>
+                      <div className="panel-create-selected-actions">
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={selectedChildDraftIndex <= 0}
+                          onClick={() => moveChildDraft(selectedChildDraft.id, -1)}
+                        >
+                          上移
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={
+                            selectedChildDraftIndex < 0
+                            || selectedChildDraftIndex >= panelChildDrafts.length - 1
+                          }
+                          onClick={() => moveChildDraft(selectedChildDraft.id, 1)}
+                        >
+                          下移
+                        </button>
+                        {selectedChildDraft.type === "subPanel" ? (
+                          <button
+                            type="button"
+                            className="secondary"
+                            onClick={() => duplicateSubPanelDraft(selectedChildDraft.id)}
+                          >
+                            复制
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => removeChildDraft(selectedChildDraft.id)}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </div>
                     <div className="panel-create-position-grid">
                       {(["x", "y", "width", "height"] as const).map((field) => (
                         <label key={field}>
@@ -2119,7 +2238,38 @@ export const DirectorPanelCreatePage = ({
                             >
                               {renderPanelBackgroundLayer(draft.decoration)}
                               {draft.title}
-                              {selected ? <PanelCreateChildOutline childId={draft.id} /> : null}
+                              {selected ? (
+                                <>
+                                  <PanelCreateChildOutline childId={draft.id} />
+                                  <div
+                                    className="panel-create-preview-subpanel-actions"
+                                    onPointerDown={(event) => {
+                                      event.stopPropagation();
+                                    }}
+                                  >
+                                    <button
+                                      type="button"
+                                      className="secondary"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        duplicateSubPanelDraft(draft.id);
+                                      }}
+                                    >
+                                      复制
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="secondary"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        removeChildDraft(draft.id);
+                                      }}
+                                    >
+                                      删除
+                                    </button>
+                                  </div>
+                                </>
+                              ) : null}
                             </div>
                           );
                         }

@@ -93,7 +93,7 @@ export const createLevelChainHomeComponents = ({
         variant: "secondary",
         borderRadius: 10,
       },
-      action: { type: "none" },
+      action: { type: "openSettings" },
     },
     {
       id: componentId("levelMapStage"),

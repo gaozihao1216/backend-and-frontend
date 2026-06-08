@@ -115,6 +115,8 @@ export const DynamicPageHost = ({
         previewUser={previewUser ?? undefined}
         runtimeUserId={runtimeUserId}
         onNavigate={onNavigate}
+        {...(staticContext?.onOpenSettings ? { onOpenSettings: staticContext.onOpenSettings } : {})}
+        {...(staticContext?.onLogout ? { onLogout: staticContext.onLogout } : {})}
       />
     </div>
   );

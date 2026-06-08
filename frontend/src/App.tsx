@@ -115,6 +115,10 @@ export const App = () => {
       search={search}
       onNavigate={navigate}
       onOpenSettings={() => setSettingsOpen(true)}
+      onLogout={() => {
+        setSettingsOpen(false);
+        setCurrentUser(null);
+      }}
       onUserUpdated={setCurrentUser}
       onOpenDesignerDesign={() => navigate(DESIGNER_DESIGN_PATH)}
       onOpenDesignerPortfolio={() => navigate(DESIGNER_PORTFOLIO_PATH)}

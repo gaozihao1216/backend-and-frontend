@@ -157,7 +157,8 @@ export const DesignerBirdLabPage = ({ userId, onBack }: DesignerBirdLabPageProps
     <section className="panel designer-bird-lab-page">
       <div className="feature-header designer-bird-lab-header">
         <div>
-          <h2>鸟类开发</h2>
+          <p className="eyebrow">Bird Lab</p>
+          <h2>鸟类开发实验室</h2>
           <p className="panel-copy">设计新鸟种的基础数值与三阶技能，提交后由管理员审核发布。</p>
         </div>
         <div className="designer-bird-lab-header-actions">
@@ -171,11 +172,13 @@ export const DesignerBirdLabPage = ({ userId, onBack }: DesignerBirdLabPageProps
       {error ? <p className="feedback error">{error}</p> : null}
       {notice ? <p className="feedback success">{notice}</p> : null}
 
-      <div className="designer-bird-tabs">
+      <div className="designer-bird-tabs" role="tablist" aria-label="鸟类设计状态">
         {(Object.keys(tabLabels) as PortfolioTab[]).map((tab) => (
           <button
             key={tab}
             type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
             className={activeTab === tab ? "secondary is-active" : "secondary"}
             onClick={() => setActiveTab(tab)}
           >
@@ -185,45 +188,65 @@ export const DesignerBirdLabPage = ({ userId, onBack }: DesignerBirdLabPageProps
       </div>
 
       {(activeTab === "draft" || activeTab === "rejected") ? (
-        <div className="feature-grid designer-bird-editor-grid">
-          <section className="feature-card">
-            <h3>{editingId ? "编辑鸟类设计" : "新建鸟类设计"}</h3>
-            <label>
-              <span>名称</span>
-              <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-            </label>
-            <label>
-              <span>简介</span>
-              <textarea rows={3} value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} />
-            </label>
-            <label>
-              <span>技能名称</span>
-              <input value={form.skillName} onChange={(event) => setForm((current) => ({ ...current, skillName: event.target.value }))} />
-            </label>
-            <div className="feature-inline-fields">
+        <div className="designer-bird-lab-layout">
+          <section className="feature-card designer-bird-form-card">
+            <div className="designer-bird-section-head">
+              <h3>{editingId ? "编辑鸟类设计" : "新建鸟类设计"}</h3>
+              <p className="meta">填写基础信息、战斗数值与三阶技能描述。</p>
+            </div>
+
+            <div className="designer-bird-form-section">
+              <h4>基础信息</h4>
               <label>
-                <span>攻击</span>
-                <input type="number" value={form.attack} onChange={(event) => setForm((current) => ({ ...current, attack: Number(event.target.value) }))} />
+                <span>名称</span>
+                <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
               </label>
               <label>
-                <span>冲击</span>
-                <input type="number" value={form.impact} onChange={(event) => setForm((current) => ({ ...current, impact: Number(event.target.value) }))} />
+                <span>简介</span>
+                <textarea rows={3} value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} />
               </label>
               <label>
-                <span>速度</span>
-                <input type="number" value={form.speed} onChange={(event) => setForm((current) => ({ ...current, speed: Number(event.target.value) }))} />
+                <span>技能名称</span>
+                <input value={form.skillName} onChange={(event) => setForm((current) => ({ ...current, skillName: event.target.value }))} />
               </label>
             </div>
-            {form.tierSkills.map((skill, index) => (
-              <label key={index}>
-                <span>{index + 1} 阶技能</span>
-                <textarea rows={2} value={skill} onChange={(event) => updateTierSkill(index, event.target.value)} />
+
+            <div className="designer-bird-form-section">
+              <h4>战斗数值</h4>
+              <div className="feature-inline-fields designer-bird-stat-fields">
+                <label>
+                  <span>攻击</span>
+                  <input type="number" value={form.attack} onChange={(event) => setForm((current) => ({ ...current, attack: Number(event.target.value) }))} />
+                </label>
+                <label>
+                  <span>冲击</span>
+                  <input type="number" value={form.impact} onChange={(event) => setForm((current) => ({ ...current, impact: Number(event.target.value) }))} />
+                </label>
+                <label>
+                  <span>速度</span>
+                  <input type="number" value={form.speed} onChange={(event) => setForm((current) => ({ ...current, speed: Number(event.target.value) }))} />
+                </label>
+              </div>
+            </div>
+
+            <div className="designer-bird-form-section">
+              <h4>三阶技能</h4>
+              {form.tierSkills.map((skill, index) => (
+                <label key={index}>
+                  <span>{index + 1} 阶技能</span>
+                  <textarea rows={2} value={skill} onChange={(event) => updateTierSkill(index, event.target.value)} />
+                </label>
+              ))}
+            </div>
+
+            <div className="designer-bird-form-section">
+              <h4>机制标签</h4>
+              <label>
+                <span>标签（逗号分隔）</span>
+                <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} onBlur={applyTags} />
               </label>
-            ))}
-            <label>
-              <span>机制标签（逗号分隔）</span>
-              <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} onBlur={applyTags} />
-            </label>
+            </div>
+
             <div className="designer-bird-form-actions">
               <button type="button" onClick={() => void handleSave()}>
                 {editingId ? "保存修改" : "保存草稿"}
@@ -236,16 +259,19 @@ export const DesignerBirdLabPage = ({ userId, onBack }: DesignerBirdLabPageProps
             </div>
           </section>
 
-          <section className="feature-card">
-            <h3>{tabLabels[activeTab]}</h3>
+          <section className="feature-card designer-bird-list-card">
+            <div className="designer-bird-section-head">
+              <h3>{tabLabels[activeTab]}</h3>
+              <p className="meta">从列表中选择草稿继续编辑，或提交审核。</p>
+            </div>
             {loading ? <p className="panel-copy">加载中…</p> : null}
             {!loading && designs.length === 0 ? <p className="panel-copy">暂无内容。</p> : null}
-            <div className="feature-stack">
+            <div className="designer-bird-card-grid">
               {designs.map((design) => (
                 <article key={design.id} className="mini-card designer-bird-card">
                   <div className="designer-bird-card-layout">
                     <img src={design.previewImageUrl} alt={design.name} />
-                    <div>
+                    <div className="designer-bird-card-body">
                       <div className="mini-card-header">
                         <strong>{design.name}</strong>
                         <span>{design.skillName}</span>
@@ -287,16 +313,18 @@ export const DesignerBirdLabPage = ({ userId, onBack }: DesignerBirdLabPageProps
           </section>
         </div>
       ) : (
-        <section className="feature-card">
-          <h3>{tabLabels[activeTab]}</h3>
+        <section className="feature-card designer-bird-list-card designer-bird-list-card-full">
+          <div className="designer-bird-section-head">
+            <h3>{tabLabels[activeTab]}</h3>
+          </div>
           {loading ? <p className="panel-copy">加载中…</p> : null}
           {!loading && designs.length === 0 ? <p className="panel-copy">暂无内容。</p> : null}
-          <div className="feature-stack">
+          <div className="designer-bird-card-grid">
             {designs.map((design) => (
               <article key={design.id} className="mini-card designer-bird-card">
                 <div className="designer-bird-card-layout">
                   <img src={design.previewImageUrl} alt={design.name} />
-                  <div>
+                  <div className="designer-bird-card-body">
                     <div className="mini-card-header">
                       <strong>{design.name}</strong>
                       <span>{design.status}</span>

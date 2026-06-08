@@ -63,7 +63,13 @@ export const SettingsPanel = ({
             {createdAtLabel}
           </p>
         </div>
-        <button type="button" onClick={onLogout}>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onLogout();
+          }}
+        >
           退出登录
         </button>
       </aside>

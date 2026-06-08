@@ -86,6 +86,12 @@ export const DynamicButton = ({ button, context }: DynamicButtonProps) => {
       case "closePanel":
         context.onClosePanel(button.action.panelId ?? "");
         return;
+      case "openSettings":
+        context.onOpenSettings?.();
+        return;
+      case "logout":
+        context.onLogout?.();
+        return;
       case "apiAction":
         void context.uiRuntime?.invokeUiAction(
           button.action.apiKey,

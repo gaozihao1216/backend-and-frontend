@@ -119,14 +119,16 @@ export const DirectorBirdSkillLabPage = ({ userId, onBack }: DirectorBirdSkillLa
 
   return (
     <section className="panel director-bird-skill-lab-page">
-      <div className="feature-header">
+      <div className="feature-header director-bird-skill-lab-header">
         <div>
+          <p className="eyebrow">Bird Skill Lab</p>
           <h2>鸟类技能实验室</h2>
           <p className="panel-copy">
             将设计师文案落实为可运行的点击技能，并为小鸟配置建模图。系统鸟与设计师鸟使用同一套积木模板。
           </p>
         </div>
-        <div className="actions">
+        <div className="director-bird-skill-lab-header-actions">
+          <div className="feature-pill">技能配置</div>
           <button type="button" className="secondary" onClick={onBack}>
             返回工作台
           </button>
@@ -139,7 +141,10 @@ export const DirectorBirdSkillLabPage = ({ userId, onBack }: DirectorBirdSkillLa
 
       <div className="director-bird-skill-lab-layout">
         <aside className="feature-card director-bird-skill-list">
-          <h3>鸟类列表</h3>
+          <div className="director-bird-skill-section-head">
+            <h3>鸟类列表</h3>
+            <p className="meta">选择一只鸟开始配置技能积木与建模图。</p>
+          </div>
           <div className="director-bird-skill-list-items">
             {birds.map((bird) => (
               <button
@@ -149,9 +154,11 @@ export const DirectorBirdSkillLabPage = ({ userId, onBack }: DirectorBirdSkillLa
                 onClick={() => setSelectedBirdType(bird.birdType)}
               >
                 <span className="director-bird-skill-list-name">{bird.name}</span>
-                <span className="meta">
-                  {bird.source === "designer" ? "设计师" : "系统"}
-                  {bird.configured ? " · 已配置" : " · 未配置"}
+                <span className="director-bird-skill-list-meta">
+                  <span>{bird.source === "designer" ? "设计师" : "系统"}</span>
+                  <span className={bird.configured ? "is-configured" : "is-pending"}>
+                    {bird.configured ? "已配置" : "未配置"}
+                  </span>
                 </span>
               </button>
             ))}
@@ -170,7 +177,7 @@ export const DirectorBirdSkillLabPage = ({ userId, onBack }: DirectorBirdSkillLa
               saving={saving}
             />
           ) : (
-            <section className="feature-card">
+            <section className="feature-card director-bird-skill-empty">
               <p className="panel-copy">请选择一只鸟开始配置技能。</p>
             </section>
           )}

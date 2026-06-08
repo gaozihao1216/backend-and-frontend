@@ -140,8 +140,33 @@ const normalizeSharedLevelMapPageConfig = (pageConfig: PageConfig): PageConfig =
   );
 };
 
+const normalizeRoleHomeActionButtons = (pageConfig: PageConfig): PageConfig => ({
+  ...pageConfig,
+  components: pageConfig.components.map((component) => {
+    if (component.type !== "button") {
+      return component;
+    }
+
+    if (component.id.endsWith(".settingsButton") && component.action.type === "none") {
+      return {
+        ...component,
+        action: { type: "openSettings" },
+      };
+    }
+
+    if (component.label === "退出登录" && component.action.type === "none") {
+      return {
+        ...component,
+        action: { type: "logout" },
+      };
+    }
+
+    return component;
+  }),
+});
+
 const normalizeRoleHomePageConfig = (pageConfig: PageConfig): PageConfig =>
-  normalizeRoleHomeChrome(migrateRoleHomeToLevelMapWidget(pageConfig));
+  normalizeRoleHomeChrome(migrateRoleHomeToLevelMapWidget(normalizeRoleHomeActionButtons(pageConfig)));
 
 const isLegacyRoleHomeLevelMapComponent = (component: PageComponent): boolean => {
   if (component.type === "panel") {

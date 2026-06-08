@@ -85,19 +85,8 @@ export const BirdSkillScratchEditor = ({
         </div>
       </header>
 
-      <div className="bird-skill-scratch-layout">
-        <aside className="bird-skill-scratch-reference">
-          <h4>设计师文案参考</h4>
-          <p className="meta">技能名：{entry.skillName}</p>
-          <ol className="bird-skill-reference-list">
-            {entry.tierSkillDescriptions.map((text, index) => (
-              <li key={index}>
-                <strong>{index + 1} 阶</strong>
-                <span>{text}</span>
-              </li>
-            ))}
-          </ol>
-
+      <section className="feature-card bird-skill-scratch-overview">
+        <div className="bird-skill-scratch-overview-model">
           <h4>小鸟建模图</h4>
           <div className="bird-skill-model-preview">
             {modelImageUrl ? <img src={modelImageUrl} alt={`${entry.name} 建模图`} /> : <p className="meta">尚未上传</p>}
@@ -118,22 +107,40 @@ export const BirdSkillScratchEditor = ({
               placeholder="data:image/... 或 https://..."
             />
           </label>
-        </aside>
+        </div>
 
-        <section className="bird-skill-scratch-workspace">
-          <div className="bird-skill-stage-tabs">
-            {skillSet.stages.map((stage, index) => (
-              <button
-                key={stage.id}
-                type="button"
-                className={`bird-skill-stage-tab${index === activeStageIndex ? " active" : ""}`}
-                onClick={() => {
-                  setActiveStageIndex(index);
-                }}
-              >
-                {index + 1} 阶
-              </button>
+        <div className="bird-skill-scratch-overview-reference">
+          <h4>设计师文案参考</h4>
+          <p className="meta">技能名：{entry.skillName}</p>
+          <ol className="bird-skill-reference-list">
+            {entry.tierSkillDescriptions.map((text, index) => (
+              <li key={index} className={index === activeStageIndex ? "active" : ""}>
+                <strong>{index + 1} 阶</strong>
+                <span>{text}</span>
+              </li>
             ))}
+          </ol>
+        </div>
+      </section>
+
+      <div className="bird-skill-scratch-main">
+        <section className="feature-card bird-skill-scratch-workspace">
+          <div className="bird-skill-workspace-head">
+            <h4>技能积木编排</h4>
+            <div className="bird-skill-stage-tabs">
+              {skillSet.stages.map((stage, index) => (
+                <button
+                  key={stage.id}
+                  type="button"
+                  className={`bird-skill-stage-tab${index === activeStageIndex ? " active" : ""}`}
+                  onClick={() => {
+                    setActiveStageIndex(index);
+                  }}
+                >
+                  {index + 1} 阶
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="bird-skill-stage-meta">
@@ -230,15 +237,18 @@ export const BirdSkillScratchEditor = ({
           </div>
         </section>
 
-        <aside className="bird-skill-scratch-palette">
-          <h4>技能积木库</h4>
+        <aside className="feature-card bird-skill-scratch-palette">
+          <div className="bird-skill-palette-head">
+            <h4>技能积木库</h4>
+            <p className="meta">点击积木添加到当前阶的技能栈。</p>
+          </div>
           {(["motion", "blast", "aura"] as const).map((groupKey) => (
             <div key={groupKey} className="bird-skill-palette-group">
               <p className="bird-skill-palette-group-label">
                 {groupKey === "motion" ? "位移 / 形态" : groupKey === "blast" ? "爆炸 / 冲击" : "范围状态"}
               </p>
               <div className="bird-skill-palette-list">
-                {paletteGroups[groupKey].map((template, index) => (
+                {paletteGroups[groupKey].map((template) => (
                   <button
                     key={template.type}
                     type="button"

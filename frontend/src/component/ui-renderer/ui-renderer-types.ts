@@ -51,6 +51,8 @@ export type DynamicRendererContext = {
   onNavigate: (path: string) => void;
   onOpenPanel: (panelId: string) => void;
   onClosePanel: (panelId: string) => void;
+  onOpenSettings?: (() => void) | undefined;
+  onLogout?: (() => void) | undefined;
 };
 
 export type DynamicPageRendererProps = {
@@ -59,6 +61,8 @@ export type DynamicPageRendererProps = {
   runtimeUserId?: string | undefined;
   previewUiData?: Record<string, unknown> | undefined;
   onNavigate: (path: string) => void;
+  onOpenSettings?: (() => void) | undefined;
+  onLogout?: (() => void) | undefined;
   fitStageToHost?: boolean | undefined;
   levelMapLayoutEdit?: LevelMapLayoutEditContext | undefined;
   levelMapPathEdit?: LevelMapPathEditContext | undefined;

@@ -851,6 +851,7 @@ const PageBuilderPreview = ({
       selectedComponentId,
     );
     if (selectedResizeTarget) {
+      event.preventDefault();
       pointerStartRef.current = {
         mode: "resize-selected",
         componentId: selectedResizeTarget.componentId,
@@ -873,6 +874,7 @@ const PageBuilderPreview = ({
       selectedComponentId,
     );
     if (selectedMoveTarget) {
+      event.preventDefault();
       const selectedComponent = componentMap.get(selectedMoveTarget.componentId);
       pointerStartRef.current = {
         mode: selectedComponent?.type === "text" ? "selected-text" : "move-selected",
@@ -914,6 +916,8 @@ const PageBuilderPreview = ({
     if (deltaX === 0 && deltaY === 0) {
       return;
     }
+
+    event.preventDefault();
 
     if (pointerStart.mode === "selected-text") {
       const totalDistance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);

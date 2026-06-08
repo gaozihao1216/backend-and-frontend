@@ -26,6 +26,7 @@ type PageDualModeHostProps = {
   showModeBar?: boolean | undefined;
   onOpenSettings?: () => void;
   onUserUpdated?: (user: AuthUser) => void;
+  onLogout?: () => void;
   onOpenDesignerDesign?: () => void;
   onOpenDesignerPortfolio?: () => void;
 };
@@ -49,6 +50,7 @@ export const PageDualModeHost = ({
   showModeBar = true,
   onOpenSettings,
   onUserUpdated,
+  onLogout,
   onOpenDesignerDesign,
   onOpenDesignerPortfolio,
 }: PageDualModeHostProps) => {
@@ -100,6 +102,7 @@ export const PageDualModeHost = ({
     onNavigate,
     ...(onOpenSettings ? { onOpenSettings } : {}),
     ...(onUserUpdated ? { onUserUpdated } : {}),
+    ...(onLogout ? { onLogout } : {}),
     ...(onOpenDesignerDesign ? { onOpenDesignerDesign } : {}),
     ...(onOpenDesignerPortfolio ? { onOpenDesignerPortfolio } : {}),
   };

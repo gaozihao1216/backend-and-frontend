@@ -211,12 +211,22 @@ export const NoopActionSchema = z.object({
   type: z.literal("none"),
 });
 
+export const OpenSettingsActionSchema = z.object({
+  type: z.literal("openSettings"),
+});
+
+export const LogoutActionSchema = z.object({
+  type: z.literal("logout"),
+});
+
 export const ComponentActionSchema = z.discriminatedUnion("type", [
   NavigateActionSchema,
   OpenPanelActionSchema,
   OpenModalActionSchema,
   ApiActionSchema,
   ClosePanelActionSchema,
+  OpenSettingsActionSchema,
+  LogoutActionSchema,
   NoopActionSchema,
 ]);
 export type ComponentAction = z.infer<typeof ComponentActionSchema>;
