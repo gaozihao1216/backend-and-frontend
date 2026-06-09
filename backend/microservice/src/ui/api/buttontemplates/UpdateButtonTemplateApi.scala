@@ -10,7 +10,7 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
-import microservice.ui.tables.{ButtonTemplateRowMapper, ButtonTemplateTable}
+import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 

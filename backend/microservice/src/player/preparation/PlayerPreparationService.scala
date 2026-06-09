@@ -2,8 +2,9 @@ package microservice.player.preparation
 
 import microservice.infrastructure.http.HttpError
 import microservice.player.runtime.PlayerWallet
-import microservice.player.tables.{PlayerPreparationTable, PlayerWalletTable}
-import microservice.bird.tables.BirdSkillConfigTable
+import microservice.player.tables.preparation.{PlayerPreparationTable}
+import microservice.player.tables.wallet.{PlayerWalletTable}
+import microservice.bird.tables.skill_config.BirdSkillConfigTable
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection

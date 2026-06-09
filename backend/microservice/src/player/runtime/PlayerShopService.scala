@@ -1,7 +1,8 @@
 package microservice.player.runtime
 
 import microservice.infrastructure.http.HttpError
-import microservice.player.tables.{PlayerWalletTable, ShopTable}
+import microservice.player.tables.shop.{ShopTable}
+import microservice.player.tables.wallet.{PlayerWalletTable}
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection

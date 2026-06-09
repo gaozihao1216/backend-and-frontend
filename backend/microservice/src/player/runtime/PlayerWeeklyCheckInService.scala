@@ -1,7 +1,9 @@
 package microservice.player.runtime
 
 import microservice.infrastructure.http.HttpError
-import microservice.player.tables.{CheckInPanelRewardTable, PlayerWalletTable, PlayerWeeklyCheckInTable}
+import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
+import microservice.player.tables.wallet.{PlayerWalletTable}
+import microservice.player.tables.weekly_check_in.{PlayerWeeklyCheckInTable}
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection

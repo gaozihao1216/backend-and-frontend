@@ -7,7 +7,7 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
-import microservice.ui.tables.{ButtonTemplateRowMapper, ButtonTemplateTable}
+import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 
 final case class DeleteButtonTemplateAPIMessage(
   userId: String,

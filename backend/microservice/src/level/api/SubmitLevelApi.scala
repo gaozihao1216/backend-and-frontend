@@ -8,9 +8,11 @@ import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.Submission
-import microservice.level.tables.{LevelTable, SubmissionRow, SubmissionTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.shared.{SubmissionRow}
+import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.{LevelStatus, SubmissionStatus}
 import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder

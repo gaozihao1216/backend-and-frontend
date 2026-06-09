@@ -3,7 +3,8 @@ package microservice.system.utils
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import microservice.ui.objects.{ButtonTemplateCategory, ButtonTemplateScalingMode, ButtonTemplateSlice, PanelTemplateCategory, PatternTemplateCategory, StretchVisualTemplateKind}
-import microservice.ui.tables.{ButtonTemplateRow, StretchVisualTemplateRow}
+import microservice.ui.tables.button_template.{ButtonTemplateRow}
+import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRow}
 
 private[utils] object SystemUiTemplateSeedData {
   private val defaultButtonSvg =

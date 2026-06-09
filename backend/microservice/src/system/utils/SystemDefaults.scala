@@ -2,23 +2,28 @@ package microservice.system.utils
 
 import cats.effect.IO
 import java.time.Instant
-import microservice.auth.tables.UserTable
+import microservice.auth.tables.user.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
-import microservice.bird.tables.{BirdDesignTable, BirdSkillConfigTable, BirdSubmissionTable}
-import microservice.level.tables.{CommentTable, FavoriteTable, LevelSlotAssignmentTable, LevelTable, RatingTable, SubmissionTable}
-import microservice.player.tables.{
-  CheckInPanelRewardTable,
-  PlayerFriendTable,
-  PlayerLegacyCheckInTable,
-  PlayerLevelProgressTable,
-  PlayerPreparationTable,
-  PlayerPrivateMessageTable,
-  PlayerWalletTable,
-  PlayerWeeklyCheckInTable,
-  ShopTable
-}
+import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.tables.skill_config.{BirdSkillConfigTable}
+import microservice.bird.tables.submission.{BirdSubmissionTable}
+import microservice.level.tables.comment.{CommentTable}
+import microservice.level.tables.favorite.{FavoriteTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.rating.{RatingTable}
+import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
+import microservice.level.tables.submission.{SubmissionTable}
+import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
+import microservice.player.tables.preparation.{PlayerPreparationTable}
+import microservice.player.tables.progress.{PlayerLegacyCheckInTable, PlayerLevelProgressTable}
+import microservice.player.tables.shop.{ShopTable}
+import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessageTable}
+import microservice.player.tables.wallet.{PlayerWalletTable}
+import microservice.player.tables.weekly_check_in.{PlayerWeeklyCheckInTable}
 import microservice.routes.ApiRouter
-import microservice.ui.tables.{ButtonTemplateTable, StretchVisualTemplateTable, UiPageTable}
+import microservice.ui.tables.button_template.{ButtonTemplateTable}
+import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateTable}
+import microservice.ui.tables.ui_page.{UiPageTable}
 import org.http4s.HttpRoutes
 
 object SystemDefaults {

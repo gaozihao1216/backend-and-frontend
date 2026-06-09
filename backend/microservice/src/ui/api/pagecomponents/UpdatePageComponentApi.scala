@@ -10,7 +10,7 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageComponent, PageConfig, UiCustomizationErrors}
-import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
+import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 

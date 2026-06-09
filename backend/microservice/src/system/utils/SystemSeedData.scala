@@ -1,9 +1,9 @@
 package microservice.system.utils
 
-import microservice.auth.tables.UserRow
+import microservice.auth.tables.user.UserRow
 import microservice.infrastructure.database.InMemoryStore
 import microservice.level.objects._
-import microservice.level.tables.{CommentRow, LevelRow, RatingRow, SubmissionRow}
+import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}
 import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, SubmissionStatus, UserRole}
 
 private[utils] object SystemSeedData {

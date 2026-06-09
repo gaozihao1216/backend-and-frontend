@@ -1,7 +1,7 @@
 package microservice.player.runtime
 
 import microservice.infrastructure.http.HttpError
-import microservice.player.tables.PlayerLevelProgressTable
+import microservice.player.tables.progress.PlayerLevelProgressTable
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection

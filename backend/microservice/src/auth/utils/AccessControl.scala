@@ -1,6 +1,6 @@
 package microservice.auth.utils
 
-import microservice.auth.tables.{UserRow, UserTable}
+import microservice.auth.tables.user.{UserRow, UserTable}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, UserRole}
 

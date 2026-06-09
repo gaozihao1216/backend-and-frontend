@@ -1,7 +1,8 @@
 package microservice.level.utils
 
 import microservice.infrastructure.http.HttpError
-import microservice.level.tables.{LevelRow, LevelTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.shared.{LevelRow}
 import microservice.system.objects.LevelStatus
 import java.sql.Connection
 

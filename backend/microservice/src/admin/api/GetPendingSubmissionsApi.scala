@@ -2,12 +2,13 @@ package microservice.admin.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.UserTable
+import microservice.auth.tables.user.UserTable
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.SubmissionWithLevel
-import microservice.level.tables.{LevelTable, SubmissionTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.UserRole
 
 final case class GetPendingSubmissionsAPIMessage(userId: String) extends APIWithTokenMessage[List[SubmissionWithLevel]] {

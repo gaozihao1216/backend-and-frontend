@@ -5,9 +5,9 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.Level
-import microservice.level.tables.LevelTable
+import microservice.level.tables.level.LevelTable
 import microservice.system.objects.LevelTag
 import microservice.system.objects.UserRole
 

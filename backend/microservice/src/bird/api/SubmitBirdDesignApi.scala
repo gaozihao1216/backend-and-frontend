@@ -5,12 +5,9 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.auth.utils.AccessControl
 import microservice.bird.objects.BirdSubmission
-import microservice.bird.tables.{
-  BirdDesignTable,
-  BirdRowMapper,
-  BirdSubmissionRow,
-  BirdSubmissionTable
-}
+import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.tables.shared.{BirdRowMapper, BirdSubmissionRow}
+import microservice.bird.tables.submission.{BirdSubmissionTable}
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}

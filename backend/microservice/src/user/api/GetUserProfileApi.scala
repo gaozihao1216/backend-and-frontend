@@ -2,10 +2,14 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.{UserRowMapper, UserTable}
+import microservice.auth.tables.user.{UserRowMapper, UserTable}
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.level.tables.{CommentTable, FavoriteTable, LevelRowMapper, LevelTable, RatingTable}
+import microservice.level.tables.comment.{CommentTable}
+import microservice.level.tables.favorite.{FavoriteTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.rating.{RatingTable}
+import microservice.level.tables.shared.{LevelRowMapper}
 import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfileStats}
 
 final case class GetUserProfileAPIMessage(

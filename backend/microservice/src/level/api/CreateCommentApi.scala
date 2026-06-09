@@ -8,9 +8,10 @@ import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.LevelComment
-import microservice.level.tables.{CommentRow, CommentTable}
+import microservice.level.tables.comment.{CommentTable}
+import microservice.level.tables.shared.{CommentRow}
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder

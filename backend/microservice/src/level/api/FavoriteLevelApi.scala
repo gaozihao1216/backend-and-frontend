@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
 import microservice.level.objects.Favorite
-import microservice.level.tables.FavoriteTable
+import microservice.level.tables.favorite.FavoriteTable
 import microservice.level.utils.LevelApiSupport
 import microservice.system.objects.UserRole
 

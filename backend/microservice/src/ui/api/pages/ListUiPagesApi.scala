@@ -7,7 +7,7 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiEndpoint}
-import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
+import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 final case class ListUiPagesAPIMessage(
   userId: String,

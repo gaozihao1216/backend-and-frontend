@@ -5,9 +5,9 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.LevelComment
-import microservice.level.tables.CommentTable
+import microservice.level.tables.comment.CommentTable
 import microservice.system.objects.AdminLevel
 
 final case class GetAdminCommentsAPIMessage(userId: String) extends APIWithTokenMessage[List[LevelComment]] {

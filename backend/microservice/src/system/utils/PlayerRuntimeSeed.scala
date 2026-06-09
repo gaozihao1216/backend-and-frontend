@@ -2,12 +2,10 @@ package microservice.system.utils
 
 import microservice.infrastructure.database.InMemoryStore
 import microservice.player.runtime.{CheckInSlotReward, PlayerRuntimeDefaults}
-import microservice.player.tables.{
-  CheckInPanelRewardTable,
-  PlayerLevelProgressTable,
-  PlayerWalletTable,
-  ShopTable
-}
+import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
+import microservice.player.tables.progress.{PlayerLevelProgressTable}
+import microservice.player.tables.shop.{ShopTable}
+import microservice.player.tables.wallet.{PlayerWalletTable}
 
 private[utils] object PlayerRuntimeSeed {
   def reset(): Unit = {

@@ -2,9 +2,11 @@ package microservice.bird.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.UserTable
+import microservice.auth.tables.user.UserTable
 import microservice.bird.objects.BirdSubmissionWithDesign
-import microservice.bird.tables.{BirdDesignTable, BirdRowMapper, BirdSubmissionTable}
+import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.tables.shared.{BirdRowMapper}
+import microservice.bird.tables.submission.{BirdSubmissionTable}
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.UserRole

@@ -1,7 +1,7 @@
 package microservice.player.runtime
 
 import microservice.infrastructure.http.HttpError
-import microservice.player.tables.PlayerLegacyCheckInTable
+import microservice.player.tables.progress.PlayerLegacyCheckInTable
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection

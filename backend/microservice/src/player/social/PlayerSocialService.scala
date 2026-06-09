@@ -1,8 +1,8 @@
 package microservice.player.social
 
-import microservice.auth.tables.UserTable
+import microservice.auth.tables.user.UserTable
 import microservice.infrastructure.http.HttpError
-import microservice.player.tables.{PlayerFriendTable, PlayerPrivateMessageRow, PlayerPrivateMessageTable}
+import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessageRow, PlayerPrivateMessageTable}
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection

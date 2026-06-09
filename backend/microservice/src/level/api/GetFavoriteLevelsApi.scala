@@ -5,9 +5,9 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.FavoriteWithLevel
-import microservice.level.tables.FavoriteTable
+import microservice.level.tables.favorite.FavoriteTable
 import microservice.system.objects.UserRole
 
 final case class GetFavoriteLevelsAPIMessage(

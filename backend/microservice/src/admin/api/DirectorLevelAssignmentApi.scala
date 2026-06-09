@@ -13,10 +13,14 @@ import microservice.admin.objects.{
 import microservice.auth.utils.AccessControl
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
-import microservice.bird.tables.{BirdDesignTable, BirdRowMapper}
+import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.tables.shared.{BirdRowMapper}
 import microservice.player.preparation.BirdPreparationCatalog
 import microservice.level.objects.{BirdPool, SubmissionWithLevel}
-import microservice.level.tables.{LevelRowMapper, LevelSlotAssignmentRow, LevelSlotAssignmentTable, LevelTable, SubmissionTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.shared.{LevelRowMapper, LevelSlotAssignmentRow}
+import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
+import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
 
 object DirectorLevelAssignmentSupport {

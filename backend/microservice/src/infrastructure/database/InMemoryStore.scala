@@ -1,21 +1,17 @@
 package microservice.infrastructure.database
 
-import microservice.auth.tables.UserRow
+import microservice.auth.tables.user.UserRow
 import microservice.level.objects.Favorite
-import microservice.bird.tables.{BirdDesignRow, BirdSubmissionRow}
-import microservice.level.tables.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
+import microservice.bird.tables.shared.{BirdDesignRow, BirdSubmissionRow}
+import microservice.level.tables.shared.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
 import microservice.player.runtime.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
-import microservice.player.tables.{
-  PlayerBirdUpgradeRow,
-  PlayerFriendRow,
-  PlayerLegacyCheckInRow,
-  PlayerLevelProgressRow,
-  PlayerPrivateMessageRow,
-  PlayerSlingshotUpgradeRow,
-  ShopItemRow,
-  ShopPurchaseRow
-}
-import microservice.ui.tables.{ButtonTemplateRow, StretchVisualTemplateRow, UiPageRow}
+import microservice.player.tables.preparation.{PlayerBirdUpgradeRow, PlayerSlingshotUpgradeRow}
+import microservice.player.tables.progress.{PlayerLegacyCheckInRow, PlayerLevelProgressRow}
+import microservice.player.tables.shop.{ShopItemRow, ShopPurchaseRow}
+import microservice.player.tables.social.{PlayerFriendRow, PlayerPrivateMessageRow}
+import microservice.ui.tables.button_template.{ButtonTemplateRow}
+import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRow}
+import microservice.ui.tables.ui_page.{UiPageRow}
 
 object InMemoryStore {
   var users: Vector[UserRow] = Vector.empty

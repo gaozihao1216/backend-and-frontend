@@ -4,7 +4,8 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.auth.utils.AccessControl
 import microservice.bird.objects.BirdDesign
-import microservice.bird.tables.{BirdDesignTable, BirdRowMapper}
+import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.tables.shared.{BirdRowMapper}
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}

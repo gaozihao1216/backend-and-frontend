@@ -2,11 +2,11 @@ package microservice.ui.api.pages
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.UserTable
+import microservice.auth.tables.user.UserTable
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
-import microservice.ui.tables.{UiPageRowMapper, UiPageTable}
+import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 object SharedLevelMapPageId {
   val value: String = "shared.levelMap"

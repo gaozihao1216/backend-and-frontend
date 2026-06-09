@@ -10,7 +10,7 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
-import microservice.ui.tables.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
+import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 

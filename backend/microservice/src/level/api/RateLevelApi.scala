@@ -6,9 +6,11 @@ import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.auth.utils.AccessControl
-import microservice.level.tables.LevelRowMapper
+import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.{RateLevelErrors, Rating}
-import microservice.level.tables.{LevelTable, RatingRow, RatingTable}
+import microservice.level.tables.level.{LevelTable}
+import microservice.level.tables.rating.{RatingTable}
+import microservice.level.tables.shared.{RatingRow}
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
 import io.circe.generic.semiauto._

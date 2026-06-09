@@ -3,7 +3,7 @@ package microservice.admin.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.level.objects.{BirdPool, SubmissionWithLevel}
-import microservice.level.tables.LevelSlotAssignmentRow
+import microservice.level.tables.shared.LevelSlotAssignmentRow
 
 final case class LevelSlotAssignment(
   id: String,

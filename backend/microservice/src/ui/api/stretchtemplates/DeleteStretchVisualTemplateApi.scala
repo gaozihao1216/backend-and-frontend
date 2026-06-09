@@ -7,7 +7,7 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
-import microservice.ui.tables.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
+import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
 
 final case class DeleteStretchVisualTemplateAPIMessage(
   userId: String,

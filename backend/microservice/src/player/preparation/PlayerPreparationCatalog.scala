@@ -1,6 +1,7 @@
 package microservice.player.preparation
 
-import microservice.bird.tables.{BirdDesignTable, BirdRowMapper}
+import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.tables.shared.{BirdRowMapper}
 import java.sql.Connection
 
 object PlayerPreparationCatalog {

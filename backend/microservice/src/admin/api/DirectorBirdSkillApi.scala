@@ -7,7 +7,7 @@ import io.circe.syntax._
 import java.sql.Connection
 import microservice.auth.utils.AccessControl
 import microservice.bird.objects.{BirdSkillConfig, DirectorBirdSkillBoard, DirectorBirdSkillEntry}
-import microservice.bird.tables.BirdSkillConfigTable
+import microservice.bird.tables.skill_config.BirdSkillConfigTable
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.player.preparation.PlayerPreparationCatalog
