@@ -10,13 +10,13 @@ object PlayerLevelProgressTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) PlayerLevelProgressTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) PlayerLevelProgressTableJdbcSchema.initialize(connection)
 
   def listClearedSuffixes(connection: Connection, userId: String): Set[String] = {
     ensureDefaultProgress(connection, userId)
     val rows =
       if (isInMemory(connection)) PlayerLevelProgressTableInMemory.listByUserId(userId)
-      else PlayerLevelProgressTableJdbc.listByUserId(connection, userId)
+      else PlayerLevelProgressTableJdbcRead.listByUserId(connection, userId)
     rows.map(_.levelSuffix).toSet
   }
 
@@ -27,14 +27,14 @@ object PlayerLevelProgressTable {
       clearedAt = Instant.now().toString
     )
     if (isInMemory(connection)) PlayerLevelProgressTableInMemory.insert(row)
-    else PlayerLevelProgressTableJdbc.insert(connection, row)
+    else PlayerLevelProgressTableJdbcWrite.insert(connection, row)
     listClearedSuffixes(connection, userId)
   }
 
   private def ensureDefaultProgress(connection: Connection, userId: String): Unit = {
     val rows =
       if (isInMemory(connection)) PlayerLevelProgressTableInMemory.listByUserId(userId)
-      else PlayerLevelProgressTableJdbc.listByUserId(connection, userId)
+      else PlayerLevelProgressTableJdbcRead.listByUserId(connection, userId)
     if (rows.nonEmpty) {
       return
     }
@@ -45,7 +45,7 @@ object PlayerLevelProgressTable {
       clearedAt = Instant.now().toString
     )
     if (isInMemory(connection)) PlayerLevelProgressTableInMemory.insert(defaultRow)
-    else PlayerLevelProgressTableJdbc.insert(connection, defaultRow)
+    else PlayerLevelProgressTableJdbcWrite.insert(connection, defaultRow)
   }
 }
 
@@ -54,12 +54,12 @@ object PlayerLegacyCheckInTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) PlayerLegacyCheckInTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) PlayerLegacyCheckInTableJdbcSchema.initialize(connection)
 
   def getStatus(connection: Connection, userId: String): String = {
     val row =
       if (isInMemory(connection)) PlayerLegacyCheckInTableInMemory.findByUserId(userId)
-      else PlayerLegacyCheckInTableJdbc.findByUserId(connection, userId)
+      else PlayerLegacyCheckInTableJdbcRead.findByUserId(connection, userId)
     row.map(_.status).getOrElse("ready")
   }
 
@@ -70,7 +70,7 @@ object PlayerLegacyCheckInTable {
       updatedAt = Instant.now().toString
     )
     if (isInMemory(connection)) PlayerLegacyCheckInTableInMemory.upsert(row)
-    else PlayerLegacyCheckInTableJdbc.upsert(connection, row)
+    else PlayerLegacyCheckInTableJdbcWrite.upsert(connection, row)
     status
   }
 }

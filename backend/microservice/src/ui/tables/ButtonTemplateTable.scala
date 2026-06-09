@@ -7,25 +7,25 @@ object ButtonTemplateTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) ButtonTemplateTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) ButtonTemplateTableJdbcSchema.initialize(connection)
 
   def listAll(connection: Connection): Vector[ButtonTemplateRow] =
     if (isInMemory(connection)) ButtonTemplateTableInMemory.listAll()
-    else ButtonTemplateTableJdbc.listAll(connection)
+    else ButtonTemplateTableJdbcRead.listAll(connection)
 
   def findById(connection: Connection, templateId: String): Option[ButtonTemplateRow] =
     if (isInMemory(connection)) ButtonTemplateTableInMemory.findById(templateId)
-    else ButtonTemplateTableJdbc.findById(connection, templateId)
+    else ButtonTemplateTableJdbcRead.findById(connection, templateId)
 
   def insert(connection: Connection, row: ButtonTemplateRow): ButtonTemplateRow =
     if (isInMemory(connection)) ButtonTemplateTableInMemory.insert(row)
-    else ButtonTemplateTableJdbc.insert(connection, row)
+    else ButtonTemplateTableJdbcWrite.insert(connection, row)
 
   def update(connection: Connection, row: ButtonTemplateRow): Option[ButtonTemplateRow] =
     if (isInMemory(connection)) ButtonTemplateTableInMemory.update(row)
-    else ButtonTemplateTableJdbc.update(connection, row)
+    else ButtonTemplateTableJdbcWrite.update(connection, row)
 
   def deleteById(connection: Connection, templateId: String): Option[ButtonTemplateRow] =
     if (isInMemory(connection)) ButtonTemplateTableInMemory.deleteById(templateId)
-    else ButtonTemplateTableJdbc.deleteById(connection, templateId)
+    else ButtonTemplateTableJdbcWrite.deleteById(connection, templateId)
 }

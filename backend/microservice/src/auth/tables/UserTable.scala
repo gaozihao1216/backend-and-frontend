@@ -8,47 +8,47 @@ object UserTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) UserTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) UserTableJdbcSchema.initialize(connection)
 
   def listAll(connection: Connection): Vector[UserRow] =
     if (isInMemory(connection)) {
       UserTableInMemory.listAll()
     } else {
-      UserTableJdbc.listAll(connection)
+      UserTableJdbcRead.listAll(connection)
     }
 
   def findById(connection: Connection, userId: String): Option[UserRow] =
     if (isInMemory(connection)) {
       UserTableInMemory.findById(userId)
     } else {
-      UserTableJdbc.findById(connection, userId)
+      UserTableJdbcRead.findById(connection, userId)
     }
 
   def findByUsername(connection: Connection, username: String): Option[UserRow] =
     if (isInMemory(connection)) {
       UserTableInMemory.findByUsername(username)
     } else {
-      UserTableJdbc.findByUsername(connection, username)
+      UserTableJdbcRead.findByUsername(connection, username)
     }
 
   def countByRole(connection: Connection, role: UserRole): Int =
     if (isInMemory(connection)) {
       UserTableInMemory.countByRole(role)
     } else {
-      UserTableJdbc.countByRole(connection, role)
+      UserTableJdbcRead.countByRole(connection, role)
     }
 
   def insert(connection: Connection, row: UserRow): UserRow =
     if (isInMemory(connection)) {
       UserTableInMemory.insert(row)
     } else {
-      UserTableJdbc.insert(connection, row)
+      UserTableJdbcWrite.insert(connection, row)
     }
 
   def updateAdminLevel(connection: Connection, userId: String, adminLevel: Option[AdminLevel], updatedAt: String): Option[UserRow] =
     if (isInMemory(connection)) {
       UserTableInMemory.updateAdminLevel(userId, adminLevel, updatedAt)
     } else {
-      UserTableJdbc.updateAdminLevel(connection, userId, adminLevel, updatedAt)
+      UserTableJdbcWrite.updateAdminLevel(connection, userId, adminLevel, updatedAt)
     }
 }

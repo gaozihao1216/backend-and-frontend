@@ -8,41 +8,41 @@ object LevelTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) LevelTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) LevelTableJdbcWrite.initialize(connection)
 
   def findById(connection: Connection, levelId: String): Option[LevelRow] =
     if (isInMemory(connection)) {
       LevelTableInMemory.findById(levelId)
     } else {
-      LevelTableJdbc.findById(connection, levelId)
+      LevelTableJdbcRead.findById(connection, levelId)
     }
 
   def nextId(connection: Connection): String =
     if (isInMemory(connection)) {
       LevelTableInMemory.nextId()
     } else {
-      LevelTableJdbc.nextId(connection)
+      LevelTableJdbcRead.nextId(connection)
     }
 
   def listPublishedByAuthor(connection: Connection, authorId: String): Vector[LevelRow] =
     if (isInMemory(connection)) {
       LevelTableInMemory.listPublishedByAuthor(authorId)
     } else {
-      LevelTableJdbc.listPublishedByAuthor(connection, authorId)
+      LevelTableJdbcRead.listPublishedByAuthor(connection, authorId)
     }
 
   def listPublished(connection: Connection, tag: Option[LevelTag], sort: String): Vector[LevelRow] =
     if (isInMemory(connection)) {
       LevelTableInMemory.listPublished(tag, sort)
     } else {
-      LevelTableJdbc.listPublished(connection, tag, sort)
+      LevelTableJdbcRead.listPublished(connection, tag, sort)
     }
 
   def insert(connection: Connection, row: LevelRow): LevelRow =
     if (isInMemory(connection)) {
       LevelTableInMemory.insert(row)
     } else {
-      LevelTableJdbc.insert(connection, row)
+      LevelTableJdbcWrite.insert(connection, row)
     }
 
   def updateSubmissionStatus(
@@ -55,7 +55,7 @@ object LevelTable {
     if (isInMemory(connection)) {
       LevelTableInMemory.updateSubmissionStatus(levelId, status, rejectionReason, updatedAt)
     } else {
-      LevelTableJdbc.updateSubmissionStatus(connection, levelId, status, rejectionReason, updatedAt)
+      LevelTableJdbcWrite.updateSubmissionStatus(connection, levelId, status, rejectionReason, updatedAt)
     }
 
   def updateReviewStatus(
@@ -69,7 +69,7 @@ object LevelTable {
     if (isInMemory(connection)) {
       LevelTableInMemory.updateReviewStatus(levelId, status, rejectionReason, publishedAt, updatedAt)
     } else {
-      LevelTableJdbc.updateReviewStatus(connection, levelId, status, rejectionReason, publishedAt, updatedAt)
+      LevelTableJdbcWrite.updateReviewStatus(connection, levelId, status, rejectionReason, publishedAt, updatedAt)
     }
 
   def updateRatingStats(
@@ -82,6 +82,6 @@ object LevelTable {
     if (isInMemory(connection)) {
       LevelTableInMemory.updateRatingStats(levelId, averageRating, ratingCount, updatedAt)
     } else {
-      LevelTableJdbc.updateRatingStats(connection, levelId, averageRating, ratingCount, updatedAt)
+      LevelTableJdbcWrite.updateRatingStats(connection, levelId, averageRating, ratingCount, updatedAt)
     }
 }

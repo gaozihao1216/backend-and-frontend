@@ -7,29 +7,29 @@ object LevelSlotAssignmentTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) LevelSlotAssignmentTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) LevelSlotAssignmentTableJdbcSchema.initialize(connection)
 
   def listAll(connection: Connection): Vector[LevelSlotAssignmentRow] =
     if (isInMemory(connection)) LevelSlotAssignmentTableInMemory.listAll()
-    else LevelSlotAssignmentTableJdbc.listAll(connection)
+    else LevelSlotAssignmentTableJdbcRead.listAll(connection)
 
   def findBySuffix(connection: Connection, levelSuffix: String): Option[LevelSlotAssignmentRow] =
     if (isInMemory(connection)) LevelSlotAssignmentTableInMemory.findBySuffix(levelSuffix)
-    else LevelSlotAssignmentTableJdbc.findBySuffix(connection, levelSuffix)
+    else LevelSlotAssignmentTableJdbcRead.findBySuffix(connection, levelSuffix)
 
   def nextId(connection: Connection): String =
     if (isInMemory(connection)) LevelSlotAssignmentTableInMemory.nextId()
-    else LevelSlotAssignmentTableJdbc.nextId(connection)
+    else LevelSlotAssignmentTableJdbcRead.nextId(connection)
 
   def upsert(connection: Connection, row: LevelSlotAssignmentRow): LevelSlotAssignmentRow =
     if (isInMemory(connection)) LevelSlotAssignmentTableInMemory.upsert(row)
-    else LevelSlotAssignmentTableJdbc.upsert(connection, row)
+    else LevelSlotAssignmentTableJdbcWrite.upsert(connection, row)
 
   def deleteBySuffix(connection: Connection, levelSuffix: String): Boolean =
     if (isInMemory(connection)) LevelSlotAssignmentTableInMemory.deleteBySuffix(levelSuffix)
-    else LevelSlotAssignmentTableJdbc.deleteBySuffix(connection, levelSuffix)
+    else LevelSlotAssignmentTableJdbcWrite.deleteBySuffix(connection, levelSuffix)
 
   def deleteBySubmissionId(connection: Connection, submissionId: String): Boolean =
     if (isInMemory(connection)) LevelSlotAssignmentTableInMemory.deleteBySubmissionId(submissionId)
-    else LevelSlotAssignmentTableJdbc.deleteBySubmissionId(connection, submissionId)
+    else LevelSlotAssignmentTableJdbcWrite.deleteBySubmissionId(connection, submissionId)
 }

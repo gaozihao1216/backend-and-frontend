@@ -9,12 +9,12 @@ object PlayerWeeklyCheckInTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) PlayerWeeklyCheckInTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) PlayerWeeklyCheckInTableJdbcSchema.initialize(connection)
 
   def getOrCreate(connection: Connection, userId: String, weekKey: String): WeeklyCheckInProgress = {
     val existing =
       if (isInMemory(connection)) PlayerWeeklyCheckInTableInMemory.findByUserAndWeek(userId, weekKey)
-      else PlayerWeeklyCheckInTableJdbc.findByUserAndWeek(connection, userId, weekKey)
+      else PlayerWeeklyCheckInTableJdbcRead.findByUserAndWeek(connection, userId, weekKey)
 
     existing match {
       case Some(row) =>
@@ -37,7 +37,7 @@ object PlayerWeeklyCheckInTable {
       updatedAt = Instant.now().toString
     )
     if (isInMemory(connection)) PlayerWeeklyCheckInTableInMemory.upsert(row)
-    else PlayerWeeklyCheckInTableJdbc.upsert(connection, row)
+    else PlayerWeeklyCheckInTableJdbcWrite.upsert(connection, row)
     progress
   }
 }

@@ -8,31 +8,31 @@ object SubmissionTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) SubmissionTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) SubmissionTableJdbcSchema.initialize(connection)
 
   def listPending(connection: Connection): Vector[SubmissionRow] =
     if (isInMemory(connection)) SubmissionTableInMemory.listPending()
-    else SubmissionTableJdbc.listPending(connection)
+    else SubmissionTableJdbcRead.listPending(connection)
 
   def listApproved(connection: Connection): Vector[SubmissionRow] =
     if (isInMemory(connection)) SubmissionTableInMemory.listApproved()
-    else SubmissionTableJdbc.listApproved(connection)
+    else SubmissionTableJdbcRead.listApproved(connection)
 
   def hasPendingForLevel(connection: Connection, levelId: String): Boolean =
     if (isInMemory(connection)) SubmissionTableInMemory.hasPendingForLevel(levelId)
-    else SubmissionTableJdbc.hasPendingForLevel(connection, levelId)
+    else SubmissionTableJdbcRead.hasPendingForLevel(connection, levelId)
 
   def nextId(connection: Connection): String =
     if (isInMemory(connection)) SubmissionTableInMemory.nextId()
-    else SubmissionTableJdbc.nextId(connection)
+    else SubmissionTableJdbcRead.nextId(connection)
 
   def insert(connection: Connection, row: SubmissionRow): SubmissionRow =
     if (isInMemory(connection)) SubmissionTableInMemory.insert(row)
-    else SubmissionTableJdbc.insert(connection, row)
+    else SubmissionTableJdbcWrite.insert(connection, row)
 
   def findById(connection: Connection, submissionId: String): Option[SubmissionRow] =
     if (isInMemory(connection)) SubmissionTableInMemory.findById(submissionId)
-    else SubmissionTableJdbc.findById(connection, submissionId)
+    else SubmissionTableJdbcRead.findById(connection, submissionId)
 
   def updateReview(
     connection: Connection,
@@ -43,5 +43,5 @@ object SubmissionTable {
     reviewedAt: String
   ): Option[SubmissionRow] =
     if (isInMemory(connection)) SubmissionTableInMemory.updateReview(submissionId, status, reviewerId, reviewNote, reviewedAt)
-    else SubmissionTableJdbc.updateReview(connection, submissionId, status, reviewerId, reviewNote, reviewedAt)
+    else SubmissionTableJdbcWrite.updateReview(connection, submissionId, status, reviewerId, reviewNote, reviewedAt)
 }

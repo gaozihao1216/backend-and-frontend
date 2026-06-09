@@ -9,13 +9,13 @@ object CheckInPanelRewardTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) CheckInPanelRewardTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) CheckInPanelRewardTableJdbcSchema.initialize(connection)
     else seedDefaultsInMemory()
 
   def listByPanelId(connection: Connection, panelId: String): Vector[CheckInSlotReward] = {
     val rows =
       if (isInMemory(connection)) CheckInPanelRewardTableInMemory.listByPanelId(panelId)
-      else CheckInPanelRewardTableJdbc.listByPanelId(connection, panelId)
+      else CheckInPanelRewardTableJdbcRead.listByPanelId(connection, panelId)
     rows.sortBy(_.slotIndex).map(row => CheckInSlotReward(row.coins, row.gems, row.fragments))
   }
 
@@ -32,7 +32,7 @@ object CheckInPanelRewardTable {
           fragments = reward.fragments
         )
       }
-      CheckInPanelRewardTableJdbc.replacePanelRewards(connection, panelId, rows)
+      CheckInPanelRewardTableJdbcWrite.replacePanelRewards(connection, panelId, rows)
     }
 
   private def seedDefaultsInMemory(): Unit = {

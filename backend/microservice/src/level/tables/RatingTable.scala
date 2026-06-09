@@ -7,29 +7,29 @@ object RatingTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) RatingTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) RatingTableJdbcSchema.initialize(connection)
 
   def countByPlayer(connection: Connection, playerId: String): Int =
     if (isInMemory(connection)) RatingTableInMemory.countByPlayer(playerId)
-    else RatingTableJdbc.countByPlayer(connection, playerId)
+    else RatingTableJdbcRead.countByPlayer(connection, playerId)
 
   def findByLevelAndPlayer(connection: Connection, levelId: String, playerId: String): Option[RatingRow] =
     if (isInMemory(connection)) RatingTableInMemory.findByLevelAndPlayer(levelId, playerId)
-    else RatingTableJdbc.findByLevelAndPlayer(connection, levelId, playerId)
+    else RatingTableJdbcRead.findByLevelAndPlayer(connection, levelId, playerId)
 
   def listByLevel(connection: Connection, levelId: String): Vector[RatingRow] =
     if (isInMemory(connection)) RatingTableInMemory.listByLevel(levelId)
-    else RatingTableJdbc.listByLevel(connection, levelId)
+    else RatingTableJdbcRead.listByLevel(connection, levelId)
 
   def nextId(connection: Connection): String =
     if (isInMemory(connection)) RatingTableInMemory.nextId()
-    else RatingTableJdbc.nextId(connection)
+    else RatingTableJdbcRead.nextId(connection)
 
   def insert(connection: Connection, row: RatingRow): RatingRow =
     if (isInMemory(connection)) RatingTableInMemory.insert(row)
-    else RatingTableJdbc.insert(connection, row)
+    else RatingTableJdbcWrite.insert(connection, row)
 
   def updateScore(connection: Connection, ratingId: String, score: Int, updatedAt: String): Option[RatingRow] =
     if (isInMemory(connection)) RatingTableInMemory.updateScore(ratingId, score, updatedAt)
-    else RatingTableJdbc.updateScore(connection, ratingId, score, updatedAt)
+    else RatingTableJdbcWrite.updateScore(connection, ratingId, score, updatedAt)
 }

@@ -9,7 +9,7 @@ object PlayerWalletTable {
     connection == null
 
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) PlayerWalletTableJdbc.initialize(connection)
+    if (!isInMemory(connection)) PlayerWalletTableJdbcSchema.initialize(connection)
 
   def getOrCreate(connection: Connection, userId: String): PlayerWallet = {
     val now = Instant.now().toString
@@ -20,10 +20,10 @@ object PlayerWalletTable {
         .map(toWallet)
         .getOrElse(PlayerRuntimeDefaults.defaultWallet)
     } else {
-      PlayerWalletTableJdbc.findByUserId(connection, userId) match {
+      PlayerWalletTableJdbcRead.findByUserId(connection, userId) match {
         case Some(row) => toWallet(row)
         case None =>
-          val row = PlayerWalletTableJdbc.upsert(
+          val row = PlayerWalletTableJdbcWrite.upsert(
             connection,
             PlayerWalletRow(
               userId = userId,
@@ -48,7 +48,7 @@ object PlayerWalletTable {
     )
     val saved =
       if (isInMemory(connection)) PlayerWalletTableInMemory.upsert(row)
-      else PlayerWalletTableJdbc.upsert(connection, row)
+      else PlayerWalletTableJdbcWrite.upsert(connection, row)
     toWallet(saved)
   }
 
