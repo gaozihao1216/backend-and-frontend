@@ -37,6 +37,11 @@ final case class CreateLevelAPIMessage(
 ) extends APIWithTokenMessage[Level] {
   override def token: String = designerId
 
+  /** 设计师创建新关卡，初始状态为 Draft。
+    *
+    * 实现：requireRole(Designer) → 校验 title → LevelTable.insert → RowMapper 转领域对象 Level。
+    * 关联：authorId 取自 header 中的 designerId；前端 objects/level/level.ts 的 Level schema 对齐返回结构。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     IO.pure {
       AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>

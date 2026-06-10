@@ -10,6 +10,11 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 管理员 HTTP 入口：审核、评论管理、总监配置、鸟类审核等。
+  *
+  * 实现：各 case 读取 x-user-id，构造 admin/bird 模块 APIMessage；权限细节在 message.plan 内校验。
+  * 关联：Standard 管理员用 comments/submissions；Director 用 director 子路径与 level slot 等接口。
+  */
 object AdminRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {

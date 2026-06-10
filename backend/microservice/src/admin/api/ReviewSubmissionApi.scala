@@ -36,6 +36,14 @@ final case class ReviewSubmissionAPIMessage(
 ) extends APIWithTokenMessage[ReviewedSubmission] {
   override def token: String = userId
 
+  /** 管理员审核关卡投稿，并联动更新 Level 状态。
+    *
+    * 实现：
+    *   1. 校验 admin 角色且 submission 为 PendingReview
+    *   2. 更新 SubmissionTable 审核字段
+    *   3. 批准 → LevelStatus.Published；拒绝 → Rejected + rejectionReason
+    * 关联：前端 AdminPage /admin/proposals；玩家仅能看到 Published 关卡。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, ReviewedSubmission]] =
     IO.pure {
       UserTable.findById(connection, userId) match {
@@ -63,6 +71,7 @@ final case class ReviewSubmissionAPIMessage(
                   case None =>
                     Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
                   case Some(reviewedSubmission) =>
+                    // submission 与 level 状态联动：审核结果决定关卡是否对外可见
                     val targetStatus =
                       if (body.status == SubmissionStatus.Approved) {
                         LevelStatus.Published

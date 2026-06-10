@@ -35,6 +35,11 @@ final case class RateLevelAPIMessage(
 ) extends APIWithTokenMessage[Rating] {
   override def token: String = playerId
 
+  /** 玩家对已发布关卡评分（1–5），同一玩家重复评分则更新记录并重算平均分。
+    *
+    * 实现：requireRole(Player) → 关卡必须 Published → RatingTable upsert → LevelTable.updateRatingStats。
+    * 关联：GET /player/levels 返回的 averageRating/ratingCount 由此维护。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Rating]] =
     IO.pure {
       AccessControl.requireRole(connection, playerId, UserRole.Player).flatMap { _ =>
@@ -48,6 +53,7 @@ final case class RateLevelAPIMessage(
             Left(RateLevelErrors.InvalidScore(body.score).toHttpError)
           } else {
             val timestamp = Instant.now().toString
+            // 同一玩家对同一关卡：更新分数而非新增多条 rating
             val ratingRow =
               RatingTable.findByLevelAndPlayer(connection, levelId, playerId) match {
                 case Some(existing) =>

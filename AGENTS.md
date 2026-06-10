@@ -1,10 +1,10 @@
-# CODEBUDDY.md
+# AGENTS.md
 
-This file provides guidance to CodeBuddy Code when working with code in this repository.
+本文件为 AI 助手提供在本仓库中工作的指引。详细文档见 [`docs/`](./docs/README.md)。
 
 ## Project Overview
 
-UGC level platform inspired by Angry Birds — designers create levels, admins review them, players play and rate published levels. Based on proposal.txt. Also includes a Scala microservice (http4s + cats-effect + PostgreSQL) under `src/main/scala/`.
+UGC level platform inspired by Angry Birds — designers create levels, admins review them, players play and rate published levels. The runtime backend is a **Scala/http4s monolith** under `backend/microservice/src/`. The frontend is **React + Vite** under `frontend/src/`. Old Node.js/Express backend (`src/backend`) has been removed.
 
 ## Commands
 
@@ -12,32 +12,30 @@ UGC level platform inspired by Angry Birds — designers create levels, admins r
 # Install dependencies
 npm install
 
-# Start both backend + frontend concurrently
+# Start both Scala backend + Vite frontend concurrently
 npm run dev
 
-# Start backend only (port 3000)
-npm run dev:backend          # one-shot
-npm run dev:backend:watch    # watch mode with tsx
+# Start backend only (port 3000, via sbt)
+npm run dev:backend          # sbt run
+npm run dev:backend:watch    # sbt ~run
 
 # Start frontend only (port 5173, proxies API to backend)
 npm run dev:frontend
 
-# Type check (no emit)
+# Type check frontend (no emit)
 npm run check
 
-# Production build (tsc + vite)
+# Frontend production build
 npm run build
 
-# Run tests (Node.js built-in test runner)
+# Frontend tests (Node.js built-in test runner)
 npm test
 
 # Run a single test file
-node --import tsx --test src/backend/services/lifecycle.test.ts
-```
+node --import tsx --test frontend/src/api/proxy-coverage.test.ts
 
-Scala microservice (requires sbt):
-```bash
-sbt run
+# Scala compile
+sbt compile
 ```
 
 ## Architecture
@@ -45,62 +43,67 @@ sbt run
 ### Source Layout
 
 ```
-src/
-├── shared/           # Single source of truth for API contracts
-│   ├── schemas/      # Zod schemas (common, level, submission, rating, comment, favorite, user, api)
-│   ├── api/          # Per-role request/response schemas (auth, user, designer, admin, player)
-│   ├── levels/       # Starter level data
-│   └── types.ts      # Re-exports everything — frontend and backend import from here
-├── backend/
-│   ├── server.ts     # Entry point (listens on 127.0.0.1:3000)
-│   ├── app.ts        # Express app setup: middleware, route mounting, error handling
-│   ├── middleware/    # authenticate (x-user-id header), requireRole
-│   ├── routes/       # Route handlers: parse input → call service → validate response → send
-│   ├── services/     # Business logic (no Express dependency)
-│   ├── data/store.ts # In-memory JSON file store (data/backend-store.json), resets in test env
-│   └── lib/http.ts   # HttpError, parseOrThrow (Zod→400), success/errorResponse helpers
-├── frontend/
-│   ├── main.tsx      # React entry
-│   ├── App.tsx       # Minimal pathname-based routing (no router library)
-│   ├── page/        # Page components (DesignerPage with hooks/components sub-structure)
-│   ├── component/   # Shared UI components (RoleSwitcher, game canvas, auth, designer editor)
-│   ├── game/         # Matter.js physics engine, fracture model, game session, drawing
-│   ├── lib/          # API client, auth, config, level repository, terrain helpers
-│   │   └── api/      # Per-role API modules using shared response schemas for validation
-│   └── styles.css
-└── main/scala/       # Scala microservice (http4s, separate from Node backend)
+backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
+├── Main.scala
+├── routes/                   # ApiRouter, HealthRouter
+├── infrastructure/           # APIMessage, DatabaseSession, HttpError
+├── core/                     # AccessControl, RowMappers, InMemoryStore
+├── system/                   # Health, enums, seed data
+├── auth/                     # Backend user binding
+├── user/                     # User profiles
+├── level/                    # Level CRUD, submissions, player actions
+├── admin/                    # Review, comments, director features
+├── ui/                       # UI customization (director only)
+├── bird/                     # Bird design & review
+└── player/                   # Shop, social, preparation, UI runtime
+
+frontend/src/
+├── api/                      # One API per file; Zod-validated requests
+├── objects/                  # Zod schemas aligned with Scala objects
+├── page/                     # Page entries (pathname routing in App.tsx)
+├── component/                # Shared UI and business components
+├── hook/                     # React hooks (incl. designer-page/)
+├── lib/                      # Auth, config, game-engine, UI runtime
+├── store/                    # Lightweight client state
+├── App.tsx                   # Pathname-based routing, auth session
+└── main.tsx
+
+docs/                         # Architecture, status, roadmap
+scripts/dev.mjs               # Concurrent sbt + vite launcher
 ```
 
-### Shared Schema Contract
+### API Contract Pattern
 
-The core architectural pattern: **Zod schemas in `src/shared/schemas/` define all API contracts**, and TypeScript types are inferred from them (never hand-written separately).
-
-- `src/shared/types.ts` re-exports everything — both frontend and backend import from this single entry point
-- `src/shared/api/` organizes per-role request/response schemas that compose from the base schemas
-- Frontend validates API responses before rendering; backend validates requests before processing and responses before sending
-- This gives compile-time type safety + runtime validation at both boundaries
+- **Frontend**: `frontend/src/api/<module>/*Api.ts` calls `client.request(path, init, zodSchema)`; schemas live in `frontend/src/objects/<module>/`
+- **Backend**: `backend/microservice/src/<module>/api/*Api.scala` defines `XxxAPIMessage` with `plan(connection): IO[Either[HttpError, A]]`
+- **Naming**: Frontend and backend API filenames match one-to-one (e.g. `CreateLevelApi`)
+- **Response shape**: `{ success: true, data }` / `{ success: false, error: { code, message } }`
 
 ### Backend Patterns
 
-- **Route → Service → Store**: Routes parse/validate with `parseOrThrow(schema, input)`, call service methods, validate response with `parseOrThrow(responseSchema, result)`, return via `success(data)` or `HttpError`
-- **Auth**: `x-user-id` header → `authenticate` middleware → `req.currentUser` → `requireRole("designer")` for role-gated routes
-- **Store**: In-memory arrays persisted to `data/backend-store.json`. Test environment uses default state without file I/O. Call `saveStore()` after mutations.
-- **Error handling**: All errors flow through `HttpError` → centralized error middleware → structured `{ success: false, error: { code, message } }`
+- **Route → APIMessage → Table**: Routes parse HTTP (path/header/body), construct APIMessage, call `.run(databaseSession)`
+- **Auth**: `x-user-id` header identifies user; `AccessControl.requireRole` / `requireAdminLevel` enforce permissions
+- **Storage**: Default `DatabaseSession.inMemory`; optional JDBC via `UGC_DATABASE_MODE=jdbc` + PostgreSQL (`backend/docker/init-store.sql`)
+- **Admin levels**: `AdminLevel.Standard` (review, comments) vs `AdminLevel.Director` (UI customization, level slots, bird skills)
 
 ### Frontend Patterns
 
-- **No router library**: `App.tsx` uses `window.location.pathname` with `history.pushState` for navigation
-- **API client**: `frontend/src/api/client.ts` — `request(path, init, responseSchema)` validates responses with Zod
-- **Game engine**: Matter.js-based physics in `frontend/src/lib/game-engine/`, with `GameSession` managing engine lifecycle
-- **Auth**: Mock auth with localStorage persistence; frontend-registered users bind to backend demo accounts (`player-1`, `designer-1`, `admin-1`)
+- **No router library**: `App.tsx` uses `window.location.pathname` + `history.pushState`
+- **API client**: `frontend/src/api/client.ts`
+- **Game engine**: Matter.js in `frontend/src/lib/game-engine/`
+- **Auth**: Mock auth in localStorage; users bind to backend demo accounts via `BindBackendUserApi`
+- **Complex page example**: `page/DesignerPage/` split into hooks, components, lib, objects — see `page/DesignerPage/ARCHITECTURE.md`
 
 ### Key TypeScript Config
 
 - `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`
 - Module: `NodeNext` with `.js` extensions in imports
 - ESM project (`"type": "module"` in package.json)
+- `include` scoped to `frontend/src/**`
 
 ### Vite Proxy
 
-Frontend dev server proxies these paths to backend at `localhost:3000`:
-`/health`, `/users`, `/designer/levels`, `/designer/submissions`, `/admin/comments`, `/admin/submissions`, `/player/levels`, `/player/favorites`
+Frontend dev server proxies these paths to `localhost:3000`:
+`/health`, `/auth`, `/users`, `/designer/levels`, `/designer/submissions`, `/designer/bird-designs`, `/admin/comments`, `/admin/director`, `/admin/submissions`, `/admin/bird-submissions`, `/player/levels`, `/player/favorites`, `/player/ui`, `/player/social`, `/player/preparation`
+
+New API paths must be added to `vite.config.ts` proxy list.

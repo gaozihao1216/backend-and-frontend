@@ -10,6 +10,11 @@ import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 认证相关 HTTP 入口：前端 mock 登录后绑定后端用户。
+  *
+  * 实现：解析 JSON body / 无参 GET，构造 APIMessage 并 run。
+  * 关联：BindBackendUser 对应 frontend BindBackendUserApi；返回 BackendUser 供前端保存 apiUserId。
+  */
 object AuthRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {

@@ -4,7 +4,13 @@ import cats.effect.IO
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.LevelTag
 
+/** 玩家关卡路由的公共辅助：解析 x-user-id 与 query 参数。
+  *
+  * 实现：统一从请求头读取当前用户；tag/sort 用于 GET /player/levels 筛选与排序。
+  * 关联：PlayerLevelReadRouter、PlayerLevelActionRouter 共用，避免各 route 重复解析逻辑。
+  */
 private[microservice] object PlayerLevelRouteSupport {
+  /** 演示鉴权：前端 client.ts 在每个请求注入 x-user-id。 */
   def currentUserId(req: org.http4s.Request[IO]): Option[String] =
     req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
 

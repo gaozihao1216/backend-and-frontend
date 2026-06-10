@@ -9,6 +9,11 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 玩家侧只读 API：已发布关卡列表/详情、评论列表、收藏列表。
+  *
+  * 实现：解析 query 与 path 参数 → 对应 Get*APIMessage。
+  * 关联：GET /player/levels 供玩家地图与列表页；评论/收藏供社区与详情页。
+  */
 private[routes] object PlayerLevelReadRouter {
   import PlayerLevelRouteSupport._
 

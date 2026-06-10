@@ -19,6 +19,11 @@ object UiActionRequest {
   implicit val decoder: Decoder[UiActionRequest] = deriveDecoder
 }
 
+/** 玩家 UI 运行时数据：动态页面所需的关卡地图、商店/签到等 apiKey 数据。
+  *
+  * 实现：部分走 ui 模块 APIMessage（level-map）；部分直接调用 PlayerUiRuntimeService（/ui/data/:apiKey）。
+  * 关联：frontend lib/ui-runtime 与 DynamicPageRenderer；配置来源为总监 UiCustomization + player 运行时表。
+  */
 object PlayerUiRuntimeRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {

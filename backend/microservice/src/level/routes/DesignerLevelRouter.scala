@@ -10,6 +10,11 @@ import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 设计师关卡 HTTP 入口：创建 draft 关卡、提交审核。
+  *
+  * 实现：从 x-user-id 读取 designerId（不信任 body 中的作者字段），解析 JSON 后调用 APIMessage。
+  * 关联：POST /designer/levels → CreateLevelAPIMessage；POST /designer/submissions → SubmitLevelAPIMessage。
+  */
 object DesignerLevelRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {

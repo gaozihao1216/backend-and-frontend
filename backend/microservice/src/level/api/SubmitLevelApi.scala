@@ -34,6 +34,11 @@ final case class SubmitLevelAPIMessage(
 ) extends APIWithTokenMessage[Submission] {
   override def token: String = designerId
 
+  /** 设计师将 draft/rejected 关卡提交审核。
+    *
+    * 实现：校验关卡归属 → 无重复 pending submission → Level 置 PendingReview → 插入 SubmissionRow。
+    * 关联：Admin ReviewSubmissionAPIMessage 处理后续批准/拒绝；与 CreateLevel 共同构成 UGC 主流程。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Submission]] =
     IO.pure {
       AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
@@ -49,6 +54,7 @@ final case class SubmitLevelAPIMessage(
             Left(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
           } else {
             val timestamp = Instant.now().toString
+            // 关卡与 submission 双写：level.status 与 submission.status 保持同步
             LevelTable.updateSubmissionStatus(connection, body.levelId, LevelStatus.PendingReview, None, timestamp)
             val row = SubmissionTable.insert(
               connection,

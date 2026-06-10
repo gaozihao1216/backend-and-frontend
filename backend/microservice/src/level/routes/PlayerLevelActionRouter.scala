@@ -10,6 +10,11 @@ import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 玩家侧写操作：评论、收藏、评分等 mutating API。
+  *
+  * 实现：POST/DELETE 解析 path 与 body → *APIMessage；与 PlayerLevelReadRouter 互补。
+  * 关联：RateLevelAPIMessage 更新 Level 聚合评分；Favorite/Comment 供社区与详情页。
+  */
 private[routes] object PlayerLevelActionRouter {
   import PlayerLevelRouteSupport._
 

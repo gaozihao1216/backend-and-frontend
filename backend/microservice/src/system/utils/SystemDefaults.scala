@@ -26,6 +26,14 @@ import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateTabl
 import microservice.ui.tables.ui_page.{UiPageTable}
 import org.http4s.HttpRoutes
 
+/** 应用级默认装配：数据库会话、种子数据、HTTP 路由树。
+  *
+  * 实现：
+  *   - 读取 UGC_DATABASE_* 环境变量选择 in-memory 或 JDBC。
+  *   - 启动时调用 SystemSeedData 填充 InMemoryStore（演示账号与样例关卡）。
+  *   - initializeDatabase 在 JDBC 模式下执行各 Table.initialize 建表。
+  * 关联：Main 启动入口；ApiRouter 消费 databaseSession。
+  */
 object SystemDefaults {
   val databaseConfig: DatabaseConfig =
     DatabaseConfig(
@@ -37,6 +45,7 @@ object SystemDefaults {
     )
 
   val databaseSession: DatabaseSession =
+    // 显式 UGC_DATABASE_MODE=in_memory 时用内存；否则走 JDBC（需 PostgreSQL 可用）
     sys.env.get("UGC_DATABASE_MODE") match {
       case Some("in_memory") => DatabaseSession.inMemory(databaseConfig)
       case _ => DatabaseSession.jdbc(databaseConfig)
@@ -45,11 +54,13 @@ object SystemDefaults {
   private val createdAt = Instant.now().toString
   private val reviewedAt = createdAt
 
+  // 进程加载时注入演示用户、关卡、模板等；与 frontend 绑定账号 ID 对应
   SystemSeedData.reset(createdAt, reviewedAt)
 
   def apiRoutes: HttpRoutes[cats.effect.IO] =
     ApiRouter.routes(databaseSession = databaseSession)
 
+  /** 启动阶段调用：JDBC 模式下为各业务表执行 DDL/迁移；in-memory 模式下多为 no-op。 */
   def initializeDatabase: IO[Unit] =
     databaseSession.withTransaction { connection =>
       IO.blocking {

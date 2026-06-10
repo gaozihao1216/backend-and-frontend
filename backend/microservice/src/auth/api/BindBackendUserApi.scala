@@ -30,6 +30,11 @@ object BindBackendUserRequest {
 final case class BindBackendUserAPIMessage(
   request: BindBackendUserRequest
 ) extends APIMessage[BackendUser] {
+  /** 将前端 localUserId + role 映射为稳定的后端 UserRow。
+    *
+    * 实现：按 localUserId 哈希生成 username；已存在则复用，否则 insert 新用户。
+    * 关联：新 admin 默认 adminLevel=Standard；演示账号 player-1 等由 SystemSeedData 预置。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, BackendUser]] =
     IO.pure {
       if (request.localUserId.trim.isEmpty || request.nickname.trim.isEmpty) {

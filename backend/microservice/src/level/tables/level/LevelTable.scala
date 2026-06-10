@@ -8,10 +8,17 @@ import microservice.level.tables.level.jdbc._
 import microservice.system.objects.{LevelStatus, LevelTag}
 import java.sql.Connection
 
+/** 关卡表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
+  *
+  * 实现：isInMemory(connection) 为 true 时走 LevelTableInMemory + InMemoryStore；
+  *       否则走 LevelTableJdbcRead/Write（PostgreSQL）。
+  * 关联：CreateLevel、ReviewSubmission、RateLevel 等 APIMessage 均通过此对象读写 LevelRow。
+  */
 object LevelTable {
   private def isInMemory(connection: Connection): Boolean =
     connection == null
 
+  /** JDBC 启动时建表；in-memory 模式下无需 DDL。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) LevelTableJdbcWrite.initialize(connection)
 

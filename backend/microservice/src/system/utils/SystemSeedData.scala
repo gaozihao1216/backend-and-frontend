@@ -6,6 +6,12 @@ import microservice.level.objects._
 import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}
 import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, SubmissionStatus, UserRole}
 
+/** in-memory 模式的初始演示数据。
+  *
+  * 实现：重置 InMemoryStore 并向量写入用户、关卡、submission、UI 模板等。
+  * 关联：player-1 / designer-1 / admin-1 / admin-director-1 供前端 BindBackendUser 绑定；
+  *       level-1 已发布、level-2 待审核，便于演示完整 UGC 流程。
+  */
 private[utils] object SystemSeedData {
   def reset(createdAt: String, reviewedAt: String): Unit =
     InMemoryStore.reset(

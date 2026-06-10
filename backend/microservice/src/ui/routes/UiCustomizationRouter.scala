@@ -44,6 +44,11 @@ import org.http4s.{HttpRoutes, Status}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 总监 UI 定制 HTTP 入口，前缀 /admin/director/ui。
+  *
+  * 实现：PageConfig、按钮模板、拉伸视觉、页面组件的 CRUD；多数 APIMessage 内 requireAdminLevel(Director)。
+  * 关联：frontend DirectorWorkbenchPage、DynamicPageRenderer 消费配置；部分 workflow 联动 player 签到奖励。
+  */
 object UiCustomizationRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {

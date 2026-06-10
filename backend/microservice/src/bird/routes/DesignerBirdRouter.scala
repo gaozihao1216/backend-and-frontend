@@ -18,6 +18,11 @@ import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** 设计师鸟类设计 HTTP 入口，挂载在 /designer/bird-designs。
+  *
+  * 实现：CRUD + 提交审核；与关卡模块独立，但审核流程在 AdminRouter 的 bird-submissions 处理。
+  * 关联：frontend DesignerBirdLabPage；总监可在 DirectorBirdSkillLab 配置技能。
+  */
 object DesignerBirdRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
