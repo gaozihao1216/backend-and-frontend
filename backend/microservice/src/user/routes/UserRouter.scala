@@ -8,10 +8,10 @@ import microservice.user.api.GetUserProfileAPIMessage
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
 
-/** 用户资料 HTTP 入口。
+/** 用户资料 HTTP 入口（profile 聚合层）。
   *
   * 实现：GET /users/:userId/profile，viewer 身份来自 x-user-id，被查看用户来自 path。
-  * 关联：聚合关卡、评论、统计等公开资料，供 UserProfilePage 展示。
+  * 关联：GetUserProfileAPIMessage 聚合 level/comment/rating 等跨模块数据；身份数据来自 user.tables.user。
   */
 object UserRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =

@@ -23,8 +23,7 @@ backend/microservice/src/
 │   └── http/            # HttpError、统一错误响应
 ├── core/                # 跨模块业务装配（AccessControl、RowMappers 等）
 ├── system/              # 健康检查、枚举、种子数据
-├── auth/                # 后端用户与绑定
-├── user/                # 用户资料
+├── user/                # 用户身份、绑定、资料、AccessControl
 ├── level/               # 关卡 CRUD、提交、玩家读/写
 ├── admin/               # 审核、评论管理、总监能力
 ├── ui/                  # UI 页面/组件/模板定制 API
@@ -75,8 +74,8 @@ final case class CreateLevelAPIMessage(
 | 前缀 | 模块 |
 | --- | --- |
 | `/health` | system |
-| `/auth` | auth |
-| `/users` | user |
+| `/auth` | user（身份绑定，URL 兼容保留） |
+| `/users` | user（资料聚合） |
 | `/designer` | level（设计师）+ bird |
 | `/player` | level（玩家读/写）+ player（ui/social/preparation） |
 | `/admin/director/ui` | ui 定制 |
@@ -122,14 +121,23 @@ sbt run
 
 通用枚举与 API 包装：`UserRole`、`LevelStatus`、`SubmissionStatus`、`ApiSuccess`、`ApiFailure`、`ErrorBody`。
 
-### auth
-
-- `GET /auth/backend-users`：列出可绑定的演示账号
-- `POST /auth/bind`：前端本地 ID 绑定到后端用户
-
 ### user
 
+统一用户模块，内部分 **identity**（身份）与 **profile**（资料聚合）两层：
+
+**身份 / 绑定**（路由前缀 `/auth`，兼容前端现有路径）：
+
+- `GET /auth/backend-users`：列出可绑定的演示账号
+- `POST /auth/bind`：前端本地 ID 绑定到后端用户（创建或复用 UserRow）
+
+**资料**（路由前缀 `/users`）：
+
 - `GET /users/:userId/profile`：资料页聚合（发布关卡、评论、统计）
+
+**共享能力**：
+
+- `tables/user/`：`UserTable`、`UserRow` 持久化（in-memory / JDBC）
+- `utils/AccessControl.scala`：全项目共用的 `requireRole` / `requireAdminLevel`
 
 ### level
 

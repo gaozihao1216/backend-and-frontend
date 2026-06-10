@@ -1,7 +1,7 @@
-package microservice.auth.tables.user
+package microservice.user.tables.user
 
-import microservice.auth.tables.user.inmemory._
-import microservice.auth.tables.user.jdbc._
+import microservice.user.tables.user.inmemory._
+import microservice.user.tables.user.jdbc._
 
 import microservice.system.objects.{AdminLevel, UserRole}
 import java.sql.Connection

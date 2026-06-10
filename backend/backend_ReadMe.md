@@ -12,7 +12,6 @@ backend/microservice/src
 ├── core
 ├── routes
 ├── system
-├── auth
 ├── user
 ├── level
 └── admin
@@ -154,14 +153,14 @@ docker compose up -d postgres
 
 注册健康检查路由，构造 `HealthAPIMessage` 并执行。
 
-### `auth/routes/AuthRouter.scala`
+### `user/routes/AuthRouter.scala`
 
 注册认证相关路由：
 
 - `GET /auth/backend-users`
 - `POST /auth/bind`
 
-只解析 body 并调用 auth APIMessage。
+只解析 body 并调用 user 模块 APIMessage。
 
 ### `user/routes/UserRouter.scala`
 
@@ -231,7 +230,7 @@ docker compose up -d postgres
 
 ### `GetBackendUsersAPIMessage`
 
-文件：`auth/api/GetBackendUsersApi.scala`
+文件：`user/api/GetBackendUsersApi.scala`
 
 作用：获取后端可绑定的演示用户列表。
 
@@ -243,7 +242,7 @@ docker compose up -d postgres
 
 ### `BindBackendUserAPIMessage`
 
-文件：`auth/api/BindBackendUserApi.scala`
+文件：`user/api/BindBackendUserApi.scala`
 
 作用：前端本地用户绑定到后端演示账号。
 
@@ -484,7 +483,7 @@ docker compose up -d postgres
 
 ### `UserTable` JDBC 实现
 
-`auth/tables` 已按职责拆分：
+`user/tables` 已按职责拆分：
 
 - `UserRow.scala`：保存 `UserRow`。
 - `UserTable.scala`：对外 facade，根据 connection 分发到 in-memory 或 JDBC 实现。
@@ -685,7 +684,7 @@ objects 层只描述数据结构，不放业务流程。
 
 主要对象：
 
-- `auth/objects/BackendUser.scala`
+- `user/objects/BackendUser.scala`
 - `user/objects/UserProfile.scala`
 - `user/objects/UserProfileStats.scala`
 - `level/objects/Level.scala`

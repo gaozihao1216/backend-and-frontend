@@ -1,6 +1,6 @@
 package microservice.system.utils
 
-import microservice.auth.tables.user.UserRow
+import microservice.user.tables.user.UserRow
 import microservice.infrastructure.database.InMemoryStore
 import microservice.level.objects._
 import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}

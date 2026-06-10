@@ -1,4 +1,4 @@
-package microservice.auth.objects
+package microservice.user.objects
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}

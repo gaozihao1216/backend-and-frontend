@@ -5,7 +5,7 @@ import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import java.sql.Connection
-import microservice.auth.utils.AccessControl
+import microservice.user.utils.AccessControl
 import microservice.bird.objects.{BirdSkillConfig, DirectorBirdSkillBoard, DirectorBirdSkillEntry}
 import microservice.bird.tables.skill_config.BirdSkillConfigTable
 import microservice.infrastructure.api.APIWithTokenMessage

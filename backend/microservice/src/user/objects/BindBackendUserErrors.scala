@@ -1,4 +1,4 @@
-package microservice.auth.objects
+package microservice.user.objects
 
 import microservice.infrastructure.http.HttpError
 

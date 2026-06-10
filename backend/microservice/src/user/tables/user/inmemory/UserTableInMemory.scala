@@ -1,6 +1,6 @@
-package microservice.auth.tables.user.inmemory
+package microservice.user.tables.user.inmemory
 
-import microservice.auth.tables.user._
+import microservice.user.tables.user._
 
 import microservice.infrastructure.database.InMemoryStore
 import microservice.system.objects.{AdminLevel, UserRole}

@@ -1,6 +1,6 @@
 package microservice.infrastructure.database
 
-import microservice.auth.tables.user.UserRow
+import microservice.user.tables.user.UserRow
 import microservice.level.objects.Favorite
 import microservice.bird.tables.shared.{BirdDesignRow, BirdSubmissionRow}
 import microservice.level.tables.shared.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}

@@ -1,4 +1,4 @@
-package microservice.auth.tables.user
+package microservice.user.tables.user
 
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole

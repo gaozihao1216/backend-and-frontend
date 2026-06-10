@@ -10,7 +10,7 @@ import microservice.admin.objects.{
   LevelSlotAssignmentDetail,
   LevelSlotCatalog
 }
-import microservice.auth.utils.AccessControl
+import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.bird.tables.design.{BirdDesignTable}

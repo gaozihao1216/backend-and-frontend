@@ -6,8 +6,8 @@ import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.admin.objects.{DirectorTransferResult, TransferDirectorPermissionErrors}
-import microservice.auth.tables.user.UserTable
-import microservice.auth.utils.AccessControl
+import microservice.user.tables.user.UserTable
+import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, UserRole}

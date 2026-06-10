@@ -3,7 +3,7 @@ package microservice.bird.api
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.auth.utils.AccessControl
+import microservice.user.utils.AccessControl
 import microservice.bird.objects.BirdSubmission
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper, BirdSubmissionRow}

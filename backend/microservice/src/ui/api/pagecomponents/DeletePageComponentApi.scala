@@ -3,7 +3,7 @@ package microservice.ui.api.pagecomponents
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.auth.utils.AccessControl
+import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel

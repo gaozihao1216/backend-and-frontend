@@ -2,7 +2,7 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.auth.tables.user.{UserRowMapper, UserTable}
+import microservice.user.tables.user.{UserRowMapper, UserTable}
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.level.tables.comment.{CommentTable}

@@ -1,15 +1,15 @@
-package microservice.auth.api
+package microservice.user.api
 
 import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
-import microservice.auth.objects.{BackendUser, BindBackendUserErrors}
-import microservice.auth.tables.user.{UserRow, UserTable}
+import microservice.user.objects.{BackendUser, BindBackendUserErrors}
+import microservice.user.tables.user.{UserRow, UserTable}
 import microservice.infrastructure.api.{APIMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.auth.tables.user.UserRowMapper
+import microservice.user.tables.user.UserRowMapper
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder

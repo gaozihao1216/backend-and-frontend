@@ -2,7 +2,7 @@ package microservice.user.objects
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.auth.objects.BackendUser
+import microservice.user.objects.BackendUser
 import microservice.level.objects.{Level, LevelComment}
 
 final case class UserProfile(

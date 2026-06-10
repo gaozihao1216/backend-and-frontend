@@ -49,8 +49,7 @@ backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 ├── infrastructure/           # APIMessage, DatabaseSession, HttpError
 ├── core/                     # AccessControl, RowMappers, InMemoryStore
 ├── system/                   # Health, enums, seed data
-├── auth/                     # Backend user binding
-├── user/                     # User profiles
+├── user/                     # Identity, bind, profile, AccessControl, UserTable
 ├── level/                    # Level CRUD, submissions, player actions
 ├── admin/                    # Review, comments, director features
 ├── ui/                       # UI customization (director only)
@@ -91,7 +90,7 @@ scripts/dev.mjs               # Concurrent sbt + vite launcher
 - **No router library**: `App.tsx` uses `window.location.pathname` + `history.pushState`
 - **API client**: `frontend/src/api/client.ts`
 - **Game engine**: Matter.js in `frontend/src/lib/game-engine/`
-- **Auth**: Mock auth in localStorage; users bind to backend demo accounts via `BindBackendUserApi`
+- **Auth**: Mock auth in localStorage; users bind via `user` module `BindBackendUserApi` (`POST /auth/bind`)
 - **Complex page example**: `page/DesignerPage/` split into hooks, components, lib, objects — see `page/DesignerPage/ARCHITECTURE.md`
 
 ### Key TypeScript Config

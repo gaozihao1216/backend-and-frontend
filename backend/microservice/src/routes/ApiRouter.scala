@@ -4,7 +4,7 @@ import cats.effect.IO
 import microservice.admin.routes.AdminRouter
 import cats.syntax.semigroupk._
 import microservice.infrastructure.database.DatabaseSession
-import microservice.auth.routes.AuthRouter
+import microservice.user.routes.AuthRouter
 import microservice.level.routes.{DesignerLevelRouter, PlayerLevelRouter}
 import microservice.bird.routes.DesignerBirdRouter
 import microservice.user.routes.UserRouter
@@ -22,6 +22,7 @@ object ApiRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     Router(
       "/" -> HealthRouter.routes(databaseSession),
+      // user 模块：/auth 绑定与 /users 资料（URL 前缀保持不变）
       "/auth" -> AuthRouter.routes(databaseSession),
       "/users" -> UserRouter.routes(databaseSession),
       // 设计师关卡与鸟类设计共用 /designer 前缀

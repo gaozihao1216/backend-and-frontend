@@ -1,6 +1,6 @@
-package microservice.auth.tables.user.jdbc
+package microservice.user.tables.user.jdbc
 
-import microservice.auth.tables.user._
+import microservice.user.tables.user._
 
 import java.sql.Connection
 import microservice.system.objects.AdminLevel

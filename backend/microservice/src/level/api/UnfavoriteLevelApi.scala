@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.auth.utils.AccessControl
+import microservice.user.utils.AccessControl
 import microservice.level.objects.Favorite
 import microservice.level.tables.favorite.FavoriteTable
 import microservice.level.utils.LevelApiSupport

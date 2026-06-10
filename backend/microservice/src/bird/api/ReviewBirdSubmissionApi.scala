@@ -5,7 +5,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
-import microservice.auth.tables.user.UserTable
+import microservice.user.tables.user.UserTable
 import microservice.bird.objects.ReviewedBirdSubmission
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper}

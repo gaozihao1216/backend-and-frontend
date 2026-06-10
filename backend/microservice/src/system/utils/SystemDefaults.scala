@@ -2,7 +2,7 @@ package microservice.system.utils
 
 import cats.effect.IO
 import java.time.Instant
-import microservice.auth.tables.user.UserTable
+import microservice.user.tables.user.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.skill_config.{BirdSkillConfigTable}

@@ -1,6 +1,6 @@
-package microservice.auth.tables.user
+package microservice.user.tables.user
 
-import microservice.auth.objects.BackendUser
+import microservice.user.objects.BackendUser
 
 object UserRowMapper {
   def toBackendUser(row: UserRow): BackendUser =

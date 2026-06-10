@@ -5,7 +5,7 @@ import java.sql.Connection
 import microservice.admin.objects.DirectorPermissionSummary
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
-import microservice.auth.utils.AccessControl
+import microservice.user.utils.AccessControl
 import microservice.system.objects.AdminLevel
 
 final case class GetDirectorPermissionsAPIMessage(
