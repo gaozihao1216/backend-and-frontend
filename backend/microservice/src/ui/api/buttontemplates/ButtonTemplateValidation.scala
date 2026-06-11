@@ -3,7 +3,9 @@ package microservice.ui.api.buttontemplates
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{ButtonTemplate, ButtonTemplateCategory, UiCustomizationErrors}
 
+/** 按钮模板的字段校验与 trim 规范化（创建/更新前调用）。 */
 private[api] object ButtonTemplateValidation {
+  /** 校验 id/name/sourceDataUrl、category 与九宫格 slice 数值合法性。 */
   def validate(template: ButtonTemplate): Either[HttpError, Unit] =
     if (template.id.trim.isEmpty || template.name.trim.isEmpty || template.sourceDataUrl.trim.isEmpty) {
       Left(UiCustomizationErrors.InvalidButtonTemplate("id, name and sourceDataUrl are required").toHttpError)
@@ -15,6 +17,7 @@ private[api] object ButtonTemplateValidation {
       Right(())
     }
 
+  /** 去除字符串字段首尾空白。 */
   def sanitize(template: ButtonTemplate): ButtonTemplate =
     template.copy(
       id = template.id.trim,

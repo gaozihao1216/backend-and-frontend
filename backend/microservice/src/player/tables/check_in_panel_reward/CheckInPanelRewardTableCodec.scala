@@ -1,3 +1,7 @@
+/** JDBC 读路径专用：SQL 列名 ↔ 签到面板奖励 Row 的编解码。
+  *
+  * 实现：baseSelect 复用 SELECT 片段；rowFromResultSet / bindRow 与 PostgreSQL snake_case 列对齐。
+  */
 package microservice.player.tables.check_in_panel_reward
 
 import java.sql.ResultSet

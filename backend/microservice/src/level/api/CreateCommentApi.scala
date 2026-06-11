@@ -17,6 +17,7 @@ import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /player/levels/:levelId/comments 的请求体。 */
 final case class CreateCommentBody(
   content: String
 )
@@ -27,6 +28,7 @@ object CreateCommentBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateCommentBody] = jsonOf
 }
 
+/** 玩家对已发布关卡发表评论 APIMessage。 */
 final case class CreateCommentAPIMessage(
   playerId: String,
   levelId: String,
@@ -34,6 +36,11 @@ final case class CreateCommentAPIMessage(
 ) extends APIWithTokenMessage[LevelComment] {
   override def token: String = playerId
 
+  /** 玩家对已发布关卡发表评论。
+    *
+    * 实现：requireRole(Player) → 校验关卡已发布 → CommentTable.insert → RowMapper。
+    * 关联：content 会 trim；userId 取自 header 中的 playerId。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, LevelComment]] =
     IO.pure(
       AccessControl.requireRole(connection, playerId, UserRole.Player).flatMap(_ => LevelApiSupport.publishedLevel(connection, levelId).map { _ =>

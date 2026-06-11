@@ -4,6 +4,10 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.system.objects.SubmissionStatus
 
+/** 待审核鸟类投稿的聚合视图：Submission 字段 + 嵌套完整 BirdDesign。
+  *
+  * 关联：GetPendingBirdSubmissionsAPIMessage 返回；from 工厂方法组装。
+  */
 final case class BirdSubmissionWithDesign(
   id: String,
   birdDesignId: String,

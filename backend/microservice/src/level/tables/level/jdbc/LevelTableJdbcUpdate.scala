@@ -1,3 +1,7 @@
+/** 关卡表的 JDBC 更新专用路径。
+  *
+  * 实现：与 JdbcWrite 互补，负责已有行的 UPDATE 逻辑。
+  */
 package microservice.level.tables.level.jdbc
 
 import microservice.level.tables.shared.LevelRow

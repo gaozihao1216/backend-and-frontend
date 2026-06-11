@@ -6,9 +6,15 @@ import microservice.infrastructure.database.InMemoryStore
 import microservice.system.objects.SubmissionStatus
 import java.sql.Connection
 
+/** 鸟类设计投稿表访问门面：记录 submit → review 流程，关联 bird_designs。
+  *
+  * 表：bird_submissions；状态使用 SubmissionStatus。
+  * 关联：SubmitBirdDesignAPIMessage 创建、ReviewBirdSubmissionAPIMessage 审核。
+  */
 object BirdSubmissionTable {
   private def isInMemory(connection: Connection): Boolean = connection == null
 
+  /** JDBC 启动时建表 bird_submissions；in-memory 模式跳过 DDL。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) {
       val statement = connection.createStatement()
@@ -32,6 +38,7 @@ object BirdSubmissionTable {
       }
     }
 
+  /** 生成下一个投稿 ID，格式 bird-submission-0001。 */
   def nextId(connection: Connection): String = {
     val count =
       if (isInMemory(connection)) InMemoryStore.birdSubmissions.size
@@ -48,6 +55,7 @@ object BirdSubmissionTable {
     f"bird-submission-${count + 1}%04d"
   }
 
+  /** 插入新投稿行。 */
   def insert(connection: Connection, row: BirdSubmissionRow): BirdSubmissionRow =
     if (isInMemory(connection)) {
       InMemoryStore.birdSubmissions = InMemoryStore.birdSubmissions :+ row
@@ -85,6 +93,7 @@ object BirdSubmissionTable {
       }
     }
 
+  /** 按 submissionId 查询单条投稿。 */
   def findById(connection: Connection, submissionId: String): Option[BirdSubmissionRow] =
     if (isInMemory(connection)) InMemoryStore.birdSubmissions.find(_.id == submissionId)
     else {
@@ -104,6 +113,7 @@ object BirdSubmissionTable {
       }
     }
 
+  /** 列出 PendingReview 状态的投稿，按 submitted_at 升序（先进先审）。 */
   def listPending(connection: Connection): Vector[BirdSubmissionRow] =
     if (isInMemory(connection)) {
       InMemoryStore.birdSubmissions.filter(_.status == SubmissionStatus.PendingReview)
@@ -131,6 +141,7 @@ object BirdSubmissionTable {
       }
     }
 
+  /** 检查某设计是否已有 PendingReview 投稿，防止重复 submit。 */
   def hasPendingForDesign(connection: Connection, designId: String): Boolean =
     if (isInMemory(connection)) {
       InMemoryStore.birdSubmissions.exists(row =>
@@ -150,6 +161,7 @@ object BirdSubmissionTable {
       }
     }
 
+  /** 写入审核结果：更新 status、reviewerId、reviewNote、reviewedAt。 */
   def updateReview(
     connection: Connection,
     submissionId: String,

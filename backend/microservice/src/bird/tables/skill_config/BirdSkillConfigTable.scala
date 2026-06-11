@@ -9,28 +9,39 @@ import java.sql.{Connection, PreparedStatement, ResultSet}
 import java.time.Instant
 import scala.collection.mutable
 
+/** 鸟类技能配置表门面：按 birdType 存储 skills JSON 与模型图 URL。
+  *
+  * 实现：connection == null 时走 BirdSkillConfigTableInMemory；否则走 JDBC（PostgreSQL ON CONFLICT upsert）。
+  * 关联：DirectorBirdSkillApi；玩家备战 PlayerPreparationCatalog 读取配置。
+  */
 object BirdSkillConfigTable {
   private def isInMemory(connection: Connection): Boolean =
     connection == null
 
+  /** JDBC 模式下初始化 bird_skill_configs 表结构。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) BirdSkillConfigTableJdbc.initialize(connection)
 
+  /** 列出全部技能配置，按 birdType 排序。 */
   def listAll(connection: Connection): List[BirdSkillConfig] =
     if (isInMemory(connection)) BirdSkillConfigTableInMemory.listAll()
     else BirdSkillConfigTableJdbc.listAll(connection)
 
+  /** 按 birdType 查询单条配置。 */
   def findByBirdType(connection: Connection, birdType: String): Option[BirdSkillConfig] =
     if (isInMemory(connection)) BirdSkillConfigTableInMemory.findByBirdType(birdType)
     else BirdSkillConfigTableJdbc.findByBirdType(connection, birdType)
 
+  /** 插入或更新技能配置（按 birdType 唯一键 upsert）。 */
   def upsert(connection: Connection, config: BirdSkillConfig): BirdSkillConfig =
     if (isInMemory(connection)) BirdSkillConfigTableInMemory.upsert(config)
     else BirdSkillConfigTableJdbc.upsert(connection, config)
 
+  /** 将全部配置转为 birdType → BirdSkillConfig 映射，供 buildBoard 快速查找。 */
   def skillsJsonMap(connection: Connection): Map[String, BirdSkillConfig] =
     listAll(connection).map(row => row.birdType -> row).toMap
 
+  /** 当前 UTC 时间 ISO-8601 字符串，用于 updatedAt 字段。 */
   def nowIso: String = Instant.now().toString
 }
 

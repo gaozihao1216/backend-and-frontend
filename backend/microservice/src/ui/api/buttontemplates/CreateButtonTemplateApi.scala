@@ -14,6 +14,7 @@ import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTe
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /admin/director/ui/button-templates 的请求体。 */
 final case class CreateButtonTemplateBody(
   template: ButtonTemplate
 )
@@ -24,6 +25,7 @@ object CreateButtonTemplateBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateButtonTemplateBody] = jsonOf
 }
 
+/** POST /admin/director/ui/button-templates 的 APIMessage：校验并创建按钮模板。 */
 final case class CreateButtonTemplateAPIMessage(
   userId: String,
   body: CreateButtonTemplateBody

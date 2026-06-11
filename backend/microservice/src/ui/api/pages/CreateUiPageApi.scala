@@ -14,6 +14,7 @@ import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /admin/director/ui/pages 的请求体。 */
 final case class CreateUiPageBody(
   page: PageConfig
 )
@@ -24,6 +25,7 @@ object CreateUiPageBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateUiPageBody] = jsonOf
 }
 
+/** POST /admin/director/ui/pages 的 APIMessage：创建新页面配置；id 不可重复。 */
 final case class CreateUiPageAPIMessage(
   userId: String,
   body: CreateUiPageBody

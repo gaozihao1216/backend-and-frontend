@@ -1,5 +1,6 @@
 package microservice.ui.objects
 
+/** 页面所属角色端点：player / designer / admin / director，用于按角色过滤页面列表。 */
 import io.circe.{Decoder, Encoder}
 
 sealed trait UiEndpoint {

@@ -1,3 +1,7 @@
+/** 鸟技能配置表的 PostgreSQL DDL 与索引（JDBC 模式首次 initialize 时执行）。
+  *
+  * 关联：鸟设计模块 Table 门面在 JDBC 模式下 startup 时调用。
+  */
 package microservice.bird.tables.skill_config.jdbc
 
 import microservice.bird.tables.skill_config._

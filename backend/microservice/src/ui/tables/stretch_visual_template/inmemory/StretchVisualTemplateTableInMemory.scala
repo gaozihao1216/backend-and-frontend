@@ -1,3 +1,7 @@
+/** InMemoryStore 上的 拉伸视觉模板 CRUD；演示模式与单元测试使用。
+  *
+  * 关联：UI 定制模块 Table 门面在 connection == null 时委托到此实现。
+  */
 package microservice.ui.tables.stretch_visual_template.inmemory
 
 import microservice.ui.tables.stretch_visual_template._

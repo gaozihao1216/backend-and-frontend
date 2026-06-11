@@ -1,5 +1,9 @@
 package microservice.ui.objects
 
+/** 可拉伸视觉模板：面板背景或装饰图案，含 kind（panel/pattern）与 category。
+  *
+  * 路由以 /panel-templates 与 /pattern-templates 区分；存储共用 StretchVisualTemplateTable。
+  */
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

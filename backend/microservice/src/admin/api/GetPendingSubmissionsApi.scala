@@ -11,6 +11,11 @@ import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.UserRole
 
+/** 列出所有待审核的关卡投稿，附带关联关卡快照。
+  *
+  * 实现：校验 UserRole.Admin → SubmissionTable.listPending → 逐条 join LevelTable → SubmissionWithLevel。
+  * 关联：GET /admin/submissions/pending；ReviewSubmissionAPIMessage 处理单条审核。
+  */
 final case class GetPendingSubmissionsAPIMessage(userId: String) extends APIWithTokenMessage[List[SubmissionWithLevel]] {
   override def token: String = userId
 

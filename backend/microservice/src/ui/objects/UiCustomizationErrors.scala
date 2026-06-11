@@ -1,5 +1,6 @@
 package microservice.ui.objects
 
+/** UI 定制模块的 sealed 错误层次，映射为带业务 code 的 HttpError。 */
 import microservice.infrastructure.http.HttpError
 
 sealed trait UiCustomizationApiError {

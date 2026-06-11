@@ -1,3 +1,7 @@
+/** 评分表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
+  */
 package microservice.level.tables.rating.jdbc
 
 import microservice.level.tables.shared.RatingRow

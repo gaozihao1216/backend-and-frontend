@@ -18,6 +18,7 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /designer/levels 的请求体：关卡元数据与编辑器 JSON。 */
 final case class CreateLevelBody(
   title: String,
   description: String,
@@ -31,6 +32,7 @@ object CreateLevelBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateLevelBody] = jsonOf
 }
 
+/** 设计师创建新关卡 APIMessage；authorId 取自 header 而非 body。 */
 final case class CreateLevelAPIMessage(
   designerId: String,
   body: CreateLevelBody
@@ -45,10 +47,12 @@ final case class CreateLevelAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     IO.pure {
       AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
+        // title 不能为空（trim 后）
         if (body.title.trim.isEmpty) {
           Left(CreateLevelErrors.CreateLevelValidation(List("title")).toHttpError)
         } else {
         val timestamp = Instant.now().toString
+        // 组装 LevelRow 并插入；status 固定为 Draft，评分字段初始化为 0
         val row = LevelTable.insert(
           connection,
           LevelRow(

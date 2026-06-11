@@ -1,3 +1,7 @@
+/** 每周签到表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
+  */
 package microservice.player.tables.weekly_check_in.jdbc
 
 import microservice.player.tables.weekly_check_in._

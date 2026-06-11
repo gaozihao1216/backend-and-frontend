@@ -1,3 +1,7 @@
+/** UI 页面表的 PostgreSQL DDL 与索引（JDBC 模式首次 initialize 时执行）。
+  *
+  * 关联：UI 定制模块 Table 门面在 JDBC 模式下 startup 时调用。
+  */
 package microservice.ui.tables.ui_page.jdbc
 
 import microservice.ui.tables.ui_page._

@@ -35,6 +35,7 @@ import org.http4s.HttpRoutes
   * 关联：Main 启动入口；ApiRouter 消费 databaseSession。
   */
 object SystemDefaults {
+  /** 从环境变量组装 JDBC 配置；未设置时使用本地 PostgreSQL 默认值。 */
   val databaseConfig: DatabaseConfig =
     DatabaseConfig(
       driver = sys.env.getOrElse("UGC_DATABASE_DRIVER", "org.postgresql.Driver"),
@@ -44,19 +45,24 @@ object SystemDefaults {
       password = sys.env.get("UGC_DATABASE_PASSWORD")
     )
 
+  /** 根据 UGC_DATABASE_MODE 选择存储后端；默认 JDBC，显式 in_memory 时用进程内向量。 */
   val databaseSession: DatabaseSession =
-    // 显式 UGC_DATABASE_MODE=in_memory 时用内存；否则走 JDBC（需 PostgreSQL 可用）
     sys.env.get("UGC_DATABASE_MODE") match {
-      case Some("in_memory") => DatabaseSession.inMemory(databaseConfig)
-      case _ => DatabaseSession.jdbc(databaseConfig)
+      case Some("in_memory") =>
+        // 本地演示 / 无 PostgreSQL 时：全部表走 InMemoryStore
+        DatabaseSession.inMemory(databaseConfig)
+      case _ =>
+        // 生产或集成测试：连接真实数据库
+        DatabaseSession.jdbc(databaseConfig)
     }
 
   private val createdAt = Instant.now().toString
   private val reviewedAt = createdAt
 
-  // 进程加载时注入演示用户、关卡、模板等；与 frontend 绑定账号 ID 对应
+  // 类加载时即注入演示用户、关卡、模板等；ID 与前端 BindBackendUser 绑定结果对应
   SystemSeedData.reset(createdAt, reviewedAt)
 
+  /** 组装完整 HTTP 路由树，供 Main 挂载到 EmberServerBuilder。 */
   def apiRoutes: HttpRoutes[cats.effect.IO] =
     ApiRouter.routes(databaseSession = databaseSession)
 
@@ -64,6 +70,7 @@ object SystemDefaults {
   def initializeDatabase: IO[Unit] =
     databaseSession.withTransaction { connection =>
       IO.blocking {
+        // --- 用户与 UGC 核心表 ---
         UserTable.initialize(connection)
         LevelTable.initialize(connection)
         SubmissionTable.initialize(connection)
@@ -71,15 +78,18 @@ object SystemDefaults {
         RatingTable.initialize(connection)
         CommentTable.initialize(connection)
         FavoriteTable.initialize(connection)
+        // --- UI 定制表 ---
         UiPageTable.initialize(connection)
         ButtonTemplateTable.initialize(connection)
         StretchVisualTemplateTable.initialize(connection)
+        // --- 玩家运行时表 ---
         PlayerWalletTable.initialize(connection)
         PlayerWeeklyCheckInTable.initialize(connection)
         PlayerLevelProgressTable.initialize(connection)
         PlayerLegacyCheckInTable.initialize(connection)
         CheckInPanelRewardTable.initialize(connection)
         ShopTable.initialize(connection)
+        // --- 鸟类设计与社交 ---
         BirdDesignTable.initialize(connection)
         BirdSubmissionTable.initialize(connection)
         BirdSkillConfigTable.initialize(connection)

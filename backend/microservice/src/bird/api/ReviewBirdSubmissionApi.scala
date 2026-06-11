@@ -16,6 +16,7 @@ import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** 鸟类投稿审核请求体：status 仅允许 Approved 或 Rejected。 */
 final case class ReviewBirdSubmissionBody(
   status: SubmissionStatus,
   reviewNote: Option[String]
@@ -27,6 +28,14 @@ object ReviewBirdSubmissionBody {
   implicit val entityDecoder: EntityDecoder[IO, ReviewBirdSubmissionBody] = jsonOf
 }
 
+/** 管理员审核鸟类设计投稿，并联动更新 BirdDesign 状态。
+  *
+  * 实现：
+  *   1. 校验 Admin 角色且 submission 为 PendingReview
+  *   2. BirdSubmissionTable.updateReview
+  *   3. 批准 → LevelStatus.Published；拒绝 → Rejected + rejectionReason
+  * 关联：POST /admin/bird-submissions/:submissionId/review；已发布设计可进入 Director bird pool。
+  */
 final case class ReviewBirdSubmissionAPIMessage(
   userId: String,
   submissionId: String,

@@ -1,3 +1,7 @@
+/** 按钮模板表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
+  */
 package microservice.ui.tables.button_template.jdbc
 
 import microservice.ui.tables.button_template._

@@ -1,3 +1,7 @@
+/** 签到面板奖励表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
+  *
+  * 关联：玩家模块 APIMessage 通过此对象读写 签到面板奖励 数据。
+  */
 package microservice.player.tables.check_in_panel_reward
 
 import microservice.player.tables.check_in_panel_reward.inmemory._

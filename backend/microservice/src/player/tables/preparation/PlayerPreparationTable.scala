@@ -19,8 +19,15 @@ final case class PlayerSlingshotUpgradeRow(
   updatedAt: String
 )
 
+/** 玩家备战升级表访问门面：鸟等级/阶位与弹弓等级。
+  *
+  * JDBC 模式在 initialize 中建 player_bird_upgrades / player_slingshot_upgrades 表；
+  * in-memory 模式使用 InMemoryStore 向量存储。
+  */
 object PlayerPreparationTable {
+  /** 鸟与弹弓等级上限。 */
   val maxLevel: Int = 5
+  /** 鸟阶位上限（与 BirdPreparationCatalog.maxTier 一致）。 */
   val maxTier: Int = BirdPreparationCatalog.maxTier
 
   private val systemBirdTypes: Vector[String] =
@@ -28,6 +35,7 @@ object PlayerPreparationTable {
 
   private def isInMemory(connection: Connection): Boolean = connection == null
 
+  /** 启动时建表/种子数据（含演示用户 player-1 的默认鸟与弹弓）。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) {
       val statement = connection.createStatement()
@@ -79,6 +87,7 @@ object PlayerPreparationTable {
       seedInMemory("player-1")
     }
 
+  /** 为 in-memory 用户写入默认鸟与弹弓等级（幂等）。 */
   def seedInMemory(userId: String, birdTypes: Vector[String] = systemBirdTypes): Unit = {
     val now = Instant.now().toString
     birdTypes.foreach { birdType =>
@@ -93,6 +102,7 @@ object PlayerPreparationTable {
     }
   }
 
+  /** 返回用户全部鸟升级行。 */
   def listBirdRows(connection: Connection, userId: String): Vector[PlayerBirdUpgradeRow] =
     if (isInMemory(connection)) {
       InMemoryStore.playerBirdUpgrades.filter(_.userId == userId)
@@ -123,12 +133,15 @@ object PlayerPreparationTable {
       }
     }
 
+  /** 返回 birdType → level 映射。 */
   def listBirdLevels(connection: Connection, userId: String): Map[String, Int] =
     listBirdRows(connection, userId).map(row => row.birdType -> row.level).toMap
 
+  /** 返回 birdType → tier 映射。 */
   def listBirdTiers(connection: Connection, userId: String): Map[String, Int] =
     listBirdRows(connection, userId).map(row => row.birdType -> row.tier).toMap
 
+  /** 读取弹弓等级（不存在时 ensure 默认 1 级）。 */
   def getSlingshotLevel(connection: Connection, userId: String): Int = {
     ensureSlingshotDefault(connection, userId)
     if (isInMemory(connection)) {
@@ -148,6 +161,7 @@ object PlayerPreparationTable {
     }
   }
 
+  /** 将指定鸟等级 +1；已达 maxLevel 时返回 Left 错误信息。 */
   def upgradeBird(connection: Connection, userId: String, birdType: String): Either[String, Int] = {
     val current = listBirdLevels(connection, userId).getOrElse(birdType, 1)
     if (current >= maxLevel) {
@@ -159,6 +173,7 @@ object PlayerPreparationTable {
     Right(nextLevel)
   }
 
+  /** 将指定鸟阶位 +1；已达 maxTier 时返回 Left 错误信息。 */
   def ascendBird(connection: Connection, userId: String, birdType: String): Either[String, Int] = {
     val currentTier = listBirdTiers(connection, userId).getOrElse(birdType, 1)
     if (currentTier >= maxTier) {
@@ -170,6 +185,7 @@ object PlayerPreparationTable {
     Right(nextTier)
   }
 
+  /** 将弹弓等级 +1；已达 maxLevel 时返回 Left 错误信息。 */
   def upgradeSlingshot(connection: Connection, userId: String): Either[String, Int] = {
     ensureSlingshotDefault(connection, userId)
     val current = getSlingshotLevel(connection, userId)
@@ -181,10 +197,13 @@ object PlayerPreparationTable {
     Right(nextLevel)
   }
 
+  /** 计算从当前等级升级到下一级所需金币（level * 100）。 */
   def upgradeCost(level: Int): Int = level * 100
 
+  /** 计算从当前阶位升阶到下一阶所需碎片（tier * 8）。 */
   def ascendCost(tier: Int): Int = tier * 8
 
+  /** 确保用户对给定 birdTypes 均有默认 1 级 1 阶记录（幂等）。 */
   def ensureBirdDefaults(connection: Connection, userId: String, birdTypes: Vector[String]): Unit =
     if (isInMemory(connection)) seedInMemory(userId, birdTypes)
     else {
@@ -208,6 +227,7 @@ object PlayerPreparationTable {
       ensureSlingshotDefault(connection, userId)
     }
 
+  /** 确保用户有默认 1 级弹弓记录（幂等）。 */
   def ensureSlingshotDefault(connection: Connection, userId: String): Unit =
     if (isInMemory(connection)) {
       if (!InMemoryStore.playerSlingshotUpgrades.exists(_.userId == userId)) {

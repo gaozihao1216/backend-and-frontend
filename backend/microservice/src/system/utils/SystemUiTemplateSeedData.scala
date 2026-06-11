@@ -6,7 +6,13 @@ import microservice.ui.objects.{ButtonTemplateCategory, ButtonTemplateScalingMod
 import microservice.ui.tables.button_template.{ButtonTemplateRow}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRow}
 
+/** UI 定制模块的 in-memory 演示模板种子。
+  *
+  * 实现：内嵌 SVG 字符串经 URLEncoder 转为 data URL，写入 ButtonTemplate / StretchVisualTemplate 行。
+  * 关联：[[SystemSeedData.reset]] 调用 buttonTemplates / stretchVisualTemplates 注入 InMemoryStore。
+  */
 private[utils] object SystemUiTemplateSeedData {
+  // 九宫格切片按钮底座 SVG（蓝紫渐变圆角矩形）
   private val defaultButtonSvg =
     """
       |<svg xmlns="http://www.w3.org/2000/svg" width="360" height="144" viewBox="0 0 360 144">
@@ -23,6 +29,7 @@ private[utils] object SystemUiTemplateSeedData {
       |</svg>
       |""".stripMargin.trim
 
+  // 面板背景 SVG（白底圆角卡片 + 标题条）
   private val defaultPanelSvg =
     """
       |<svg xmlns="http://www.w3.org/2000/svg" width="420" height="280" viewBox="0 0 420 280">
@@ -32,6 +39,7 @@ private[utils] object SystemUiTemplateSeedData {
       |</svg>
       |""".stripMargin.trim
 
+  // 装饰图案 SVG（星形徽章，可用于按钮点缀）
   private val defaultPatternSvg =
     """
       |<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
@@ -40,11 +48,13 @@ private[utils] object SystemUiTemplateSeedData {
       |</svg>
       |""".stripMargin.trim
 
+  /** 将 SVG 原文编码为前端可直接使用的 data:image/svg+xml URL。 */
   private def svgDataUrl(svg: String): String = {
     val encoded = URLEncoder.encode(svg, StandardCharsets.UTF_8.name()).replace("+", "%20")
     s"data:image/svg+xml;charset=utf-8,$encoded"
   }
 
+  /** 生成一条演示用按钮模板行。 */
   def buttonTemplates(timestamp: String): Vector[ButtonTemplateRow] =
     Vector(
       ButtonTemplateRow(
@@ -53,12 +63,13 @@ private[utils] object SystemUiTemplateSeedData {
         sourceDataUrl = svgDataUrl(defaultButtonSvg),
         category = ButtonTemplateCategory.Business,
         scalingMode = ButtonTemplateScalingMode.FixedAspect,
-        slice = ButtonTemplateSlice(top = 24, right = 24, bottom = 24, left = 24),
+        slice = ButtonTemplateSlice(top = 24, right = 24, bottom = 24, left = 24), // 九宫格切片边距
         createdAt = timestamp,
         updatedAt = timestamp
       )
     )
 
+  /** 生成面板背景与装饰图案两条 StretchVisual 模板行。 */
   def stretchVisualTemplates(timestamp: String): Vector[StretchVisualTemplateRow] =
     Vector(
       StretchVisualTemplateRow(

@@ -8,22 +8,31 @@ import microservice.user.api.GetUserProfileAPIMessage
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
 
-/** 用户资料 HTTP 入口（profile 聚合层）。
+/** 用户资料（profile）层的 HTTP 路由。
   *
-  * 实现：GET /users/:userId/profile，viewer 身份来自 x-user-id，被查看用户来自 path。
-  * 关联：GetUserProfileAPIMessage 聚合 level/comment/rating 等跨模块数据；身份数据来自 user.tables.user。
+  * 挂载前缀：/users。
+  * 与 AuthRouter 同属 user 模块：Auth 管「是谁」，UserRouter 管「资料页展示什么」。
   */
 object UserRouter {
+
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+
+      // GET /users/:profileUserId/profile — 查看某用户的公开资料聚合
       case req @ GET -> Root / profileUserId / "profile" =>
-        val viewerUserId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+        // 当前访问者 ID：演示环境下由前端在每个请求头注入 x-user-id
+        val viewerUserId =
+          req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
+
         viewerUserId match {
           case Some(currentUserId) =>
+            // viewer 与 profile 目标可以不同（例如查看他人主页）；校验逻辑在 GetUserProfileAPIMessage 内
             GetUserProfileAPIMessage(currentUserId, profileUserId)
               .run(databaseSession)
               .flatMap(result => HttpError.fromEither(result.map(profile => ApiSuccess(profile))))
+
           case None =>
+            // 缺少身份上下文时直接 401，不进入 APIMessage
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
     }

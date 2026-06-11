@@ -9,6 +9,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
+/** GET /admin/director/ui/pages/:pageId 的 APIMessage；需 Director 权限。 */
 final case class GetUiPageAPIMessage(
   userId: String,
   pageId: String

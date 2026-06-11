@@ -9,12 +9,19 @@ import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 
+/** 玩家备战业务服务：鸟升级/升阶与弹弓升级。
+  *
+  * 实现：消耗钱包金币（升级）或碎片（升阶），读写 PlayerPreparationTable。
+  * 关联：PlayerPreparationRouter；鸟目录来自 PlayerPreparationCatalog + BirdSkillConfigTable。
+  */
 object PlayerPreparationService {
+  /** 获取当前用户全部鸟与弹弓备战状态及钱包余额摘要。 */
   def getState(connection: Connection, userId: String): Either[HttpError, PlayerPreparationResponse] = {
     val wallet = PlayerWalletTable.getOrCreate(connection, userId)
     Right(buildResponse(connection, userId, wallet))
   }
 
+  /** 消耗金币提升指定鸟等级（上限 maxLevel）。 */
   def upgradeBird(connection: Connection, userId: String, birdType: String): Either[HttpError, PlayerPreparationResponse] = {
     PlayerPreparationCatalog.find(connection, birdType) match {
       case None => Left(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
@@ -39,6 +46,7 @@ object PlayerPreparationService {
     }
   }
 
+  /** 消耗碎片提升指定鸟阶位（上限 maxTier，解锁更高 tier 技能）。 */
   def ascendBird(connection: Connection, userId: String, birdType: String): Either[HttpError, PlayerPreparationResponse] = {
     PlayerPreparationCatalog.find(connection, birdType) match {
       case None => Left(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
@@ -63,6 +71,7 @@ object PlayerPreparationService {
     }
   }
 
+  /** 消耗金币提升弹弓等级（上限 maxLevel）。 */
   def upgradeSlingshot(connection: Connection, userId: String): Either[HttpError, PlayerPreparationResponse] = {
     val wallet = PlayerWalletTable.getOrCreate(connection, userId)
     val currentLevel = PlayerPreparationTable.getSlingshotLevel(connection, userId)
@@ -82,6 +91,7 @@ object PlayerPreparationService {
     }
   }
 
+  /** 将备战响应序列化为 API JSON。 */
   def toJson(response: PlayerPreparationResponse): Json =
     Json.obj(
       "birds" -> Json.arr(response.birds.map(birdToJson): _*),

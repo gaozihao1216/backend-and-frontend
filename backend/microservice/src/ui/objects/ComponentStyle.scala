@@ -1,5 +1,6 @@
 package microservice.ui.objects
 
+/** 组件可选视觉样式：变体、颜色、圆角、字号与宽高比锁定等。 */
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

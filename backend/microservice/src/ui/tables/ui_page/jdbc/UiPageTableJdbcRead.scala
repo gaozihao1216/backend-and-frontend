@@ -1,3 +1,7 @@
+/** UI 页面表的 JDBC 只读查询。
+  *
+  * 实现：PreparedStatement + Codec.rowFromResultSet；由 Table 门面在 connection != null 时委托。
+  */
 package microservice.ui.tables.ui_page.jdbc
 
 import microservice.ui.tables.ui_page._

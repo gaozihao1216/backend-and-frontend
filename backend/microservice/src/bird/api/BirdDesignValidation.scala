@@ -2,6 +2,7 @@ package microservice.bird.api
 
 import microservice.infrastructure.http.HttpError
 
+/** 鸟类设计输入的统一结构，供 Create/Update 与 Validation 共用。 */
 final case class BirdDesignInputBody(
   name: String,
   summary: String,
@@ -14,6 +15,10 @@ final case class BirdDesignInputBody(
   mechanismTags: List[String]
 )
 
+/** 鸟类设计字段校验：trim 字符串、stats 范围 1–200、tierSkills 必须恰好 3 条。
+  *
+  * 关联：CreateBirdDesignAPIMessage、UpdateBirdDesignAPIMessage 在写入前调用 validate。
+  */
 object BirdDesignValidation {
   def validate(body: BirdDesignInputBody): Either[HttpError, BirdDesignInputBody] = {
     val trimmedName = body.name.trim

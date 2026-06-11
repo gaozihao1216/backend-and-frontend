@@ -15,6 +15,7 @@ import microservice.system.objects.{LevelStatus, UserRole}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** 创建鸟类设计请求体：属性值、三档 tierSkills、可选预览图与机制标签。 */
 final case class CreateBirdDesignBody(
   name: String,
   summary: String,
@@ -33,6 +34,11 @@ object CreateBirdDesignBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateBirdDesignBody] = jsonOf
 }
 
+/** 设计师创建新鸟类设计，初始状态为 Draft。
+  *
+  * 实现：requireRole(Designer) → BirdDesignValidation.validate → BirdDesignTable.insert。
+  * 关联：POST /designer/bird-designs；previewImageUrl 缺省时使用 BirdDesignTable.defaultPreviewImageUrl。
+  */
 final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBirdDesignBody)
     extends APIWithTokenMessage[BirdDesign] {
   override def token: String = designerId

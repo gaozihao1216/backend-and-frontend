@@ -9,12 +9,17 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiEndpoint}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
+/** GET /admin/director/ui/pages 的 APIMessage。
+  *
+  * 可选 query endpoint 按角色端点过滤；需 Director 权限。
+  */
 final case class ListUiPagesAPIMessage(
   userId: String,
   endpoint: Option[UiEndpoint]
 ) extends APIWithTokenMessage[List[PageConfig]] {
   override def token: String = userId
 
+  /** 列出全部或指定 endpoint 的页面配置。 */
   override def plan(connection: Connection): IO[Either[HttpError, List[PageConfig]]] =
     IO.pure {
       AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map { _ =>

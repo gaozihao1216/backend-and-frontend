@@ -4,6 +4,12 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.system.objects.SubmissionStatus
 
+/** 投稿记录与关卡详情的组合 DTO，供管理员审核看板使用。
+  *
+  * 字段说明：
+  *   - id / levelId / submitterId / status / reviewerId / reviewNote / submittedAt / reviewedAt：Submission 字段
+  *   - level：嵌套的完整 Level 对象
+  */
 final case class SubmissionWithLevel(
   id: String,
   levelId: String,

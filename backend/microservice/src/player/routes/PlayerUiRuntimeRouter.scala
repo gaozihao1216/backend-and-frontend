@@ -13,6 +13,7 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
+/** POST /player/ui/actions/:apiKey 的请求体：透传给运行时服务的参数字典。 */
 final case class UiActionRequest(params: Map[String, String] = Map.empty)
 
 object UiActionRequest {
@@ -25,8 +26,10 @@ object UiActionRequest {
   * 关联：frontend lib/ui-runtime 与 DynamicPageRenderer；配置来源为总监 UiCustomization + player 运行时表。
   */
 object PlayerUiRuntimeRouter {
+  /** 注册 /player/ui 下的路由；level-map 走 ui APIMessage，data/actions 走 PlayerUiRuntimeService。 */
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      // GET /player/ui/level-map — 获取共享关卡地图页配置（id = shared.levelMap）
       case req @ GET -> Root / "ui" / "level-map" =>
         PlayerLevelRouteSupport.currentUserId(req) match {
           case Some(userId) =>
@@ -37,6 +40,7 @@ object PlayerUiRuntimeRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // GET /player/ui/data/:apiKey — 按 apiKey 拉取动态页面所需运行时数据（钱包、商店、签到等）
       case req @ GET -> Root / "ui" / "data" / apiKey =>
         PlayerLevelRouteSupport.currentUserId(req) match {
           case Some(userId) =>
@@ -51,6 +55,7 @@ object PlayerUiRuntimeRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // POST /player/ui/actions/:apiKey — 执行动态页面交互动作（购买、签到领取等）
       case req @ POST -> Root / "ui" / "actions" / apiKey =>
         PlayerLevelRouteSupport.currentUserId(req) match {
           case Some(userId) =>

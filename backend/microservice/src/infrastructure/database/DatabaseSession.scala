@@ -12,15 +12,18 @@ import java.sql.DriverManager
   * 关联：[[microservice.infrastructure.api.APIMessage.run]] 始终通过 withTransaction 调用 plan。
   */
 trait DatabaseSession {
-  def config: DatabaseConfig
-  def description: String
+  def config: DatabaseConfig   // 当前会话使用的 JDBC 配置（in-memory 模式亦保留，供日志与描述）
+  def description: String      // 人类可读的连接描述，用于启动日志
 
+  /** 获取连接并执行 use；用毕后由实现方负责关闭连接。 */
   def withConnection[A](use: Connection => IO[A]): IO[A]
 
+  /** 在事务边界内执行 use；成功提交，异常或 Left 时回滚。 */
   def withTransaction[A](use: Connection => IO[A]): IO[A]
 }
 
 object DatabaseSession {
+  /** 静默关闭连接，忽略 close 抛出的异常。 */
   private def closeQuietly(connection: Connection): IO[Unit] =
     IO.blocking(connection.close()).handleErrorWith(_ => IO.unit)
 
@@ -32,6 +35,7 @@ object DatabaseSession {
         s"${config.driver}:${config.schema}@${config.url}"
 
       override def withConnection[A](use: Connection => IO[A]): IO[A] =
+        // null 作为哨兵值，各 Table 据此分支到 InMemoryStore
         use(null.asInstanceOf[Connection])
 
       override def withTransaction[A](use: Connection => IO[A]): IO[A] =
@@ -48,6 +52,7 @@ object DatabaseSession {
       override def withConnection[A](use: Connection => IO[A]): IO[A] =
         IO.blocking {
           Class.forName(config.driver)
+          // 按是否提供用户名/密码选择认证方式
           (config.username, config.password) match {
             case (Some(username), Some(password)) =>
               DriverManager.getConnection(config.url, username, password)
@@ -63,8 +68,10 @@ object DatabaseSession {
             _ <- IO.blocking(connection.setAutoCommit(false))
             result <- use(connection).attempt.flatMap {
               case Right(value) =>
+                // 业务成功：提交事务
                 IO.blocking(connection.commit()).as(value)
               case Left(error) =>
+                // 业务或 IO 失败：回滚后向上抛出原始异常
                 IO.blocking(connection.rollback()).attempt *> IO.raiseError[A](error)
             }.guarantee(IO.blocking(connection.setAutoCommit(previousAutoCommit)).handleErrorWith(_ => IO.unit))
           } yield result

@@ -10,13 +10,15 @@ import microservice.system.objects.LevelTag
   * 关联：PlayerLevelReadRouter、PlayerLevelActionRouter 共用，避免各 route 重复解析逻辑。
   */
 private[microservice] object PlayerLevelRouteSupport {
-  /** 演示鉴权：前端 client.ts 在每个请求注入 x-user-id。 */
+  /** 从请求头读取当前用户 ID；演示鉴权，前端 client.ts 在每个请求注入 x-user-id。 */
   def currentUserId(req: org.http4s.Request[IO]): Option[String] =
     req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
 
+  /** 读取 sort 查询参数，默认 "newest"；传给 LevelTable.listPublished 决定排序方式。 */
   def sortParam(req: org.http4s.Request[IO]): String =
     req.params.getOrElse("sort", "newest")
 
+  /** 解析 tag 查询参数：缺省为 None（不过滤）；非法值返回 Left(INVALID_LEVEL_TAG)。 */
   def tagParam(req: org.http4s.Request[IO]): Either[HttpError, Option[LevelTag]] =
     req.params.get("tag") match {
       case None => Right(None)

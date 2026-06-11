@@ -23,5 +23,6 @@ object Main extends IOApp.Simple {
         .withPort(Port.fromInt(3000).get)
         .withHttpApp(SystemDefaults.apiRoutes.orNotFound)
         .build
+        // 3. 持有 server 资源直至进程结束（IO.never 永不完成，保持监听）
         .use(_ => IO.never)
 }

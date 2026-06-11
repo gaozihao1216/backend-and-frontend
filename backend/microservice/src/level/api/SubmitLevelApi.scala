@@ -18,6 +18,7 @@ import microservice.system.objects.UserRole
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /designer/submissions 的请求体：待提交审核的关卡 ID。 */
 final case class SubmitLevelBody(
   levelId: String
 )
@@ -28,6 +29,7 @@ object SubmitLevelBody {
   implicit val entityDecoder: EntityDecoder[IO, SubmitLevelBody] = jsonOf
 }
 
+/** 设计师提交关卡审核 APIMessage。 */
 final case class SubmitLevelAPIMessage(
   designerId: String,
   body: SubmitLevelBody
@@ -46,10 +48,13 @@ final case class SubmitLevelAPIMessage(
         case None =>
           Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: ${body.levelId}"))
         case Some(level) =>
+          // 只能提交自己的关卡
           if (level.authorId != designerId) {
             Left(HttpError.forbidden("Cannot submit another designer's level"))
+          // 同一关卡不允许存在多条 pending submission
           } else if (SubmissionTable.hasPendingForLevel(connection, body.levelId)) {
             Left(HttpError.conflict("SUBMISSION_EXISTS", "Level already has a pending submission"))
+          // 仅 Draft 或 Rejected 状态可再次提交
           } else if (level.status != LevelStatus.Draft && level.status != LevelStatus.Rejected) {
             Left(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
           } else {

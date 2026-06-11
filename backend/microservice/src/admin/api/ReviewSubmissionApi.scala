@@ -18,6 +18,7 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** 关卡投稿审核请求体：仅允许 Approved 或 Rejected 两种终态。 */
 final case class ReviewSubmissionBody(
   status: SubmissionStatus,
   reviewNote: Option[String]

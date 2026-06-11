@@ -9,20 +9,30 @@ import io.circe.syntax._
 import java.sql.Connection
 import java.time.{DayOfWeek, LocalDate, ZoneOffset}
 
+/** 玩家周签到运行时服务：7 格签到进度、奖励领取与面板奖励配置。
+  *
+  * 实现：按 UTC 周一为 weekKey；每日仅可领取当前 activeSlot；奖励来自 CheckInPanelRewardTable。
+  * 关联：总监 panel-workflows 注册奖励；PlayerWeeklyCheckInTable 持久化进度。
+  */
 object PlayerWeeklyCheckInService {
   private val WeeklyCheckInDataKey = "player.weeklyCheckIn"
   private val WeeklyCheckInClaimActionKey = "player.weeklyCheckIn.claim"
 
+  /** 拉取签到面板状态的 dataSource apiKey。 */
   val dataApiKey: String = WeeklyCheckInDataKey
 
+  /** 领取当日签到奖励的 action apiKey。 */
   val claimActionKey: String = WeeklyCheckInClaimActionKey
 
+  /** 返回默认面板（无 panelId）的周签到 payload。 */
   def getData(connection: Connection, userId: String): Either[HttpError, Json] =
     Right(buildPayload(connection, userId, panelId = None))
 
+  /** 返回指定 panelId 的周签到 payload（含该面板奖励配置）。 */
   def getDataForPanel(connection: Connection, userId: String, panelId: String): Either[HttpError, Json] =
     Right(buildPayload(connection, userId, Some(panelId)))
 
+  /** 领取指定 slot（1-7）的签到奖励：校验 activeSlot、发放钱包奖励并标记今日已签。 */
   def executeClaim(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
     val panelId = params.getOrElse("panelId", PlayerRuntimeDefaults.roleHomeCheckInPanelId)
     val slot = params.get("slot").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
@@ -70,6 +80,7 @@ object PlayerWeeklyCheckInService {
     Right(buildPayload(connection, userId, Some(panelId)))
   }
 
+  /** 总监注册签到面板的 7 格奖励配置（覆盖写入 CheckInPanelRewardTable）。 */
   def registerPanelRewards(connection: Connection, panelId: String, slots: Vector[CheckInSlotReward]): Unit =
     CheckInPanelRewardTable.replacePanelRewards(connection, panelId, slots)
 

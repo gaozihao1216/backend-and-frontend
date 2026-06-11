@@ -4,7 +4,13 @@ import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper}
 import java.sql.Connection
 
+/** 备战鸟目录聚合：系统内置鸟 + 设计师已发布鸟设计。
+  *
+  * 实现：合并 BirdPreparationCatalog 与 BirdDesignTable.listPublished。
+  * 关联：PlayerPreparationService 构建响应时调用。
+  */
 object PlayerPreparationCatalog {
+  /** 加载完整鸟目录（系统 + 设计师发布）。 */
   def loadEntries(connection: Connection): Vector[BirdCatalogEntry] =
     BirdPreparationCatalog.entries.map(_.copy(source = "system")) ++
       BirdDesignTable
@@ -12,6 +18,7 @@ object PlayerPreparationCatalog {
         .map(BirdRowMapper.toBirdDesign)
         .map(fromPublishedDesign)
 
+  /** 在完整目录中按 birdType 查找（升级/升阶前校验）。 */
   def find(connection: Connection, birdType: String): Option[BirdCatalogEntry] =
     loadEntries(connection).find(_.birdType == birdType)
 

@@ -14,6 +14,7 @@ import microservice.system.objects.{AdminLevel, UserRole}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** 总监权限移交请求体：目标必须是 Admin 角色用户。 */
 final case class TransferDirectorPermissionBody(
   targetAdminId: String
 )
@@ -24,6 +25,14 @@ object TransferDirectorPermissionBody {
   implicit val entityDecoder: EntityDecoder[IO, TransferDirectorPermissionBody] = jsonOf
 }
 
+/** 将总监权限移交给另一位 Admin：当前用户降为 Standard，目标用户升为 Director。
+  *
+  * 实现：
+  *   1. requireAdminLevel(Director) 且不可 transfer 给自己
+  *   2. 校验 target 存在且 role == Admin
+  *   3. 原子更新双方 adminLevel（失败则 DIRECTOR_TRANSFER_FAILED）
+  * 关联：POST /admin/director/transfer；TransferDirectorPermissionErrors 定义业务错误码。
+  */
 final case class TransferDirectorPermissionAPIMessage(
   currentDirectorId: String,
   body: TransferDirectorPermissionBody

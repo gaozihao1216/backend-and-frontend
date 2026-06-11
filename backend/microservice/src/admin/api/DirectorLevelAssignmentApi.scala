@@ -23,7 +23,13 @@ import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
 import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
 
+/** 总监关卡槽位分配的共享辅助逻辑：组装看板数据、关联投稿与关卡、构建可选 bird pool。
+  *
+  * 实现：buildBoard 合并已分配槽位、待分配已批准投稿、系统+设计师 bird pool 选项。
+  * 关联：GetDirectorLevelAssignmentBoardAPIMessage 及 Assign/Unassign/UpdateBirdPool 均依赖此对象。
+  */
 object DirectorLevelAssignmentSupport {
+  /** 按 submissionId 联查 SubmissionTable 与 LevelTable，返回 SubmissionWithLevel。 */
   def submissionWithLevel(connection: Connection, submissionId: String): Option[SubmissionWithLevel] =
     SubmissionTable.findById(connection, submissionId).flatMap { submission =>
       LevelTable.findById(connection, submission.levelId).map { level =>
@@ -31,6 +37,7 @@ object DirectorLevelAssignmentSupport {
       }
     }
 
+  /** 合并系统内置鸟（BirdPreparationCatalog）与已发布设计师鸟（BirdDesignTable.listPublished）。 */
   def buildBirdPoolOptions(connection: Connection): List[DirectorBirdPoolOption] = {
     val systemOptions =
       BirdPreparationCatalog.entries.map { entry =>
@@ -59,6 +66,7 @@ object DirectorLevelAssignmentSupport {
     systemOptions ++ designerOptions
   }
 
+  /** 构建总监关卡分配看板：当前槽位占用、可分配投稿、bird pool 下拉选项。 */
   def buildBoard(connection: Connection): DirectorLevelAssignmentBoard = {
     val assignedSubmissionIds =
       LevelSlotAssignmentTable.listAll(connection).map(_.submissionId).toSet
@@ -88,6 +96,11 @@ object DirectorLevelAssignmentSupport {
   }
 }
 
+/** 获取总监关卡槽位分配看板（已分配 + 待分配 + bird pool 选项）。
+  *
+  * 实现：requireAdminLevel(Director) → DirectorLevelAssignmentSupport.buildBoard。
+  * 关联：GET /admin/director/level-assignments/board。
+  */
 final case class GetDirectorLevelAssignmentBoardAPIMessage(
   userId: String
 ) extends APIWithTokenMessage[DirectorLevelAssignmentBoard] {
@@ -101,6 +114,7 @@ final case class GetDirectorLevelAssignmentBoardAPIMessage(
     }
 }
 
+/** 将已批准关卡投稿分配到指定槽位（level01–level10），可附带 bird pool 配置。 */
 final case class AssignLevelSlotBody(
   submissionId: String,
   note: Option[String],
@@ -118,6 +132,10 @@ object AssignLevelSlotBody {
   implicit val entityDecoder: EntityDecoder[IO, AssignLevelSlotBody] = jsonOf
 }
 
+/** 分配关卡到槽位：校验 suffix 合法、投稿已 Approved、关联 Level 存在，然后 upsert LevelSlotAssignmentTable。
+  *
+  * 关联：POST /admin/director/level-assignments/:levelSuffix；AssignLevelSlotErrors 定义错误。
+  */
 final case class AssignLevelSlotAPIMessage(
   userId: String,
   levelSuffix: String,
@@ -165,6 +183,7 @@ final case class AssignLevelSlotAPIMessage(
     }
 }
 
+/** 解除指定槽位的关卡分配（删除 LevelSlotAssignmentTable 记录）。 */
 final case class UnassignLevelSlotAPIMessage(
   userId: String,
   levelSuffix: String
@@ -188,6 +207,7 @@ final case class UnassignLevelSlotAPIMessage(
     }
 }
 
+/** 更新已分配槽位的 bird pool（玩家备战可选鸟列表）。 */
 final case class UpdateLevelSlotBirdPoolBody(
   birdPool: BirdPool
 )
@@ -203,6 +223,7 @@ object UpdateLevelSlotBirdPoolBody {
   implicit val entityDecoder: EntityDecoder[IO, UpdateLevelSlotBirdPoolBody] = jsonOf
 }
 
+/** 更新槽位 bird pool 配置，不改变 submission 绑定关系。 */
 final case class UpdateLevelSlotBirdPoolAPIMessage(
   userId: String,
   levelSuffix: String,
@@ -234,6 +255,7 @@ final case class UpdateLevelSlotBirdPoolAPIMessage(
     }
 }
 
+/** 废止已批准投稿：解除槽位绑定、Submission 标记 Abolished、Level 回退为 Rejected。 */
 final case class AbolishDirectorSubmissionBody(
   note: Option[String]
 )
@@ -249,6 +271,10 @@ object AbolishDirectorSubmissionBody {
   implicit val entityDecoder: EntityDecoder[IO, AbolishDirectorSubmissionBody] = jsonOf
 }
 
+/** 总监废止已上线/已批准关卡：从槽位移除并同步更新 Submission 与 Level 状态。
+  *
+  * 关联：POST /admin/director/submissions/:submissionId/abolish。
+  */
 final case class AbolishDirectorSubmissionAPIMessage(
   userId: String,
   submissionId: String,

@@ -1,5 +1,9 @@
 package microservice.ui.objects
 
+/** 动态页面完整配置：id、路由 path、角色端点、布局与组件列表。
+  *
+  * 前后端契约对象；存储于 UiPageTable，由 DynamicPageRenderer 消费。
+  */
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

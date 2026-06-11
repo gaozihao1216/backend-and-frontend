@@ -9,6 +9,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
 
+/** GET panel-templates 或 pattern-templates 的 APIMessage；由 kind 区分资源类型。 */
 final case class ListStretchVisualTemplatesAPIMessage(
   userId: String,
   kind: StretchVisualTemplateKind

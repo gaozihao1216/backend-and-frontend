@@ -13,7 +13,8 @@ import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, Submissio
   *       level-1 已发布、level-2 待审核，便于演示完整 UGC 流程。
   */
 private[utils] object SystemSeedData {
-  def reset(createdAt: String, reviewedAt: String): Unit =
+  def reset(createdAt: String, reviewedAt: String): Unit = {
+    // --- 1. 重置 InMemoryStore 核心 UGC 表 ---
     InMemoryStore.reset(
       nextUsers = users(createdAt),
       nextLevels = levels(createdAt),
@@ -24,8 +25,11 @@ private[utils] object SystemSeedData {
       nextButtonTemplates = SystemUiTemplateSeedData.buttonTemplates(createdAt),
       nextStretchVisualTemplates = SystemUiTemplateSeedData.stretchVisualTemplates(createdAt)
     )
+    // --- 2. 初始化玩家钱包、签到、商店等运行时数据 ---
     PlayerRuntimeSeed.reset()
+  }
 
+  /** 四类演示账号：玩家、设计师、标准管理员、总监管理员。 */
   private def users(createdAt: String): Vector[UserRow] =
     Vector(
       UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, None, createdAt, createdAt),
@@ -34,6 +38,7 @@ private[utils] object SystemSeedData {
       UserRow("admin-director-1", "001", "001", UserRole.Admin, Some(AdminLevel.Director), createdAt, createdAt)
     )
 
+  /** 两条样例关卡：level-1 已发布（含评分），level-2 待审核。 */
   private def levels(createdAt: String): Vector[LevelRow] =
     Vector(
       LevelRow(
@@ -68,6 +73,7 @@ private[utils] object SystemSeedData {
       )
     )
 
+  /** 与 levels 对应的提交流水：submission-1 已通过，submission-2 待审。 */
   private def submissions(createdAt: String, reviewedAt: String): Vector[SubmissionRow] =
     Vector(
       SubmissionRow(
@@ -92,6 +98,7 @@ private[utils] object SystemSeedData {
       )
     )
 
+  /** 最小可玩关卡物理数据：地面线、木块障碍、猪敌人、3 只基础鸟。 */
   private val demoLevelData = LevelData(
     world = GameWorld(width = 1600, height = 900, gravity = 1.0),
     ground = Some(GroundLine(points = List(Position(0, 760), Position(1600, 760)))),

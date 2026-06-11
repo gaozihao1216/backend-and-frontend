@@ -10,6 +10,10 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
 
+/** 列出当前设计师的鸟类设计，可按 LevelStatus 筛选。
+  *
+  * 关联：GET /designer/bird-designs?status=。
+  */
 final case class ListBirdDesignsAPIMessage(
   designerId: String,
   status: Option[LevelStatus]
@@ -27,6 +31,10 @@ final case class ListBirdDesignsAPIMessage(
     }
 }
 
+/** 删除草稿状态的鸟类设计（仅作者、仅 Draft）。
+  *
+  * 关联：DELETE /designer/bird-designs/:designId。
+  */
 final case class DeleteBirdDesignAPIMessage(designerId: String, designId: String)
     extends APIWithTokenMessage[BirdDesign] {
   override def token: String = designerId

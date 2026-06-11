@@ -14,6 +14,7 @@ import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** PUT /admin/director/ui/pages/:pageId 的请求体。 */
 final case class UpdateUiPageBody(
   page: PageConfig
 )
@@ -24,6 +25,7 @@ object UpdateUiPageBody {
   implicit val entityDecoder: EntityDecoder[IO, UpdateUiPageBody] = jsonOf
 }
 
+/** PUT /admin/director/ui/pages/:pageId 的 APIMessage：更新或 upsert 页面配置。 */
 final case class UpdateUiPageAPIMessage(
   userId: String,
   pageId: String,

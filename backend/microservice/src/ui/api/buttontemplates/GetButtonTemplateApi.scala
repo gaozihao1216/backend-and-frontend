@@ -9,6 +9,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 
+/** GET /admin/director/ui/button-templates/:templateId 的 APIMessage。 */
 final case class GetButtonTemplateAPIMessage(
   userId: String,
   templateId: String

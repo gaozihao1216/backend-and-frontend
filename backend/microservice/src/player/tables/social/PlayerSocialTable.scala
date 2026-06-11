@@ -14,9 +14,11 @@ final case class PlayerPrivateMessageRow(
   createdAt: String
 )
 
+/** 玩家好友关系表访问门面：单向存储 userId → friendUserId，加好友时双向 insertPair。 */
 object PlayerFriendTable {
   private def isInMemory(connection: Connection): Boolean = connection == null
 
+  /** 启动时建表/种子数据（含演示好友 player-1 ↔ designer-1）。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) {
       val statement = connection.createStatement()
@@ -56,6 +58,7 @@ object PlayerFriendTable {
       )
     }
 
+  /** 返回用户的全部好友 userId 列表（按 created_at 升序）。 */
   def listFriendUserIds(connection: Connection, userId: String): Vector[String] =
     if (isInMemory(connection)) {
       InMemoryStore.playerFriends.filter(_.userId == userId).map(_.friendUserId)
@@ -80,6 +83,7 @@ object PlayerFriendTable {
       }
     }
 
+  /** 判断两用户是否已为好友（单向存在即 true）。 */
   def exists(connection: Connection, userId: String, friendUserId: String): Boolean =
     if (isInMemory(connection)) {
       InMemoryStore.playerFriends.exists(row => row.userId == userId && row.friendUserId == friendUserId)
@@ -97,6 +101,7 @@ object PlayerFriendTable {
       }
     }
 
+  /** 双向插入好友关系（幂等，已存在则跳过）。 */
   def insertPair(connection: Connection, userId: String, friendUserId: String): Unit = {
     val createdAt = Instant.now().toString
     insertOne(connection, userId, friendUserId, createdAt)
@@ -129,9 +134,11 @@ object PlayerFriendTable {
   }
 }
 
+/** 玩家私信表访问门面：存储好友间的双向私信记录。 */
 object PlayerPrivateMessageTable {
   private def isInMemory(connection: Connection): Boolean = connection == null
 
+  /** 启动时建表与对话查询索引；仅 JDBC 模式执行 DDL。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) {
       val statement = connection.createStatement()
@@ -155,6 +162,7 @@ object PlayerPrivateMessageTable {
       }
     }
 
+  /** 列出两用户间的全部私信（双向，按时间升序）。 */
   def listConversation(connection: Connection, userId: String, withUserId: String): Vector[PlayerPrivateMessageRow] = {
     val rows =
       if (isInMemory(connection)) {
@@ -199,6 +207,7 @@ object PlayerPrivateMessageTable {
     rows.sortBy(row => (row.createdAt, row.id))
   }
 
+  /** 插入一条私信并返回写入的行。 */
   def insert(connection: Connection, row: PlayerPrivateMessageRow): PlayerPrivateMessageRow =
     if (isInMemory(connection)) {
       InMemoryStore.playerPrivateMessages = InMemoryStore.playerPrivateMessages :+ row
@@ -223,6 +232,7 @@ object PlayerPrivateMessageTable {
       }
     }
 
+  /** 生成下一条私信 id（格式 pm-0001）。 */
   def nextId(connection: Connection): String = {
     val count =
       if (isInMemory(connection)) InMemoryStore.playerPrivateMessages.size

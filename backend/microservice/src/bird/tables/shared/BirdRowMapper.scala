@@ -4,7 +4,12 @@ import microservice.bird.objects.{BirdDesign, BirdSubmission}
 import io.circe.parser._
 import io.circe.syntax._
 
+/** 鸟类模块 Row ↔ 领域对象映射，以及 JSON 字符串列表编解码。
+  *
+  * 关联：BirdDesignTable / BirdSubmissionTable 的 tierSkills、mechanismTags 以 JSON 存库。
+  */
 object BirdRowMapper {
+  /** BirdDesignRow → BirdDesign 领域对象，解码 tierSkills 与 mechanismTags JSON。 */
   def toBirdDesign(row: BirdDesignRow): BirdDesign =
     BirdDesign(
       id = row.id,
@@ -25,6 +30,7 @@ object BirdRowMapper {
       publishedAt = row.publishedAt
     )
 
+  /** BirdSubmissionRow → BirdSubmission 领域对象。 */
   def toBirdSubmission(row: BirdSubmissionRow): BirdSubmission =
     BirdSubmission(
       id = row.id,
@@ -37,6 +43,7 @@ object BirdRowMapper {
       reviewedAt = row.reviewedAt
     )
 
+  /** 将字符串列表序列化为紧凑 JSON，写入 tier_skills_json / mechanism_tags_json 列。 */
   def encodeStringList(values: List[String]): String =
     values.asJson.noSpaces
 

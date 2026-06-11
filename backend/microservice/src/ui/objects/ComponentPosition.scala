@@ -1,5 +1,6 @@
 package microservice.ui.objects
 
+/** 组件在页面上的矩形区域：支持 percent 或 px 单位。 */
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, HCursor, Json}
 

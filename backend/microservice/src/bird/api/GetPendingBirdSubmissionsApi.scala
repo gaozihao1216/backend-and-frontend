@@ -11,6 +11,11 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.UserRole
 
+/** 列出所有待审核的鸟类设计投稿，附带关联 BirdDesign 快照。
+  *
+  * 实现：校验 UserRole.Admin → BirdSubmissionTable.listPending → join BirdDesignTable。
+  * 关联：GET /admin/bird-submissions/pending（AdminRouter 路由，APIMessage 在此模块）。
+  */
 final case class GetPendingBirdSubmissionsAPIMessage(userId: String)
     extends APIWithTokenMessage[List[BirdSubmissionWithDesign]] {
   override def token: String = userId

@@ -50,8 +50,10 @@ import org.http4s.dsl.io._
   * 关联：frontend DirectorWorkbenchPage、DynamicPageRenderer 消费配置；部分 workflow 联动 player 签到奖励。
   */
 object UiCustomizationRouter {
+  /** 注册 /admin/director/ui 下的全部路由。 */
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      // GET /pages?endpoint= — 列出页面配置（可选按角色端点过滤）
       case req @ GET -> Root / "pages" =>
         withUserId(req) { userId =>
           parseEndpoint(req.uri.query.params.get("endpoint")) match {
@@ -64,6 +66,7 @@ object UiCustomizationRouter {
           }
         }
 
+      // --- 按钮模板 CRUD ---
       case req @ GET -> Root / "button-templates" =>
         withUserId(req) { userId =>
           ListButtonTemplatesAPIMessage(userId)
@@ -103,6 +106,7 @@ object UiCustomizationRouter {
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
         }
 
+      // --- 面板拉伸模板 CRUD（kind = Panel）---
       case req @ GET -> Root / "panel-templates" =>
         withUserId(req) { userId =>
           ListStretchVisualTemplatesAPIMessage(userId, StretchVisualTemplateKind.Panel)
@@ -135,6 +139,7 @@ object UiCustomizationRouter {
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
         }
 
+      // --- 图案拉伸模板 CRUD（kind = Pattern）---
       case req @ GET -> Root / "pattern-templates" =>
         withUserId(req) { userId =>
           ListStretchVisualTemplatesAPIMessage(userId, StretchVisualTemplateKind.Pattern)
@@ -167,6 +172,7 @@ object UiCustomizationRouter {
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
         }
 
+      // --- 单页 CRUD 与组件管理 ---
       case req @ GET -> Root / "pages" / pageId =>
         withUserId(req) { userId =>
           GetUiPageAPIMessage(userId, pageId)
@@ -224,6 +230,7 @@ object UiCustomizationRouter {
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
         }
 
+      // PUT /panel-workflows/:panelId/check-in-rewards — 注册签到面板 7 格奖励（联动 player 运行时）
       case req @ PUT -> Root / "panel-workflows" / panelId / "check-in-rewards" =>
         withUserId(req) { _ =>
           req.as[RegisterCheckInPanelRewardsBody].flatMap { body =>

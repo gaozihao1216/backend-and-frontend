@@ -5,7 +5,9 @@ import microservice.user.tables.user._
 import java.sql.Connection
 import microservice.system.objects.AdminLevel
 
+/** users 表的 JDBC 写操作。 */
 private[tables] object UserTableJdbcWrite {
+
   def insert(connection: Connection, row: UserRow): UserRow = {
     val statement = connection.prepareStatement(
       """
@@ -20,7 +22,7 @@ private[tables] object UserTableJdbcWrite {
       statement.setString(4, row.role.value)
       row.adminLevel match {
         case Some(adminLevel) => statement.setString(5, adminLevel.value)
-        case None => statement.setNull(5, java.sql.Types.VARCHAR)
+        case None             => statement.setNull(5, java.sql.Types.VARCHAR)
       }
       statement.setString(6, row.createdAt)
       statement.setString(7, row.updatedAt)
@@ -31,6 +33,7 @@ private[tables] object UserTableJdbcWrite {
     }
   }
 
+  /** 更新 admin_level；若 id 不存在返回 None；成功则 re-read 最新行。 */
   def updateAdminLevel(connection: Connection, userId: String, adminLevel: Option[AdminLevel], updatedAt: String): Option[UserRow] = {
     val statement = connection.prepareStatement(
       """
@@ -42,7 +45,7 @@ private[tables] object UserTableJdbcWrite {
     try {
       adminLevel match {
         case Some(level) => statement.setString(1, level.value)
-        case None => statement.setNull(1, java.sql.Types.VARCHAR)
+        case None        => statement.setNull(1, java.sql.Types.VARCHAR)
       }
       statement.setString(2, updatedAt)
       statement.setString(3, userId)

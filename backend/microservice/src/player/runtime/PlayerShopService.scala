@@ -7,15 +7,24 @@ import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 
+/** 玩家商店运行时服务：商品目录展示与购买扣款。
+  *
+  * 实现：按 catalogIndex 过滤商品，购买时校验余额并记录购买历史。
+  * 关联：ShopTable、PlayerWalletTable；前端商店面板通过 apiKey 绑定。
+  */
 object PlayerShopService {
+  /** 拉取商店目录与钱包余额的 dataSource apiKey。 */
   val dataApiKey: String = "player.shop"
+  /** 购买商品的 action apiKey。 */
   val purchaseActionKey: String = "player.shop.purchase"
 
+  /** 返回指定 catalogIndex 下的商品列表、钱包余额与已购 itemId 列表。 */
   def getData(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
     val catalogIndex = params.get("catalogIndex").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
     Right(buildPayload(connection, userId, catalogIndex))
   }
 
+  /** 购买商品：校验 itemId、余额，扣款并记录购买后返回最新商店 payload。 */
   def executePurchase(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
     val itemId = params.getOrElse("itemId", "").trim
     val catalogIndex = params.get("catalogIndex").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)

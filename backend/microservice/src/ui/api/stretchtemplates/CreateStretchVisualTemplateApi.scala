@@ -14,6 +14,7 @@ import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowM
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST panel-templates / pattern-templates 的请求体。 */
 final case class CreateStretchVisualTemplateBody(
   template: StretchVisualTemplate
 )
@@ -24,6 +25,7 @@ object CreateStretchVisualTemplateBody {
   implicit val entityDecoder: EntityDecoder[IO, CreateStretchVisualTemplateBody] = jsonOf
 }
 
+/** 创建拉伸视觉模板的 APIMessage；Router 传入 expectedKind 强制与路由一致。 */
 final case class CreateStretchVisualTemplateAPIMessage(
   userId: String,
   expectedKind: StretchVisualTemplateKind,

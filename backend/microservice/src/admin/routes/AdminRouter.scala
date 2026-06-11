@@ -10,14 +10,21 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
-/** 管理员 HTTP 入口：审核、评论管理、总监配置、鸟类审核等。
+/** 管理员 HTTP 入口，挂载在 /admin 前缀下。
   *
-  * 实现：各 case 读取 x-user-id，构造 admin/bird 模块 APIMessage；权限细节在 message.plan 内校验。
-  * 关联：Standard 管理员用 comments/submissions；Director 用 director 子路径与 level slot 等接口。
+  * 职责划分：
+  *   - Standard 管理员（AdminLevel.Standard）：评论管理、关卡投稿审核
+  *   - Director 总监（AdminLevel.Director）：权限移交、关卡槽位分配、鸟类技能配置、投稿废止
+  *   - 鸟类投稿审核：由 Admin 角色处理，路由在此但 APIMessage 在 bird 模块
+  *
+  * 实现：每个 case 从 x-user-id 请求头读取当前用户，构造对应 APIMessage 并调用 .run(databaseSession)；
+  *       角色与 adminLevel 校验在 APIMessage.plan 内完成，Router 层仅做 header 缺失检查。
+  * 关联：frontend AdminPage、DirectorLevelLab、DirectorBirdSkillLab；vite 代理 /admin/... 到 backend:3000。
   */
 object AdminRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      // ── Standard 管理员：评论管理 ──────────────────────────────────────────
       case req @ GET -> Root / "comments" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         userId match {
@@ -40,6 +47,7 @@ object AdminRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── Standard 管理员：关卡投稿审核 ──────────────────────────────────────
       case req @ GET -> Root / "submissions" / "pending" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         userId match {
@@ -51,6 +59,7 @@ object AdminRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── Admin 角色：鸟类设计投稿审核（APIMessage 在 bird 模块） ───────────────
       case req @ GET -> Root / "bird-submissions" / "pending" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         userId match {
@@ -88,6 +97,7 @@ object AdminRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── Director 总监：权限与 UI 定制能力查询 ────────────────────────────────
       case req @ GET -> Root / "director" / "permissions" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         userId match {
@@ -112,6 +122,7 @@ object AdminRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── Director 总监：关卡槽位（level01–level10）分配与废止 ────────────────
       case req @ GET -> Root / "director" / "level-assignments" / "board" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         userId match {
@@ -173,6 +184,7 @@ object AdminRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── Director 总监：鸟类技能 JSON 配置（备战/关卡 bird pool 运行时读取） ──
       case req @ GET -> Root / "director" / "bird-skills" / "board" =>
         val userId = req.headers.headers.find(_.name.toString.equalsIgnoreCase("x-user-id")).map(_.value)
         userId match {

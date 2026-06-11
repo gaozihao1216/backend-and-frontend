@@ -10,6 +10,11 @@ import microservice.level.objects.LevelComment
 import microservice.level.tables.comment.CommentTable
 import microservice.system.objects.AdminLevel
 
+/** 获取全部关卡评论列表，供 Standard 管理员在后台浏览与删除。
+  *
+  * 实现：requireAdminLevel(Standard) → CommentTable.listAllForAdmin → LevelRowMapper 转 LevelComment。
+  * 关联：GET /admin/comments；DeleteCommentAPIMessage 与之配对。
+  */
 final case class GetAdminCommentsAPIMessage(userId: String) extends APIWithTokenMessage[List[LevelComment]] {
   override def token: String = userId
 

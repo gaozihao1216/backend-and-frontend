@@ -3,6 +3,7 @@ package microservice.level.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
+/** 矩形尺寸，用于障碍物与敌人的宽高描述。 */
 final case class Size(width: Double, height: Double)
 
 object Size {

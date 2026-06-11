@@ -9,6 +9,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.ButtonTemplate
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 
+/** GET /admin/director/ui/button-templates 的 APIMessage；需 Director 权限。 */
 final case class ListButtonTemplatesAPIMessage(
   userId: String
 ) extends APIWithTokenMessage[List[ButtonTemplate]] {

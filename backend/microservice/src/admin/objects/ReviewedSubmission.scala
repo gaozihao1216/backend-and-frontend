@@ -4,6 +4,10 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.level.objects.Submission
 
+/** 审核完成后的关卡投稿快照 DTO（status 为字符串便于 JSON 序列化）。
+  *
+  * 关联：ReviewSubmissionAPIMessage 成功响应；fromSubmission 从 level.objects.Submission 转换。
+  */
 final case class ReviewedSubmission(
   id: String,
   levelId: String,

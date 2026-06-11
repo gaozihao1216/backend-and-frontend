@@ -17,8 +17,10 @@ import org.http4s.dsl.io._
 private[routes] object PlayerLevelReadRouter {
   import PlayerLevelRouteSupport._
 
+  /** 注册玩家侧 GET 路由；所有端点均要求 x-user-id 且角色为 Player。 */
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      // ── 已发布关卡列表（支持 tag 筛选与 sort 排序） ────────────────────────
       case req @ GET -> Root / "levels" =>
         currentUserId(req) match {
           case Some(playerId) =>
@@ -28,12 +30,14 @@ private[routes] object PlayerLevelReadRouter {
                   .run(databaseSession)
                   .flatMap(result => HttpError.fromEither(result.map(levels => ApiSuccess(levels))))
               case Left(error) =>
+                // tag 参数非法时返回 400 INVALID_LEVEL_TAG
                 HttpError.toResponse(error)
             }
           case None =>
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── 单个已发布关卡详情 ───────────────────────────────────────────────────
       case req @ GET -> Root / "levels" / levelId =>
         currentUserId(req) match {
           case Some(playerId) =>
@@ -44,6 +48,7 @@ private[routes] object PlayerLevelReadRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── 关卡评论列表（仅对已发布关卡） ─────────────────────────────────────
       case req @ GET -> Root / "levels" / levelId / "comments" =>
         currentUserId(req) match {
           case Some(playerId) =>
@@ -54,6 +59,7 @@ private[routes] object PlayerLevelReadRouter {
             HttpError.toResponse(HttpError.unauthorized("Missing x-user-id header"))
         }
 
+      // ── 当前玩家的收藏列表（含关卡详情） ───────────────────────────────────
       case req @ GET -> Root / "favorites" =>
         currentUserId(req) match {
           case Some(playerId) =>

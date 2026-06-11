@@ -14,6 +14,7 @@ import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /admin/director/ui/pages/:pageId/components 的请求体。 */
 final case class CreatePageComponentBody(
   component: PageComponent
 )
@@ -24,6 +25,7 @@ object CreatePageComponentBody {
   implicit val entityDecoder: EntityDecoder[IO, CreatePageComponentBody] = jsonOf
 }
 
+/** 向页面追加组件的 APIMessage；component.id 不可与已有组件重复。 */
 final case class CreatePageComponentAPIMessage(
   userId: String,
   pageId: String,

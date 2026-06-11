@@ -9,6 +9,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
 
+/** DELETE panel-templates/:id 或 pattern-templates/:id 的 APIMessage。 */
 final case class DeleteStretchVisualTemplateAPIMessage(
   userId: String,
   templateId: String,

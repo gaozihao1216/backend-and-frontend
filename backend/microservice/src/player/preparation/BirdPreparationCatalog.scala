@@ -1,7 +1,9 @@
 package microservice.player.preparation
 
+/** 鸟的基础三维属性（1 级时的基准值）。 */
 final case class BirdBaseStats(attack: Int, impact: Int, speed: Int)
 
+/** 系统内置或设计师发布鸟在备战目录中的条目。 */
 final case class BirdCatalogEntry(
   birdType: String,
   name: String,
@@ -14,7 +16,9 @@ final case class BirdCatalogEntry(
   authorId: Option[String] = None
 )
 
+/** 系统内置鸟备战目录：三只默认鸟及其 tier 技能描述与预览图。 */
 object BirdPreparationCatalog {
+  /** 鸟阶位上限（1-3 对应三档技能描述）。 */
   val maxTier: Int = 3
 
   private val basicPreview =
@@ -68,9 +72,11 @@ object BirdPreparationCatalog {
     )
   )
 
+  /** 按 birdType 在系统内置目录中查找。 */
   def find(birdType: String): Option[BirdCatalogEntry] =
     entries.find(_.birdType == birdType)
 
+  /** 按等级计算实际属性（每级 +8 攻击/冲击，+5 速度）。 */
   def statsFor(level: Int, base: BirdBaseStats): BirdBaseStats = {
     val bonus = math.max(level - 1, 0)
     BirdBaseStats(
@@ -80,9 +86,11 @@ object BirdPreparationCatalog {
     )
   }
 
+  /** 返回当前 tier 对应的技能描述文案。 */
   def skillDescription(entry: BirdCatalogEntry, tier: Int): String =
     entry.tierSkillDescriptions(math.min(math.max(tier, 1), entry.tierSkillDescriptions.length) - 1)
 
+  /** 若未达 maxTier，返回下一阶技能预览文案。 */
   def nextTierSkillPreview(entry: BirdCatalogEntry, tier: Int): Option[String] =
     if (tier >= maxTier) None
     else Some(entry.tierSkillDescriptions(tier))

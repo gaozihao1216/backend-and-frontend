@@ -1,5 +1,6 @@
 package microservice.ui.objects
 
+/** 页面布局配置：stack / grid / freeform 及列数、间距、内边距等参数。 */
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

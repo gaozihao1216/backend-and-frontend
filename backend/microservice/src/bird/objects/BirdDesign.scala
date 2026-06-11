@@ -4,6 +4,10 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.system.objects.LevelStatus
 
+/** 设计师创建的鸟类设计领域对象，复用 LevelStatus 表示生命周期（Draft → PendingReview → Published/Rejected）。
+  *
+  * 关联：BirdDesignTable / BirdRowMapper；前端 objects/bird/BirdDesign.ts schema 对齐。
+  */
 final case class BirdDesign(
   id: String,
   authorId: String,

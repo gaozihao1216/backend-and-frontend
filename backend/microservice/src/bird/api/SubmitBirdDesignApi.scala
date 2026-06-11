@@ -12,6 +12,11 @@ import microservice.infrastructure.api.APIWithTokenMessage
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
 
+/** 将 Draft/Rejected 设计提交审核：设计进入 PendingReview，并创建 BirdSubmission 记录。
+  *
+  * 实现：校验所有权、无重复 pending 投稿、状态可提交 → updateSubmissionStatus + BirdSubmissionTable.insert。
+  * 关联：POST /designer/bird-designs/:designId/submit；审核由 ReviewBirdSubmissionAPIMessage 处理。
+  */
 final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String)
     extends APIWithTokenMessage[BirdSubmission] {
   override def token: String = designerId

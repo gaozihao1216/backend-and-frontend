@@ -1,5 +1,6 @@
 package microservice.ui.objects
 
+/** 按钮、面板、图案三类模板的合法 category 枚举与默认值。 */
 object ButtonTemplateCategory {
   val Business: String = "business"
   val Level: String = "level"

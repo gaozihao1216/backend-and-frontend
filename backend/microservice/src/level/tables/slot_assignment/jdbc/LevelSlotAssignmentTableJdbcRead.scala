@@ -1,3 +1,7 @@
+/** 关卡槽位表的 JDBC 只读查询。
+  *
+  * 实现：PreparedStatement + Codec.rowFromResultSet；由 Table 门面在 connection != null 时委托。
+  */
 package microservice.level.tables.slot_assignment.jdbc
 
 import microservice.level.tables.shared.LevelSlotAssignmentRow

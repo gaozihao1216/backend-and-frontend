@@ -1,5 +1,9 @@
 package microservice.ui.objects
 
+/** 按钮视觉模板：源图 URL、缩放模式（固定比例/九宫格）与 slice 边距。
+  *
+  * 总监在 DirectorWorkbench 管理；ButtonComponent 的 baseDesign 可引用 templateId。
+  */
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

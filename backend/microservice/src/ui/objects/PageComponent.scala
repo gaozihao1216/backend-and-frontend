@@ -1,5 +1,9 @@
 package microservice.ui.objects
 
+/** 页面组件 ADT：button / panel / text / list 四种类型及其附属配置。
+  *
+  * 含位置、样式、数据源、绑定与动作；自定义 Circe 编解码按 type 字段分发。
+  */
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}

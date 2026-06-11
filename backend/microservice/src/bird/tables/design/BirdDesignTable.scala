@@ -8,12 +8,19 @@ import io.circe.syntax._
 import java.sql.Connection
 import java.time.Instant
 
+/** 鸟类设计表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 间分流。
+  *
+  * 表：bird_designs；状态复用 LevelStatus（Draft/PendingReview/Published/Rejected）。
+  * 关联：DesignerBirdRouter CRUD、ReviewBirdSubmissionAPIMessage 审核、Director bird pool 选项。
+  */
 object BirdDesignTable {
+  /** 未上传预览图时使用的默认 SVG data URL。 */
   val defaultPreviewImageUrl: String =
     "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Ccircle cx='120' cy='120' r='88' fill='%23dbeafe'/%3E%3Ctext x='120' y='128' text-anchor='middle' font-size='28' fill='%231e3a8a'%3E%E9%B8%9F%3C/text%3E%3C/svg%3E"
 
   private def isInMemory(connection: Connection): Boolean = connection == null
 
+  /** JDBC 启动时建表 bird_designs；in-memory 模式跳过 DDL。 */
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) {
       val statement = connection.createStatement()
@@ -45,6 +52,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 生成下一个设计 ID，格式 bird-design-0001。 */
   def nextId(connection: Connection): String = {
     val count =
       if (isInMemory(connection)) InMemoryStore.birdDesigns.size
@@ -61,6 +69,7 @@ object BirdDesignTable {
     f"bird-design-${count + 1}%04d"
   }
 
+  /** 插入新设计行，返回写入后的 BirdDesignRow。 */
   def insert(connection: Connection, row: BirdDesignRow): BirdDesignRow =
     if (isInMemory(connection)) {
       InMemoryStore.birdDesigns = InMemoryStore.birdDesigns :+ row
@@ -84,6 +93,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 列出所有 Published 状态的设计，供 Director bird pool 与玩家 catalog 使用。 */
   def listPublished(connection: Connection): Vector[BirdDesignRow] =
     if (isInMemory(connection)) {
       InMemoryStore.birdDesigns.filter(_.status == LevelStatus.Published)
@@ -113,6 +123,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 按 designId 查询单条设计。 */
   def findById(connection: Connection, designId: String): Option[BirdDesignRow] =
     if (isInMemory(connection)) InMemoryStore.birdDesigns.find(_.id == designId)
     else {
@@ -134,6 +145,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 按作者列出设计，可选 status 筛选；按 updated_at 降序。 */
   def listByAuthor(connection: Connection, authorId: String, status: Option[LevelStatus]): Vector[BirdDesignRow] = {
     val rows =
       if (isInMemory(connection)) InMemoryStore.birdDesigns.filter(_.authorId == authorId)
@@ -181,6 +193,7 @@ object BirdDesignTable {
     }
   }
 
+  /** 更新可编辑设计（Draft/Rejected）：校验 authorId 与状态后全量更新字段。 */
   def updateEditable(connection: Connection, row: BirdDesignRow): Option[BirdDesignRow] =
     findById(connection, row.id).flatMap { existing =>
       if (existing.authorId != row.authorId) None
@@ -229,6 +242,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 提交审核时更新设计状态（如 Draft → PendingReview），不涉及 publishedAt。 */
   def updateSubmissionStatus(
     connection: Connection,
     designId: String,
@@ -264,6 +278,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 审核完成后更新设计状态、拒绝原因与发布时间。 */
   def updateReviewStatus(
     connection: Connection,
     designId: String,
@@ -309,6 +324,7 @@ object BirdDesignTable {
       }
     }
 
+  /** 删除 Draft 设计：校验 authorId 与 Draft 状态，成功返回 true。 */
   def deleteDraft(connection: Connection, designId: String, authorId: String): Boolean =
     findById(connection, designId) match {
       case Some(row) if row.authorId == authorId && row.status == LevelStatus.Draft =>

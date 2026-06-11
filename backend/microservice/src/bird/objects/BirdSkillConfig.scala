@@ -3,6 +3,10 @@ package microservice.bird.objects
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.semiauto._
 
+/** 总监配置的鸟类技能 JSON 持久化模型（按 birdType 唯一）。
+  *
+  * 关联：BirdSkillConfigTable；SaveDirectorBirdSkillAPIMessage 写入；玩家备战/运行时读取。
+  */
 final case class BirdSkillConfig(
   birdType: String,
   skills: Json,
@@ -16,6 +20,7 @@ object BirdSkillConfig {
   implicit val decoder: Decoder[BirdSkillConfig] = deriveDecoder
 }
 
+/** 总监技能看板中的单鸟条目：合并 catalog 元数据与可选已配置 skills JSON。 */
 final case class DirectorBirdSkillEntry(
   birdType: String,
   name: String,
@@ -33,6 +38,7 @@ object DirectorBirdSkillEntry {
   implicit val decoder: Decoder[DirectorBirdSkillEntry] = deriveDecoder
 }
 
+/** 总监鸟类技能配置看板：全部可选鸟种及其配置状态。 */
 final case class DirectorBirdSkillBoard(
   birds: List[DirectorBirdSkillEntry]
 )

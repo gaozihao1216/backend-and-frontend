@@ -22,6 +22,7 @@ object LevelTable {
   def initialize(connection: Connection): Unit =
     if (!isInMemory(connection)) LevelTableJdbcWrite.initialize(connection)
 
+  /** 按 ID 查找关卡。 */
   def findById(connection: Connection, levelId: String): Option[LevelRow] =
     if (isInMemory(connection)) {
       LevelTableInMemory.findById(levelId)
@@ -29,6 +30,7 @@ object LevelTable {
       LevelTableJdbcRead.findById(connection, levelId)
     }
 
+  /** 生成下一个关卡 ID。 */
   def nextId(connection: Connection): String =
     if (isInMemory(connection)) {
       LevelTableInMemory.nextId()
@@ -36,6 +38,7 @@ object LevelTable {
       LevelTableJdbcRead.nextId(connection)
     }
 
+  /** 列出指定作者的全部已发布关卡。 */
   def listPublishedByAuthor(connection: Connection, authorId: String): Vector[LevelRow] =
     if (isInMemory(connection)) {
       LevelTableInMemory.listPublishedByAuthor(authorId)
@@ -43,6 +46,7 @@ object LevelTable {
       LevelTableJdbcRead.listPublishedByAuthor(connection, authorId)
     }
 
+  /** 列出已发布关卡，支持 tag 筛选与 sort 排序。 */
   def listPublished(connection: Connection, tag: Option[LevelTag], sort: String): Vector[LevelRow] =
     if (isInMemory(connection)) {
       LevelTableInMemory.listPublished(tag, sort)
@@ -50,6 +54,7 @@ object LevelTable {
       LevelTableJdbcRead.listPublished(connection, tag, sort)
     }
 
+  /** 插入新关卡记录。 */
   def insert(connection: Connection, row: LevelRow): LevelRow =
     if (isInMemory(connection)) {
       LevelTableInMemory.insert(row)
@@ -57,6 +62,7 @@ object LevelTable {
       LevelTableJdbcWrite.insert(connection, row)
     }
 
+  /** 设计师提交审核时更新关卡状态（Draft/Rejected → PendingReview）。 */
   def updateSubmissionStatus(
     connection: Connection,
     levelId: String,
@@ -70,6 +76,7 @@ object LevelTable {
       LevelTableJdbcWrite.updateSubmissionStatus(connection, levelId, status, rejectionReason, updatedAt)
     }
 
+  /** 管理员审核后更新关卡状态（Approved → Published 或 Rejected）。 */
   def updateReviewStatus(
     connection: Connection,
     levelId: String,
@@ -84,6 +91,7 @@ object LevelTable {
       LevelTableJdbcWrite.updateReviewStatus(connection, levelId, status, rejectionReason, publishedAt, updatedAt)
     }
 
+  /** 评分变更后更新关卡的 averageRating 与 ratingCount 聚合字段。 */
   def updateRatingStats(
     connection: Connection,
     levelId: String,

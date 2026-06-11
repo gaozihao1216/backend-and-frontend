@@ -1,3 +1,7 @@
+/** UI 页面表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
+  */
 package microservice.ui.tables.ui_page.jdbc
 
 import microservice.ui.tables.ui_page._

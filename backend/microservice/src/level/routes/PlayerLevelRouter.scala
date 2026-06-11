@@ -12,6 +12,7 @@ import org.http4s.HttpRoutes
   * 关联：前端 player-api、player-ui-api、player-social-api 等均代理到此前缀。
   */
 object PlayerLevelRouter {
+  /** 组合玩家侧全部子路由；关卡相关部分由 Read/Action router 提供。 */
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     PlayerLevelReadRouter.routes(databaseSession) <+>
       PlayerLevelActionRouter.routes(databaseSession) <+>

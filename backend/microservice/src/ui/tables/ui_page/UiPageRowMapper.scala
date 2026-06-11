@@ -1,3 +1,7 @@
+/** 持久化 Row 与领域/API 对象之间的映射器。
+  *
+  * 实现：纯字段拷贝，不含业务逻辑；Table 层返回 Row，上层经此转为对外 DTO。
+  */
 package microservice.ui.tables.ui_page
 
 import microservice.ui.objects.PageConfig

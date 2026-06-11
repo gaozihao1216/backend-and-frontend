@@ -6,9 +6,12 @@ import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 
+/** 玩家钱包运行时服务：为动态页面提供 coins/gems/fragments 数据。 */
 object PlayerWalletService {
+  /** 前端 dataSource.apiKey 使用的标识。 */
   val dataApiKey: String = "player.wallet"
 
+  /** 读取或创建用户钱包并序列化为 JSON。 */
   def getData(connection: Connection, userId: String): Either[HttpError, Json] =
     Right(buildPayload(connection, userId))
 

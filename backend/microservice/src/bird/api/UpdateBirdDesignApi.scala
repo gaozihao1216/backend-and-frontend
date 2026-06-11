@@ -15,6 +15,7 @@ import microservice.system.objects.{LevelStatus, UserRole}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** 更新鸟类设计请求体，字段与 CreateBirdDesignBody 一致。 */
 final case class UpdateBirdDesignBody(
   name: String,
   summary: String,
@@ -33,6 +34,11 @@ object UpdateBirdDesignBody {
   implicit val entityDecoder: EntityDecoder[IO, UpdateBirdDesignBody] = jsonOf
 }
 
+/** 更新鸟类设计：仅作者可编辑 Draft/Rejected 状态的设计，保存后重置为 Draft。
+  *
+  * 实现：校验所有权与状态 → validate → BirdDesignTable.updateEditable。
+  * 关联：PUT /designer/bird-designs/:designId。
+  */
 final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String, body: UpdateBirdDesignBody)
     extends APIWithTokenMessage[BirdDesign] {
   override def token: String = designerId

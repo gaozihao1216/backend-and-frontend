@@ -14,6 +14,7 @@ import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTe
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** PUT /admin/director/ui/button-templates/:templateId 的请求体。 */
 final case class UpdateButtonTemplateBody(
   template: ButtonTemplate
 )
@@ -24,6 +25,7 @@ object UpdateButtonTemplateBody {
   implicit val entityDecoder: EntityDecoder[IO, UpdateButtonTemplateBody] = jsonOf
 }
 
+/** PUT /admin/director/ui/button-templates/:templateId 的 APIMessage。 */
 final case class UpdateButtonTemplateAPIMessage(
   userId: String,
   templateId: String,

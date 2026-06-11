@@ -3,6 +3,10 @@ package microservice.level.objects
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 
+/** 地面形状抽象：支持折线（line）与贝塞尔曲线（bezier）两种类型。
+  *
+  * 实现：自定义 Circe 编解码，按 type 字段多态反序列化为 GroundLine 或 GroundBezier。
+  */
 trait LevelGround {
   def `type`: String
 }

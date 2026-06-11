@@ -18,6 +18,7 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
+/** POST /player/levels/:levelId/ratings 的请求体。 */
 final case class RateLevelBody(
   score: Int
 )
@@ -28,6 +29,7 @@ object RateLevelBody {
   implicit val entityDecoder: EntityDecoder[IO, RateLevelBody] = jsonOf
 }
 
+/** 玩家对已发布关卡评分 APIMessage。 */
 final case class RateLevelAPIMessage(
   playerId: String,
   levelId: String,
@@ -47,8 +49,10 @@ final case class RateLevelAPIMessage(
         case None =>
           Left(RateLevelErrors.LevelMissing(levelId).toHttpError)
         case Some(level) =>
+          // 仅已发布关卡可评分
           if (level.status != LevelStatus.Published) {
             Left(RateLevelErrors.LevelNotPublished(levelId).toHttpError)
+          // 分数必须在 1–5 之间
           } else if (body.score < 1 || body.score > 5) {
             Left(RateLevelErrors.InvalidScore(body.score).toHttpError)
           } else {
@@ -72,6 +76,7 @@ final case class RateLevelAPIMessage(
                 )
               }
 
+            // 重算该关卡的平均分与评分人数，写回 Level 聚合字段
             val levelRatings = RatingTable.listByLevel(connection, levelId)
             val average =
               if (levelRatings.isEmpty) 0.0

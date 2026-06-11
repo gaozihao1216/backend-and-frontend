@@ -5,7 +5,9 @@ import microservice.user.tables.user._
 import microservice.system.objects.UserRole
 import java.sql.Connection
 
+/** users 表的 JDBC 只读操作。 */
 private[tables] object UserTableJdbcRead {
+
   def listAll(connection: Connection): Vector[UserRow] = {
     val statement = connection.prepareStatement(
       s"${UserTableCodec.baseSelect} ORDER BY created_at ASC, id ASC"

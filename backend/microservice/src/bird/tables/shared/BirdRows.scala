@@ -1,3 +1,7 @@
+/** 鸟设计模块多个相关 Row case class 的聚合定义（shared 包）。
+  *
+  * 关联：JdbcRead/Codec 与 RowMapper 均依赖此处的行类型。
+  */
 package microservice.bird.tables.shared
 
 import microservice.system.objects.{LevelStatus, SubmissionStatus}

@@ -1,3 +1,7 @@
+/** InMemoryStore 上的 评分 CRUD；演示模式与单元测试使用。
+  *
+  * 关联：关卡模块 Table 门面在 connection == null 时委托到此实现。
+  */
 package microservice.level.tables.rating.inmemory
 
 import microservice.level.tables.shared.RatingRow

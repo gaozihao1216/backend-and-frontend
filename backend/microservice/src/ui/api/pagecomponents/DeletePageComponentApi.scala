@@ -10,6 +10,7 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
+/** DELETE /admin/director/ui/pages/:pageId/components/:componentId 的 APIMessage。 */
 final case class DeletePageComponentAPIMessage(
   userId: String,
   pageId: String,

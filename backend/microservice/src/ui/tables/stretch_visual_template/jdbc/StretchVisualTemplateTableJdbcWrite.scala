@@ -1,3 +1,7 @@
+/** 拉伸视觉模板表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
+  */
 package microservice.ui.tables.stretch_visual_template.jdbc
 
 import microservice.ui.tables.stretch_visual_template._

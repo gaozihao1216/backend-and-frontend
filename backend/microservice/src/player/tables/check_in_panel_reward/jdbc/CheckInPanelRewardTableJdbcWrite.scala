@@ -1,3 +1,7 @@
+/** 签到面板奖励表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
+  */
 package microservice.player.tables.check_in_panel_reward.jdbc
 
 import microservice.player.tables.check_in_panel_reward._

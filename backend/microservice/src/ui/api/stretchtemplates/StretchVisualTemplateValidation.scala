@@ -3,7 +3,9 @@ package microservice.ui.api.stretchtemplates
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{PanelTemplateCategory, PatternTemplateCategory, StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
 
+/** 拉伸视觉模板的字段校验、category 规范化与 kind 一致性检查。 */
 private[api] object StretchVisualTemplateValidation {
+  /** 校验 id/name/sourceDataUrl 与 kind 对应的 category 合法性。 */
   def validate(template: StretchVisualTemplate): Either[HttpError, Unit] =
     if (template.id.trim.isEmpty || template.name.trim.isEmpty || template.sourceDataUrl.trim.isEmpty) {
       Left(UiCustomizationErrors.InvalidStretchVisualTemplate("id, name and sourceDataUrl are required").toHttpError)
@@ -19,6 +21,7 @@ private[api] object StretchVisualTemplateValidation {
       case StretchVisualTemplateKind.Pattern => PatternTemplateCategory.isValid(template.category)
     }
 
+  /** 去除字符串字段首尾空白并按 kind 规范化 category。 */
   def sanitize(template: StretchVisualTemplate): StretchVisualTemplate =
     template.copy(
       id = template.id.trim,
@@ -27,6 +30,7 @@ private[api] object StretchVisualTemplateValidation {
       category = StretchVisualTemplate.normalizeCategoryForKind(template.kind, template.category.trim)
     )
 
+  /** 确保模板 kind 与路由期望的 expectedKind 一致。 */
   def ensureKind(template: StretchVisualTemplate, expectedKind: StretchVisualTemplateKind): Either[HttpError, StretchVisualTemplate] =
     if (template.kind == expectedKind) {
       Right(template)
