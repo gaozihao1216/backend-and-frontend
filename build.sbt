@@ -6,6 +6,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "UserService",
     Compile / scalaSource := baseDirectory.value / "backend" / "microservice" / "src",
+    Test / scalaSource := baseDirectory.value / "backend" / "microservice" / "test",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % "3.5.7",
       "org.http4s" %% "http4s-dsl" % "0.23.30",
@@ -14,6 +15,8 @@ lazy val root = (project in file("."))
       "io.circe" %% "circe-generic" % "0.14.10",
       "io.circe" %% "circe-parser" % "0.14.10",
       "org.postgresql" % "postgresql" % "42.7.5",
-      "org.slf4j" % "slf4j-simple" % "2.0.16"
+      "org.slf4j" % "slf4j-simple" % "2.0.16",
+      "org.scalameta" %% "munit" % "1.0.4" % Test,
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test
     )
   )

@@ -13,6 +13,7 @@ import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/
 import { compactStoredPageConfigVisualAssets, compactStoredRoleHomePageConfigs } from "./lib/ui-customization.js";
 import { hydrateSharedLevelMapFromApi } from "./lib/shared-level-map-persistence.js";
 import { isPageBuilderPath, resolveHomePageId, resolvePageId } from "./lib/page-id-resolver.js";
+import { checkRouteAccess } from "./lib/route-access.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
 // 这样实现足够轻量，也方便把设计器页面与主页逻辑拆开。
@@ -207,19 +208,22 @@ export const App = () => {
       <BackendBindingPanel title={title} user={user} onBound={setCurrentUser} />
     );
 
-  const renderStandaloneRoute = (user: AuthUser) => {
-    if (isPageBuilderPath(pathname)) {
-      if (user.role !== "admin" || user.adminLevel !== "director") {
-        return (
-          <section className="panel">
-            <h2>页面优化</h2>
-            <p className="panel-copy">当前账号不是总监管理员，无法访问页面可视化编辑器。</p>
-          </section>
-        );
-      }
+  const renderAccessDenied = (title: string, message: string) => (
+    <section className="panel">
+      <h2>{title}</h2>
+      <p className="panel-copy">{message}</p>
+    </section>
+  );
 
-      const pageId = new URLSearchParams(search).get("pageId");
+  const renderStandaloneRoute = (user: AuthUser) => {
+    const routeDenial = checkRouteAccess(pathname, user);
+    if (routeDenial) {
+      return renderAccessDenied(routeDenial.title, routeDenial.message);
+    }
+
+    if (isPageBuilderPath(pathname)) {
       const searchParams = new URLSearchParams(search);
+      const pageId = searchParams.get("pageId");
       if (pathname.endsWith(PANEL_CREATE_SUFFIX)) {
         const targetPath = pathname.slice(0, -PANEL_CREATE_SUFFIX.length) || "/";
         return renderBoundPage(user, "创建小面板", (apiUserId) => (
@@ -312,33 +316,6 @@ export const App = () => {
         <section className="panel">
           <h2>备战区域</h2>
           <p className="panel-copy">当前账号不是玩家，无法访问备战区域。</p>
-        </section>
-      );
-    }
-
-    if (pathname === ADMIN_PROPOSALS_PATH && user.role !== "admin") {
-      return (
-        <section className="panel">
-          <h2>提案处理</h2>
-          <p className="panel-copy">当前账号不是管理员，无法访问提案处理页面。</p>
-        </section>
-      );
-    }
-
-    if (
-      (pathname === DIRECTOR_CONSOLE_PATH
-        || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
-        || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH
-        || pathname === DIRECTOR_LEVEL_INTERFACE_PATH
-        || pathname === DIRECTOR_LEVEL_ASSIGNMENT_PATH
-        || pathname === DIRECTOR_BIRD_SKILL_LAB_PATH
-        || pathname === DIRECTOR_LEVEL_BACKGROUND_TEMPLATES_PATH)
-      && user.role !== "admin"
-    ) {
-      return (
-        <section className="panel">
-          <h2>总监控制台</h2>
-          <p className="panel-copy">当前账号不是管理员，无法访问总监控制台。</p>
         </section>
       );
     }

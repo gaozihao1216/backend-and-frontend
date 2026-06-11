@@ -20,7 +20,7 @@ backend/microservice/src/
 ├── infrastructure/      # 纯技术基础设施
 │   ├── api/             # APIMessage、APIWithTokenMessage
 │   ├── database/        # DatabaseConfig、DatabaseSession、Connection
-│   └── http/            # HttpError、统一错误响应
+│   └── http/            # HttpError、AuthMiddleware、统一错误响应
 ├── core/                # 跨模块业务装配（AccessControl、RowMappers 等）
 ├── system/              # 健康检查、枚举、种子数据
 ├── user/                # 用户身份、绑定、资料、AccessControl
@@ -62,26 +62,29 @@ final case class CreateLevelAPIMessage(
 
 原则：
 
-- Route 只做 HTTP 解析，不写业务规则
+- Route 只做 HTTP 解析，不写业务规则；**禁止**在 route 内直接 `withTransaction` 或调用 service
 - `plan(connection)` 内完成权限、校验、table 调用
+- `APIMessage.run` 调用 `DatabaseSession.withTransactionEither`：`Right` 提交，`Left` 回滚（无异常驱动控制流）
 - 返回 `IO[Either[HttpError, A]]`，由 `HttpError.fromEither` 转为 HTTP 响应
 - 成功体包装为 `ApiSuccess(data)`，失败为 `ApiFailure(error)`
 
-## 路由挂载
+## 路由挂载与鉴权
 
 `ApiRouter.scala` 将模块路由组合如下：
 
-| 前缀 | 模块 |
-| --- | --- |
-| `/health` | system |
-| `/auth` | user（身份绑定，URL 兼容保留） |
-| `/users` | user（资料聚合） |
-| `/designer` | level（设计师）+ bird |
-| `/player` | level（玩家读/写）+ player（ui/social/preparation） |
-| `/admin/director/ui` | ui 定制 |
-| `/admin` | admin（审核、评论、总监配置） |
+| 前缀 | 模块 | 鉴权 |
+| --- | --- | --- |
+| `/health` | system | 公开 |
+| `/auth` | user（身份绑定） | 公开 |
+| `/users` | user（资料聚合） | 需 `x-user-id` |
+| `/designer` | level（设计师）+ bird | 需 `x-user-id` |
+| `/player` | level（玩家读/写）+ player（ui/social/preparation） | 需 `x-user-id` |
+| `/admin/director/ui` | ui 定制 | 需 `x-user-id` |
+| `/admin` | admin（审核、评论、总监配置） | 需 `x-user-id` |
 
-认证上下文通过请求头 **`x-user-id`** 传递；后端不信任 body 中的用户身份字段。
+受保护前缀由 **`AuthMiddleware.requireUserId`** 统一拦截：缺少 `x-user-id` 时返回 401。Route 内通过 `AuthMiddleware.userIdFromRequest(req).get` 读取当前用户，**不在 route 内重复 401 分支**。
+
+认证上下文通过请求头 **`x-user-id`** 传递；后端不信任 body 中的用户身份字段。角色与管理员等级校验仍在 APIMessage 的 `plan` 内通过 `AccessControl` 完成。
 
 ## 权限模型
 
@@ -103,7 +106,13 @@ final case class CreateLevelAPIMessage(
 ### 可选：PostgreSQL/JDBC
 
 ```bash
-docker compose up -d postgres
+npm run postgres:up
+npm run dev:backend:postgres
+```
+
+或手动指定环境变量：
+
+```bash
 UGC_DATABASE_MODE=jdbc \
 UGC_DATABASE_URL=jdbc:postgresql://localhost:5432/ugc_level_platform \
 UGC_DATABASE_USERNAME=postgres \
@@ -174,13 +183,12 @@ sbt run
 
 ### player
 
-挂载在 `/player` 下若干子路径：
+挂载在 `/player` 下若干子路径，业务均通过 `player/api/` 或 `level/api/` 的 APIMessage 执行：
 
-- **ui runtime**：动态 UI 数据、商店、签到、关卡进度
-- **social**：社交相关数据
-- **preparation**：备战、鸟池配置
-
-实现以 `player/runtime/` 服务 + `player/tables/` 为主，部分 API 定义在 route 邻近层而非独立 `api/` 文件。
+- **ui runtime**：`player/api/ui/` — 动态 UI 数据与动作；关卡地图页走 `ui/api/pages/`
+- **social**：`player/api/social/` — 好友与私信
+- **preparation**：`player/api/preparation/` — 鸟/弹弓备战升级
+- **levels / favorites**：`level/api/` — 已发布关卡读/写（挂载在同一 `/player` 前缀下）
 
 ## API 文件约定
 
@@ -208,8 +216,11 @@ sbt run
 ## 本地开发命令
 
 ```bash
-npm run dev:backend       # sbt run
-npm run dev:backend:watch # sbt ~run
+npm run dev                 # in-memory 后端 + 前端
+npm run dev:backend         # sbt run（默认 in-memory）
+npm run dev:backend:watch   # sbt ~run
+npm run dev:backend:postgres # JDBC 模式
+npm run postgres:up         # 启动 Docker Postgres
 sbt compile
-sbt test                  # 若有 Scala 测试
+sbt test                    # 若有 Scala 测试
 ```

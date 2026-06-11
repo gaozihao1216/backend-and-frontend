@@ -58,9 +58,9 @@ final case class XxxAPIMessage(
 - `DatabaseSession.inMemory` 仍使用 in-memory 模式。
 - `DatabaseSession.jdbc(config)` 使用真实 JDBC connection 和事务。
 - `connection` 参数用于 table 层在 in-memory/JDBC 实现之间分流。
-- `APIMessage.run` 通过 `DatabaseSession.withTransaction(plan)` 执行，事务边界已经集中在 session 层。
+- `APIMessage.run` 通过 `DatabaseSession.withTransactionEither(plan)` 执行：`Right` commit，`Left` rollback（无异常驱动回滚）。
 - table 对外数据访问方法已经统一为 connection-based 形态。
-- 当前 in-memory `withTransaction` 是 no-op，内部委托给 `withConnection`。
+- 当前 in-memory `withTransaction` / `withTransactionEither` 等价于 `withConnection`。
 - `DatabaseSession.jdbc(config)` 已提供真实 JDBC session，支持打开连接、关闭连接、事务 commit/rollback 和恢复 auto-commit。
 - 默认启动使用 `DatabaseSession.inMemory(databaseConfig)`；设置 `UGC_DATABASE_MODE=jdbc` 后切换到 PostgreSQL。
 - 可通过 `UGC_DATABASE_URL`、`UGC_DATABASE_USERNAME`、`UGC_DATABASE_PASSWORD`、`UGC_DATABASE_DRIVER`、`UGC_DATABASE_SCHEMA` 覆盖数据库配置。
@@ -72,17 +72,17 @@ final case class XxxAPIMessage(
 定义 API 执行协议：
 
 - `APIMessage[A]`：要求实现 `plan(connection: Connection)`。
-- `run(databaseSession)`：通过 `databaseSession.withTransaction(plan)` 执行 API。
+- `run(databaseSession)`：通过 `databaseSession.withTransactionEither(plan)` 执行 API。
 - `APIWithTokenMessage[A]`：兼容需要用户身份的 API。
 
 ### `DatabaseSession.scala`
 
-当前提供 in-memory 和 JDBC 两种 session。它负责给 APIMessage 提供一个 `Connection` 形态的参数，并提供统一的 `withTransaction` 事务边界。
+当前提供 in-memory 和 JDBC 两种 session。它负责给 APIMessage 提供一个 `Connection` 形态的参数，并提供 `withTransaction` / `withTransactionEither` 事务边界。
 
 当前提供两个 session 工厂：
 
-- `DatabaseSession.inMemory(config)`：用于当前默认运行模式，`withTransaction` 是 no-op，内部委托给 `withConnection`。
-- `DatabaseSession.jdbc(config)`：用于真实 JDBC 连接，`withTransaction` 会关闭 auto-commit，业务成功时 commit，业务失败或 API 返回 `Left(HttpError)` 时 rollback，最后恢复原 auto-commit 并关闭连接。
+- `DatabaseSession.inMemory(config)`：默认运行模式，`withTransactionEither` 等价于 `withConnection`。
+- `DatabaseSession.jdbc(config)`：真实 JDBC 连接；`withTransactionEither` 在 `Right` 时 commit、`Left` 时 rollback，IO 异常时 rollback 并向上抛出。
 
 注意：默认仍是 in-memory 模式。真实持久化需要设置 `UGC_DATABASE_MODE=jdbc`，并确保 PostgreSQL 已按 `backend/docker/init-store.sql` 初始化。
 
@@ -91,12 +91,15 @@ final case class XxxAPIMessage(
 仓库根目录提供了 `docker-compose.yml`，用于启动本地 PostgreSQL 并在首次创建数据卷时执行 `backend/docker/init-store.sql`。
 
 ```bash
-docker compose up -d postgres
+npm run postgres:up
+# 或 docker compose up -d postgres
 ```
 
 使用 JDBC 模式运行 Scala 服务：
 
 ```bash
+npm run dev:backend:postgres
+# 或
 UGC_DATABASE_MODE=jdbc \
 UGC_DATABASE_URL=jdbc:postgresql://localhost:5432/ugc_level_platform \
 UGC_DATABASE_USERNAME=postgres \

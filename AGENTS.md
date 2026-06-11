@@ -16,8 +16,13 @@ npm install
 npm run dev
 
 # Start backend only (port 3000, via sbt)
-npm run dev:backend          # sbt run
+npm run dev:backend          # sbt run (default in-memory)
 npm run dev:backend:watch    # sbt ~run
+npm run dev:backend:postgres # UGC_DATABASE_MODE=jdbc sbt run
+
+# PostgreSQL (optional persistence)
+npm run postgres:up          # docker compose up -d postgres
+npm run dev:postgres         # postgres + jdbc backend + frontend
 
 # Start frontend only (port 5173, proxies API to backend)
 npm run dev:frontend
@@ -34,8 +39,9 @@ npm test
 # Run a single test file
 node --import tsx --test frontend/src/api/proxy-coverage.test.ts
 
-# Scala compile
+# Scala compile / test
 sbt compile
+sbt test
 ```
 
 ## Architecture
@@ -46,7 +52,7 @@ sbt compile
 backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 ├── Main.scala
 ├── routes/                   # ApiRouter, HealthRouter
-├── infrastructure/           # APIMessage, DatabaseSession, HttpError
+├── infrastructure/           # APIMessage, DatabaseSession, HttpError, AuthMiddleware
 ├── core/                     # AccessControl, RowMappers, InMemoryStore
 ├── system/                   # Health, enums, seed data
 ├── user/                     # Identity, bind, profile, AccessControl, UserTable
@@ -80,9 +86,10 @@ scripts/dev.mjs               # Concurrent sbt + vite launcher
 
 ### Backend Patterns
 
-- **Route → APIMessage → Table**: Routes parse HTTP (path/header/body), construct APIMessage, call `.run(databaseSession)`
-- **Auth**: `x-user-id` header identifies user; `AccessControl.requireRole` / `requireAdminLevel` enforce permissions
-- **Storage**: Default `DatabaseSession.inMemory`; optional JDBC via `UGC_DATABASE_MODE=jdbc` + PostgreSQL (`backend/docker/init-store.sql`)
+- **Route → APIMessage → Table**: Routes parse HTTP (path/header/body), construct APIMessage, call `.run(databaseSession)` — routes must not call `withTransaction` or services directly
+- **Auth**: `AuthMiddleware.requireUserId` wraps protected routes in `ApiRouter`; public routes are `/health` and `/auth/*`. Handlers read identity via `AuthMiddleware.userIdFromRequest(req)`. Role checks use `AccessControl.requireRole` / `requireAdminLevel` inside APIMessage `plan`
+- **Transactions**: `APIMessage.run` → `DatabaseSession.withTransactionEither` — `Right` commits, `Left` rolls back (no exception-driven rollback)
+- **Storage**: Default `DatabaseSession.inMemory`; optional JDBC via `UGC_DATABASE_MODE=jdbc` + PostgreSQL (`backend/docker/init-store.sql`, `npm run postgres:up`)
 - **Admin levels**: `AdminLevel.Standard` (review, comments) vs `AdminLevel.Director` (UI customization, level slots, bird skills)
 
 ### Frontend Patterns

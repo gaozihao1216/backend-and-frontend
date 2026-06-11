@@ -21,7 +21,7 @@
 
 **建议**：
 
-- 提供 `.env.example` 或 compose 一键启动「前端 + 后端 + Postgres」
+- 提供 `.env.example` 与 `npm run dev:postgres` 一键启动「前端 + 后端 + Postgres」（已完成）
 - CI 中增加 JDBC 模式 smoke test
 - 明确哪些 player/runtime 表仅 in-memory 有 seed，避免 JDBC 空库体验差
 
@@ -41,8 +41,8 @@
 
 **待完善**：
 
-- 自动化测试：Standard 不能访问 `/admin/director/ui/*`；Director 不能访问评论管理 API
-- 前端路由守卫与后端权限双重校验结果一致
+- ~~自动化测试：Standard 不能访问 `/admin/director/ui/*`；Director 不能访问评论管理 API~~（已覆盖于 `AdminAccessControlSuite` / `ApiRouterAuthSuite`）
+- ~~前端路由守卫与后端权限双重校验结果一致~~（`frontend/src/lib/route-access.ts` + 单元测试）
 - 总监「废除投稿」等高级操作的产品规则文档化
 - `TransferDirectorPermission` 流程的操作确认与审计
 

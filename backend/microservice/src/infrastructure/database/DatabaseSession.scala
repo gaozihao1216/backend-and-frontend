@@ -3,11 +3,12 @@ package microservice.infrastructure.database
 import cats.effect.IO
 import java.sql.Connection
 import java.sql.DriverManager
+import microservice.infrastructure.http.HttpError
 
 /** 数据库会话抽象：向 APIMessage 提供 Connection，并统一事务边界。
   *
   * 实现两种模式：
-  *   - inMemory：connection 传 null，table 层据此路由到 InMemoryStore（本地演示默认 seed）。
+  *   - inMemory：connection 传 null，table 层据此路由到 InMemoryStore（默认模式，无需 PostgreSQL）。
   *   - jdbc：真实 PostgreSQL 连接；withTransaction 关闭 autoCommit，成功 commit，失败 rollback。
   * 关联：[[microservice.infrastructure.api.APIMessage.run]] 始终通过 withTransaction 调用 plan。
   */
@@ -18,8 +19,11 @@ trait DatabaseSession {
   /** 获取连接并执行 use；用毕后由实现方负责关闭连接。 */
   def withConnection[A](use: Connection => IO[A]): IO[A]
 
-  /** 在事务边界内执行 use；成功提交，异常或 Left 时回滚。 */
+  /** 在事务边界内执行 use；成功提交，异常时回滚。 */
   def withTransaction[A](use: Connection => IO[A]): IO[A]
+
+  /** 在事务边界内执行 use；Right 提交，Left 回滚且不抛异常。 */
+  def withTransactionEither[A](use: Connection => IO[Either[HttpError, A]]): IO[Either[HttpError, A]]
 }
 
 object DatabaseSession {
@@ -39,6 +43,9 @@ object DatabaseSession {
         use(null.asInstanceOf[Connection])
 
       override def withTransaction[A](use: Connection => IO[A]): IO[A] =
+        withConnection(use)
+
+      override def withTransactionEither[A](use: Connection => IO[Either[HttpError, A]]): IO[Either[HttpError, A]] =
         withConnection(use)
     }
 
@@ -68,11 +75,25 @@ object DatabaseSession {
             _ <- IO.blocking(connection.setAutoCommit(false))
             result <- use(connection).attempt.flatMap {
               case Right(value) =>
-                // 业务成功：提交事务
                 IO.blocking(connection.commit()).as(value)
               case Left(error) =>
-                // 业务或 IO 失败：回滚后向上抛出原始异常
                 IO.blocking(connection.rollback()).attempt *> IO.raiseError[A](error)
+            }.guarantee(IO.blocking(connection.setAutoCommit(previousAutoCommit)).handleErrorWith(_ => IO.unit))
+          } yield result
+        }
+
+      override def withTransactionEither[A](use: Connection => IO[Either[HttpError, A]]): IO[Either[HttpError, A]] =
+        withConnection { connection =>
+          for {
+            previousAutoCommit <- IO.blocking(connection.getAutoCommit)
+            _ <- IO.blocking(connection.setAutoCommit(false))
+            result <- use(connection).flatMap {
+              case right @ Right(_) =>
+                IO.blocking(connection.commit()).as(right)
+              case left @ Left(_) =>
+                IO.blocking(connection.rollback()).as(left)
+            }.handleErrorWith { error =>
+              IO.blocking(connection.rollback()).attempt *> IO.raiseError(error)
             }.guarantee(IO.blocking(connection.setAutoCommit(previousAutoCommit)).handleErrorWith(_ => IO.unit))
           } yield result
         }

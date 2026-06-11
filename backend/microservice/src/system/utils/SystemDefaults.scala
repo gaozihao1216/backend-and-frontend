@@ -45,15 +45,13 @@ object SystemDefaults {
       password = sys.env.get("UGC_DATABASE_PASSWORD")
     )
 
-  /** 根据 UGC_DATABASE_MODE 选择存储后端；默认 JDBC，显式 in_memory 时用进程内向量。 */
+  /** 根据 UGC_DATABASE_MODE 选择存储后端；默认 in_memory，显式 jdbc 时连接 PostgreSQL。 */
   val databaseSession: DatabaseSession =
     sys.env.get("UGC_DATABASE_MODE") match {
-      case Some("in_memory") =>
-        // 本地演示 / 无 PostgreSQL 时：全部表走 InMemoryStore
-        DatabaseSession.inMemory(databaseConfig)
-      case _ =>
-        // 生产或集成测试：连接真实数据库
+      case Some("jdbc") =>
         DatabaseSession.jdbc(databaseConfig)
+      case _ =>
+        DatabaseSession.inMemory(databaseConfig)
     }
 
   private val createdAt = Instant.now().toString

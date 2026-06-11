@@ -15,7 +15,15 @@ UGC 关卡平台（灵感来自 Angry Birds 类玩法）：
 
 ```bash
 npm install
-npm run dev
+npm run dev              # 默认 in-memory，无需 Docker
+```
+
+使用 PostgreSQL 持久化：
+
+```bash
+npm run postgres:up
+npm run dev:backend:postgres   # 仅后端 JDBC 模式
+# 或分别启动：postgres:up 后 npm run dev（需自行设 UGC_DATABASE_MODE=jdbc）
 ```
 
 | 服务 | 地址 |
@@ -104,19 +112,20 @@ npm run dev
 
 ## 数据持久化现状
 
-| 模式 | 行为 |
-| --- | --- |
-| 默认 in-memory | 无需 Docker；重启后回到种子数据 |
-| JDBC（需配置环境变量） | PostgreSQL 持久化；适合联调与集成测试 |
+| 模式 | 启动方式 | 行为 |
+| --- | --- | --- |
+| 默认 in-memory | `npm run dev` | 无需 Docker；重启后回到种子数据 |
+| JDBC | `npm run postgres:up` + `npm run dev:backend:postgres` | PostgreSQL 持久化；适合联调与集成测试 |
+| JDBC 一键 | `npm run dev:postgres` | 启动 compose Postgres + JDBC 后端 + 前端 |
 
-多数表已具备 jdbc 实现，但**默认仍以 in-memory 启动**，避免本地未装数据库时无法运行。
+环境变量见仓库根目录 `.env.example`；`UGC_DATABASE_MODE=jdbc` 切换 JDBC；未设置时默认 in-memory。
 
 ## 已知限制
 
-1. **认证为演示级**：无真实密码哈希、JWT 或会话服务；生产环境不可用
+1. **认证为演示级**：`AuthMiddleware` 仅校验 `x-user-id` 是否存在，无真实密码哈希、JWT 或会话服务；生产环境不可用
 2. **UI 定制能力偏配置型**：总监可管理 PageConfig 与模板，但尚非完整可视化 WYSIWYG 编辑器
 3. **玩家经济/社交**：后端有 wallet、shop、social 表与服务，业务规则仍为 MVP/演示深度
-4. **测试覆盖不均衡**：前端有部分单元测试；Scala 端测试较少
+4. **测试覆盖不均衡**：前端有部分单元测试；Scala 端已有基础设施与管理员权限测试（`sbt test` / `npm run test:backend`）
 5. **单实例部署**：无水平扩展、缓存、消息队列等生产设施
 
 ## 建议演示顺序（课程/答辩）
@@ -132,5 +141,6 @@ npm run dev
 ```bash
 npm run check    # TypeScript
 npm test         # 前端测试
+npm run test:backend  # Scala 测试（munit）
 sbt compile      # Scala 编译
 ```
