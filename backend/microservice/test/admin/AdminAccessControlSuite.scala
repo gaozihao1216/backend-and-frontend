@@ -1,6 +1,12 @@
 package microservice.admin
 
-import microservice.admin.api.{GetAdminCommentsAPIMessage, GetDirectorLevelAssignmentBoardAPIMessage, GetDirectorPermissionsAPIMessage}
+import microservice.admin.api.{
+  GetAdminCommentsAPIMessage,
+  GetDirectorLevelAssignmentBoardAPIMessage,
+  GetDirectorPermissionsAPIMessage,
+  GetPendingSubmissionsAPIMessage
+}
+import microservice.bird.api.GetPendingBirdSubmissionsAPIMessage
 import microservice.testsupport.TestSupport
 import microservice.ui.api.pages.ListUiPagesAPIMessage
 import munit.CatsEffectSuite
@@ -66,6 +72,33 @@ class AdminAccessControlSuite extends CatsEffectSuite {
       .map {
         case Left(error) => assertEquals(error.status, Status.Forbidden)
         case Right(_)    => fail("standard admin should not access ui customization")
+      }
+  }
+
+  test("standard admin can list pending submissions") {
+    GetPendingSubmissionsAPIMessage("admin-1")
+      .run(TestSupport.session)
+      .map {
+        case Right(submissions) => assert(submissions.nonEmpty)
+        case Left(error)        => fail(s"expected success, got ${error.code}")
+      }
+  }
+
+  test("director admin cannot list pending submissions") {
+    GetPendingSubmissionsAPIMessage("admin-director-1")
+      .run(TestSupport.session)
+      .map {
+        case Left(error) => assertEquals(error.status, Status.Forbidden)
+        case Right(_)    => fail("director should not access standard submission review api")
+      }
+  }
+
+  test("director admin cannot list pending bird submissions") {
+    GetPendingBirdSubmissionsAPIMessage("admin-director-1")
+      .run(TestSupport.session)
+      .map {
+        case Left(error) => assertEquals(error.status, Status.Forbidden)
+        case Right(_)    => fail("director should not access standard bird submission review api")
       }
   }
 

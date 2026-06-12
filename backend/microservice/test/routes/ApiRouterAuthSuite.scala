@@ -50,6 +50,22 @@ class ApiRouterAuthSuite extends CatsEffectSuite {
     routes.run(request).map(response => assertEquals(response.status, Status.Ok))
   }
 
+  test("GET /admin/submissions/pending succeeds for standard admin with header") {
+    val request =
+      Request[IO](Method.GET, uri"/admin/submissions/pending")
+        .withHeaders(Header.Raw(CIString("x-user-id"), "admin-1"))
+
+    routes.run(request).map(response => assertEquals(response.status, Status.Ok))
+  }
+
+  test("GET /admin/submissions/pending is forbidden for director admin") {
+    val request =
+      Request[IO](Method.GET, uri"/admin/submissions/pending")
+        .withHeaders(Header.Raw(CIString("x-user-id"), "admin-director-1"))
+
+    routes.run(request).map(response => assertEquals(response.status, Status.Forbidden))
+  }
+
   test("GET /admin/director/ui/pages is forbidden for standard admin") {
     val request =
       Request[IO](Method.GET, uri"/admin/director/ui/pages")

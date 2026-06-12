@@ -3,16 +3,14 @@ package microservice.admin.api
 import cats.effect.IO
 import java.time.Instant
 import java.sql.Connection
-import microservice.user.tables.user.UserTable
+import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage}
 import microservice.infrastructure.http.{HttpError}
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.admin.objects.{ReviewedSubmission, ReviewSubmissionErrors}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.submission.{SubmissionTable}
-import microservice.system.objects.LevelStatus
-import microservice.system.objects.SubmissionStatus
-import microservice.system.objects.UserRole
+import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
@@ -47,59 +45,55 @@ final case class ReviewSubmissionAPIMessage(
     */
   override def plan(connection: Connection): IO[Either[HttpError, ReviewedSubmission]] =
     IO.pure {
-      UserTable.findById(connection, userId) match {
-        case Some(user) if user.role == UserRole.Admin =>
-          SubmissionTable.findById(connection, submissionId) match {
-            case None =>
-              Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
-            case Some(submission) =>
-              if (submission.status != SubmissionStatus.PendingReview) {
-                Left(ReviewSubmissionErrors.SubmissionAlreadyReviewed(submissionId).toHttpError)
-              } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
-                Left(ReviewSubmissionErrors.InvalidReviewStatus(body.status).toHttpError)
-              } else {
-                val timestamp = Instant.now().toString
-                val reviewed = SubmissionTable.updateReview(
-                  connection = connection,
-                  submissionId = submissionId,
-                  status = body.status,
-                  reviewerId = userId,
-                  reviewNote = body.reviewNote,
-                  reviewedAt = timestamp
-                )
+      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).flatMap { _ =>
+        SubmissionTable.findById(connection, submissionId) match {
+          case None =>
+            Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
+          case Some(submission) =>
+            if (submission.status != SubmissionStatus.PendingReview) {
+              Left(ReviewSubmissionErrors.SubmissionAlreadyReviewed(submissionId).toHttpError)
+            } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
+              Left(ReviewSubmissionErrors.InvalidReviewStatus(body.status).toHttpError)
+            } else {
+              val timestamp = Instant.now().toString
+              val reviewed = SubmissionTable.updateReview(
+                connection = connection,
+                submissionId = submissionId,
+                status = body.status,
+                reviewerId = userId,
+                reviewNote = body.reviewNote,
+                reviewedAt = timestamp
+              )
 
-                reviewed match {
-                  case None =>
-                    Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
-                  case Some(reviewedSubmission) =>
-                    // submission 与 level 状态联动：审核结果决定关卡是否对外可见
-                    val targetStatus =
-                      if (body.status == SubmissionStatus.Approved) {
-                        LevelStatus.Published
-                      } else {
-                        LevelStatus.Rejected
-                      }
-                    val publishedAt = if (body.status == SubmissionStatus.Approved) Some(timestamp) else None
-                    val rejectionReason = if (body.status == SubmissionStatus.Approved) None else body.reviewNote
-
-                    LevelTable.updateReviewStatus(
-                      connection = connection,
-                      levelId = submission.levelId,
-                      status = targetStatus,
-                      rejectionReason = rejectionReason,
-                      publishedAt = publishedAt,
-                      updatedAt = timestamp
-                    ) match {
-                      case None =>
-                        Left(ReviewSubmissionErrors.LinkedLevelMissing(submission.levelId).toHttpError)
-                      case Some(_) =>
-                        Right(ReviewedSubmission.fromSubmission(LevelRowMapper.toSubmission(reviewedSubmission)))
+              reviewed match {
+                case None =>
+                  Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
+                case Some(reviewedSubmission) =>
+                  val targetStatus =
+                    if (body.status == SubmissionStatus.Approved) {
+                      LevelStatus.Published
+                    } else {
+                      LevelStatus.Rejected
                     }
-                }
+                  val publishedAt = if (body.status == SubmissionStatus.Approved) Some(timestamp) else None
+                  val rejectionReason = if (body.status == SubmissionStatus.Approved) None else body.reviewNote
+
+                  LevelTable.updateReviewStatus(
+                    connection = connection,
+                    levelId = submission.levelId,
+                    status = targetStatus,
+                    rejectionReason = rejectionReason,
+                    publishedAt = publishedAt,
+                    updatedAt = timestamp
+                  ) match {
+                    case None =>
+                      Left(ReviewSubmissionErrors.LinkedLevelMissing(submission.levelId).toHttpError)
+                    case Some(_) =>
+                      Right(ReviewedSubmission.fromSubmission(LevelRowMapper.toSubmission(reviewedSubmission)))
+                  }
               }
-          }
-        case Some(_) => Left(HttpError.forbidden("Admin role is required"))
-        case None => Left(HttpError.unauthorized("Unknown user"))
+            }
+        }
       }
     }
 }

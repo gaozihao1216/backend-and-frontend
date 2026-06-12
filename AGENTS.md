@@ -42,6 +42,7 @@ node --import tsx --test frontend/src/api/proxy-coverage.test.ts
 # Scala compile / test
 sbt compile
 sbt test
+sbt "testOnly *JdbcSmokeSuite"   # 需 UGC_DATABASE_MODE=jdbc + Postgres
 ```
 
 ## Architecture

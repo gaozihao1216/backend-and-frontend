@@ -65,8 +65,8 @@ object SystemDefaults {
     ApiRouter.routes(databaseSession = databaseSession)
 
   /** 启动阶段调用：JDBC 模式下为各业务表执行 DDL/迁移；in-memory 模式下多为 no-op。 */
-  def initializeDatabase: IO[Unit] =
-    databaseSession.withTransaction { connection =>
+  def initializeDatabaseOn(session: DatabaseSession): IO[Unit] =
+    session.withTransaction { connection =>
       IO.blocking {
         // --- 用户与 UGC 核心表 ---
         UserTable.initialize(connection)
@@ -96,4 +96,7 @@ object SystemDefaults {
         PlayerPreparationTable.initialize(connection)
       }
     }
+
+  def initializeDatabase: IO[Unit] =
+    initializeDatabaseOn(databaseSession)
 }

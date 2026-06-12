@@ -40,19 +40,14 @@ private[tables] object UserTableJdbcSchema {
         """
       )
 
-      // 预置总监演示账号 admin-director-1（与 SystemSeedData 一致）
-      statement.executeUpdate(
+      // 预置演示账号（与 SystemSeedData / init-store.sql 一致）
+      val demoUsersSeed =
         """
-          INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at)
-          VALUES (
-            'admin-director-1',
-            '001',
-            '001',
-            'admin',
-            'director',
-            '2026-06-03T00:00:00Z',
-            '2026-06-03T00:00:00Z'
-          )
+          INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
+            ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+            ('designer-1', 'local-designer-0000002', 'Designer One', 'designer', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+            ('admin-1', 'local-admin-0000003', 'Admin One', 'admin', 'standard', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),
+            ('admin-director-1', '001', '001', 'admin', 'director', '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z')
           ON CONFLICT (id) DO UPDATE SET
             username = EXCLUDED.username,
             display_name = EXCLUDED.display_name,
@@ -60,7 +55,7 @@ private[tables] object UserTableJdbcSchema {
             admin_level = EXCLUDED.admin_level,
             updated_at = EXCLUDED.updated_at
         """
-      )
+      statement.executeUpdate(demoUsersSeed)
     } finally {
       statement.close()
     }

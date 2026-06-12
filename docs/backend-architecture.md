@@ -90,7 +90,7 @@ final case class CreateLevelAPIMessage(
 
 - `AccessControl.requireRole(connection, userId, role)`：校验 player / designer / admin
 - `AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard | Director)`：管理员分级
-  - **Standard**：关卡审核、评论管理、鸟类审核
+  - **Standard**：关卡/鸟类投稿审核、评论管理
   - **Director**：UI 定制、关卡槽位分配、鸟类技能配置等
 
 `AdminLevel` 定义在 `system/objects/AdminLevel.scala`，用户表字段 `admin_level` 仅对 `role = admin` 有效。
@@ -217,10 +217,11 @@ sbt run
 
 ```bash
 npm run dev                 # in-memory 后端 + 前端
+npm run dev:postgres        # Postgres + JDBC 后端 + 前端
 npm run dev:backend         # sbt run（默认 in-memory）
 npm run dev:backend:watch   # sbt ~run
 npm run dev:backend:postgres # JDBC 模式
 npm run postgres:up         # 启动 Docker Postgres
 sbt compile
-sbt test                    # 若有 Scala 测试
+sbt test                    # Scala 测试
 ```

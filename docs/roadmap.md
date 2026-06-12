@@ -22,7 +22,7 @@
 **建议**：
 
 - 提供 `.env.example` 与 `npm run dev:postgres` 一键启动「前端 + 后端 + Postgres」（已完成）
-- CI 中增加 JDBC 模式 smoke test
+- CI 中增加 JDBC 模式 smoke test（`.github/workflows/ci.yml` 的 `scala-jdbc` job；本地 `npm run test:backend:jdbc`）
 - 明确哪些 player/runtime 表仅 in-memory 有 seed，避免 JDBC 空库体验差
 
 ## 2. 认证与安全

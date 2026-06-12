@@ -21,10 +21,12 @@ npm run dev              # 默认 in-memory，无需 Docker
 使用 PostgreSQL 持久化：
 
 ```bash
-npm run postgres:up
-npm run dev:backend:postgres   # 仅后端 JDBC 模式
-# 或分别启动：postgres:up 后 npm run dev（需自行设 UGC_DATABASE_MODE=jdbc）
+npm run dev:postgres           # 一键：Postgres + JDBC 后端 + 前端
+npm run postgres:up            # 仅启动数据库
+npm run dev:backend:postgres   # 仅 JDBC 后端（需 postgres:up）
 ```
+
+环境变量模板见 `.env.example`。
 
 | 服务 | 地址 |
 | --- | --- |
@@ -141,6 +143,7 @@ npm run dev:backend:postgres   # 仅后端 JDBC 模式
 ```bash
 npm run check    # TypeScript
 npm test         # 前端测试
-npm run test:backend  # Scala 测试（munit）
+npm run test:backend      # Scala 测试（in-memory）
+npm run test:backend:jdbc # JDBC 冒烟（需 postgres:up + 默认 postgres/postgres）
 sbt compile      # Scala 编译
 ```

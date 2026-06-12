@@ -52,3 +52,44 @@ jobs:
 
       - name: Test
         run: sbt test
+
+  scala-jdbc:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ugc_level_platform
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ugc_level_platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      UGC_DATABASE_MODE: jdbc
+      UGC_DATABASE_URL: jdbc:postgresql://localhost:5432/ugc_level_platform
+      UGC_DATABASE_USERNAME: postgres
+      UGC_DATABASE_PASSWORD: postgres
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: JDBC smoke tests
+        run: sbt "testOnly *JdbcSmokeSuite"
