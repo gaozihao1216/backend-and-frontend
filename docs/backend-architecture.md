@@ -86,7 +86,9 @@ final case class ListFriendsAPIMessage(userId: String) extends APIWithTokenMessa
 
 受保护前缀由 **`AuthMiddleware.requireUserId`** 统一拦截：缺少 `x-user-id` 时返回 401。Route 内通过 `AuthMiddleware.userIdFromRequest(req).get` 读取当前用户，**不在 route 内重复 401 分支**。
 
-认证上下文通过请求头 **`x-user-id`** 传递；后端不信任 body 中的用户身份字段。角色与管理员等级校验仍在 APIMessage 的 `plan` 内通过 `AccessControl` 完成。
+认证上下文通过请求头 **`x-user-id`** 传递；后端不信任 body 中的用户身份字段。受保护路由应调用 **`APIWithTokenMessage.runAuthenticated(headerUserId, session)`**，在 plan 执行前校验 header 与 `token` 一致（`USER_ID_MISMATCH`）。角色与管理员等级校验仍在 APIMessage 的 `plan` 内通过 `AccessControl` 完成。
+
+JDBC 模式下，`SystemDefaults.initializeDatabaseOn` 在 DDL 之后调用 **`SystemJdbcSeedData.seed`**，写入与 in-memory `SystemDemoData` 一致的关卡、投稿、评分、评论与 UI 模板演示数据。
 
 ## 权限模型
 

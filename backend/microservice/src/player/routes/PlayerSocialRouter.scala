@@ -27,14 +27,14 @@ object PlayerSocialRouter {
       case req @ GET -> Root / "social" / "friends" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         ListFriendsAPIMessage(userId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
 
       case req @ POST -> Root / "social" / "friends" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[AddFriendRequest].flatMap { body =>
           AddFriendAPIMessage(userId, body.friendUserId)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
         }
 
@@ -45,7 +45,7 @@ object PlayerSocialRouter {
             HttpError.toResponse(HttpError.badRequest("INVALID_CHAT_TARGET", "withUserId is required"))
           case Some(chatUserId) =>
             ListMessagesAPIMessage(userId, chatUserId)
-              .run(databaseSession)
+              .runAuthenticated(userId, databaseSession)
               .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
         }
 
@@ -53,7 +53,7 @@ object PlayerSocialRouter {
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[SendPrivateMessageRequest].flatMap { body =>
           SendMessageAPIMessage(userId, body.receiverId, body.content)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
         }
     }

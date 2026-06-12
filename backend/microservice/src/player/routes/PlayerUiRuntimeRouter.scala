@@ -26,20 +26,20 @@ object PlayerUiRuntimeRouter {
       case req @ GET -> Root / "ui" / "level-map" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         GetSharedLevelMapPageAPIMessage(userId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
 
       case req @ GET -> Root / "ui" / "data" / apiKey =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         GetPlayerUiDataAPIMessage(userId, apiKey, req.uri.query.params)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
 
       case req @ POST -> Root / "ui" / "actions" / apiKey =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UiActionRequest].flatMap { body =>
           InvokePlayerUiActionAPIMessage(userId, apiKey, body.params)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
         }
     }

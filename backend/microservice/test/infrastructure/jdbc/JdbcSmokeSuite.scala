@@ -1,6 +1,7 @@
 package microservice.infrastructure.jdbc
 
 import microservice.admin.api.GetPendingSubmissionsAPIMessage
+import microservice.level.api.GetPublishedLevelsAPIMessage
 import microservice.system.api.HealthAPIMessage
 import microservice.system.utils.SystemDefaults
 import microservice.testsupport.JdbcTestSupport
@@ -44,8 +45,27 @@ class JdbcSmokeSuite extends CatsEffectSuite {
     GetPendingSubmissionsAPIMessage("admin-1")
       .run(JdbcTestSupport.session)
       .map {
-        case Right(_) => ()
+        case Right(submissions) =>
+          assert(submissions.exists(_.id == "submission-2"))
         case Left(error) => fail(s"expected success, got ${error.code}: ${error.message}")
+      }
+  }
+
+  test("jdbc demo seed exposes published level to player") {
+    GetPublishedLevelsAPIMessage("player-1", tag = None, sort = "newest")
+      .run(JdbcTestSupport.session)
+      .map {
+        case Right(levels) => assert(levels.exists(_.id == "level-1"))
+        case Left(error)   => fail(s"expected published levels, got ${error.code}: ${error.message}")
+      }
+  }
+
+  test("runAuthenticated rejects header/token mismatch over jdbc") {
+    GetPendingSubmissionsAPIMessage("admin-1")
+      .runAuthenticated("admin-director-1", JdbcTestSupport.session)
+      .map {
+        case Left(error) => assertEquals(error.code, "USER_ID_MISMATCH")
+        case Right(_)    => fail("expected identity mismatch")
       }
   }
 

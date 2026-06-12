@@ -26,14 +26,14 @@ object DesignerBirdRouter {
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         val status = statusValue.flatMap(LevelStatus.fromString)
         ListBirdDesignsAPIMessage(designerId, status)
-          .run(databaseSession)
+          .runAuthenticated(designerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(designs => ApiSuccess(designs))))
 
       case req @ POST -> Root / "bird-designs" =>
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateBirdDesignBody].flatMap { body =>
           CreateBirdDesignAPIMessage(designerId, body)
-            .run(databaseSession)
+            .runAuthenticated(designerId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(design => ApiSuccess(design)), successStatus = Status.Created))
         }
 
@@ -41,20 +41,20 @@ object DesignerBirdRouter {
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UpdateBirdDesignBody].flatMap { body =>
           UpdateBirdDesignAPIMessage(designerId, designId, body)
-            .run(databaseSession)
+            .runAuthenticated(designerId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(design => ApiSuccess(design))))
         }
 
       case req @ DELETE -> Root / "bird-designs" / designId =>
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         DeleteBirdDesignAPIMessage(designerId, designId)
-          .run(databaseSession)
+          .runAuthenticated(designerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(design => ApiSuccess(design))))
 
       case req @ POST -> Root / "bird-designs" / designId / "submit" =>
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         SubmitBirdDesignAPIMessage(designerId, designId)
-          .run(databaseSession)
+          .runAuthenticated(designerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(submission => ApiSuccess(submission)), successStatus = Status.Created))
     }
 

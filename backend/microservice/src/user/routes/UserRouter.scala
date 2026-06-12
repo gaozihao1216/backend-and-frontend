@@ -16,7 +16,7 @@ object UserRouter {
       case req @ GET -> Root / profileUserId / "profile" =>
         val currentUserId = AuthMiddleware.userIdFromRequest(req).get
         GetUserProfileAPIMessage(currentUserId, profileUserId)
-          .run(databaseSession)
+          .runAuthenticated(currentUserId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(profile => ApiSuccess(profile))))
     }
 }

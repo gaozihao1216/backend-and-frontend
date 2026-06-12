@@ -4,6 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
+import microservice.user.utils.AccessControl
 
 /** 所有业务 API 的统一执行协议。
   *
@@ -24,4 +25,11 @@ trait APIMessage[A] {
 /** 需要当前用户身份的 API 标记 trait；token 字段供日志/审计扩展，实际身份以 case class 参数字段为准。 */
 trait APIWithTokenMessage[A] extends APIMessage[A] {
   def token: String // 预留：OAuth/JWT 等扩展；当前多以 x-user-id 头传递身份
+
+  /** 路由传入的 x-user-id 必须与 token 一致后再执行 plan。 */
+  final def runAuthenticated(headerUserId: String, databaseSession: DatabaseSession): IO[Either[HttpError, A]] =
+    AccessControl.requireBoundIdentity(headerUserId, token) match {
+      case Left(error) => IO.pure(Left(error))
+      case Right(_)    => run(databaseSession)
+    }
 }

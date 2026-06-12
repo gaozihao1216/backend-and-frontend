@@ -21,25 +21,25 @@ object PlayerPreparationRouter {
       case req @ GET -> Root / "preparation" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         GetPreparationStateAPIMessage(userId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
 
       case req @ POST -> Root / "preparation" / "birds" / birdType / "upgrade" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         UpgradePreparationBirdAPIMessage(userId, birdType)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
 
       case req @ POST -> Root / "preparation" / "birds" / birdType / "ascend" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         AscendPreparationBirdAPIMessage(userId, birdType)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
 
       case req @ POST -> Root / "preparation" / "slingshot" / "upgrade" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         UpgradePreparationSlingshotAPIMessage(userId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
     }
 }

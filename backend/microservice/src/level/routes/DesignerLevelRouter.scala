@@ -18,7 +18,7 @@ object DesignerLevelRouter {
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateLevelBody].flatMap { body =>
           CreateLevelAPIMessage(designerId, body)
-            .run(databaseSession)
+            .runAuthenticated(designerId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(level => ApiSuccess(level)), successStatus = Status.Created))
         }
 
@@ -26,7 +26,7 @@ object DesignerLevelRouter {
         val designerId = AuthMiddleware.userIdFromRequest(req).get
         req.as[SubmitLevelBody].flatMap { body =>
           SubmitLevelAPIMessage(designerId, body)
-            .run(databaseSession)
+            .runAuthenticated(designerId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(submission => ApiSuccess(submission)), successStatus = Status.Created))
         }
     }

@@ -3,6 +3,7 @@ package microservice.user.utils
 import microservice.user.tables.user.{UserRow, UserTable}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, UserRole}
+import org.http4s.Status
 
 import java.sql.Connection
 
@@ -51,5 +52,15 @@ object AccessControl {
 
       case None =>
         Left(HttpError.unauthorized("Unknown user"))
+    }
+
+  /** 校验路由层 x-user-id 与 APIMessage.token 一致，防止 header 与构造参数张冠李戴。 */
+  def requireBoundIdentity(headerUserId: String, token: String): Either[HttpError, Unit] =
+    if (headerUserId.trim.isEmpty || token.trim.isEmpty) {
+      Left(HttpError.unauthorized("Missing user identity"))
+    } else if (headerUserId != token) {
+      Left(HttpError(Status.Forbidden, "USER_ID_MISMATCH", "x-user-id does not match request identity"))
+    } else {
+      Right(())
     }
 }

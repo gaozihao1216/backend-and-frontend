@@ -94,6 +94,9 @@ object SystemDefaults {
         PlayerFriendTable.initialize(connection)
         PlayerPrivateMessageTable.initialize(connection)
         PlayerPreparationTable.initialize(connection)
+        if (connection != null) {
+          SystemJdbcSeedData.seed(connection)
+        }
       }
     }
 

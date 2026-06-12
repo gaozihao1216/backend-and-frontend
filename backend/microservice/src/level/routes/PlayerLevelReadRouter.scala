@@ -20,7 +20,7 @@ private[routes] object PlayerLevelReadRouter {
         tagParam(req) match {
           case Right(tag) =>
             GetPublishedLevelsAPIMessage(playerId, tag, sortParam(req))
-              .run(databaseSession)
+              .runAuthenticated(playerId, databaseSession)
               .flatMap(result => HttpError.fromEither(result.map(levels => ApiSuccess(levels))))
           case Left(error) =>
             HttpError.toResponse(error)
@@ -29,19 +29,19 @@ private[routes] object PlayerLevelReadRouter {
       case req @ GET -> Root / "levels" / levelId =>
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         GetPublishedLevelAPIMessage(playerId, levelId)
-          .run(databaseSession)
+          .runAuthenticated(playerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(level => ApiSuccess(level))))
 
       case req @ GET -> Root / "levels" / levelId / "comments" =>
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         GetLevelCommentsAPIMessage(playerId, levelId)
-          .run(databaseSession)
+          .runAuthenticated(playerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(comments => ApiSuccess(comments))))
 
       case req @ GET -> Root / "favorites" =>
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         GetFavoriteLevelsAPIMessage(playerId)
-          .run(databaseSession)
+          .runAuthenticated(playerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(favorites => ApiSuccess(favorites))))
     }
 }

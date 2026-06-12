@@ -18,27 +18,27 @@ private[routes] object PlayerLevelActionRouter {
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateCommentBody].flatMap { body =>
           CreateCommentAPIMessage(playerId, levelId, body)
-            .run(databaseSession)
+            .runAuthenticated(playerId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(comment => ApiSuccess(comment)), successStatus = Status.Created))
         }
 
       case req @ POST -> Root / "levels" / levelId / "favorite" =>
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         FavoriteLevelAPIMessage(playerId, levelId)
-          .run(databaseSession)
+          .runAuthenticated(playerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(favorite => ApiSuccess(favorite)), successStatus = Status.Created))
 
       case req @ DELETE -> Root / "levels" / levelId / "favorite" =>
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         UnfavoriteLevelAPIMessage(playerId, levelId)
-          .run(databaseSession)
+          .runAuthenticated(playerId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(favorite => ApiSuccess(favorite))))
 
       case req @ POST -> Root / "levels" / levelId / "ratings" =>
         val playerId = AuthMiddleware.userIdFromRequest(req).get
         req.as[RateLevelBody].flatMap { body =>
           RateLevelAPIMessage(playerId, levelId, body)
-            .run(databaseSession)
+            .runAuthenticated(playerId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(rating => ApiSuccess(rating)), successStatus = Status.Created))
         }
     }

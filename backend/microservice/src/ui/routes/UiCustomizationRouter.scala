@@ -62,7 +62,7 @@ object UiCustomizationRouter {
             HttpError.toResponse(error)
           case Right(endpoint) =>
             ListUiPagesAPIMessage(userId, endpoint)
-              .run(databaseSession)
+              .runAuthenticated(userId, databaseSession)
               .flatMap(result => HttpError.fromEither(result.map(pages => ApiSuccess(pages))))
           }
 
@@ -70,20 +70,20 @@ object UiCustomizationRouter {
       case req @ GET -> Root / "button-templates" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         ListButtonTemplatesAPIMessage(userId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(templates => ApiSuccess(templates))))
 
       case req @ GET -> Root / "button-templates" / templateId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         GetButtonTemplateAPIMessage(userId, templateId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
 
       case req @ POST -> Root / "button-templates" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateButtonTemplateBody].flatMap { body =>
           CreateButtonTemplateAPIMessage(userId, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template)), successStatus = Status.Created))
           }
 
@@ -91,28 +91,28 @@ object UiCustomizationRouter {
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UpdateButtonTemplateBody].flatMap { body =>
           UpdateButtonTemplateAPIMessage(userId, templateId, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
           }
 
       case req @ DELETE -> Root / "button-templates" / templateId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         DeleteButtonTemplateAPIMessage(userId, templateId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
 
       // --- 面板拉伸模板 CRUD（kind = Panel）---
       case req @ GET -> Root / "panel-templates" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         ListStretchVisualTemplatesAPIMessage(userId, StretchVisualTemplateKind.Panel)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(templates => ApiSuccess(templates))))
 
       case req @ POST -> Root / "panel-templates" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateStretchVisualTemplateBody].flatMap { body =>
           CreateStretchVisualTemplateAPIMessage(userId, StretchVisualTemplateKind.Panel, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template)), successStatus = Status.Created))
           }
 
@@ -120,28 +120,28 @@ object UiCustomizationRouter {
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UpdateStretchVisualTemplateBody].flatMap { body =>
           UpdateStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Panel, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
           }
 
       case req @ DELETE -> Root / "panel-templates" / templateId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         DeleteStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Panel)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
 
       // --- 图案拉伸模板 CRUD（kind = Pattern）---
       case req @ GET -> Root / "pattern-templates" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         ListStretchVisualTemplatesAPIMessage(userId, StretchVisualTemplateKind.Pattern)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(templates => ApiSuccess(templates))))
 
       case req @ POST -> Root / "pattern-templates" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateStretchVisualTemplateBody].flatMap { body =>
           CreateStretchVisualTemplateAPIMessage(userId, StretchVisualTemplateKind.Pattern, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template)), successStatus = Status.Created))
           }
 
@@ -149,28 +149,28 @@ object UiCustomizationRouter {
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UpdateStretchVisualTemplateBody].flatMap { body =>
           UpdateStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Pattern, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
           }
 
       case req @ DELETE -> Root / "pattern-templates" / templateId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         DeleteStretchVisualTemplateAPIMessage(userId, templateId, StretchVisualTemplateKind.Pattern)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(template => ApiSuccess(template))))
 
       // --- 单页 CRUD 与组件管理 ---
       case req @ GET -> Root / "pages" / pageId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         GetUiPageAPIMessage(userId, pageId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
 
       case req @ POST -> Root / "pages" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreateUiPageBody].flatMap { body =>
           CreateUiPageAPIMessage(userId, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page)), successStatus = Status.Created))
           }
 
@@ -178,21 +178,21 @@ object UiCustomizationRouter {
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UpdateUiPageBody].flatMap { body =>
           UpdateUiPageAPIMessage(userId, pageId, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
           }
 
       case req @ DELETE -> Root / "pages" / pageId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         DeleteUiPageAPIMessage(userId, pageId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
 
       case req @ POST -> Root / "pages" / pageId / "components" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[CreatePageComponentBody].flatMap { body =>
           CreatePageComponentAPIMessage(userId, pageId, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page)), successStatus = Status.Created))
           }
 
@@ -200,14 +200,14 @@ object UiCustomizationRouter {
         val userId = AuthMiddleware.userIdFromRequest(req).get
         req.as[UpdatePageComponentBody].flatMap { body =>
           UpdatePageComponentAPIMessage(userId, pageId, componentId, body)
-            .run(databaseSession)
+            .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
           }
 
       case req @ DELETE -> Root / "pages" / pageId / "components" / componentId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         DeletePageComponentAPIMessage(userId, pageId, componentId)
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
 
       // PUT /panel-workflows/:panelId/check-in-rewards — 注册签到面板 7 格奖励（联动 player 运行时）
@@ -219,7 +219,7 @@ object UiCustomizationRouter {
           panelId,
           body.slots.map(slot => CheckInSlotReward(slot.coins, slot.gems, slot.fragments))
         )
-          .run(databaseSession)
+          .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))
         }
     }

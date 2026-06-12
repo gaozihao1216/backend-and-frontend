@@ -2,7 +2,9 @@ package microservice.infrastructure.api
 
 import cats.data.EitherT
 import cats.effect.IO
+import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
+import microservice.user.utils.AccessControl
 
 /** APIMessage.plan 的步骤组合：用 `for` 推导表达「鉴权 → 校验 → 读写 → 返回」。 */
 object PlanSteps {
@@ -11,6 +13,10 @@ object PlanSteps {
   /** 权限或业务校验：Left 时短路，不再执行后续步骤。 */
   def require[A](check: Either[HttpError, A]): Step[A] =
     EitherT.fromEither[IO](check)
+
+  /** 校验 x-user-id 与 token 绑定（plan 内可选第二步）。 */
+  def requireBound(headerUserId: String, token: String): Step[Unit] =
+    require(AccessControl.requireBoundIdentity(headerUserId, token))
 
   /** 同步读/写（Table 调用），成功即 Right。 */
   def read[A](run: => A): Step[A] =

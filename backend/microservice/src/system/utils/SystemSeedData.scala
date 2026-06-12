@@ -1,110 +1,20 @@
 package microservice.system.utils
 
-import microservice.user.tables.user.UserRow
 import microservice.infrastructure.database.InMemoryStore
-import microservice.level.objects._
-import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}
-import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, SubmissionStatus, UserRole}
 
-/** in-memory 模式的初始演示数据。
-  *
-  * 实现：重置 InMemoryStore 并向量写入用户、关卡、submission、UI 模板等。
-  * 关联：player-1 / designer-1 / admin-1 / admin-director-1 供前端 BindBackendUser 绑定；
-  *       level-1 已发布、level-2 待审核，便于演示完整 UGC 流程。
-  */
+/** in-memory 模式的初始演示数据。 */
 private[utils] object SystemSeedData {
   def reset(createdAt: String, reviewedAt: String): Unit = {
-    // --- 1. 重置 InMemoryStore 核心 UGC 表 ---
     InMemoryStore.reset(
-      nextUsers = users(createdAt),
-      nextLevels = levels(createdAt),
-      nextRatings = Vector(RatingRow("rating-1", "level-1", "player-1", 4, createdAt, createdAt)),
-      nextComments = Vector(CommentRow("comment-1", "level-1", "player-1", "Solid tutorial pacing.", createdAt)),
+      nextUsers = SystemDemoData.users(createdAt),
+      nextLevels = SystemDemoData.levels(createdAt),
+      nextRatings = SystemDemoData.ratings(createdAt),
+      nextComments = SystemDemoData.comments(createdAt),
       nextFavorites = Vector.empty,
-      nextSubmissions = submissions(createdAt, reviewedAt),
+      nextSubmissions = SystemDemoData.submissions(createdAt, reviewedAt),
       nextButtonTemplates = SystemUiTemplateSeedData.buttonTemplates(createdAt),
       nextStretchVisualTemplates = SystemUiTemplateSeedData.stretchVisualTemplates(createdAt)
     )
-    // --- 2. 初始化玩家钱包、签到、商店等运行时数据 ---
     PlayerRuntimeSeed.reset()
   }
-
-  /** 四类演示账号：玩家、设计师、标准管理员、总监管理员。 */
-  private def users(createdAt: String): Vector[UserRow] =
-    Vector(
-      UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, None, createdAt, createdAt),
-      UserRow("designer-1", "local-designer-0000002", "Designer One", UserRole.Designer, None, createdAt, createdAt),
-      UserRow("admin-1", "local-admin-0000003", "Admin One", UserRole.Admin, Some(AdminLevel.Standard), createdAt, createdAt),
-      UserRow("admin-director-1", "001", "001", UserRole.Admin, Some(AdminLevel.Director), createdAt, createdAt)
-    )
-
-  /** 两条样例关卡：level-1 已发布（含评分），level-2 待审核。 */
-  private def levels(createdAt: String): Vector[LevelRow] =
-    Vector(
-      LevelRow(
-        id = "level-1",
-        title = "Starter Siege",
-        description = "Published sample level for profile and rating demos.",
-        tags = List(LevelTag.Beginner, LevelTag.Puzzle),
-        data = demoLevelData,
-        authorId = "designer-1",
-        status = LevelStatus.Published,
-        rejectionReason = None,
-        averageRating = 4.0,
-        ratingCount = 1,
-        createdAt = createdAt,
-        updatedAt = createdAt,
-        publishedAt = Some(createdAt)
-      ),
-      LevelRow(
-        id = "level-2",
-        title = "Pending Glass Tower",
-        description = "Pending review sample for admin demo.",
-        tags = List(LevelTag.Hard),
-        data = demoLevelData,
-        authorId = "designer-1",
-        status = LevelStatus.PendingReview,
-        rejectionReason = None,
-        averageRating = 0,
-        ratingCount = 0,
-        createdAt = createdAt,
-        updatedAt = createdAt,
-        publishedAt = None
-      )
-    )
-
-  /** 与 levels 对应的提交流水：submission-1 已通过，submission-2 待审。 */
-  private def submissions(createdAt: String, reviewedAt: String): Vector[SubmissionRow] =
-    Vector(
-      SubmissionRow(
-        id = "submission-1",
-        levelId = "level-1",
-        submitterId = "designer-1",
-        status = SubmissionStatus.Approved,
-        reviewerId = Some("admin-1"),
-        reviewNote = Some("Published as baseline sample."),
-        submittedAt = createdAt,
-        reviewedAt = Some(reviewedAt)
-      ),
-      SubmissionRow(
-        id = "submission-2",
-        levelId = "level-2",
-        submitterId = "designer-1",
-        status = SubmissionStatus.PendingReview,
-        reviewerId = None,
-        reviewNote = None,
-        submittedAt = createdAt,
-        reviewedAt = None
-      )
-    )
-
-  /** 最小可玩关卡物理数据：地面线、木块障碍、猪敌人、3 只基础鸟。 */
-  private val demoLevelData = LevelData(
-    world = GameWorld(width = 1600, height = 900, gravity = 1.0),
-    ground = Some(GroundLine(points = List(Position(0, 760), Position(1600, 760)))),
-    terrain = None,
-    birdInventory = BirdInventory(basic = 3),
-    obstacles = List(LevelObstacle("obstacle-1", "wood", Position(960, 650), Size(120, 30), Some(0))),
-    enemies = List(LevelEnemy("enemy-1", "pig", Position(1020, 610), Some(Size(48, 48))))
-  )
 }
