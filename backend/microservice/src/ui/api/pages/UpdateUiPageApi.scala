@@ -1,8 +1,6 @@
 package microservice.ui.api.pages
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
@@ -11,19 +9,6 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** PUT /admin/director/ui/pages/:pageId 的请求体。 */
-final case class UpdateUiPageBody(
-  page: PageConfig
-)
-
-object UpdateUiPageBody {
-  implicit val encoder: Encoder[UpdateUiPageBody] = deriveEncoder
-  implicit val decoder: Decoder[UpdateUiPageBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, UpdateUiPageBody] = jsonOf
-}
 
 /** PUT /admin/director/ui/pages/:pageId 的 APIMessage：更新或 upsert 页面配置。 */
 final case class UpdateUiPageAPIMessage(

@@ -4,7 +4,6 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.{
   AssignLevelSlotErrors,
-  DirectorBirdPoolOption,
   DirectorLevelAssignmentBoard,
   LevelSlotAssignment,
   LevelSlotAssignmentDetail,
@@ -14,12 +13,9 @@ import microservice.admin.support.DirectorLevelAssignmentSupport
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.shared.{BirdRowMapper}
-import microservice.player.preparation.BirdPreparationCatalog
 import microservice.level.objects.{BirdPool, SubmissionWithLevel}
 import microservice.level.tables.level.{LevelTable}
-import microservice.level.tables.shared.{LevelRowMapper, LevelSlotAssignmentRow}
+import microservice.level.tables.shared.{LevelSlotAssignmentRow}
 import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
 import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
@@ -41,24 +37,6 @@ final case class GetDirectorLevelAssignmentBoardAPIMessage(
         board <- PlanSteps.read(DirectorLevelAssignmentSupport.buildBoard(connection))
       } yield board
     }
-}
-
-/** 将已批准关卡投稿分配到指定槽位（level01–level10），可附带 bird pool 配置。 */
-final case class AssignLevelSlotBody(
-  submissionId: String,
-  note: Option[String],
-  birdPool: Option[BirdPool] = None
-)
-
-object AssignLevelSlotBody {
-  import io.circe.generic.semiauto._
-  import io.circe.{Decoder, Encoder}
-  import org.http4s.EntityDecoder
-  import org.http4s.circe.jsonOf
-
-  implicit val encoder: Encoder[AssignLevelSlotBody] = deriveEncoder
-  implicit val decoder: Decoder[AssignLevelSlotBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, AssignLevelSlotBody] = jsonOf
 }
 
 /** 分配关卡到槽位：校验 suffix 合法、投稿已 Approved、关联 Level 存在，然后 upsert LevelSlotAssignmentTable。
@@ -147,22 +125,6 @@ final case class UnassignLevelSlotAPIMessage(
     }
 }
 
-/** 更新已分配槽位的 bird pool（玩家备战可选鸟列表）。 */
-final case class UpdateLevelSlotBirdPoolBody(
-  birdPool: BirdPool
-)
-
-object UpdateLevelSlotBirdPoolBody {
-  import io.circe.generic.semiauto._
-  import io.circe.{Decoder, Encoder}
-  import org.http4s.EntityDecoder
-  import org.http4s.circe.jsonOf
-
-  implicit val encoder: Encoder[UpdateLevelSlotBirdPoolBody] = deriveEncoder
-  implicit val decoder: Decoder[UpdateLevelSlotBirdPoolBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, UpdateLevelSlotBirdPoolBody] = jsonOf
-}
-
 /** 更新槽位 bird pool 配置，不改变 submission 绑定关系。 */
 final case class UpdateLevelSlotBirdPoolAPIMessage(
   userId: String,
@@ -197,22 +159,6 @@ final case class UpdateLevelSlotBirdPoolAPIMessage(
         }
       } yield detail
     }
-}
-
-/** 废止已批准投稿：解除槽位绑定、Submission 标记 Abolished、Level 回退为 Rejected。 */
-final case class AbolishDirectorSubmissionBody(
-  note: Option[String]
-)
-
-object AbolishDirectorSubmissionBody {
-  import io.circe.generic.semiauto._
-  import io.circe.{Decoder, Encoder}
-  import org.http4s.EntityDecoder
-  import org.http4s.circe.jsonOf
-
-  implicit val encoder: Encoder[AbolishDirectorSubmissionBody] = deriveEncoder
-  implicit val decoder: Decoder[AbolishDirectorSubmissionBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, AbolishDirectorSubmissionBody] = jsonOf
 }
 
 /** 总监废止已上线/已批准关卡：从槽位移除并同步更新 Submission 与 Level 状态。

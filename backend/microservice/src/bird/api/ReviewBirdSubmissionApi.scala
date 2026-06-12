@@ -1,8 +1,6 @@
 package microservice.bird.api
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
@@ -13,19 +11,6 @@ import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-final case class ReviewBirdSubmissionBody(
-  status: SubmissionStatus,
-  reviewNote: Option[String]
-)
-
-object ReviewBirdSubmissionBody {
-  implicit val encoder: Encoder[ReviewBirdSubmissionBody] = deriveEncoder
-  implicit val decoder: Decoder[ReviewBirdSubmissionBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, ReviewBirdSubmissionBody] = jsonOf
-}
 
 final case class ReviewBirdSubmissionAPIMessage(
   userId: String,

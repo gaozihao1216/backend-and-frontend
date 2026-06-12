@@ -1,8 +1,6 @@
 package microservice.admin.api
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.admin.objects.{DirectorTransferResult, TransferDirectorPermissionErrors}
@@ -11,19 +9,6 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, UserRole}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** 总监权限移交请求体：目标必须是 Admin 角色用户。 */
-final case class TransferDirectorPermissionBody(
-  targetAdminId: String
-)
-
-object TransferDirectorPermissionBody {
-  implicit val encoder: Encoder[TransferDirectorPermissionBody] = deriveEncoder
-  implicit val decoder: Decoder[TransferDirectorPermissionBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, TransferDirectorPermissionBody] = jsonOf
-}
 
 /** 将总监权限移交给另一位 Admin：当前用户降为 Standard，目标用户升为 Director。
   *

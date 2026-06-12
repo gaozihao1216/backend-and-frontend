@@ -1,8 +1,6 @@
 package microservice.ui.api.stretchtemplates
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
@@ -11,19 +9,6 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** PUT panel-templates/:id 或 pattern-templates/:id 的请求体。 */
-final case class UpdateStretchVisualTemplateBody(
-  template: StretchVisualTemplate
-)
-
-object UpdateStretchVisualTemplateBody {
-  implicit val encoder: Encoder[UpdateStretchVisualTemplateBody] = deriveEncoder
-  implicit val decoder: Decoder[UpdateStretchVisualTemplateBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, UpdateStretchVisualTemplateBody] = jsonOf
-}
 
 /** 更新拉伸视觉模板的 APIMessage；校验 kind 与路由一致。 */
 final case class UpdateStretchVisualTemplateAPIMessage(

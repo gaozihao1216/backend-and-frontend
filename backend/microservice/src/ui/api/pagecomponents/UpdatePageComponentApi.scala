@@ -1,29 +1,14 @@
 package microservice.ui.api.pagecomponents
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{PageComponent, PageConfig, UiCustomizationErrors}
+import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** PUT /admin/director/ui/pages/:pageId/components/:componentId 的请求体。 */
-final case class UpdatePageComponentBody(
-  component: PageComponent
-)
-
-object UpdatePageComponentBody {
-  implicit val encoder: Encoder[UpdatePageComponentBody] = deriveEncoder
-  implicit val decoder: Decoder[UpdatePageComponentBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, UpdatePageComponentBody] = jsonOf
-}
 
 /** 更新页面内指定组件的 APIMessage；路径 componentId 覆盖 body 中的 id。 */
 final case class UpdatePageComponentAPIMessage(

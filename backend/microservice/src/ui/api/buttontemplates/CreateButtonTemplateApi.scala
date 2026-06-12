@@ -1,8 +1,6 @@
 package microservice.ui.api.buttontemplates
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
@@ -11,19 +9,6 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** POST /admin/director/ui/button-templates 的请求体。 */
-final case class CreateButtonTemplateBody(
-  template: ButtonTemplate
-)
-
-object CreateButtonTemplateBody {
-  implicit val encoder: Encoder[CreateButtonTemplateBody] = deriveEncoder
-  implicit val decoder: Decoder[CreateButtonTemplateBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, CreateButtonTemplateBody] = jsonOf
-}
 
 /** POST /admin/director/ui/button-templates 的 APIMessage：校验并创建按钮模板。 */
 final case class CreateButtonTemplateAPIMessage(

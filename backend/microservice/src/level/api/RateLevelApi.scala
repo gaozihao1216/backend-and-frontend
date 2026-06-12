@@ -13,21 +13,6 @@ import microservice.level.tables.rating.{RatingTable}
 import microservice.level.tables.shared.{RatingRow}
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** POST /player/levels/:levelId/ratings 的请求体。 */
-final case class RateLevelBody(
-  score: Int
-)
-
-object RateLevelBody {
-  implicit val encoder: Encoder[RateLevelBody] = deriveEncoder
-  implicit val decoder: Decoder[RateLevelBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, RateLevelBody] = jsonOf
-}
 
 /** 玩家对已发布关卡评分 APIMessage。 */
 final case class RateLevelAPIMessage(

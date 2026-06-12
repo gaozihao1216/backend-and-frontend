@@ -2,8 +2,6 @@ package microservice.bird.tables.skill_config
 
 import microservice.bird.tables.skill_config.jdbc._
 
-import io.circe.Json
-import io.circe.parser.parse
 import microservice.bird.objects.BirdSkillConfig
 import java.sql.{Connection, PreparedStatement, ResultSet}
 import java.time.Instant
@@ -24,18 +22,22 @@ object BirdSkillConfigTable {
 
   /** 列出全部技能配置，按 birdType 排序。 */
   def listAll(connection: Connection): List[BirdSkillConfig] =
-    if (isInMemory(connection)) BirdSkillConfigTableInMemory.listAll()
-    else BirdSkillConfigTableJdbc.listAll(connection)
+    if (isInMemory(connection)) BirdSkillConfigTableInMemory.listAll().map(BirdSkillConfigRowMapper.toBirdSkillConfig)
+    else BirdSkillConfigTableJdbc.listAll(connection).map(BirdSkillConfigRowMapper.toBirdSkillConfig)
 
   /** 按 birdType 查询单条配置。 */
   def findByBirdType(connection: Connection, birdType: String): Option[BirdSkillConfig] =
-    if (isInMemory(connection)) BirdSkillConfigTableInMemory.findByBirdType(birdType)
-    else BirdSkillConfigTableJdbc.findByBirdType(connection, birdType)
+    if (isInMemory(connection)) BirdSkillConfigTableInMemory.findByBirdType(birdType).map(BirdSkillConfigRowMapper.toBirdSkillConfig)
+    else BirdSkillConfigTableJdbc.findByBirdType(connection, birdType).map(BirdSkillConfigRowMapper.toBirdSkillConfig)
 
   /** 插入或更新技能配置（按 birdType 唯一键 upsert）。 */
-  def upsert(connection: Connection, config: BirdSkillConfig): BirdSkillConfig =
-    if (isInMemory(connection)) BirdSkillConfigTableInMemory.upsert(config)
-    else BirdSkillConfigTableJdbc.upsert(connection, config)
+  def upsert(connection: Connection, config: BirdSkillConfig): BirdSkillConfig = {
+    val row = BirdSkillConfigRowMapper.fromBirdSkillConfig(config)
+    val saved =
+      if (isInMemory(connection)) BirdSkillConfigTableInMemory.upsert(row)
+      else BirdSkillConfigTableJdbc.upsert(connection, row)
+    BirdSkillConfigRowMapper.toBirdSkillConfig(saved)
+  }
 
   /** 将全部配置转为 birdType → BirdSkillConfig 映射，供 buildBoard 快速查找。 */
   def skillsJsonMap(connection: Connection): Map[String, BirdSkillConfig] =
@@ -46,15 +48,15 @@ object BirdSkillConfigTable {
 }
 
 private[tables] object BirdSkillConfigTableInMemory {
-  private val store = mutable.Map.empty[String, BirdSkillConfig]
+  private val store = mutable.Map.empty[String, BirdSkillConfigRow]
 
-  def listAll(): List[BirdSkillConfig] = store.values.toList.sortBy(_.birdType)
+  def listAll(): List[BirdSkillConfigRow] = store.values.toList.sortBy(_.birdType)
 
-  def findByBirdType(birdType: String): Option[BirdSkillConfig] = store.get(birdType)
+  def findByBirdType(birdType: String): Option[BirdSkillConfigRow] = store.get(birdType)
 
-  def upsert(config: BirdSkillConfig): BirdSkillConfig = {
-    store.update(config.birdType, config)
-    config
+  def upsert(row: BirdSkillConfigRow): BirdSkillConfigRow = {
+    store.update(row.birdType, row)
+    row
   }
 }
 
@@ -62,7 +64,7 @@ private[tables] object BirdSkillConfigTableJdbc {
   def initialize(connection: Connection): Unit =
     BirdSkillConfigTableJdbcSchema.initialize(connection)
 
-  def listAll(connection: Connection): List[BirdSkillConfig] = {
+  def listAll(connection: Connection): List[BirdSkillConfigRow] = {
     val statement = connection.createStatement()
     try {
       val resultSet = statement.executeQuery(
@@ -80,7 +82,7 @@ private[tables] object BirdSkillConfigTableJdbc {
     }
   }
 
-  def findByBirdType(connection: Connection, birdType: String): Option[BirdSkillConfig] = {
+  def findByBirdType(connection: Connection, birdType: String): Option[BirdSkillConfigRow] = {
     val statement = connection.prepareStatement(
       """
         SELECT bird_type, skills_json, model_image_url, updated_by_id, updated_at
@@ -101,7 +103,7 @@ private[tables] object BirdSkillConfigTableJdbc {
     }
   }
 
-  def upsert(connection: Connection, config: BirdSkillConfig): BirdSkillConfig = {
+  def upsert(connection: Connection, row: BirdSkillConfigRow): BirdSkillConfigRow = {
     val statement = connection.prepareStatement(
       """
         INSERT INTO bird_skill_configs (
@@ -115,30 +117,28 @@ private[tables] object BirdSkillConfigTableJdbc {
       """
     )
     try {
-      bindConfig(statement, config)
+      bindRow(statement, row)
       statement.executeUpdate()
-      config
+      row
     } finally {
       statement.close()
     }
   }
 
-  private def readRow(resultSet: ResultSet): BirdSkillConfig = {
-    val skillsRaw = resultSet.getString("skills_json")
-    BirdSkillConfig(
+  private def readRow(resultSet: ResultSet): BirdSkillConfigRow =
+    BirdSkillConfigRow(
       birdType = resultSet.getString("bird_type"),
-      skills = parse(skillsRaw).getOrElse(Json.obj()),
+      skillsJson = resultSet.getString("skills_json"),
       modelImageUrl = Option(resultSet.getString("model_image_url")),
       updatedById = Option(resultSet.getString("updated_by_id")),
       updatedAt = resultSet.getString("updated_at")
     )
-  }
 
-  private def bindConfig(statement: PreparedStatement, config: BirdSkillConfig): Unit = {
-    statement.setString(1, config.birdType)
-    statement.setString(2, config.skills.noSpacesSortKeys)
-    statement.setString(3, config.modelImageUrl.orNull)
-    statement.setString(4, config.updatedById.orNull)
-    statement.setString(5, config.updatedAt)
+  private def bindRow(statement: PreparedStatement, row: BirdSkillConfigRow): Unit = {
+    statement.setString(1, row.birdType)
+    statement.setString(2, row.skillsJson)
+    statement.setString(3, row.modelImageUrl.orNull)
+    statement.setString(4, row.updatedById.orNull)
+    statement.setString(5, row.updatedAt)
   }
 }

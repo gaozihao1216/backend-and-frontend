@@ -1,8 +1,6 @@
 package microservice.admin.api
 
 import cats.effect.IO
-import io.circe.{Decoder, Encoder, Json}
-import io.circe.generic.semiauto._
 import java.sql.Connection
 import microservice.user.utils.AccessControl
 import microservice.admin.support.DirectorBirdSkillSupport
@@ -12,8 +10,6 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.preparation.PlayerPreparationCatalog
 import microservice.system.objects.AdminLevel
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
 
 /** 获取全部鸟种技能配置看板。
   *
@@ -31,18 +27,6 @@ final case class GetDirectorBirdSkillBoardAPIMessage(
         board <- PlanSteps.read(DirectorBirdSkillSupport.buildBoard(connection))
       } yield board
     }
-}
-
-/** 保存某鸟种技能 JSON 与可选模型图 URL 的请求体。 */
-final case class SaveDirectorBirdSkillBody(
-  skills: Json,
-  modelImageUrl: Option[String] = None
-)
-
-object SaveDirectorBirdSkillBody {
-  implicit val encoder: Encoder[SaveDirectorBirdSkillBody] = deriveEncoder
-  implicit val decoder: Decoder[SaveDirectorBirdSkillBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[cats.effect.IO, SaveDirectorBirdSkillBody] = jsonOf
 }
 
 /** 保存/更新指定鸟种的技能配置（upsert BirdSkillConfigTable）。

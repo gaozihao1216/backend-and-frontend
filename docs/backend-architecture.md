@@ -44,11 +44,11 @@ backend/microservice/src/
 **类型分层（老师反馈后的约定）**
 
 - `objects/`：纯数据模型与序列化（如 `PlayerWallet`、`CheckInSlotReward`、`HealthResponse`）
-- `api/`：仅 `XxxAPIMessage` + 请求 Body DTO；**禁止**在此定义领域类型或 Support 对象
+- `api/`：仅 `XxxAPIMessage`；HTTP 请求 DTO 放在同目录 `XxxBody.scala` / `XxxRequest.scala`
 - `tables/`：仅 `*Row` 与 Table 门面；Row 与 domain 对象分离，Table 负责 `Row ↔ objects` 映射
 - `runtime/`、`preparation/`、`validation/`、`admin/support/`：可复用逻辑与服务，import `objects/` 中的类型
 
-示例：`PlayerPreparationSupport` 留在 `player/preparation/`，`PlayerRuntimeDefaults` / `PlayerWeeklyCheckInService` 留在 `player/runtime/`，对应 view 类型在 `player/objects/`。
+示例：`PlayerPreparationSupport` 留在 `player/preparation/`，`PlayerRuntimeDefaults` / `PlayerWeeklyCheckInService` 留在 `player/runtime/`；`CreateLevelBody` 等在 `level/api/` 独立文件；`BirdSkillConfigRow` + `BirdSkillConfigRowMapper` 在 `bird/tables/skill_config/`。
 
 ## APIMessage 模式
 

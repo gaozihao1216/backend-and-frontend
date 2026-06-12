@@ -1,8 +1,6 @@
 package microservice.level.api
 
 import cats.effect.IO
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
@@ -15,19 +13,6 @@ import microservice.level.tables.shared.{SubmissionRow}
 import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.{LevelStatus, SubmissionStatus}
 import microservice.system.objects.UserRole
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** POST /designer/submissions 的请求体：待提交审核的关卡 ID。 */
-final case class SubmitLevelBody(
-  levelId: String
-)
-
-object SubmitLevelBody {
-  implicit val encoder: Encoder[SubmitLevelBody] = deriveEncoder
-  implicit val decoder: Decoder[SubmitLevelBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, SubmitLevelBody] = jsonOf
-}
 
 /** 设计师提交关卡审核 APIMessage。 */
 final case class SubmitLevelAPIMessage(

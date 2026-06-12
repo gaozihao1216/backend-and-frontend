@@ -7,30 +7,11 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.utils.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.{CreateLevelErrors, Level, LevelData}
+import microservice.level.objects.{CreateLevelErrors, Level}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.shared.{LevelRow}
 import microservice.system.objects.LevelStatus
-import microservice.system.objects.LevelTag
 import microservice.system.objects.UserRole
-import io.circe.generic.semiauto._
-import io.circe.{Decoder, Encoder}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
-/** POST /designer/levels 的请求体：关卡元数据与编辑器 JSON。 */
-final case class CreateLevelBody(
-  title: String,
-  description: String,
-  tags: List[LevelTag],
-  data: LevelData
-)
-
-object CreateLevelBody {
-  implicit val encoder: Encoder[CreateLevelBody] = deriveEncoder
-  implicit val decoder: Decoder[CreateLevelBody] = deriveDecoder
-  implicit val entityDecoder: EntityDecoder[IO, CreateLevelBody] = jsonOf
-}
 
 /** 设计师创建新关卡 APIMessage；authorId 取自 header 而非 body。 */
 final case class CreateLevelAPIMessage(

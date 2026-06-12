@@ -1,6 +1,6 @@
 package microservice.bird.validation
 
-import microservice.bird.objects.BirdDesignInputBody
+import microservice.bird.api.BirdDesignInputBody
 import microservice.infrastructure.http.HttpError
 
 /** 鸟类设计字段校验：trim 字符串、stats 范围 1–200、tierSkills 必须恰好 3 条。 */
