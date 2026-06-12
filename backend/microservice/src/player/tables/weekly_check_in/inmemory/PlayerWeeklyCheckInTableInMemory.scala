@@ -7,7 +7,7 @@ package microservice.player.tables.weekly_check_in.inmemory
 import microservice.player.tables.weekly_check_in._
 
 import microservice.infrastructure.database.InMemoryStore
-import microservice.player.runtime.WeeklyCheckInProgress
+import microservice.player.objects.WeeklyCheckInProgress
 
 private[tables] object PlayerWeeklyCheckInTableInMemory {
   def findByUserAndWeek(userId: String, weekKey: String): Option[PlayerWeeklyCheckInRow] =

@@ -1,4 +1,4 @@
-package microservice.player.social
+package microservice.player.objects
 
 import io.circe.Json
 

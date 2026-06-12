@@ -1,7 +1,6 @@
-package microservice.player.preparation
+package microservice.player.objects
 
 import io.circe.Json
-import io.circe.syntax._
 
 /** 备战 API 响应 JSON 编码（无 Connection 依赖）。 */
 object PlayerPreparationJson {

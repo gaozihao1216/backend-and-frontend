@@ -7,7 +7,7 @@ package microservice.player.tables.check_in_panel_reward.inmemory
 import microservice.player.tables.check_in_panel_reward._
 
 import microservice.infrastructure.database.InMemoryStore
-import microservice.player.runtime.CheckInSlotReward
+import microservice.player.objects.CheckInSlotReward
 
 private[tables] object CheckInPanelRewardTableInMemory {
   def listByPanelId(panelId: String): Vector[CheckInPanelRewardRow] =

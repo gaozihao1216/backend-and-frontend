@@ -4,7 +4,7 @@ import microservice.user.tables.user.UserRow
 import microservice.level.objects.Favorite
 import microservice.bird.tables.shared.{BirdDesignRow, BirdSubmissionRow}
 import microservice.level.tables.shared.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
-import microservice.player.runtime.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
+import microservice.player.objects.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
 import microservice.player.tables.preparation.{PlayerBirdUpgradeRow, PlayerSlingshotUpgradeRow}
 import microservice.player.tables.progress.{PlayerLegacyCheckInRow, PlayerLevelProgressRow}
 import microservice.player.tables.shop.{ShopItemRow, ShopPurchaseRow}

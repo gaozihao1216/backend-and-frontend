@@ -1,7 +1,8 @@
 package microservice.system.utils
 
 import microservice.infrastructure.database.InMemoryStore
-import microservice.player.runtime.{CheckInSlotReward, PlayerRuntimeDefaults}
+import microservice.player.objects.CheckInSlotReward
+import microservice.player.runtime.PlayerRuntimeDefaults
 import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
 import microservice.player.tables.progress.{PlayerLevelProgressTable}
 import microservice.player.tables.shop.{ShopTable}

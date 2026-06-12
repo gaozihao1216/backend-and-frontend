@@ -6,7 +6,8 @@ import io.circe.syntax._
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.runtime.{CheckInSlotReward, PlayerWeeklyCheckInService}
+import microservice.player.objects.CheckInSlotReward
+import microservice.player.runtime.PlayerWeeklyCheckInService
 import microservice.system.objects.AdminLevel
 import microservice.user.utils.AccessControl
 

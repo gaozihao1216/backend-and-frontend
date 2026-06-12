@@ -5,7 +5,7 @@ import io.circe.Json
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.social.{PlayerFriendListResponse, PlayerFriendSummary, PlayerSocialJson}
+import microservice.player.objects.{PlayerFriendListResponse, PlayerFriendSummary, PlayerSocialJson}
 import microservice.player.tables.social.PlayerFriendTable
 import microservice.system.objects.UserRole
 import microservice.user.tables.user.UserTable

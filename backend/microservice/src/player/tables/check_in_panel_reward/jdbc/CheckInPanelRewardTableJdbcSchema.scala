@@ -6,7 +6,7 @@ package microservice.player.tables.check_in_panel_reward.jdbc
 
 import microservice.player.tables.check_in_panel_reward._
 
-import microservice.player.runtime.CheckInSlotReward
+import microservice.player.objects.CheckInSlotReward
 import java.sql.Connection
 
 private[tables] object CheckInPanelRewardTableJdbcSchema {

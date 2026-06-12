@@ -3,7 +3,7 @@ package microservice.player.tables.weekly_check_in
 import microservice.player.tables.weekly_check_in.inmemory._
 import microservice.player.tables.weekly_check_in.jdbc._
 
-import microservice.player.runtime.WeeklyCheckInProgress
+import microservice.player.objects.WeeklyCheckInProgress
 import java.sql.Connection
 import java.time.Instant
 

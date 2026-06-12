@@ -10,6 +10,7 @@ import microservice.admin.objects.{
   LevelSlotAssignmentDetail,
   LevelSlotCatalog
 }
+import microservice.admin.support.DirectorLevelAssignmentSupport
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
@@ -22,79 +23,6 @@ import microservice.level.tables.shared.{LevelRowMapper, LevelSlotAssignmentRow}
 import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
 import microservice.level.tables.submission.{SubmissionTable}
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
-
-/** 总监关卡槽位分配的共享辅助逻辑：组装看板数据、关联投稿与关卡、构建可选 bird pool。
-  *
-  * 实现：buildBoard 合并已分配槽位、待分配已批准投稿、系统+设计师 bird pool 选项。
-  * 关联：GetDirectorLevelAssignmentBoardAPIMessage 及 Assign/Unassign/UpdateBirdPool 均依赖此对象。
-  */
-object DirectorLevelAssignmentSupport {
-  /** 按 submissionId 联查 SubmissionTable 与 LevelTable，返回 SubmissionWithLevel。 */
-  def submissionWithLevel(connection: Connection, submissionId: String): Option[SubmissionWithLevel] =
-    SubmissionTable.findById(connection, submissionId).flatMap { submission =>
-      LevelTable.findById(connection, submission.levelId).map { level =>
-        SubmissionWithLevel.from(LevelRowMapper.toSubmission(submission), LevelRowMapper.toLevel(level))
-      }
-    }
-
-  /** 合并系统内置鸟（BirdPreparationCatalog）与已发布设计师鸟（BirdDesignTable.listPublished）。 */
-  def buildBirdPoolOptions(connection: Connection): List[DirectorBirdPoolOption] = {
-    val systemOptions =
-      BirdPreparationCatalog.entries.map { entry =>
-        DirectorBirdPoolOption(
-          birdType = entry.birdType,
-          name = entry.name,
-          source = "system",
-          authorId = None
-        )
-      }.toList
-
-    val designerOptions =
-      BirdDesignTable
-        .listPublished(connection)
-        .map(BirdRowMapper.toBirdDesign)
-        .map { design =>
-          DirectorBirdPoolOption(
-            birdType = design.id,
-            name = design.name,
-            source = "designer",
-            authorId = Some(design.authorId)
-          )
-        }
-        .toList
-
-    systemOptions ++ designerOptions
-  }
-
-  /** 构建总监关卡分配看板：当前槽位占用、可分配投稿、bird pool 下拉选项。 */
-  def buildBoard(connection: Connection): DirectorLevelAssignmentBoard = {
-    val assignedSubmissionIds =
-      LevelSlotAssignmentTable.listAll(connection).map(_.submissionId).toSet
-
-    val assignments =
-      LevelSlotAssignmentTable.listAll(connection).flatMap { row =>
-        submissionWithLevel(connection, row.submissionId).map { submission =>
-          LevelSlotAssignmentDetail(LevelSlotAssignment.from(row), submission)
-        }
-      }.toList
-
-    val pendingApproved =
-      SubmissionTable.listApproved(connection)
-        .filterNot(submission => assignedSubmissionIds.contains(submission.id))
-        .flatMap(submission =>
-          LevelTable.findById(connection, submission.levelId).map { level =>
-            SubmissionWithLevel.from(LevelRowMapper.toSubmission(submission), LevelRowMapper.toLevel(level))
-          }
-        )
-        .toList
-
-    DirectorLevelAssignmentBoard(
-      assignments = assignments,
-      pendingApproved = pendingApproved,
-      birdPoolOptions = buildBirdPoolOptions(connection)
-    )
-  }
-}
 
 /** 获取总监关卡槽位分配看板（已分配 + 待分配 + bird pool 选项）。
   *

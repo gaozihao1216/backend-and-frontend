@@ -7,7 +7,8 @@ package microservice.player.tables.wallet.inmemory
 import microservice.player.tables.wallet._
 
 import microservice.infrastructure.database.InMemoryStore
-import microservice.player.runtime.{PlayerRuntimeDefaults, PlayerWallet}
+import microservice.player.objects.{PlayerWallet}
+import microservice.player.runtime.PlayerRuntimeDefaults
 
 private[tables] object PlayerWalletTableInMemory {
   def findByUserId(userId: String): Option[PlayerWalletRow] =

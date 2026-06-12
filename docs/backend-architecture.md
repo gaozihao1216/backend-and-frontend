@@ -36,10 +36,19 @@ backend/microservice/src/
 | 目录 | 职责 |
 | --- | --- |
 | `api/` | `XxxAPIMessage`：权限、校验、业务流程、调用 tables |
-| `objects/` | 领域对象（case class + Circe codec） |
+| `objects/` | 领域对象（case class + Circe codec）；JSON 辅助如 `PlayerSocialJson` |
 | `routes/` | HTTP 解析（path/header/body），构造 APIMessage 并 `run` |
-| `tables/` | 数据访问；inmemory 与 jdbc 双实现 |
-| `utils/` 或 `runtime/` | 模块内辅助服务 |
+| `tables/` | 数据访问；`*Row` case class + Table 门面；inmemory 与 jdbc 双实现 |
+| `runtime/` / `preparation/` / `support/` | 模块内业务辅助（**不是** domain 类型，不放 `objects/`） |
+
+**类型分层（老师反馈后的约定）**
+
+- `objects/`：纯数据模型与序列化（如 `PlayerWallet`、`CheckInSlotReward`、`HealthResponse`）
+- `api/`：仅 `XxxAPIMessage` + 请求 Body DTO；**禁止**在此定义领域类型或 Support 对象
+- `tables/`：仅 `*Row` 与 Table 门面；Row 与 domain 对象分离，Table 负责 `Row ↔ objects` 映射
+- `runtime/`、`preparation/`、`validation/`、`admin/support/`：可复用逻辑与服务，import `objects/` 中的类型
+
+示例：`PlayerPreparationSupport` 留在 `player/preparation/`，`PlayerRuntimeDefaults` / `PlayerWeeklyCheckInService` 留在 `player/runtime/`，对应 view 类型在 `player/objects/`。
 
 ## APIMessage 模式
 

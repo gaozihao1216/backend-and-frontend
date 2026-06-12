@@ -9,6 +9,8 @@ import microservice.user.utils.AccessControl
 import microservice.bird.objects.BirdDesign
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper}
+import microservice.bird.objects.BirdDesignInputBody
+import microservice.bird.validation.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}

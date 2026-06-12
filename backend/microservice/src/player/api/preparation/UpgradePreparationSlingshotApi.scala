@@ -5,7 +5,8 @@ import io.circe.Json
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.preparation.{PlayerPreparationJson, PlayerPreparationSupport}
+import microservice.player.objects.{CheckInSlotReward, PlayerPreparationJson}
+import microservice.player.preparation.PlayerPreparationSupport
 import microservice.player.tables.preparation.PlayerPreparationTable
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole

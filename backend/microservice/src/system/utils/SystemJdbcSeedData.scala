@@ -4,7 +4,8 @@ import microservice.level.tables.comment.CommentTable
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.rating.RatingTable
 import microservice.level.tables.submission.SubmissionTable
-import microservice.player.runtime.{CheckInSlotReward, PlayerRuntimeDefaults}
+import microservice.player.objects.CheckInSlotReward
+import microservice.player.runtime.PlayerRuntimeDefaults
 import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
 import microservice.ui.tables.button_template.ButtonTemplateTable
 import microservice.ui.tables.stretch_visual_template.StretchVisualTemplateTable

@@ -8,7 +8,8 @@ import microservice.player.tables.check_in_panel_reward.inmemory._
 import microservice.player.tables.check_in_panel_reward.jdbc._
 
 import microservice.infrastructure.database.InMemoryStore
-import microservice.player.runtime.{CheckInSlotReward, PlayerRuntimeDefaults}
+import microservice.player.objects.CheckInSlotReward
+import microservice.player.runtime.PlayerRuntimeDefaults
 import java.sql.Connection
 
 object CheckInPanelRewardTable {

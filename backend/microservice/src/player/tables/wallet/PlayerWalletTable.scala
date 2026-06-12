@@ -3,7 +3,8 @@ package microservice.player.tables.wallet
 import microservice.player.tables.wallet.inmemory._
 import microservice.player.tables.wallet.jdbc._
 
-import microservice.player.runtime.{PlayerRuntimeDefaults, PlayerWallet}
+import microservice.player.objects.{PlayerWallet}
+import microservice.player.runtime.PlayerRuntimeDefaults
 import java.sql.Connection
 import java.time.Instant
 

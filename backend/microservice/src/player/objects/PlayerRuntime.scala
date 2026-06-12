@@ -1,4 +1,4 @@
-package microservice.player.runtime
+package microservice.player.objects
 
 /** 玩家钱包运行时模型：金币、宝石、碎片三种货币。 */
 final case class PlayerWallet(

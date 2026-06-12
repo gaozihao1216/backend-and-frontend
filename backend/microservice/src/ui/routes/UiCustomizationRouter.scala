@@ -39,7 +39,7 @@ import microservice.ui.api.pages.{
 }
 import microservice.ui.api.panelworkflows.{RegisterCheckInPanelRewardsAPIMessage, RegisterCheckInPanelRewardsBody}
 import microservice.ui.objects.{StretchVisualTemplateKind, UiEndpoint}
-import microservice.player.runtime.CheckInSlotReward
+import microservice.player.objects.CheckInSlotReward
 import microservice.infrastructure.http.AuthMiddleware
 import org.http4s.{HttpRoutes, Status}
 import org.http4s.circe.CirceEntityCodec._

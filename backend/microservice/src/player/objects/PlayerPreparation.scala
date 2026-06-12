@@ -1,4 +1,4 @@
-package microservice.player.preparation
+package microservice.player.objects
 
 import io.circe.Json
 

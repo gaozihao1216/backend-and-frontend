@@ -5,20 +5,6 @@ import microservice.player.preparation.BirdPreparationCatalog
 import java.sql.Connection
 import java.time.Instant
 
-final case class PlayerBirdUpgradeRow(
-  userId: String,
-  birdType: String,
-  level: Int,
-  tier: Int,
-  updatedAt: String
-)
-
-final case class PlayerSlingshotUpgradeRow(
-  userId: String,
-  level: Int,
-  updatedAt: String
-)
-
 /** 玩家备战升级表访问门面：鸟等级/阶位与弹弓等级。
   *
   * JDBC 模式在 initialize 中建 player_bird_upgrades / player_slingshot_upgrades 表；

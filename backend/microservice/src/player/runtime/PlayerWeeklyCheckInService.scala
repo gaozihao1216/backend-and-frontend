@@ -1,6 +1,7 @@
 package microservice.player.runtime
 
 import microservice.infrastructure.http.HttpError
+import microservice.player.objects.{CheckInSlotReward, WeeklyCheckInProgress}
 import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
 import microservice.player.tables.wallet.{PlayerWalletTable}
 import microservice.player.tables.weekly_check_in.{PlayerWeeklyCheckInTable}

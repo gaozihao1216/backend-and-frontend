@@ -4,16 +4,6 @@ import microservice.infrastructure.database.InMemoryStore
 import java.sql.Connection
 import java.time.Instant
 
-final case class PlayerFriendRow(userId: String, friendUserId: String, createdAt: String)
-
-final case class PlayerPrivateMessageRow(
-  id: String,
-  senderId: String,
-  receiverId: String,
-  content: String,
-  createdAt: String
-)
-
 /** 玩家好友关系表访问门面：单向存储 userId → friendUserId，加好友时双向 insertPair。 */
 object PlayerFriendTable {
   private def isInMemory(connection: Connection): Boolean = connection == null

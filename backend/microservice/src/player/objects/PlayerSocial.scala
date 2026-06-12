@@ -1,4 +1,4 @@
-package microservice.player.social
+package microservice.player.objects
 
 /** 好友列表中的单个好友摘要（含展示名与加好友时间占位）。 */
 final case class PlayerFriendSummary(

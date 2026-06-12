@@ -1,5 +1,7 @@
 package microservice.player.runtime
 
+import microservice.player.objects.PlayerWallet
+
 /** 玩家运行时默认值：新用户钱包初始余额与默认签到面板 id。 */
 object PlayerRuntimeDefaults {
   /** 新用户默认金币。 */

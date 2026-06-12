@@ -11,7 +11,7 @@ import microservice.player.api.social.{
   ListMessagesAPIMessage,
   SendMessageAPIMessage
 }
-import microservice.player.social.{AddFriendRequest, SendPrivateMessageRequest}
+import microservice.player.objects.{AddFriendRequest, SendPrivateMessageRequest}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
