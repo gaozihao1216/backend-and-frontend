@@ -66,7 +66,7 @@ backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 frontend/src/
 ├── api/                      # One API per file; Zod-validated requests
 ├── objects/                  # Zod schemas aligned with Scala objects
-├── page/                     # Page entries (pathname routing in App.tsx)
+├── page/                     # Page entries by domain: shared/, player/, admin/, designer/, director/, profile/
 ├── component/                # Shared UI and business components
 ├── hook/                     # React hooks (incl. designer-page/)
 ├── lib/                      # Auth, config, game-engine, UI runtime
@@ -99,7 +99,7 @@ scripts/dev.mjs               # Concurrent sbt + vite launcher
 - **API client**: `frontend/src/api/client.ts`
 - **Game engine**: Matter.js in `frontend/src/lib/game-engine/`
 - **Auth**: Mock auth in localStorage; users bind via `user` module `BindBackendUserApi` (`POST /auth/bind`)
-- **Complex page example**: `page/DesignerPage/` split into hooks, components, lib, objects — see `page/DesignerPage/ARCHITECTURE.md`
+- **Complex page example**: `page/designer/DesignerPage/` split into hooks, components, lib, objects — see `page/designer/DesignerPage/ARCHITECTURE.md` and `page/ARCHITECTURE.md`
 
 ### Key TypeScript Config
 

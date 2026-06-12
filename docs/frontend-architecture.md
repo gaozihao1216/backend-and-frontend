@@ -65,9 +65,13 @@ frontend/src/
 - `component/BackendBindingPanel.tsx`：将本地身份绑定到后端演示账号（`player-1`、`designer-1`、`admin-1` 等）
 - API 请求通过 `x-user-id` 请求头传递后端用户 ID
 
-### 2. 设计师编辑器（DesignerPage）
+### 2. 页面组织
 
-复杂页面已拆分为 hook + component + lib + objects 四层，详见 `frontend/src/page/DesignerPage/ARCHITECTURE.md`。
+`page/` 按角色域分子目录（`shared/`、`player/`、`admin/`、`designer/`、`director/`、`profile/`），详见 `frontend/src/page/ARCHITECTURE.md`。
+
+### 3. 设计师编辑器（DesignerPage）
+
+复杂页面已拆分为 hook + component + lib + objects 四层，详见 `frontend/src/page/designer/DesignerPage/ARCHITECTURE.md`。
 
 职责划分：
 

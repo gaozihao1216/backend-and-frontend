@@ -68,7 +68,7 @@ export const StaticLevelScreenPreview = ({ levelSuffix, onNavigate }: StaticLeve
           <p className="eyebrow">Static Page</p>
           <h2>{node?.label ?? levelSuffix}</h2>
           <p className="panel-copy">
-            静态版对应主界面关卡浮层与 PlayerPage 试玩入口，由 React 页面直接组合，而非 PageConfig 嵌套。
+            静态版对应主界面关卡浮层试玩入口，由 React 页面直接组合，而非 PageConfig 嵌套。
           </p>
         </div>
         <div className="page-display-mode-bar-meta">
