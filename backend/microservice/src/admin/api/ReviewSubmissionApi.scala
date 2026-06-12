@@ -4,19 +4,18 @@ import cats.effect.IO
 import java.time.Instant
 import java.sql.Connection
 import microservice.user.utils.AccessControl
-import microservice.infrastructure.api.{APIWithTokenMessage}
-import microservice.infrastructure.http.{HttpError}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.http.HttpError
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.admin.objects.{ReviewedSubmission, ReviewSubmissionErrors}
-import microservice.level.tables.level.{LevelTable}
-import microservice.level.tables.submission.{SubmissionTable}
+import microservice.level.tables.level.LevelTable
+import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-/** 关卡投稿审核请求体：仅允许 Approved 或 Rejected 两种终态。 */
 final case class ReviewSubmissionBody(
   status: SubmissionStatus,
   reviewNote: Option[String]
@@ -35,65 +34,55 @@ final case class ReviewSubmissionAPIMessage(
 ) extends APIWithTokenMessage[ReviewedSubmission] {
   override def token: String = userId
 
-  /** 管理员审核关卡投稿，并联动更新 Level 状态。
-    *
-    * 实现：
-    *   1. 校验 admin 角色且 submission 为 PendingReview
-    *   2. 更新 SubmissionTable 审核字段
-    *   3. 批准 → LevelStatus.Published；拒绝 → Rejected + rejectionReason
-    * 关联：前端 AdminPage /admin/proposals；玩家仅能看到 Published 关卡。
-    */
   override def plan(connection: Connection): IO[Either[HttpError, ReviewedSubmission]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).flatMap { _ =>
-        SubmissionTable.findById(connection, submissionId) match {
-          case None =>
-            Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
-          case Some(submission) =>
-            if (submission.status != SubmissionStatus.PendingReview) {
-              Left(ReviewSubmissionErrors.SubmissionAlreadyReviewed(submissionId).toHttpError)
-            } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
-              Left(ReviewSubmissionErrors.InvalidReviewStatus(body.status).toHttpError)
-            } else {
-              val timestamp = Instant.now().toString
-              val reviewed = SubmissionTable.updateReview(
-                connection = connection,
-                submissionId = submissionId,
-                status = body.status,
-                reviewerId = userId,
-                reviewNote = body.reviewNote,
-                reviewedAt = timestamp
-              )
-
-              reviewed match {
-                case None =>
-                  Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
-                case Some(reviewedSubmission) =>
-                  val targetStatus =
-                    if (body.status == SubmissionStatus.Approved) {
-                      LevelStatus.Published
-                    } else {
-                      LevelStatus.Rejected
-                    }
-                  val publishedAt = if (body.status == SubmissionStatus.Approved) Some(timestamp) else None
-                  val rejectionReason = if (body.status == SubmissionStatus.Approved) None else body.reviewNote
-
-                  LevelTable.updateReviewStatus(
-                    connection = connection,
-                    levelId = submission.levelId,
-                    status = targetStatus,
-                    rejectionReason = rejectionReason,
-                    publishedAt = publishedAt,
-                    updatedAt = timestamp
-                  ) match {
-                    case None =>
-                      Left(ReviewSubmissionErrors.LinkedLevelMissing(submission.levelId).toHttpError)
-                    case Some(_) =>
-                      Right(ReviewedSubmission.fromSubmission(LevelRowMapper.toSubmission(reviewedSubmission)))
-                  }
-              }
-            }
-        }
-      }
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ()))
+        submission <- PlanSteps.require(
+          SubmissionTable.findById(connection, submissionId) match {
+            case None    => Left(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
+            case Some(s) => Right(s)
+          }
+        )
+        _ <- PlanSteps.require(
+          if (submission.status != SubmissionStatus.PendingReview) {
+            Left(ReviewSubmissionErrors.SubmissionAlreadyReviewed(submissionId).toHttpError)
+          } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
+            Left(ReviewSubmissionErrors.InvalidReviewStatus(body.status).toHttpError)
+          } else {
+            Right(())
+          }
+        )
+        timestamp = Instant.now().toString
+        reviewed <- PlanSteps.require(
+          SubmissionTable
+            .updateReview(
+              connection = connection,
+              submissionId = submissionId,
+              status = body.status,
+              reviewerId = userId,
+              reviewNote = body.reviewNote,
+              reviewedAt = timestamp
+            )
+            .toRight(ReviewSubmissionErrors.SubmissionMissing(submissionId).toHttpError)
+        )
+        targetStatus =
+          if (body.status == SubmissionStatus.Approved) LevelStatus.Published else LevelStatus.Rejected
+        publishedAt = if (body.status == SubmissionStatus.Approved) Some(timestamp) else None
+        rejectionReason = if (body.status == SubmissionStatus.Approved) None else body.reviewNote
+        _ <- PlanSteps.require(
+          LevelTable
+            .updateReviewStatus(
+              connection = connection,
+              levelId = submission.levelId,
+              status = targetStatus,
+              rejectionReason = rejectionReason,
+              publishedAt = publishedAt,
+              updatedAt = timestamp
+            )
+            .toRight(ReviewSubmissionErrors.LinkedLevelMissing(submission.levelId).toHttpError)
+            .map(_ => ())
+        )
+      } yield ReviewedSubmission.fromSubmission(LevelRowMapper.toSubmission(reviewed))
     }
 }

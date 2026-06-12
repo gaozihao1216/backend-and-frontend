@@ -7,7 +7,7 @@ import java.sql.Connection
 /** 备战鸟目录聚合：系统内置鸟 + 设计师已发布鸟设计。
   *
   * 实现：合并 BirdPreparationCatalog 与 BirdDesignTable.listPublished。
-  * 关联：PlayerPreparationService 构建响应时调用。
+  * 关联：PlayerPreparationSupport / APIMessage plan 构建响应时调用。
   */
 object PlayerPreparationCatalog {
   /** 加载完整鸟目录（系统 + 设计师发布）。 */

@@ -8,7 +8,7 @@ import microservice.bird.objects.BirdSubmission
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper, BirdSubmissionRow}
 import microservice.bird.tables.submission.{BirdSubmissionTable}
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
 
@@ -22,19 +22,26 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
   override def token: String = designerId
 
   override def plan(connection: Connection): IO[Either[HttpError, BirdSubmission]] =
-    IO.pure {
-      AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
-        BirdDesignTable.findById(connection, designId) match {
-          case None =>
-            Left(HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
-          case Some(design) if design.authorId != designerId =>
-            Left(HttpError.forbidden("Cannot submit another designer's bird design"))
-          case Some(design) if BirdSubmissionTable.hasPendingForDesign(connection, designId) =>
-            Left(HttpError.conflict("SUBMISSION_EXISTS", "Bird design already has a pending submission"))
-          case Some(design)
-              if design.status != LevelStatus.Draft && design.status != LevelStatus.Rejected =>
-            Left(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design cannot be submitted in current status"))
-          case Some(_) =>
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        _ <- PlanSteps.require(
+          BirdDesignTable.findById(connection, designId) match {
+            case None =>
+              Left(HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
+            case Some(design) if design.authorId != designerId =>
+              Left(HttpError.forbidden("Cannot submit another designer's bird design"))
+            case Some(design) if BirdSubmissionTable.hasPendingForDesign(connection, designId) =>
+              Left(HttpError.conflict("SUBMISSION_EXISTS", "Bird design already has a pending submission"))
+            case Some(design)
+                if design.status != LevelStatus.Draft && design.status != LevelStatus.Rejected =>
+              Left(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design cannot be submitted in current status"))
+            case Some(_) =>
+              Right(())
+          }
+        )
+        submission <- PlanSteps.require(
+          {
             val timestamp = Instant.now().toString
             BirdDesignTable.updateSubmissionStatus(
               connection,
@@ -61,7 +68,8 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
                 )
                 Right(BirdRowMapper.toBirdSubmission(row))
             }
-        }
-      }
+          }
+        )
+      } yield submission
     }
 }

@@ -3,7 +3,7 @@ package microservice.ui.api.pages
 import cats.effect.IO
 import java.sql.Connection
 import microservice.user.tables.user.UserTable
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
@@ -20,14 +20,21 @@ final case class GetSharedLevelMapPageAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
-    IO.pure {
-      UserTable.findById(connection, userId) match {
-        case None =>
-          Left(HttpError.unauthorized("Unknown user"))
-        case Some(_) =>
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(
+          UserTable.findById(connection, userId) match {
+            case None =>
+              Left(HttpError.unauthorized("Unknown user"))
+            case Some(_) =>
+              Right(())
+          }
+        )
+        page <- PlanSteps.require(
           UiPageTable.findById(connection, SharedLevelMapPageId.value)
             .map(UiPageRowMapper.toPageConfig)
             .toRight(UiCustomizationErrors.PageNotFound(SharedLevelMapPageId.value).toHttpError)
-      }
+        )
+      } yield page
     }
 }

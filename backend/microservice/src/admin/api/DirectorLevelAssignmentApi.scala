@@ -11,7 +11,7 @@ import microservice.admin.objects.{
   LevelSlotCatalog
 }
 import microservice.user.utils.AccessControl
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper}
@@ -107,10 +107,11 @@ final case class GetDirectorLevelAssignmentBoardAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, DirectorLevelAssignmentBoard]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map { _ =>
-        DirectorLevelAssignmentSupport.buildBoard(connection)
-      }
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        board <- PlanSteps.read(DirectorLevelAssignmentSupport.buildBoard(connection))
+      } yield board
     }
 }
 
@@ -144,42 +145,49 @@ final case class AssignLevelSlotAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, LevelSlotAssignmentDetail]] =
-    IO.pure {
+    PlanSteps.finish {
       for {
-        user <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        _ <-
+        user <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
+        _ <- PlanSteps.require(
           if (LevelSlotCatalog.isSupported(levelSuffix)) Right(())
           else Left(AssignLevelSlotErrors.InvalidLevelSuffix(levelSuffix).toHttpError)
-        submission <- SubmissionTable.findById(connection, body.submissionId).toRight(
-          AssignLevelSlotErrors.SubmissionMissing(body.submissionId).toHttpError
         )
-        _ <-
+        submission <- PlanSteps.require(
+          SubmissionTable.findById(connection, body.submissionId).toRight(
+            AssignLevelSlotErrors.SubmissionMissing(body.submissionId).toHttpError
+          )
+        )
+        _ <- PlanSteps.require(
           if (submission.status == SubmissionStatus.Approved) Right(())
           else Left(AssignLevelSlotErrors.SubmissionNotApproved(body.submissionId).toHttpError)
-        _ <- LevelTable.findById(connection, submission.levelId).toRight(
-          AssignLevelSlotErrors.LinkedLevelMissing(submission.levelId).toHttpError
         )
-      } yield {
-        val timestamp = java.time.Instant.now().toString
-        val row = LevelSlotAssignmentRow(
-          id = LevelSlotAssignmentTable.nextId(connection),
-          levelSuffix = levelSuffix,
-          submissionId = submission.id,
-          sourceLevelId = submission.levelId,
-          assignedById = user.id,
-          assignedAt = timestamp,
-          note = body.note,
-          birdPool = Some(body.birdPool.getOrElse(BirdPool.default))
+        _ <- PlanSteps.require(
+          LevelTable.findById(connection, submission.levelId).toRight(
+            AssignLevelSlotErrors.LinkedLevelMissing(submission.levelId).toHttpError
+          ).map(_ => ())
         )
-        LevelSlotAssignmentTable.upsert(connection, row)
-        val submissionWithLevel =
-          DirectorLevelAssignmentSupport
-            .submissionWithLevel(connection, submission.id)
-            .getOrElse(
-              throw new IllegalStateException(s"Submission level missing after assign: ${submission.id}")
-            )
-        LevelSlotAssignmentDetail(LevelSlotAssignment.from(row), submissionWithLevel)
-      }
+        detail <- PlanSteps.read {
+          val timestamp = java.time.Instant.now().toString
+          val row = LevelSlotAssignmentRow(
+            id = LevelSlotAssignmentTable.nextId(connection),
+            levelSuffix = levelSuffix,
+            submissionId = submission.id,
+            sourceLevelId = submission.levelId,
+            assignedById = user.id,
+            assignedAt = timestamp,
+            note = body.note,
+            birdPool = Some(body.birdPool.getOrElse(BirdPool.default))
+          )
+          LevelSlotAssignmentTable.upsert(connection, row)
+          val submissionWithLevel =
+            DirectorLevelAssignmentSupport
+              .submissionWithLevel(connection, submission.id)
+              .getOrElse(
+                throw new IllegalStateException(s"Submission level missing after assign: ${submission.id}")
+              )
+          LevelSlotAssignmentDetail(LevelSlotAssignment.from(row), submissionWithLevel)
+        }
+      } yield detail
     }
 }
 
@@ -191,18 +199,22 @@ final case class UnassignLevelSlotAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, LevelSlotAssignment]] =
-    IO.pure {
+    PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        _ <-
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- PlanSteps.require(
           if (LevelSlotCatalog.isSupported(levelSuffix)) Right(())
           else Left(AssignLevelSlotErrors.InvalidLevelSuffix(levelSuffix).toHttpError)
-        existing <- LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix).toRight(
-          AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError
         )
-        _ <-
+        existing <- PlanSteps.require(
+          LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix).toRight(
+            AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError
+          )
+        )
+        _ <- PlanSteps.require(
           if (LevelSlotAssignmentTable.deleteBySuffix(connection, levelSuffix)) Right(())
           else Left(AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError)
+        )
       } yield LevelSlotAssignment.from(existing)
     }
 }
@@ -232,26 +244,30 @@ final case class UpdateLevelSlotBirdPoolAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, LevelSlotAssignmentDetail]] =
-    IO.pure {
+    PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        _ <-
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- PlanSteps.require(
           if (LevelSlotCatalog.isSupported(levelSuffix)) Right(())
           else Left(AssignLevelSlotErrors.InvalidLevelSuffix(levelSuffix).toHttpError)
-        existing <- LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix).toRight(
-          AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError
         )
-      } yield {
-        val updated = existing.copy(birdPool = Some(body.birdPool))
-        LevelSlotAssignmentTable.upsert(connection, updated)
-        val submissionWithLevel =
-          DirectorLevelAssignmentSupport
-            .submissionWithLevel(connection, updated.submissionId)
-            .getOrElse(
-              throw new IllegalStateException(s"Submission level missing after bird pool update: ${updated.submissionId}")
-            )
-        LevelSlotAssignmentDetail(LevelSlotAssignment.from(updated), submissionWithLevel)
-      }
+        existing <- PlanSteps.require(
+          LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix).toRight(
+            AssignLevelSlotErrors.AssignmentMissing(levelSuffix).toHttpError
+          )
+        )
+        detail <- PlanSteps.read {
+          val updated = existing.copy(birdPool = Some(body.birdPool))
+          LevelSlotAssignmentTable.upsert(connection, updated)
+          val submissionWithLevel =
+            DirectorLevelAssignmentSupport
+              .submissionWithLevel(connection, updated.submissionId)
+              .getOrElse(
+                throw new IllegalStateException(s"Submission level missing after bird pool update: ${updated.submissionId}")
+              )
+          LevelSlotAssignmentDetail(LevelSlotAssignment.from(updated), submissionWithLevel)
+        }
+      } yield detail
     }
 }
 
@@ -283,42 +299,46 @@ final case class AbolishDirectorSubmissionAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, SubmissionWithLevel]] =
-    IO.pure {
+    PlanSteps.finish {
       for {
-        user <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        submission <- SubmissionTable.findById(connection, submissionId).toRight(
-          AssignLevelSlotErrors.SubmissionMissing(submissionId).toHttpError
+        user <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
+        submission <- PlanSteps.require(
+          SubmissionTable.findById(connection, submissionId).toRight(
+            AssignLevelSlotErrors.SubmissionMissing(submissionId).toHttpError
+          )
         )
-        _ <-
+        _ <- PlanSteps.require(
           if (submission.status == SubmissionStatus.Approved) Right(())
           else Left(AssignLevelSlotErrors.SubmissionNotAbolishable(submissionId).toHttpError)
-      } yield {
-        val timestamp = java.time.Instant.now().toString
-        val abolishNote = body.note.filter(_.trim.nonEmpty).map(_.trim)
-
-        LevelSlotAssignmentTable.deleteBySubmissionId(connection, submission.id)
-
-        SubmissionTable.updateReview(
-          connection = connection,
-          submissionId = submission.id,
-          status = SubmissionStatus.Abolished,
-          reviewerId = user.id,
-          reviewNote = abolishNote.orElse(Some("Abolished by director.")),
-          reviewedAt = timestamp
         )
+        result <- PlanSteps.read {
+          val timestamp = java.time.Instant.now().toString
+          val abolishNote = body.note.filter(_.trim.nonEmpty).map(_.trim)
 
-        LevelTable.updateReviewStatus(
-          connection = connection,
-          levelId = submission.levelId,
-          status = LevelStatus.Rejected,
-          rejectionReason = abolishNote.orElse(Some("Abolished by director.")),
-          publishedAt = None,
-          updatedAt = timestamp
-        )
+          LevelSlotAssignmentTable.deleteBySubmissionId(connection, submission.id)
 
-        DirectorLevelAssignmentSupport
-          .submissionWithLevel(connection, submission.id)
-          .getOrElse(throw new IllegalStateException(s"Submission missing after abolish: ${submission.id}"))
-      }
+          SubmissionTable.updateReview(
+            connection = connection,
+            submissionId = submission.id,
+            status = SubmissionStatus.Abolished,
+            reviewerId = user.id,
+            reviewNote = abolishNote.orElse(Some("Abolished by director.")),
+            reviewedAt = timestamp
+          )
+
+          LevelTable.updateReviewStatus(
+            connection = connection,
+            levelId = submission.levelId,
+            status = LevelStatus.Rejected,
+            rejectionReason = abolishNote.orElse(Some("Abolished by director.")),
+            publishedAt = None,
+            updatedAt = timestamp
+          )
+
+          DirectorLevelAssignmentSupport
+            .submissionWithLevel(connection, submission.id)
+            .getOrElse(throw new IllegalStateException(s"Submission missing after abolish: ${submission.id}"))
+        }
+      } yield result
     }
 }

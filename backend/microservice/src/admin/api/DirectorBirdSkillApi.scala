@@ -8,7 +8,7 @@ import java.sql.Connection
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.{BirdSkillConfig, DirectorBirdSkillBoard, DirectorBirdSkillEntry}
 import microservice.bird.tables.skill_config.BirdSkillConfigTable
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.preparation.PlayerPreparationCatalog
 import microservice.system.objects.AdminLevel
@@ -65,10 +65,11 @@ final case class GetDirectorBirdSkillBoardAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, DirectorBirdSkillBoard]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map { _ =>
-        DirectorBirdSkillSupport.buildBoard(connection)
-      }
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        board <- PlanSteps.read(DirectorBirdSkillSupport.buildBoard(connection))
+      } yield board
     }
 }
 
@@ -97,23 +98,28 @@ final case class SaveDirectorBirdSkillAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, BirdSkillConfig]] =
-    IO.pure {
+    PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        entry <- PlayerPreparationCatalog.find(connection, birdType).toRight(
-          HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType")
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- PlanSteps.require(
+          PlayerPreparationCatalog.find(connection, birdType).toRight(
+            HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType")
+          ).map(_ => ())
         )
-        skills <- DirectorBirdSkillSupport.validateSkillsJson(body.skills)
-      } yield BirdSkillConfigTable.upsert(
-          connection,
-          BirdSkillConfig(
-            birdType = birdType,
-            skills = skills,
-            modelImageUrl = body.modelImageUrl.filter(_.trim.nonEmpty),
-            updatedById = Some(userId),
-            updatedAt = BirdSkillConfigTable.nowIso
+        skills <- PlanSteps.require(DirectorBirdSkillSupport.validateSkillsJson(body.skills))
+        config <- PlanSteps.read(
+          BirdSkillConfigTable.upsert(
+            connection,
+            BirdSkillConfig(
+              birdType = birdType,
+              skills = skills,
+              modelImageUrl = body.modelImageUrl.filter(_.trim.nonEmpty),
+              updatedById = Some(userId),
+              updatedAt = BirdSkillConfigTable.nowIso
+            )
           )
         )
+      } yield config
     }
 }
 
@@ -128,25 +134,28 @@ final case class GetDirectorBirdSkillAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, DirectorBirdSkillEntry]] =
-    IO.pure {
+    PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        entry <- PlayerPreparationCatalog.find(connection, birdType).toRight(
-          HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType")
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        entry <- PlanSteps.require(
+          PlayerPreparationCatalog.find(connection, birdType).toRight(
+            HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType")
+          )
         )
-      } yield {
-        val config = BirdSkillConfigTable.findByBirdType(connection, birdType)
-        DirectorBirdSkillEntry(
-          birdType = entry.birdType,
-          name = entry.name,
-          source = entry.source,
-          authorId = entry.authorId,
-          skillName = entry.skillName,
-          tierSkillDescriptions = entry.tierSkillDescriptions.toList,
-          configured = config.isDefined,
-          skills = config.map(_.skills),
-          modelImageUrl = config.flatMap(_.modelImageUrl).orElse(Some(entry.previewImageUrl))
-        )
-      }
+        skillEntry <- PlanSteps.read {
+          val config = BirdSkillConfigTable.findByBirdType(connection, birdType)
+          DirectorBirdSkillEntry(
+            birdType = entry.birdType,
+            name = entry.name,
+            source = entry.source,
+            authorId = entry.authorId,
+            skillName = entry.skillName,
+            tierSkillDescriptions = entry.tierSkillDescriptions.toList,
+            configured = config.isDefined,
+            skills = config.map(_.skills),
+            modelImageUrl = config.flatMap(_.modelImageUrl).orElse(Some(entry.previewImageUrl))
+          )
+        }
+      } yield skillEntry
     }
 }

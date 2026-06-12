@@ -5,7 +5,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.utils.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
@@ -42,12 +42,18 @@ final case class SubmitLevelAPIMessage(
     * 关联：Admin ReviewSubmissionAPIMessage 处理后续批准/拒绝；与 CreateLevel 共同构成 UGC 主流程。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Submission]] =
-    IO.pure {
-      AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
-        LevelTable.findById(connection, body.levelId) match {
-        case None =>
-          Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: ${body.levelId}"))
-        case Some(level) =>
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        level <- PlanSteps.require(
+          LevelTable.findById(connection, body.levelId) match {
+            case None =>
+              Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: ${body.levelId}"))
+            case Some(value) =>
+              Right(value)
+          }
+        )
+        _ <- PlanSteps.require(
           // 只能提交自己的关卡
           if (level.authorId != designerId) {
             Left(HttpError.forbidden("Cannot submit another designer's level"))
@@ -58,25 +64,28 @@ final case class SubmitLevelAPIMessage(
           } else if (level.status != LevelStatus.Draft && level.status != LevelStatus.Rejected) {
             Left(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
           } else {
-            val timestamp = Instant.now().toString
-            // 关卡与 submission 双写：level.status 与 submission.status 保持同步
-            LevelTable.updateSubmissionStatus(connection, body.levelId, LevelStatus.PendingReview, None, timestamp)
-            val row = SubmissionTable.insert(
-              connection,
-              SubmissionRow(
-                id = SubmissionTable.nextId(connection),
-                levelId = body.levelId,
-                submitterId = designerId,
-                status = SubmissionStatus.PendingReview,
-                reviewerId = None,
-                reviewNote = None,
-                submittedAt = timestamp,
-                reviewedAt = None
-              )
-            )
-            Right(LevelRowMapper.toSubmission(row))
+            Right(())
           }
+        )
+        submission <- PlanSteps.read {
+          val timestamp = Instant.now().toString
+          // 关卡与 submission 双写：level.status 与 submission.status 保持同步
+          LevelTable.updateSubmissionStatus(connection, body.levelId, LevelStatus.PendingReview, None, timestamp)
+          val row = SubmissionTable.insert(
+            connection,
+            SubmissionRow(
+              id = SubmissionTable.nextId(connection),
+              levelId = body.levelId,
+              submitterId = designerId,
+              status = SubmissionStatus.PendingReview,
+              reviewerId = None,
+              reviewNote = None,
+              submittedAt = timestamp,
+              reviewedAt = None
+            )
+          )
+          LevelRowMapper.toSubmission(row)
         }
-      }
+      } yield submission
     }
 }

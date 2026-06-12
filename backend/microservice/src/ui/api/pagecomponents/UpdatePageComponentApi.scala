@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageComponent, PageConfig, UiCustomizationErrors}
@@ -35,14 +35,21 @@ final case class UpdatePageComponentAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
-        UiPageTable.findById(connection, pageId) match {
-          case None =>
-            Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-          case Some(page) if !page.components.exists(_.id == componentId) =>
-            Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError)
-          case Some(_) =>
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- PlanSteps.require(
+          UiPageTable.findById(connection, pageId) match {
+            case None =>
+              Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
+            case Some(page) if !page.components.exists(_.id == componentId) =>
+              Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError)
+            case Some(_) =>
+              Right(())
+          }
+        )
+        page <- PlanSteps.require(
+          {
             val component = body.component match {
               case button: microservice.ui.objects.ButtonComponent => button.copy(id = componentId)
               case panel: microservice.ui.objects.PanelComponent => panel.copy(id = componentId)
@@ -53,7 +60,8 @@ final case class UpdatePageComponentAPIMessage(
               .updateComponent(connection, pageId, componentId, component, Instant.now().toString)
               .map(row => Right(UiPageRowMapper.toPageConfig(row)))
               .getOrElse(Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError))
-        }
-      }
+          }
+        )
+      } yield page
     }
 }

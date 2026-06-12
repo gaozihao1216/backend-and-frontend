@@ -7,7 +7,7 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.user.objects.{BackendUser, BindBackendUserErrors}
 import microservice.user.tables.user.{UserRow, UserTable}
-import microservice.infrastructure.api.{APIMessage}
+import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.tables.user.UserRowMapper
 import microservice.system.objects.AdminLevel
@@ -38,38 +38,45 @@ final case class BindBackendUserAPIMessage(
 ) extends APIMessage[BackendUser] {
 
   override def plan(connection: Connection): IO[Either[HttpError, BackendUser]] =
-    IO.pure {
-      // --- 1. 基础字段校验 ---
-      if (request.localUserId.trim.isEmpty || request.nickname.trim.isEmpty) {
-        Left(BindBackendUserErrors.BindBackendUserValidation(List("localUserId", "nickname")).toHttpError)
-      } else {
-        val normalizedNickname = request.nickname.trim
+    PlanSteps.finish {
+      for {
+        // --- 1. 基础字段校验 ---
+        _ <- PlanSteps.require(
+          if (request.localUserId.trim.isEmpty || request.nickname.trim.isEmpty) {
+            Left(BindBackendUserErrors.BindBackendUserValidation(List("localUserId", "nickname")).toHttpError)
+          } else {
+            Right(())
+          }
+        )
+        user <- PlanSteps.read {
+          val normalizedNickname = request.nickname.trim
 
-        // --- 2. 由 localUserId 生成确定性 username，保证同一本地身份多次 bind 得到同一后端用户 ---
-        val suffix =
-          math.abs(request.localUserId.trim.hashCode).toString.take(7).reverse.padTo(7, '0').reverse
-        val username = s"local-${request.role.value}-$suffix"
+          // --- 2. 由 localUserId 生成确定性 username，保证同一本地身份多次 bind 得到同一后端用户 ---
+          val suffix =
+            math.abs(request.localUserId.trim.hashCode).toString.take(7).reverse.padTo(7, '0').reverse
+          val username = s"local-${request.role.value}-$suffix"
 
-        // --- 3. 查已有用户；不存在则按 role 计数生成 id 并 insert ---
-        val resolvedUser = UserTable.findByUsername(connection, username).getOrElse {
-          val timestamp = Instant.now().toString
-          UserTable.insert(
-            connection,
-            UserRow(
-              id = s"${request.role.value}-${UserTable.countByRole(connection, request.role) + 1}",
-              username = username,
-              displayName = normalizedNickname,
-              role = request.role,
-              // 通过 bind 新建的 admin 默认为 standard；director 由 seed/SQL 预置
-              adminLevel = if (request.role == UserRole.Admin) Some(AdminLevel.Standard) else None,
-              createdAt = timestamp,
-              updatedAt = timestamp
+          // --- 3. 查已有用户；不存在则按 role 计数生成 id 并 insert ---
+          val resolvedUser = UserTable.findByUsername(connection, username).getOrElse {
+            val timestamp = Instant.now().toString
+            UserTable.insert(
+              connection,
+              UserRow(
+                id = s"${request.role.value}-${UserTable.countByRole(connection, request.role) + 1}",
+                username = username,
+                displayName = normalizedNickname,
+                role = request.role,
+                // 通过 bind 新建的 admin 默认为 standard；director 由 seed/SQL 预置
+                adminLevel = if (request.role == UserRole.Admin) Some(AdminLevel.Standard) else None,
+                createdAt = timestamp,
+                updatedAt = timestamp
+              )
             )
-          )
-        }
+          }
 
-        // --- 4. Row → 对外 API 对象 ---
-        Right(UserRowMapper.toBackendUser(resolvedUser))
-      }
+          // --- 4. Row → 对外 API 对象 ---
+          UserRowMapper.toBackendUser(resolvedUser)
+        }
+      } yield user
     }
 }

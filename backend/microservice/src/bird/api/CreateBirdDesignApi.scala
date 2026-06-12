@@ -9,7 +9,7 @@ import microservice.user.utils.AccessControl
 import microservice.bird.objects.BirdDesign
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdDesignRow, BirdRowMapper}
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
 import org.http4s.EntityDecoder
@@ -44,9 +44,11 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
   override def token: String = designerId
 
   override def plan(connection: Connection): IO[Either[HttpError, BirdDesign]] =
-    IO.pure {
-      AccessControl.requireRole(connection, designerId, UserRole.Designer).flatMap { _ =>
-        BirdDesignValidation.validate(toInput(body)).map { input =>
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        input <- PlanSteps.require(BirdDesignValidation.validate(toInput(body)))
+        design <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = BirdDesignTable.insert(
             connection,
@@ -71,7 +73,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
           )
           BirdRowMapper.toBirdDesign(row)
         }
-      }
+      } yield design
     }
 
   private def toInput(body: CreateBirdDesignBody): BirdDesignInputBody =

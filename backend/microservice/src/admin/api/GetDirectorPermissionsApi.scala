@@ -3,7 +3,7 @@ package microservice.admin.api
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.DirectorPermissionSummary
-import microservice.infrastructure.api.{APIWithTokenMessage}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.utils.AccessControl
 import microservice.system.objects.AdminLevel
@@ -19,13 +19,13 @@ final case class GetDirectorPermissionsAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, DirectorPermissionSummary]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map { user =>
-        DirectorPermissionSummary(
-          userId = user.id,
-          adminLevel = AdminLevel.Director,
-          canManageUiCustomization = true
-        )
-      }
+    PlanSteps.finish {
+      for {
+        user <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
+      } yield DirectorPermissionSummary(
+        userId = user.id,
+        adminLevel = AdminLevel.Director,
+        canManageUiCustomization = true
+      )
     }
 }

@@ -7,16 +7,15 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.ReviewedBirdSubmission
-import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.shared.{BirdRowMapper}
-import microservice.bird.tables.submission.{BirdSubmissionTable}
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.bird.tables.design.BirdDesignTable
+import microservice.bird.tables.shared.BirdRowMapper
+import microservice.bird.tables.submission.BirdSubmissionTable
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, LevelStatus, SubmissionStatus}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-/** 鸟类投稿审核请求体：status 仅允许 Approved 或 Rejected。 */
 final case class ReviewBirdSubmissionBody(
   status: SubmissionStatus,
   reviewNote: Option[String]
@@ -28,14 +27,6 @@ object ReviewBirdSubmissionBody {
   implicit val entityDecoder: EntityDecoder[IO, ReviewBirdSubmissionBody] = jsonOf
 }
 
-/** 管理员审核鸟类设计投稿，并联动更新 BirdDesign 状态。
-  *
-  * 实现：
-  *   1. 校验 Admin 角色且 submission 为 PendingReview
-  *   2. BirdSubmissionTable.updateReview
-  *   3. 批准 → LevelStatus.Published；拒绝 → Rejected + rejectionReason
-  * 关联：POST /admin/bird-submissions/:submissionId/review；已发布设计可进入 Director bird pool。
-  */
 final case class ReviewBirdSubmissionAPIMessage(
   userId: String,
   submissionId: String,
@@ -44,49 +35,54 @@ final case class ReviewBirdSubmissionAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, ReviewedBirdSubmission]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).flatMap { _ =>
-        BirdSubmissionTable.findById(connection, submissionId) match {
-          case None =>
-            Left(HttpError.notFound("BIRD_SUBMISSION_NOT_FOUND", s"Bird submission not found: $submissionId"))
-          case Some(submission) if submission.status != SubmissionStatus.PendingReview =>
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ()))
+        submission <- PlanSteps.require(
+          BirdSubmissionTable.findById(connection, submissionId) match {
+            case None    => Left(HttpError.notFound("BIRD_SUBMISSION_NOT_FOUND", s"Bird submission not found: $submissionId"))
+            case Some(s) => Right(s)
+          }
+        )
+        _ <- PlanSteps.require(
+          if (submission.status != SubmissionStatus.PendingReview) {
             Left(HttpError.conflict("SUBMISSION_ALREADY_REVIEWED", s"Submission already reviewed: $submissionId"))
-          case Some(submission)
-              if body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected =>
+          } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
             Left(HttpError.badRequest("INVALID_REVIEW_STATUS", "Review status must be approved or rejected"))
-          case Some(submission) =>
-            val timestamp = Instant.now().toString
-            BirdSubmissionTable.updateReview(
+          } else {
+            Right(())
+          }
+        )
+        timestamp = Instant.now().toString
+        reviewed <- PlanSteps.require(
+          BirdSubmissionTable
+            .updateReview(
               connection = connection,
               submissionId = submissionId,
               status = body.status,
               reviewerId = userId,
               reviewNote = body.reviewNote,
               reviewedAt = timestamp
-            ) match {
-              case None =>
-                Left(HttpError.notFound("BIRD_SUBMISSION_NOT_FOUND", s"Bird submission not found: $submissionId"))
-              case Some(reviewedSubmission) =>
-                val targetStatus =
-                  if (body.status == SubmissionStatus.Approved) LevelStatus.Published else LevelStatus.Rejected
-                val publishedAt = if (body.status == SubmissionStatus.Approved) Some(timestamp) else None
-                val rejectionReason = if (body.status == SubmissionStatus.Approved) None else body.reviewNote
-
-                BirdDesignTable.updateReviewStatus(
-                  connection = connection,
-                  designId = submission.birdDesignId,
-                  status = targetStatus,
-                  rejectionReason = rejectionReason,
-                  publishedAt = publishedAt,
-                  updatedAt = timestamp
-                ) match {
-                  case None =>
-                    Left(HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: ${submission.birdDesignId}"))
-                  case Some(_) =>
-                    Right(ReviewedBirdSubmission.fromSubmission(BirdRowMapper.toBirdSubmission(reviewedSubmission)))
-                }
-            }
-        }
-      }
+            )
+            .toRight(HttpError.notFound("BIRD_SUBMISSION_NOT_FOUND", s"Bird submission not found: $submissionId"))
+        )
+        targetStatus =
+          if (body.status == SubmissionStatus.Approved) LevelStatus.Published else LevelStatus.Rejected
+        publishedAt = if (body.status == SubmissionStatus.Approved) Some(timestamp) else None
+        rejectionReason = if (body.status == SubmissionStatus.Approved) None else body.reviewNote
+        _ <- PlanSteps.require(
+          BirdDesignTable
+            .updateReviewStatus(
+              connection = connection,
+              designId = submission.birdDesignId,
+              status = targetStatus,
+              rejectionReason = rejectionReason,
+              publishedAt = publishedAt,
+              updatedAt = timestamp
+            )
+            .toRight(HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: ${submission.birdDesignId}"))
+            .map(_ => ())
+        )
+      } yield ReviewedBirdSubmission.fromSubmission(BirdRowMapper.toBirdSubmission(reviewed))
     }
 }

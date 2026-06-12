@@ -3,7 +3,7 @@ package microservice.ui.api.pages
 import cats.effect.IO
 import java.sql.Connection
 import microservice.user.utils.AccessControl
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiEndpoint}
@@ -21,13 +21,16 @@ final case class ListUiPagesAPIMessage(
 
   /** 列出全部或指定 endpoint 的页面配置。 */
   override def plan(connection: Connection): IO[Either[HttpError, List[PageConfig]]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map { _ =>
-        val rows = endpoint match {
-          case Some(value) => UiPageTable.listByEndpoint(connection, value)
-          case None => UiPageTable.listAll(connection)
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        pages <- PlanSteps.read {
+          val rows = endpoint match {
+            case Some(value) => UiPageTable.listByEndpoint(connection, value)
+            case None => UiPageTable.listAll(connection)
+          }
+          rows.map(UiPageRowMapper.toPageConfig).toList
         }
-        rows.map(UiPageRowMapper.toPageConfig).toList
-      }
+      } yield pages
     }
 }

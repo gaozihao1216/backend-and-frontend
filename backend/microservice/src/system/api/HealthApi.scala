@@ -4,7 +4,7 @@ import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import java.sql.Connection
-import microservice.infrastructure.api.{APIMessage}
+import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 
 /** GET /health 的响应体；status 固定为 "ok" 表示进程存活。 */
@@ -25,5 +25,7 @@ object HealthResponse {
 final case class HealthAPIMessage() extends APIMessage[HealthResponse] {
   override def plan(connection: Connection): IO[Either[HttpError, HealthResponse]] =
     // 无业务校验；connection 在 in-memory 模式下为 null，此处不使用
-    IO.pure(Right(HealthResponse(status = "ok")))
+    PlanSteps.finish {
+      PlanSteps.read(HealthResponse(status = "ok"))
+    }
 }

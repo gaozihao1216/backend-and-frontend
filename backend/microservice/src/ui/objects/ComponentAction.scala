@@ -2,7 +2,7 @@ package microservice.ui.objects
 
 /** 组件交互动作 ADT：导航、开关面板/弹窗、调用运行时 apiKey、无操作等。
   *
-  * ApiAction 可链式 afterSuccess；与 PlayerUiRuntimeService 的 action apiKey 对应。
+  * ApiAction 可链式 afterSuccess；与 player/api/ui 中 action apiKey 对应。
   */
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}

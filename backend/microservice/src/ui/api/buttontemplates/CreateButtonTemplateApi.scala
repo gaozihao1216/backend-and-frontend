@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
@@ -33,21 +33,26 @@ final case class CreateButtonTemplateAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, ButtonTemplate]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
-        val template = ButtonTemplateValidation.sanitize(body.template)
-        if (ButtonTemplateTable.findById(connection, template.id).nonEmpty) {
-          Left(UiCustomizationErrors.ButtonTemplateAlreadyExists(template.id).toHttpError)
-        } else {
-          ButtonTemplateValidation.validate(template).map { _ =>
-            val timestamp = Instant.now().toString
-            val row = ButtonTemplateTable.insert(
-              connection,
-              ButtonTemplateRowMapper.fromButtonTemplate(template, createdAt = timestamp, updatedAt = timestamp)
-            )
-            ButtonTemplateRowMapper.toButtonTemplate(row)
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template))
+        _ <- PlanSteps.require(
+          if (ButtonTemplateTable.findById(connection, template.id).nonEmpty) {
+            Left(UiCustomizationErrors.ButtonTemplateAlreadyExists(template.id).toHttpError)
+          } else {
+            Right(())
           }
+        )
+        _ <- PlanSteps.require(ButtonTemplateValidation.validate(template).map(_ => ()))
+        result <- PlanSteps.read {
+          val timestamp = Instant.now().toString
+          val row = ButtonTemplateTable.insert(
+            connection,
+            ButtonTemplateRowMapper.fromButtonTemplate(template, createdAt = timestamp, updatedAt = timestamp)
+          )
+          ButtonTemplateRowMapper.toButtonTemplate(row)
         }
-      }
+      } yield result
     }
 }

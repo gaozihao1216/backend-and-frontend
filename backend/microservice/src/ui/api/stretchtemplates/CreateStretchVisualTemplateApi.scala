@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
-import microservice.infrastructure.api.APIWithTokenMessage
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
@@ -34,23 +34,27 @@ final case class CreateStretchVisualTemplateAPIMessage(
   override def token: String = userId
 
   override def plan(connection: Connection): IO[Either[HttpError, StretchVisualTemplate]] =
-    IO.pure {
-      AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).flatMap { _ =>
-        val template = StretchVisualTemplateValidation.sanitize(body.template.copy(kind = expectedKind))
-        StretchVisualTemplateValidation.ensureKind(template, expectedKind).flatMap { validated =>
-          StretchVisualTemplateValidation.validate(validated).flatMap { _ =>
-            if (StretchVisualTemplateTable.findById(connection, template.id).nonEmpty) {
-              Left(UiCustomizationErrors.StretchVisualTemplateAlreadyExists(template.id).toHttpError)
-            } else {
-              val timestamp = Instant.now().toString
-              val row = StretchVisualTemplateTable.insert(
-                connection,
-                StretchVisualTemplateRowMapper.fromStretchVisualTemplate(template, createdAt = timestamp, updatedAt = timestamp)
-              )
-              Right(StretchVisualTemplateRowMapper.toStretchVisualTemplate(row))
-            }
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        template <- PlanSteps.read(StretchVisualTemplateValidation.sanitize(body.template.copy(kind = expectedKind)))
+        validated <- PlanSteps.require(StretchVisualTemplateValidation.ensureKind(template, expectedKind))
+        _ <- PlanSteps.require(StretchVisualTemplateValidation.validate(validated).map(_ => ()))
+        _ <- PlanSteps.require(
+          if (StretchVisualTemplateTable.findById(connection, template.id).nonEmpty) {
+            Left(UiCustomizationErrors.StretchVisualTemplateAlreadyExists(template.id).toHttpError)
+          } else {
+            Right(())
           }
+        )
+        result <- PlanSteps.read {
+          val timestamp = Instant.now().toString
+          val row = StretchVisualTemplateTable.insert(
+            connection,
+            StretchVisualTemplateRowMapper.fromStretchVisualTemplate(template, createdAt = timestamp, updatedAt = timestamp)
+          )
+          StretchVisualTemplateRowMapper.toStretchVisualTemplate(row)
         }
-      }
+      } yield result
     }
 }

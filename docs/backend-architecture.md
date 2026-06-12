@@ -46,19 +46,21 @@ backend/microservice/src/
 所有 API 遵循统一执行协议：
 
 ```scala
-final case class CreateLevelAPIMessage(
-  designerId: String,
-  body: CreateLevelBody
-) extends APIWithTokenMessage[Level] {
-  override def token: String = designerId
+final case class ListFriendsAPIMessage(userId: String) extends APIWithTokenMessage[Json] {
+  override def token: String = userId
 
-  override def plan(connection: Connection): IO[Either[HttpError, Level]] =
-    for {
-      _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer)
-      level <- LevelTable.insert(connection, ...)
-    } yield Right(level)
+  override def plan(connection: Connection): IO[Either[HttpError, Json]] =
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireRole(connection, userId, UserRole.Player))
+        friendIds <- PlanSteps.read(PlayerFriendTable.listFriendUserIds(connection, userId))
+        friends <- PlanSteps.read(/* join UserTable → summaries */)
+      } yield PlayerSocialJson.toJsonFriends(PlayerFriendListResponse(friends))
+    }
 }
 ```
+
+`PlanSteps`（`EitherT[IO, HttpError, A]`）把 plan 写成可读的步骤剧本：`require` 校验/鉴权、`read` 同步表读写、`blocking` 阻塞 IO、`finish` 产出 `IO[Either[HttpError, A]]`。
 
 原则：
 
