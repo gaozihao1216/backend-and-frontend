@@ -14,11 +14,11 @@
 ```text
 frontend/src/
 ├── api/              # HTTP 调用，按后端模块拆分；一 API 一文件
-├── objects/          # Zod schema 与 TypeScript 类型，与后端 objects 对齐
-├── page/             # 页面入口（按 pathname 挂载）
-├── component/        # 可复用 UI 与业务区域组件
-├── hook/             # React hooks（含 designer-page 子目录）
-├── lib/              # 纯逻辑：auth、配置、游戏引擎、UI 运行时等
+├── objects/          # Zod/TS 类型（后端对齐 + objects/<domain>-page/ 页面类型）
+├── page/             # 页面入口（按域：shared/ player/ admin/ designer/ director/ profile/）
+├── component/        # 可复用 UI；复杂页子组件在 *-page/ 子目录
+├── hook/             # React hooks（designer-page/ director-page/ player-page/）
+├── lib/              # 纯逻辑；页面辅助在 lib/<domain>-page/
 ├── store/            # 轻量前端状态
 ├── shared/           # 关卡种子数据等共享静态资源
 ├── styles.css
@@ -67,11 +67,34 @@ frontend/src/
 
 ### 2. 页面组织
 
-`page/` 按角色域分子目录（`shared/`、`player/`、`admin/`、`designer/`、`director/`、`profile/`），详见 `frontend/src/page/ARCHITECTURE.md`。
+`page/` 按角色域分子目录，详见 [`frontend/src/page/ARCHITECTURE.md`](../frontend/src/page/ARCHITECTURE.md)。
+
+```text
+page/
+├── shared/     # PageDualModeHost、StaticPageRenderer、DynamicPageHost
+├── player/     # 商店、社交、备战、社区
+├── admin/      # 审核、社区管理
+├── designer/   # 作品集、关卡编辑、鸟类实验室
+├── director/   # UI 定制、页面构建、模板与面板编辑器
+└── profile/    # 用户资料
+```
+
+**复杂页面四层拆分**（入口薄、逻辑进 hook）：
+
+| 层 | 路径示例 |
+| --- | --- |
+| 入口 | `page/director/DirectorPageBuilderPage/index.tsx` |
+| Hook | `hook/director-page/useDirectorPageBuilder.ts` |
+| 组件 | `component/director-page/page-builder/*` |
+| 工具/类型 | `lib/director-page/*`、`objects/director-page/*` |
+
+已拆分页面清单（Designer / Player 社交·备战 / Director 构建工具五页 + 面板创建）见 `page/ARCHITECTURE.md` 的「已完成拆分」表。
+
+简单页（&lt;~300 行）仍用单文件 `XxxPage.tsx`，无需强制建目录。
 
 ### 3. 设计师编辑器（DesignerPage）
 
-复杂页面已拆分为 hook + component + lib + objects 四层，详见 `frontend/src/page/designer/DesignerPage/ARCHITECTURE.md`。
+详见 [`frontend/src/page/designer/DesignerPage/ARCHITECTURE.md`](../frontend/src/page/designer/DesignerPage/ARCHITECTURE.md)。
 
 职责划分：
 
@@ -79,7 +102,14 @@ frontend/src/
 - **components**：表单、画布、备份面板、设计手册等展示块
 - **lib/game-engine**：物理模拟、实体放置、技能系统
 
-### 3. 游戏引擎
+### 4. 玩家与总监复杂页
+
+与 DesignerPage 同一模式，state 在 `hook/*-page/`，JSX 在 `component/*-page/`：
+
+- **玩家**：`PlayerSocialPage/`、`PlayerPreparationPage/` → `usePlayerSocial`、`usePlayerPreparation`
+- **总监**：`DirectorLevelInterfacePage/`、`DirectorPageBuilderPage/`、`DirectorButtonTemplatesPage/`、`DirectorButtonDesignPage/`、`DirectorPanelCreatePage/` → 对应 `useDirector*` hook 与 workspace 组件
+
+### 5. 游戏引擎
 
 路径：`frontend/src/lib/game-engine/`
 
@@ -89,7 +119,7 @@ frontend/src/
 
 设计器与玩家游玩共用同一套引擎类型（`objects/level/level-data.ts`）。
 
-### 4. UI 定制与动态渲染
+### 6. UI 定制与动态渲染
 
 总监管理员可通过后端 API 配置页面结构，前端负责渲染：
 
@@ -99,7 +129,7 @@ frontend/src/
 
 玩家侧 UI 运行时数据通过 `/player/ui/*` 接口拉取（商店、签到、进度等）。
 
-### 5. 页面双模式
+### 7. 页面双模式
 
 `PageDualModeHost` 支持同一 URL 在「实际业务页」与「总监预览/编辑模式」间切换，用于 UI 定制工作流。
 

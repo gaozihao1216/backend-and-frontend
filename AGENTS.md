@@ -65,12 +65,16 @@ backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 
 frontend/src/
 ├── api/                      # One API per file; Zod-validated requests
-├── objects/                  # Zod schemas aligned with Scala objects
-├── page/                     # Page entries by domain: shared/, player/, admin/, designer/, director/, profile/
-├── component/                # Shared UI and business components
-├── hook/                     # React hooks (incl. designer-page/)
-├── lib/                      # Auth, config, game-engine, UI runtime
+├── objects/                  # Zod schemas aligned with Scala objects; page types in */-page/
+├── page/                     # Page entries by domain — see frontend/src/page/ARCHITECTURE.md
+│   ├── shared/               # PageDualModeHost, StaticPageRenderer, DynamicPageHost
+│   ├── player/ admin/ designer/ director/ profile/
+├── component/                # Shared UI; complex page UI in designer-page/, director-page/
+├── hook/                     # React hooks: designer-page/, director-page/, player-page/
+├── lib/                      # Auth, config, game-engine, UI runtime; page helpers in lib/*-page/
 ├── store/                    # Lightweight client state
+├── shared/                   # Level seed data and shared static assets
+├── styles.css
 ├── App.tsx                   # Pathname-based routing, auth session
 └── main.tsx
 
@@ -99,7 +103,7 @@ scripts/dev.mjs               # Concurrent sbt + vite launcher
 - **API client**: `frontend/src/api/client.ts`
 - **Game engine**: Matter.js in `frontend/src/lib/game-engine/`
 - **Auth**: Mock auth in localStorage; users bind via `user` module `BindBackendUserApi` (`POST /auth/bind`)
-- **Complex page example**: `page/designer/DesignerPage/` split into hooks, components, lib, objects — see `page/designer/DesignerPage/ARCHITECTURE.md` and `page/ARCHITECTURE.md`
+- **Complex pages**: Split into `page/` entry + `hook/*-page/` + `component/*-page/` + `lib/*-page/` + `objects/*-page/` — see `frontend/src/page/ARCHITECTURE.md`; DesignerPage detail in `page/designer/DesignerPage/ARCHITECTURE.md`
 
 ### Key TypeScript Config
 

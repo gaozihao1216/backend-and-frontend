@@ -7,6 +7,7 @@
 | 文档 | 内容 |
 | --- | --- |
 | [frontend-architecture.md](./frontend-architecture.md) | 前端目录分层、路由、API 契约、页面与游戏引擎 |
+| [../frontend/src/page/ARCHITECTURE.md](../frontend/src/page/ARCHITECTURE.md) | `page/` 域划分、复杂页拆分清单与约定 |
 | [backend-architecture.md](./backend-architecture.md) | Scala 后端模块、APIMessage 模式、存储与 API 约定 |
 | [current-status.md](./current-status.md) | 当前已实现的功能、演示账号、已知限制 |
 | [roadmap.md](./roadmap.md) | 后续改进优先级与方向 |
