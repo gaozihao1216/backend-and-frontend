@@ -1,7 +1,11 @@
 {
+  "git.path": "\\\\wsl.localhost\\Ubuntu\\usr\\bin\\git",
   "git.useIntegratedAskPass": true,
   "terminal.integrated.env.linux": {
     "GIT_SSH_COMMAND": "ssh -i /home/gaozihao/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+  },
+  "terminal.integrated.env.windows": {
+    "GIT_SSH_COMMAND": "wsl ssh"
   },
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",
