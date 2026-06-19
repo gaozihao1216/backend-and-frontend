@@ -1,7 +1,7 @@
 package microservice.bird.routes
 
 import cats.effect.IO
-import microservice.bird.api.{
+import microservice.bird.api.design.{
   CreateBirdDesignAPIMessage,
   CreateBirdDesignBody,
   DeleteBirdDesignAPIMessage,

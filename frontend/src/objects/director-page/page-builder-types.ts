@@ -2,6 +2,7 @@ import type { getUiPreviewUser, PageComponent } from "../ui-customization/ui-cus
 import type { PageConfig } from "../ui-customization/ui-customization-objects.js";
 
 export type DirectorPageBuilderPageProps = {
+  userId: string;
   pageId: string | null;
   targetPath?: string;
   onBack: () => void;

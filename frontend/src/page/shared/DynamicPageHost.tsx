@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { DynamicPageRenderer } from "../../component/ui-renderer/index.js";
 import {
   getDefaultPageConfig,
@@ -6,12 +6,19 @@ import {
   getPageConfigRevision,
   subscribePageConfigStore,
 } from "../../lib/ui-customization.js";
+import {
+  getPublishedPageConfigRevision,
+  getRuntimePageConfig,
+  subscribePublishedPageConfigs,
+} from "../../lib/published-page-configs.js";
+import { hydratePublishedPageFromApi } from "../../lib/ui-page-publish.js";
 import { getUiPreviewUser } from "../../objects/ui-customization/ui-customization-objects.js";
 import { isStaticPageSupported, renderStaticPage, type StaticPageRenderContext } from "./StaticPageRenderer.js";
 
 type DynamicPageHostProps = {
   pageId: string | null;
   useDefaultConfig?: boolean | undefined;
+  preferPublishedConfig?: boolean | undefined;
   runtimeUserId?: string | undefined;
   onNavigate: (path: string) => void;
   embedded?: boolean | undefined;
@@ -21,6 +28,7 @@ type DynamicPageHostProps = {
 export const DynamicPageHost = ({
   pageId,
   useDefaultConfig = false,
+  preferPublishedConfig = false,
   runtimeUserId,
   onNavigate,
   embedded = false,
@@ -31,10 +39,28 @@ export const DynamicPageHost = ({
     getPageConfigRevision,
     getPageConfigRevision,
   );
+  const publishedRevision = useSyncExternalStore(
+    subscribePublishedPageConfigs,
+    getPublishedPageConfigRevision,
+    getPublishedPageConfigRevision,
+  );
   const pageConfig = pageId
-    ? (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId))
+    ? (useDefaultConfig
+      ? getDefaultPageConfig(pageId)
+      : preferPublishedConfig
+        ? getRuntimePageConfig(pageId)
+        : getPageConfig(pageId))
     : null;
   void pageConfigRevision;
+  void publishedRevision;
+
+  useEffect(() => {
+    if (!preferPublishedConfig || !runtimeUserId || !pageId) {
+      return;
+    }
+
+    void hydratePublishedPageFromApi(runtimeUserId, pageId);
+  }, [pageId, preferPublishedConfig, runtimeUserId]);
   const previewUser = pageConfig ? getUiPreviewUser(pageConfig.roleScope) : null;
 
   if (!pageId) {

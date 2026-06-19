@@ -3,29 +3,37 @@ package microservice.admin.routes
 import cats.effect.IO
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{AuthMiddleware, HttpError}
-import microservice.admin.api.{
+import microservice.admin.api.comments.{
+  DeleteCommentAPIMessage,
+  GetAdminCommentsAPIMessage
+}
+import microservice.admin.api.submissions.{
+  GetPendingSubmissionsAPIMessage,
+  ReviewSubmissionAPIMessage,
+  ReviewSubmissionBody
+}
+import microservice.admin.api.director.permissions.{
+  GetDirectorPermissionsAPIMessage,
+  TransferDirectorPermissionAPIMessage,
+  TransferDirectorPermissionBody
+}
+import microservice.admin.api.director.level_assignment.{
   AbolishDirectorSubmissionAPIMessage,
   AbolishDirectorSubmissionBody,
   AssignLevelSlotAPIMessage,
   AssignLevelSlotBody,
-  DeleteCommentAPIMessage,
-  GetAdminCommentsAPIMessage,
-  GetDirectorBirdSkillAPIMessage,
-  GetDirectorBirdSkillBoardAPIMessage,
   GetDirectorLevelAssignmentBoardAPIMessage,
-  GetDirectorPermissionsAPIMessage,
-  GetPendingSubmissionsAPIMessage,
-  ReviewSubmissionAPIMessage,
-  ReviewSubmissionBody,
-  SaveDirectorBirdSkillAPIMessage,
-  SaveDirectorBirdSkillBody,
-  TransferDirectorPermissionAPIMessage,
-  TransferDirectorPermissionBody,
   UnassignLevelSlotAPIMessage,
   UpdateLevelSlotBirdPoolAPIMessage,
   UpdateLevelSlotBirdPoolBody
 }
-import microservice.bird.api.{
+import microservice.admin.api.director.bird_skill.{
+  GetDirectorBirdSkillAPIMessage,
+  GetDirectorBirdSkillBoardAPIMessage,
+  SaveDirectorBirdSkillAPIMessage,
+  SaveDirectorBirdSkillBody
+}
+import microservice.bird.api.review.{
   GetPendingBirdSubmissionsAPIMessage,
   ReviewBirdSubmissionAPIMessage,
   ReviewBirdSubmissionBody

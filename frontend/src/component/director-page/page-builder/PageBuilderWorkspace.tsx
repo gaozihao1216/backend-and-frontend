@@ -50,6 +50,9 @@ export const PageBuilderWorkspace = ({
   addComponentToWorkingPanel,
   deleteWorkingPanel,
   handleSave,
+  handlePublish,
+  handleRollback,
+  publishState,
   openButtonDesign,
   openButtonConfig,
   openPanelCreate,
@@ -79,7 +82,13 @@ export const PageBuilderWorkspace = ({
           返回 UI 美化配置
         </button>
         <button type="button" disabled={!pageConfig} onClick={handleSave}>
-          保存配置
+          保存草稿
+        </button>
+        <button type="button" disabled={!pageConfig || publishState === "working"} onClick={() => void handlePublish()}>
+          发布到玩家端
+        </button>
+        <button type="button" className="secondary" disabled={!pageId || publishState === "working"} onClick={() => void handleRollback()}>
+          回滚上一版
         </button>
       </div>
     </div>

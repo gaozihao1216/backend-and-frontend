@@ -6,6 +6,10 @@ import {
   getPageConfigRevision,
   subscribePageConfigStore,
 } from "../lib/ui-customization.js";
+import {
+  getPublishedPageConfigRevision,
+  subscribePublishedPageConfigs,
+} from "../lib/published-page-configs.js";
 
 export const useSharedLevelMapPageConfig = (): PageConfig | null => {
   const pageConfigRevision = useSyncExternalStore(
@@ -13,9 +17,14 @@ export const useSharedLevelMapPageConfig = (): PageConfig | null => {
     getPageConfigRevision,
     getPageConfigRevision,
   );
+  const publishedRevision = useSyncExternalStore(
+    subscribePublishedPageConfigs,
+    getPublishedPageConfigRevision,
+    getPublishedPageConfigRevision,
+  );
   const basePage = useMemo(
     () => getSharedLevelMapPageConfig(),
-    [pageConfigRevision],
+    [pageConfigRevision, publishedRevision],
   );
   const [hydratedByRevision, setHydratedByRevision] = useState<{
     revision: number;

@@ -3,12 +3,13 @@ import { useDirectorPageBuilder } from "../../../hook/director-page/useDirectorP
 import type { DirectorPageBuilderPageProps } from "../../../objects/director-page/page-builder-types.js";
 
 export const DirectorPageBuilderPage = ({
+  userId,
   pageId,
   targetPath = "/",
   onBack,
   onNavigate,
 }: DirectorPageBuilderPageProps) => {
-  const pageBuilder = useDirectorPageBuilder({ pageId, targetPath, onNavigate });
+  const pageBuilder = useDirectorPageBuilder({ pageId, targetPath, onNavigate, userId });
 
   return (
     <PageBuilderWorkspace

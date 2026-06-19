@@ -34,6 +34,8 @@ import microservice.ui.api.pages.{
   DeleteUiPageAPIMessage,
   GetUiPageAPIMessage,
   ListUiPagesAPIMessage,
+  PublishUiPageAPIMessage,
+  RollbackUiPageAPIMessage,
   UpdateUiPageAPIMessage,
   UpdateUiPageBody
 }
@@ -181,6 +183,20 @@ object UiCustomizationRouter {
             .runAuthenticated(userId, databaseSession)
             .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
           }
+
+      case req @ POST -> Root / "pages" / pageId / "publish" =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        req.as[UpdateUiPageBody].flatMap { body =>
+          PublishUiPageAPIMessage(userId, pageId, body)
+            .runAuthenticated(userId, databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
+          }
+
+      case req @ POST -> Root / "pages" / pageId / "rollback" =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        RollbackUiPageAPIMessage(userId, pageId)
+          .runAuthenticated(userId, databaseSession)
+          .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
 
       case req @ DELETE -> Root / "pages" / pageId =>
         val userId = AuthMiddleware.userIdFromRequest(req).get

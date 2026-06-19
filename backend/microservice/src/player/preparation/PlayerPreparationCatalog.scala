@@ -22,7 +22,7 @@ object PlayerPreparationCatalog {
   def find(connection: Connection, birdType: String): Option[BirdCatalogEntry] =
     loadEntries(connection).find(_.birdType == birdType)
 
-  private def fromPublishedDesign(design: microservice.bird.objects.BirdDesign): BirdCatalogEntry = {
+  private def fromPublishedDesign(design: microservice.bird.objects.design.BirdDesign): BirdCatalogEntry = {
     val tierSkills =
       if (design.tierSkills.length >= BirdPreparationCatalog.maxTier) design.tierSkills.take(BirdPreparationCatalog.maxTier)
       else design.tierSkills ++ List.fill(BirdPreparationCatalog.maxTier - design.tierSkills.length)("待补充技能描述")

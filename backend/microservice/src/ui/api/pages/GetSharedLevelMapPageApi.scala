@@ -5,8 +5,7 @@ import java.sql.Connection
 import microservice.user.tables.user.UserTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.ui.objects.{PageConfig, SharedLevelMapPageId, UiCustomizationErrors}
-import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
+import microservice.ui.objects.{PageConfig, SharedLevelMapPageId}
 
 /** GET /player/ui/level-map 的 APIMessage：任意已登录玩家可读共享关卡地图页配置。 */
 final case class GetSharedLevelMapPageAPIMessage(
@@ -25,11 +24,7 @@ final case class GetSharedLevelMapPageAPIMessage(
               Right(())
           }
         )
-        page <- PlanSteps.require(
-          UiPageTable.findById(connection, SharedLevelMapPageId.value)
-            .map(UiPageRowMapper.toPageConfig)
-            .toRight(UiCustomizationErrors.PageNotFound(SharedLevelMapPageId.value).toHttpError)
-        )
+        page <- PlanSteps.require(UiPagePublishSupport.getPublishedPage(connection, SharedLevelMapPageId.value))
       } yield page
     }
 }

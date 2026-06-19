@@ -38,6 +38,11 @@ object UiCustomizationErrors {
       HttpError.conflict("UI_BUTTON_TEMPLATE_ALREADY_EXISTS", s"UI button template already exists: $templateId")
   }
 
+  final case class PageRollbackUnavailable(pageId: String) extends UiCustomizationApiError {
+    override def toHttpError: HttpError =
+      HttpError.notFound("UI_PAGE_ROLLBACK_UNAVAILABLE", s"No rollback snapshot for UI page: $pageId")
+  }
+
   final case class InvalidPageConfig(reason: String) extends UiCustomizationApiError {
     override def toHttpError: HttpError =
       HttpError.badRequest("UI_PAGE_CONFIG_INVALID", reason)

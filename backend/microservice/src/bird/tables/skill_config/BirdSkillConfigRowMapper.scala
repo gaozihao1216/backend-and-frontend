@@ -2,7 +2,7 @@ package microservice.bird.tables.skill_config
 
 import io.circe.Json
 import io.circe.parser.parse
-import microservice.bird.objects.BirdSkillConfig
+import microservice.bird.objects.skill.BirdSkillConfig
 
 /** BirdSkillConfigRow ↔ BirdSkillConfig 映射。 */
 object BirdSkillConfigRowMapper {

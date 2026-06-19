@@ -1,6 +1,6 @@
 package microservice.infrastructure.jdbc
 
-import microservice.admin.api.GetPendingSubmissionsAPIMessage
+import microservice.admin.api.submissions.GetPendingSubmissionsAPIMessage
 import microservice.level.api.GetPublishedLevelsAPIMessage
 import microservice.system.api.HealthAPIMessage
 import microservice.system.utils.SystemDefaults

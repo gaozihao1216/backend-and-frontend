@@ -59,8 +59,14 @@ backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 ├── user/                     # Identity, bind, profile, AccessControl, UserTable
 ├── level/                    # Level CRUD, submissions, player actions
 ├── admin/                    # Review, comments, director features
+│   ├── api/comments|submissions|director/{permissions,level_assignment,bird_skill}
+│   ├── objects/submission + objects/director/{permissions,level_assignment}
+│   └── support/director/     # Board assembly helpers
 ├── ui/                       # UI customization (director only)
 ├── bird/                     # Bird design & review
+│   ├── api/design|review
+│   ├── objects/design|submission|skill
+│   └── validation/design
 └── player/                   # Shop, social, preparation, UI runtime
 
 frontend/src/

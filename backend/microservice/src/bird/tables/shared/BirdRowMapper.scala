@@ -1,6 +1,7 @@
 package microservice.bird.tables.shared
 
-import microservice.bird.objects.{BirdDesign, BirdSubmission}
+import microservice.bird.objects.design.BirdDesign
+import microservice.bird.objects.submission.BirdSubmission
 import io.circe.parser._
 import io.circe.syntax._
 

@@ -2,7 +2,7 @@ package microservice.bird.tables.skill_config
 
 import microservice.bird.tables.skill_config.jdbc._
 
-import microservice.bird.objects.BirdSkillConfig
+import microservice.bird.objects.skill.BirdSkillConfig
 import java.sql.{Connection, PreparedStatement, ResultSet}
 import java.time.Instant
 import scala.collection.mutable

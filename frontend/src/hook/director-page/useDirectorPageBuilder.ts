@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { getTextContentMode } from "../../lib/dynamic-text-program.js";
 import { getPageConfig, savePageConfig } from "../../lib/ui-customization.js";
+import { publishUiPageConfig, rollbackUiPageConfig } from "../../lib/ui-page-publish.js";
 import {
   canUseAsWorkingPanel,
   createChildComponentId,
@@ -19,9 +20,10 @@ type UseDirectorPageBuilderOptions = {
   pageId: string | null;
   targetPath: string;
   onNavigate: (nextPath: string) => void;
+  userId?: string | null;
 };
 
-export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate }: UseDirectorPageBuilderOptions) => {
+export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate, userId = null }: UseDirectorPageBuilderOptions) => {
   const [pageConfig, setPageConfig] = useState<PageConfig | null>(() => pageId ? getPageConfig(pageId) : null);
   const [panelPickerOpen, setPanelPickerOpen] = useState(false);
   const [pickerPanelId, setPickerPanelId] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate }: UseDi
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [editingTextComponentId, setEditingTextComponentId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [publishState, setPublishState] = useState<"idle" | "working">("idle");
   const [builderSurfaceMode, setBuilderSurfaceMode] = useState<"editor" | "static" | "dynamic" | "compare">("editor");
   const previewUser = pageConfig ? getUiPreviewUser(pageConfig.roleScope) : null;
   const componentMap = useMemo(
@@ -193,7 +196,51 @@ export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate }: UseDi
     }
 
     savePageConfig(pageConfig);
-    setFeedback("配置已保存到本地。");
+    setFeedback("配置已保存到本地草稿。");
+  };
+
+  const handlePublish = async () => {
+    if (!pageConfig || !pageId) {
+      return;
+    }
+
+    if (!userId) {
+      setFeedback("请先绑定总监后端账号后再发布。");
+      return;
+    }
+
+    setPublishState("working");
+    try {
+      const publishedPage = await publishUiPageConfig(userId, pageConfig);
+      setPageConfig(publishedPage);
+      setFeedback("配置已发布，玩家将读取服务端版本。");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "发布到服务端失败。");
+    } finally {
+      setPublishState("idle");
+    }
+  };
+
+  const handleRollback = async () => {
+    if (!pageId) {
+      return;
+    }
+
+    if (!userId) {
+      setFeedback("请先绑定总监后端账号后再回滚。");
+      return;
+    }
+
+    setPublishState("working");
+    try {
+      const restoredPage = await rollbackUiPageConfig(userId, pageId);
+      setPageConfig(restoredPage);
+      setFeedback("已回滚到上一版发布配置。");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "没有可回滚的发布版本。");
+    } finally {
+      setPublishState("idle");
+    }
   };
   const openButtonDesign = () => {
     if (!pageId || activeComponent?.type !== "button") {
@@ -451,6 +498,9 @@ export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate }: UseDi
     addComponentToWorkingPanel,
     deleteWorkingPanel,
     handleSave,
+    handlePublish,
+    handleRollback,
+    publishState,
     openButtonDesign,
     openButtonConfig,
     openPanelCreate,

@@ -24,6 +24,7 @@ import microservice.routes.ApiRouter
 import microservice.ui.tables.button_template.{ButtonTemplateTable}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateTable}
 import microservice.ui.tables.ui_page.{UiPageTable}
+import microservice.ui.tables.ui_page_rollback.{UiPageRollbackTable}
 import org.http4s.HttpRoutes
 
 /** 应用级默认装配：数据库会话、种子数据、HTTP 路由树。
@@ -78,6 +79,7 @@ object SystemDefaults {
         FavoriteTable.initialize(connection)
         // --- UI 定制表 ---
         UiPageTable.initialize(connection)
+        UiPageRollbackTable.initialize(connection)
         ButtonTemplateTable.initialize(connection)
         StretchVisualTemplateTable.initialize(connection)
         // --- 玩家运行时表 ---

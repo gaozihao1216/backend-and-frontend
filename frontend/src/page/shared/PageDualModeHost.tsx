@@ -7,6 +7,12 @@ import {
   subscribePageConfigStore,
 } from "../../lib/ui-customization.js";
 import {
+  getPublishedPageConfigRevision,
+  getRuntimePageConfig,
+  subscribePublishedPageConfigs,
+} from "../../lib/published-page-configs.js";
+import { hydratePublishedPageFromApi } from "../../lib/ui-page-publish.js";
+import {
   readPageDisplayModeFromSearch,
   readStoredPageDisplayMode,
   persistPageDisplayMode,
@@ -54,15 +60,36 @@ export const PageDualModeHost = ({
   onOpenDesignerDesign,
   onOpenDesignerPortfolio,
 }: PageDualModeHostProps) => {
+  const preferPublishedConfig = user.role === "player" && Boolean(user.apiUserId);
   const pageConfigRevision = useSyncExternalStore(
     subscribePageConfigStore,
     getPageConfigRevision,
     getPageConfigRevision,
   );
-  const pageConfig = useMemo(
-    () => (useDefaultConfig ? getDefaultPageConfig(pageId) : getPageConfig(pageId)),
-    [pageId, useDefaultConfig, pageConfigRevision],
+  const publishedRevision = useSyncExternalStore(
+    subscribePublishedPageConfigs,
+    getPublishedPageConfigRevision,
+    getPublishedPageConfigRevision,
   );
+  const pageConfig = useMemo(() => {
+    if (useDefaultConfig) {
+      return getDefaultPageConfig(pageId);
+    }
+
+    if (preferPublishedConfig) {
+      return getRuntimePageConfig(pageId);
+    }
+
+    return getPageConfig(pageId);
+  }, [pageId, preferPublishedConfig, publishedRevision, useDefaultConfig, pageConfigRevision]);
+
+  useEffect(() => {
+    if (!preferPublishedConfig || !user.apiUserId) {
+      return;
+    }
+
+    void hydratePublishedPageFromApi(user.apiUserId, pageId);
+  }, [pageId, preferPublishedConfig, user.apiUserId]);
   const staticAvailable = isStaticPageSupported(pageId);
   const dynamicAvailable = Boolean(pageConfig && pageConfig.components.length > 0);
   const [mode, setMode] = useState<PageDisplayMode>(() => resolveInitialMode(search));
@@ -120,6 +147,7 @@ export const PageDualModeHost = ({
       <DynamicPageHost
         pageId={pageId}
         useDefaultConfig={useDefaultConfig}
+        preferPublishedConfig={preferPublishedConfig}
         runtimeUserId={user.apiUserId ?? undefined}
         onNavigate={onNavigate}
         embedded

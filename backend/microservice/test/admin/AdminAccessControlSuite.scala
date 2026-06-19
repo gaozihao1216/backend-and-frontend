@@ -1,12 +1,10 @@
 package microservice.admin
 
-import microservice.admin.api.{
-  GetAdminCommentsAPIMessage,
-  GetDirectorLevelAssignmentBoardAPIMessage,
-  GetDirectorPermissionsAPIMessage,
-  GetPendingSubmissionsAPIMessage
-}
-import microservice.bird.api.GetPendingBirdSubmissionsAPIMessage
+import microservice.admin.api.comments.GetAdminCommentsAPIMessage
+import microservice.admin.api.director.level_assignment.GetDirectorLevelAssignmentBoardAPIMessage
+import microservice.admin.api.director.permissions.GetDirectorPermissionsAPIMessage
+import microservice.admin.api.submissions.GetPendingSubmissionsAPIMessage
+import microservice.bird.api.review.GetPendingBirdSubmissionsAPIMessage
 import microservice.testsupport.TestSupport
 import microservice.ui.api.pages.ListUiPagesAPIMessage
 import munit.CatsEffectSuite

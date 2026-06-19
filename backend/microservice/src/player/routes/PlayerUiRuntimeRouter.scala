@@ -7,7 +7,7 @@ import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.{AuthMiddleware, HttpError}
 import microservice.player.api.ui.{GetPlayerUiDataAPIMessage, InvokePlayerUiActionAPIMessage}
 import microservice.system.objects.ApiSuccess
-import microservice.ui.api.pages.GetSharedLevelMapPageAPIMessage
+import microservice.ui.api.pages.{GetPlayerUiPageAPIMessage, GetSharedLevelMapPageAPIMessage}
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
@@ -26,6 +26,12 @@ object PlayerUiRuntimeRouter {
       case req @ GET -> Root / "ui" / "level-map" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
         GetSharedLevelMapPageAPIMessage(userId)
+          .runAuthenticated(userId, databaseSession)
+          .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
+
+      case req @ GET -> Root / "ui" / "pages" / pageId =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        GetPlayerUiPageAPIMessage(userId, pageId)
           .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(page => ApiSuccess(page))))
 

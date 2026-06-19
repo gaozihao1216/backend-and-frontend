@@ -262,14 +262,15 @@ export const App = () => {
       }
 
       const targetPath = pathname.slice(0, -PAGE_BUILDER_UPDATE_SUFFIX.length) || "/";
-      return (
+      return renderBoundPage(user, "页面优化", (apiUserId) => (
         <DirectorPageBuilderPage
+          userId={apiUserId}
           pageId={pageId}
           targetPath={targetPath}
           onBack={() => navigate(DIRECTOR_UI_CUSTOMIZATION_PATH)}
           onNavigate={navigate}
         />
-      );
+      ));
     }
 
     if (pathname === DYNAMIC_PAGE_PATH) {

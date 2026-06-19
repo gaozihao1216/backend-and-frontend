@@ -182,6 +182,41 @@ sbt run
 
 - 关卡槽位分配、鸟类技能板、权限转移等（`/admin/director/*` 部分路径）
 
+目录按业务域分子包（与 `player/`、`ui/` 一致）：
+
+```text
+admin/
+├── api/
+│   ├── comments/              # 评论管理
+│   │   ├── DeleteCommentApi.scala
+│   │   └── GetAdminCommentsApi.scala
+│   ├── submissions/           # 关卡投稿审核
+│   │   ├── GetPendingSubmissionsApi.scala
+│   │   ├── ReviewSubmissionApi.scala
+│   │   └── ReviewSubmissionBody.scala
+│   └── director/
+│       ├── permissions/       # 总监权限转移
+│       │   ├── GetDirectorPermissionsApi.scala
+│       │   ├── TransferDirectorPermissionApi.scala
+│       │   └── TransferDirectorPermissionBody.scala
+│       ├── level_assignment/  # 关卡槽位分配
+│       │   ├── DirectorLevelAssignmentApi.scala
+│       │   └── DirectorLevelAssignmentBodies.scala
+│       └── bird_skill/        # 鸟类技能配置
+│           ├── DirectorBirdSkillApi.scala
+│           └── SaveDirectorBirdSkillBody.scala
+├── objects/
+│   ├── submission/            # 审核结果与错误码
+│   └── director/
+│       ├── permissions/
+│       └── level_assignment/
+├── support/director/            # 看板组装、校验等可复用逻辑
+│   ├── level_assignment/
+│   └── bird_skill/
+├── routes/AdminRouter.scala
+└── tables/AdminAuditTable.scala
+```
+
 ### ui
 
 总监专用，挂载在 `/admin/director/ui`：
@@ -193,6 +228,34 @@ sbt run
 ### bird
 
 设计师创建/编辑/提交鸟类设计；管理员审核鸟类投稿。
+
+目录按生命周期分子包：
+
+```text
+bird/
+├── api/
+│   ├── design/                # 设计师 CRUD + 提交
+│   │   ├── CreateBirdDesignApi.scala / Body
+│   │   ├── UpdateBirdDesignApi.scala / Body
+│   │   ├── ListBirdDesignsApi.scala（含 DeleteBirdDesignAPIMessage）
+│   │   ├── SubmitBirdDesignApi.scala
+│   │   └── BirdDesignInputBody.scala
+│   └── review/                # 管理员审核
+│       ├── GetPendingBirdSubmissionsApi.scala
+│       ├── ReviewBirdSubmissionApi.scala
+│       └── ReviewBirdSubmissionBody.scala
+├── objects/
+│   ├── design/BirdDesign.scala
+│   ├── submission/            # BirdSubmission、ReviewedBirdSubmission 等
+│   └── skill/                 # BirdSkillConfig、DirectorBirdSkillBoard/Entry
+├── validation/design/         # BirdDesignValidation
+├── routes/DesignerBirdRouter.scala
+└── tables/
+    ├── design/
+    ├── submission/
+    ├── skill_config/
+    └── shared/                # BirdRowMapper、BirdRows
+```
 
 ### player
 

@@ -31,6 +31,7 @@ object InMemoryStore {
 
   // --- UI 定制模板 ---
   var uiPages: Vector[UiPageRow] = Vector.empty
+  var uiPageRollbacks: Vector[microservice.ui.tables.ui_page_rollback.UiPageRollbackRow] = Vector.empty
   var buttonTemplates: Vector[ButtonTemplateRow] = Vector.empty
   var stretchVisualTemplates: Vector[StretchVisualTemplateRow] = Vector.empty
 
@@ -73,6 +74,7 @@ object InMemoryStore {
     favorites = nextFavorites
     submissions = nextSubmissions
     uiPages = nextUiPages
+    uiPageRollbacks = Vector.empty
     buttonTemplates = nextButtonTemplates
     stretchVisualTemplates = nextStretchVisualTemplates
     levelSlotAssignments = nextLevelSlotAssignments
