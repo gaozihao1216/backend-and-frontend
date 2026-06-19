@@ -9,7 +9,7 @@ import microservice.level.tables.shared.LevelRow
 import microservice.level.tables.favorite._
 
 import java.sql.Connection
-import microservice.level.objects.Favorite
+import microservice.level.objects.social.Favorite
 
 private[tables] object FavoriteTableJdbcWrite {
   def insert(connection: Connection, favorite: Favorite): Favorite = {

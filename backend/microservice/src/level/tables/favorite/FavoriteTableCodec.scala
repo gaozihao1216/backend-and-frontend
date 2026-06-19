@@ -7,7 +7,7 @@ package microservice.level.tables.favorite
 import microservice.level.tables.shared.LevelRow
 
 import java.sql.ResultSet
-import microservice.level.objects.Favorite
+import microservice.level.objects.social.Favorite
 
 private[tables] object FavoriteTableCodec {
   val baseSelect: String =

@@ -4,7 +4,8 @@
   */
 package microservice.level.tables.shared
 
-import microservice.level.objects.{BirdPool, LevelData}
+import microservice.level.objects.inventory.{BirdPool}
+import microservice.level.objects.level.{LevelData}
 import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
 
 final case class LevelRow(

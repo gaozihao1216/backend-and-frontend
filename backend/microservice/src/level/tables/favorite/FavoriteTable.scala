@@ -5,7 +5,7 @@ import microservice.level.tables.shared.LevelRow
 import microservice.level.tables.favorite.inmemory._
 import microservice.level.tables.favorite.jdbc._
 
-import microservice.level.objects.Favorite
+import microservice.level.objects.social.Favorite
 import java.sql.Connection
 
 /** 关卡收藏表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。

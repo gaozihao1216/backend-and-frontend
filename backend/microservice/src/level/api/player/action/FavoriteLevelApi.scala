@@ -1,0 +1,40 @@
+package microservice.level.api.player.action
+
+import cats.effect.IO
+import java.sql.Connection
+import java.time.Instant
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.http.HttpError
+import microservice.user.utils.AccessControl
+import microservice.level.objects.social.Favorite
+import microservice.level.tables.favorite.FavoriteTable
+import microservice.level.support.player.LevelApiSupport
+import microservice.system.objects.UserRole
+
+final case class FavoriteLevelAPIMessage(
+  playerId: String,
+  levelId: String
+) extends APIWithTokenMessage[Favorite] {
+  override def token: String = playerId
+
+  override def plan(connection: Connection): IO[Either[HttpError, Favorite]] =
+    PlanSteps.finish {
+      for {
+        _ <- PlanSteps.require(AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ()))
+        _ <- PlanSteps.require(LevelApiSupport.publishedLevel(connection, levelId).map(_ => ()))
+        favorite <- PlanSteps.read(
+          FavoriteTable.find(connection, playerId, levelId).getOrElse {
+            FavoriteTable.insert(
+              connection,
+              Favorite(
+                id = FavoriteTable.nextId(connection),
+                levelId = levelId,
+                userId = playerId,
+                createdAt = Instant.now().toString
+              )
+            )
+          }
+        )
+      } yield favorite
+    }
+}

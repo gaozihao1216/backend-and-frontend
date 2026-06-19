@@ -9,7 +9,7 @@ import microservice.admin.objects.director.level_assignment.{
 }
 import microservice.bird.tables.design.BirdDesignTable
 import microservice.bird.tables.shared.BirdRowMapper
-import microservice.level.objects.SubmissionWithLevel
+import microservice.level.objects.submission.SubmissionWithLevel
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.tables.slot_assignment.LevelSlotAssignmentTable

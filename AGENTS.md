@@ -58,6 +58,9 @@ backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 ├── system/                   # Health, enums, seed data
 ├── user/                     # Identity, bind, profile, AccessControl, UserTable
 ├── level/                    # Level CRUD, submissions, player actions
+│   ├── api/design + api/player/{read,action}
+│   ├── objects/{level,terrain,submission,social,inventory,errors}
+│   └── support/player/
 ├── admin/                    # Review, comments, director features
 │   ├── api/comments|submissions|director/{permissions,level_assignment,bird_skill}
 │   ├── objects/submission + objects/director/{permissions,level_assignment}

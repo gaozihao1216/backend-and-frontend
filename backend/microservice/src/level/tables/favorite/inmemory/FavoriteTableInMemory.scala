@@ -9,7 +9,7 @@ import microservice.level.tables.shared.LevelRow
 import microservice.level.tables.favorite._
 
 import microservice.infrastructure.database.InMemoryStore
-import microservice.level.objects.Favorite
+import microservice.level.objects.social.Favorite
 import microservice.system.objects.LevelStatus
 
 private[tables] object FavoriteTableInMemory {

@@ -8,7 +8,7 @@ import microservice.level.tables.shared.LevelSlotAssignmentRow
 
 import io.circe.parser.decode
 import io.circe.syntax._
-import microservice.level.objects.BirdPool
+import microservice.level.objects.inventory.BirdPool
 
 private[tables] object LevelSlotAssignmentTableCodec {
   val baseSelect: String =

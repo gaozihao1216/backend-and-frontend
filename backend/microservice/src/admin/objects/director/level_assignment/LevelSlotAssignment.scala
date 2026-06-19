@@ -2,7 +2,8 @@ package microservice.admin.objects.director.level_assignment
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.level.objects.{BirdPool, SubmissionWithLevel}
+import microservice.level.objects.inventory.{BirdPool}
+import microservice.level.objects.submission.{SubmissionWithLevel}
 import microservice.level.tables.shared.LevelSlotAssignmentRow
 
 /** 关卡槽位分配记录 DTO：将 LevelSlotAssignmentRow 转为 API 响应结构。

@@ -13,7 +13,8 @@ import microservice.admin.support.director.level_assignment.DirectorLevelAssignm
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.objects.{BirdPool, SubmissionWithLevel}
+import microservice.level.objects.inventory.{BirdPool}
+import microservice.level.objects.submission.{SubmissionWithLevel}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.shared.{LevelSlotAssignmentRow}
 import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}

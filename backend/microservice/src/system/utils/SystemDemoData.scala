@@ -1,7 +1,9 @@
 package microservice.system.utils
 
 import microservice.user.tables.user.UserRow
-import microservice.level.objects._
+import microservice.level.objects.level._
+import microservice.level.objects.terrain._
+import microservice.level.objects.inventory._
 import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}
 import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, SubmissionStatus, UserRole}
 

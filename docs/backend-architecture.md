@@ -48,7 +48,7 @@ backend/microservice/src/
 - `tables/`：仅 `*Row` 与 Table 门面；Row 与 domain 对象分离，Table 负责 `Row ↔ objects` 映射
 - `runtime/`、`preparation/`、`validation/`、`admin/support/`：可复用逻辑与服务，import `objects/` 中的类型
 
-示例：`PlayerPreparationSupport` 留在 `player/preparation/`，`PlayerRuntimeDefaults` / `PlayerWeeklyCheckInService` 留在 `player/runtime/`；`CreateLevelBody` 等在 `level/api/` 独立文件；`BirdSkillConfigRow` + `BirdSkillConfigRowMapper` 在 `bird/tables/skill_config/`。
+示例：`PlayerPreparationSupport` 留在 `player/preparation/`，`PlayerRuntimeDefaults` / `PlayerWeeklyCheckInService` 留在 `player/runtime/`；`CreateLevelBody` 等在 `level/api/design/` 独立文件；`BirdSkillConfigRow` + `BirdSkillConfigRowMapper` 在 `bird/tables/skill_config/`。
 
 ## APIMessage 模式
 
@@ -171,6 +171,29 @@ sbt run
 玩家：
 
 - 已发布关卡列表/详情、评分、收藏、评论
+
+目录按角色与数据域分子包：
+
+```text
+level/
+├── api/
+│   ├── design/                # 设计师创建与提交
+│   │   ├── CreateLevelApi.scala / Body
+│   │   └── SubmitLevelApi.scala / Body
+│   └── player/
+│       ├── read/              # 已发布关卡、评论、收藏列表
+│       └── action/            # 评分、收藏、评论写入
+├── objects/
+│   ├── level/                 # Level、LevelData、GameWorld
+│   ├── terrain/               # 地形、障碍物、敌人（Position、LevelGround 等）
+│   ├── submission/            # Submission、SubmissionWithLevel
+│   ├── social/                # Rating、LevelComment、Favorite 等
+│   ├── inventory/             # BirdInventory、BirdPool
+│   └── errors/                # CreateLevelErrors
+├── support/player/            # LevelApiSupport（已发布关卡校验）
+├── routes/                    # DesignerLevelRouter、PlayerLevel*Router
+└── tables/                    # level / submission / rating / comment / favorite / slot_assignment
+```
 
 ### admin
 

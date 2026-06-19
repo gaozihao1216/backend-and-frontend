@@ -8,7 +8,7 @@ import microservice.level.tables.shared.LevelRow
 
 import io.circe.parser.decode
 import io.circe.syntax._
-import microservice.level.objects.LevelData
+import microservice.level.objects.level.LevelData
 import microservice.system.objects.{LevelStatus, LevelTag}
 import java.sql.{PreparedStatement, ResultSet, SQLException, Types}
 

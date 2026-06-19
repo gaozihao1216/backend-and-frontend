@@ -3,7 +3,7 @@ package microservice.admin.api.director.level_assignment
 import cats.effect.IO
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.level.objects.BirdPool
+import microservice.level.objects.inventory.BirdPool
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 

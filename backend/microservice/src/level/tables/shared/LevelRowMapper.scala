@@ -1,6 +1,8 @@
 package microservice.level.tables.shared
 
-import microservice.level.objects.{Level, LevelComment, Rating, Submission}
+import microservice.level.objects.level.{Level}
+import microservice.level.objects.social.{LevelComment, Rating}
+import microservice.level.objects.submission.{Submission}
 
 /** 持久化 Row 与领域对象之间的映射器。
   *

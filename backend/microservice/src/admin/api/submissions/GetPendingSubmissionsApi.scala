@@ -6,7 +6,7 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.SubmissionWithLevel
+import microservice.level.objects.submission.SubmissionWithLevel
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.AdminLevel

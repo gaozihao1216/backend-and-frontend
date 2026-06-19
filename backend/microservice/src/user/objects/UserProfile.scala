@@ -3,7 +3,8 @@ package microservice.user.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.user.objects.BackendUser
-import microservice.level.objects.{Level, LevelComment}
+import microservice.level.objects.level.{Level}
+import microservice.level.objects.social.{LevelComment}
 
 /** 用户资料页聚合响应（profile 层）。
   *

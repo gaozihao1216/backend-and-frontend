@@ -6,7 +6,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.utils.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.LevelComment
+import microservice.level.objects.social.LevelComment
 import microservice.level.tables.comment.CommentTable
 import microservice.system.objects.AdminLevel
 
