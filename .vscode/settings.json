@@ -1,4 +1,8 @@
 {
+  "git.useIntegratedAskPass": true,
+  "terminal.integrated.env.linux": {
+    "GIT_SSH_COMMAND": "ssh -i /home/gaozihao/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+  },
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",
   "C_Cpp_Runner.debuggerPath": "gdb",
