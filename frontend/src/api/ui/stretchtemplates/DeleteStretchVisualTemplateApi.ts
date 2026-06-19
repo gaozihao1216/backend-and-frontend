@@ -1,0 +1,29 @@
+import { DeleteStretchVisualTemplateResponseDataSchema, type UiStretchVisualTemplate } from "../../api-contracts.js";
+import { request } from "../../client.js";
+import type { StretchVisualTemplateKind } from "../../../objects/ui-customization/stretch-visual-template.js";
+import { stretchTemplateItemApiPath } from "./stretchTemplatePaths.js";
+
+export class DeleteStretchVisualTemplateApi {
+  path(kind: StretchVisualTemplateKind, templateId: string): string {
+    return stretchTemplateItemApiPath(kind, templateId);
+  }
+
+  async execute(
+    userId: string,
+    kind: StretchVisualTemplateKind,
+    templateId: string,
+  ): Promise<UiStretchVisualTemplate> {
+    return request(
+      this.path(kind, templateId),
+      { method: "DELETE", headers: { "x-user-id": userId } },
+      DeleteStretchVisualTemplateResponseDataSchema,
+    );
+  }
+}
+
+export const deleteStretchVisualTemplateApi = new DeleteStretchVisualTemplateApi();
+export const deleteStretchVisualTemplate = (
+  userId: string,
+  kind: StretchVisualTemplateKind,
+  templateId: string,
+) => deleteStretchVisualTemplateApi.execute(userId, kind, templateId);

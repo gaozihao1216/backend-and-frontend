@@ -3,7 +3,12 @@ package microservice.ui.api.buttontemplates
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{ButtonTemplate, ButtonTemplateCategory, UiCustomizationErrors}
 
-/** 按钮模板的字段校验与 trim 规范化（创建/更新前调用）。 */
+/** 按钮模板的字段校验与 trim 规范化。
+  *
+  * 定义：Create/Update ButtonTemplate APIMessage 写入前的共享校验层。
+  * 作用：sanitize 去空白；validate 检查必填字段、category 与 slice 数值。
+  * 关联：ButtonTemplateCategory；UiCustomizationErrors.InvalidButtonTemplate。
+  */
 private[api] object ButtonTemplateValidation {
   /** 校验 id/name/sourceDataUrl、category 与九宫格 slice 数值合法性。 */
   def validate(template: ButtonTemplate): Either[HttpError, Unit] =
@@ -26,6 +31,8 @@ private[api] object ButtonTemplateValidation {
       category = template.category.trim
     )
 
+  /** 检查九宫格 slice 四边值均为有限非负数。 */
+  /** 检查九宫格 slice 四边值均为有限非负数。 */
   private def isValidSlice(template: ButtonTemplate): Boolean = {
     val values = List(template.slice.top, template.slice.right, template.slice.bottom, template.slice.left)
     values.forall(value => !value.isNaN && !value.isInfinity && value >= 0)

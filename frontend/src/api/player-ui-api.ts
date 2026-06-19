@@ -1,2 +1,2 @@
-export * from "./ui-runtime/GetPlayerUiDataApi.js";
-export * from "./ui-runtime/InvokePlayerUiActionApi.js";
+export * from "./player/ui/GetPlayerUiDataApi.js";
+export * from "./player/ui/InvokePlayerUiActionApi.js";

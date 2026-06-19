@@ -4,7 +4,13 @@ import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 import java.sql.{ResultSet, SQLException}
 
-/** JDBC 读路径专用：SQL 列名 ↔ UserRow 的编解码。 */
+/** JDBC 读路径：SQL 列名 ↔ UserRow 编解码。
+  *
+  * 定义：baseSelect SQL 片段 + rowFromResultSet 解析函数。
+  * 问题：role/adminLevel 存字符串，需 fromString 并非法值抛 SQLException 回滚事务。
+  * 作用：UserTableJdbcRead 所有 SELECT 复用 baseSelect。
+  * 关联：[[UserTableJdbcRead]]、[[UserTableJdbcWrite.updateAdminLevel]] re-read。
+  */
 private[tables] object UserTableCodec {
 
   /** 所有 SELECT 复用的基础语句（ snake_case 列名对应 PostgreSQL 表结构）。 */

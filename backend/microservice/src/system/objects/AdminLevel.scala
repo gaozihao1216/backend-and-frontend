@@ -2,10 +2,12 @@ package microservice.system.objects
 
 import io.circe.{Decoder, Encoder}
 
-/** 管理员子级别，仅当 UserRole.Admin 时有效。
+/** 管理员子级别枚举，仅 UserRole.Admin 时有效。
   *
-  * 实现：standard 可审核关卡与评论；director 额外拥有 UI 定制、关卡槽位、鸟类技能配置权限。
-  * 关联：UserRow.adminLevel、AccessControl.requireAdminLevel。
+  * 定义：Standard / Director 两档，存于 UserRow.adminLevel Option。
+  * 问题：审核员与总监权限差异大，不能仅用 Admin 角色一刀切。
+  * 作用：standard 负责审核；director 额外拥有 UI/槽位/鸟技能配置。
+  * 关联：[[UserRow]]、[[AccessControl.requireAdminLevel]]、admin/director 路由。
   */
 sealed trait AdminLevel {
   def value: String

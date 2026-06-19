@@ -2,9 +2,12 @@ package microservice.system.objects
 
 import io.circe.{Decoder, Encoder}
 
-/** 关卡生命周期状态，描述设计师草稿到发布/驳回的流转。
+/** 关卡生命周期状态枚举。
   *
-  * 关联：LevelRow.status、玩家列表仅暴露 Published；管理员可见 PendingReview。
+  * 定义：sealed trait + 四个 case object，value 为 JSON/DB 字符串。
+  * 问题：设计师草稿、待审、已发布、已驳回需在同一字段上区分且类型安全。
+  * 作用：驱动 LevelRow.status 流转；玩家 API 过滤 Published；审核 API 处理 PendingReview。
+  * 关联：[[LevelRow]]、CreateLevel/SubmitLevel/ReviewSubmission APIMessage；前端 level schema。
   */
 sealed trait LevelStatus {
   def value: String

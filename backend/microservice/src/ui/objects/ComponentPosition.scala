@@ -4,16 +4,19 @@ package microservice.ui.objects
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, HCursor, Json}
 
+/** 位置单位：percent 或 px。 */
 sealed trait ComponentPositionUnit {
   def value: String
 }
 
+/** ComponentPositionUnit 枚举与编解码。 */
 object ComponentPositionUnit {
   case object Percent extends ComponentPositionUnit { override val value: String = "percent" }
   case object Px extends ComponentPositionUnit { override val value: String = "px" }
 
   private val byValue = List(Percent, Px).map(unit => unit.value -> unit).toMap
 
+  /** 从字符串解析位置单位。 */
   def fromString(value: String): Option[ComponentPositionUnit] =
     byValue.get(value)
 
@@ -24,6 +27,7 @@ object ComponentPositionUnit {
     Decoder.decodeString.emap(value => byValue.get(value).toRight(s"Unknown component position unit: $value"))
 }
 
+/** 组件矩形区域（单位 + x/y/width/height）。 */
 final case class ComponentPosition(
   unit: ComponentPositionUnit,
   x: Double,
@@ -32,6 +36,7 @@ final case class ComponentPosition(
   height: Double
 )
 
+/** ComponentPosition 编解码（unit 默认 percent）。 */
 object ComponentPosition {
   implicit val encoder: Encoder[ComponentPosition] = Encoder.instance { position =>
     Json.obj(

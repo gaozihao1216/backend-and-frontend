@@ -2,9 +2,12 @@ package microservice.system.objects
 
 import io.circe.{Decoder, Encoder}
 
-/** 关卡展示标签，用于列表筛选与元数据展示。
+/** 关卡展示标签枚举。
   *
-  * 与前端 LevelTagSchema 对齐；LevelRow.tags 为 List[LevelTag]。
+  * 定义：Puzzle/Hard/Beginner/Funny/Strategy 五类标签，可多选存于 LevelRow.tags。
+  * 问题：玩家浏览关卡需按难度/风格筛选与展示元数据。
+  * 作用：设计师创建关卡时选择；列表 API 返回供前端 badge 渲染。
+  * 关联：[[LevelRow.tags]]、前端 LevelTagSchema、[[SystemDemoData.demoLevelData]] 样例。
   */
 sealed trait LevelTag {
   def value: String

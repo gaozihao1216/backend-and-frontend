@@ -10,6 +10,7 @@ import java.sql.Connection
 import microservice.ui.objects.PageComponent
 
 private[tables] object UiPageTableJdbcWrite {
+  /** INSERT 新页面行。 */
   def insert(connection: Connection, row: UiPageRow): UiPageRow = {
     val statement = connection.prepareStatement(
       """
@@ -26,6 +27,7 @@ private[tables] object UiPageTableJdbcWrite {
     }
   }
 
+  /** UPDATE 已有页面行；影响行数为 0 时返回 None。 */
   def update(connection: Connection, row: UiPageRow): Option[UiPageRow] = {
     val statement = connection.prepareStatement(
       """
@@ -49,6 +51,7 @@ private[tables] object UiPageTableJdbcWrite {
     }
   }
 
+  /** DELETE 页面行；先 read 再 delete 返回被删行。 */
   def deleteById(connection: Connection, pageId: String): Option[UiPageRow] =
     UiPageTableJdbcRead.findById(connection, pageId).flatMap { row =>
       val statement = connection.prepareStatement("DELETE FROM ui_pages WHERE id = ?")
@@ -60,11 +63,13 @@ private[tables] object UiPageTableJdbcWrite {
       }
     }
 
+  /** 向页面 components JSON 追加组件。 */
   def addComponent(connection: Connection, pageId: String, component: PageComponent, updatedAt: String): Option[UiPageRow] =
     UiPageTableJdbcRead.findById(connection, pageId).filterNot(_.components.exists(_.id == component.id)).flatMap { row =>
       update(connection, row.copy(components = row.components :+ component, updatedAt = updatedAt))
     }
 
+  /** 替换页面内指定 id 的组件。 */
   def updateComponent(connection: Connection, pageId: String, componentId: String, component: PageComponent, updatedAt: String): Option[UiPageRow] =
     UiPageTableJdbcRead.findById(connection, pageId).filter(_.components.exists(_.id == componentId)).flatMap { row =>
       update(connection, row.copy(
@@ -73,6 +78,7 @@ private[tables] object UiPageTableJdbcWrite {
       ))
     }
 
+  /** 从页面 components 中移除指定组件。 */
   def deleteComponent(connection: Connection, pageId: String, componentId: String, updatedAt: String): Option[UiPageRow] =
     UiPageTableJdbcRead.findById(connection, pageId).filter(_.components.exists(_.id == componentId)).flatMap { row =>
       update(connection, row.copy(

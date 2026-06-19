@@ -5,7 +5,13 @@ import microservice.user.tables.user._
 import microservice.system.objects.UserRole
 import java.sql.Connection
 
-/** users 表的 JDBC 只读操作。 */
+/** users 表 JDBC 只读操作。
+  *
+  * 定义：listAll/findById/findByUsername/countByRole 四个 SELECT 入口。
+  * 问题：需正确关闭 Statement/ResultSet 避免连接泄漏。
+  * 作用：参数化 WHERE/ORDER BY，ResultSet 经 UserTableCodec 转 Row。
+  * 关联：[[UserTable]] 读分流；[[UserTableCodec.baseSelect]]。
+  */
 private[tables] object UserTableJdbcRead {
 
   def listAll(connection: Connection): Vector[UserRow] = {

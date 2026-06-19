@@ -11,6 +11,7 @@ import microservice.ui.objects.StretchVisualTemplateKind
   * 路由层以 /panel-templates 与 /pattern-templates 区分 kind；存储共用一张表。
   */
 object StretchVisualTemplateTable {
+  /** 判断当前是否为 InMemory 模式（connection == null）。 */
   private def isInMemory(connection: Connection): Boolean =
     connection == null
 

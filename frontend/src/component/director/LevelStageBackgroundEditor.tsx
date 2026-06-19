@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { createStretchVisualTemplate } from "../../api/ui/stretch-visual-templates-api.js";
+import { createStretchVisualTemplate } from "../../api/ui/stretchtemplates/CreateStretchVisualTemplateApi.js";
 import { useDirectorTemplateLibrary } from "../../hook/useDirectorTemplateLibrary.js";
 import {
   createLibraryTemplateSelectOptions,

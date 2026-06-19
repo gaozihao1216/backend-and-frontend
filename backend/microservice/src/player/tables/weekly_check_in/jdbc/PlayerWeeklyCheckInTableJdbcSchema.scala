@@ -1,7 +1,10 @@
-/** 每周签到表的 PostgreSQL DDL 与索引（JDBC 模式首次 initialize 时执行）。
+/**
   *
-  * 关联：玩家模块 Table 门面在 JDBC 模式下 startup 时调用。
-  */
+   * 定义：PlayerWeeklyCheckInTableJdbcSchema：PostgreSQL DDL 与迁移/种子 SQL。
+ * 问题：JDBC 模式冷启动需建表且与 in-memory 演示数据 id 对齐。
+ * 作用：initialize(connection) 执行 CREATE TABLE / ALTER / INSERT ON CONFLICT。
+ * 关联：[[PlayerWeeklyCheckInTableTable]] initialize 调用；docker init-store.sql 可对齐。
+ */
 package microservice.player.tables.weekly_check_in.jdbc
 
 import microservice.player.tables.weekly_check_in._

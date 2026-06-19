@@ -3,10 +3,13 @@ package microservice.ui.objects
 /** UI 定制模块的 sealed 错误层次，映射为带业务 code 的 HttpError。 */
 import microservice.infrastructure.http.HttpError
 
+/** UI 定制模块 API 错误的 sealed 根类型。 */
 sealed trait UiCustomizationApiError {
+  /** 映射为带业务 code 的 HttpError。 */
   def toHttpError: HttpError
 }
 
+/** UI 定制模块全部业务错误 case class 集合；各 toHttpError 映射 HTTP 状态码。 */
 object UiCustomizationErrors {
   final case class PageNotFound(pageId: String) extends UiCustomizationApiError {
     override def toHttpError: HttpError =

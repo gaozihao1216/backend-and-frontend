@@ -6,10 +6,12 @@ import microservice.user.tables.user.jdbc._
 import microservice.system.objects.{AdminLevel, UserRole}
 import java.sql.Connection
 
-/** 用户表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
+/** 用户表访问门面：in-memory 与 JDBC 双实现分流。
   *
-  * 关联：BindBackendUser、AccessControl、GetUserProfile 等均通过此对象读写用户。
-  * 实现：connection == null 表示 DatabaseSession.inMemory；否则走 PostgreSQL。
+  * 定义：object 暴露 initialize/listAll/findById/findByUsername/countByRole/insert/updateAdminLevel。
+  * 问题：演示 in-memory 与生产 JDBC 需同一 API，APIMessage 不应感知存储后端。
+  * 作用：connection==null → InMemoryStore；否则 PreparedStatement。
+  * 关联：[[BindBackendUserAPIMessage]]、[[AccessControl]]、[[GetUserProfileAPIMessage]]。
   */
 object UserTable {
 

@@ -93,7 +93,7 @@ scripts/dev.mjs               # Concurrent sbt + vite launcher
 
 ### API Contract Pattern
 
-- **Frontend**: `frontend/src/api/<module>/*Api.ts` calls `client.request(path, init, zodSchema)`; schemas live in `frontend/src/objects/<module>/`
+- **Frontend**: `frontend/src/api/<module>/<subpath>/*Api.ts` mirrors backend `api/` layout — see `frontend/src/api/ARCHITECTURE.md`
 - **Backend**: `backend/microservice/src/<module>/api/*Api.scala` defines `XxxAPIMessage` with `plan(connection): IO[Either[HttpError, A]]`
 - **Naming**: Frontend and backend API filenames match one-to-one (e.g. `CreateLevelApi`)
 - **Response shape**: `{ success: true, data }` / `{ success: false, error: { code, message } }`

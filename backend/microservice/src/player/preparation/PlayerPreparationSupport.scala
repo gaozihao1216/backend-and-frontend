@@ -11,7 +11,13 @@ import microservice.player.objects.{
 import microservice.player.tables.preparation.PlayerPreparationTable
 import java.sql.Connection
 
-/** 备战响应组装（纯读表 + 映射，供 APIMessage plan 调用）。 */
+/** 备战页响应组装支持（纯读表 + 映射）。
+  *
+  * 定义：private[player] object，buildResponse 合并 Catalog/Table/Wallet/SkillConfig。
+  * 问题：GetPreparationState 若在 APIMessage 内手写映射会过长且难测。
+  * 作用：ensureBirdDefaults → 组装 BirdUpgradeView/SlingshotUpgradeView 与 stats。
+  * 关联：[[GetPreparationStateAPIMessage]]；[[PlayerPreparationCatalog.loadEntries]]。
+  */
 private[player] object PlayerPreparationSupport {
   def buildResponse(connection: Connection, userId: String, wallet: PlayerWallet): PlayerPreparationResponse = {
     val catalogEntries = PlayerPreparationCatalog.loadEntries(connection)

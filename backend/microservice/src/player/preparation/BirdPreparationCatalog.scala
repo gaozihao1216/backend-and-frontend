@@ -1,6 +1,12 @@
 package microservice.player.preparation
 
-/** 鸟的基础三维属性（1 级时的基准值）。 */
+/** 系统内置鸟备战静态配置。
+  *
+  * 定义：entries 定义默认 birdType、升级费用曲线、tier 技能占位。
+  * 问题：无设计师鸟时准备页仍需可玩默认鸟种。
+  * 作用：Vector 静态数据，不访问 DB。
+  * 关联：[[PlayerPreparationCatalog.loadEntries]] 前缀合并。
+  */
 final case class BirdBaseStats(attack: Int, impact: Int, speed: Int)
 
 /** 系统内置或设计师发布鸟在备战目录中的条目。 */

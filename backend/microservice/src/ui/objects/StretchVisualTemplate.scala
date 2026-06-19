@@ -7,14 +7,17 @@ package microservice.ui.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
+/** 拉伸视觉模板类型：panel 面板背景或 pattern 装饰图案。 */
 sealed abstract class StretchVisualTemplateKind(val value: String)
 
+/** StretchVisualTemplateKind 枚举与编解码。 */
 object StretchVisualTemplateKind {
   case object Panel extends StretchVisualTemplateKind("panel")
   case object Pattern extends StretchVisualTemplateKind("pattern")
 
   val values: List[StretchVisualTemplateKind] = List(Panel, Pattern)
 
+  /** 从字符串解析 kind。 */
   def fromString(value: String): Option[StretchVisualTemplateKind] =
     values.find(_.value == value)
 
@@ -25,6 +28,7 @@ object StretchVisualTemplateKind {
     Decoder.decodeString.emap(value => fromString(value).toRight(s"Unknown stretch visual template kind: $value"))
 }
 
+/** 拉伸视觉模板领域对象。 */
 final case class StretchVisualTemplate(
   id: String,
   name: String,
@@ -35,6 +39,7 @@ final case class StretchVisualTemplate(
   updatedAt: Option[String]
 )
 
+/** StretchVisualTemplate 编解码与 category 规范化辅助方法。 */
 object StretchVisualTemplate {
   implicit val encoder: Encoder[StretchVisualTemplate] = deriveEncoder
   implicit val decoder: Decoder[StretchVisualTemplate] =
@@ -58,12 +63,14 @@ object StretchVisualTemplate {
       )
     }
 
+  /** 按 kind 返回默认 category。 */
   def defaultCategoryForKind(kind: StretchVisualTemplateKind): String =
     kind match {
       case StretchVisualTemplateKind.Panel   => PanelTemplateCategory.defaultValue
       case StretchVisualTemplateKind.Pattern => PatternTemplateCategory.defaultValue
     }
 
+  /** 校验 category 合法性，非法时回退默认值。 */
   def normalizeCategoryForKind(kind: StretchVisualTemplateKind, category: String): String =
     kind match {
       case StretchVisualTemplateKind.Panel if PanelTemplateCategory.isValid(category)   => category

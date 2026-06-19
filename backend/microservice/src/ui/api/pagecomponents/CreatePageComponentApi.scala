@@ -10,7 +10,12 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
-/** 向页面追加组件的 APIMessage；component.id 不可与已有组件重复。 */
+/** 总监向页面追加组件 APIMessage。
+  *
+  * 定义：POST /admin/director/ui/pages/:pageId/components。
+  * 作用：校验 component.id 唯一后 append 到 PageConfig.components。
+  * 关联：CreatePageComponentBody.component 为 PageComponent ADT。
+  */
 final case class CreatePageComponentAPIMessage(
   userId: String,
   pageId: String,
@@ -18,10 +23,17 @@ final case class CreatePageComponentAPIMessage(
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 
+  /** 页面组件 CRUD 业务逻辑。
+    *
+    * 实现：requireAdminLevel(Director) → 校验页面存在与 component.id 唯一 → addComponent。
+    * 关联：返回更新后的完整 PageConfig。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 校验页面存在且 component.id 不重复
         _ <- PlanSteps.require(
           UiPageTable.findById(connection, pageId) match {
             case None =>
@@ -32,6 +44,7 @@ final case class CreatePageComponentAPIMessage(
               Right(())
           }
         )
+        // 追加组件并返回更新后的 PageConfig
         page <- PlanSteps.require(
           UiPageTable
             .addComponent(connection, pageId, body.component, Instant.now().toString)

@@ -9,7 +9,12 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
 
-/** DELETE panel-templates/:id 或 pattern-templates/:id 的 APIMessage。 */
+/** 总监删除拉伸视觉模板 APIMessage。
+  *
+  * 定义：DELETE /panel-templates/:id 或 /pattern-templates/:id。
+  * 作用：校验 kind 匹配后 deleteById。
+  * 关联：返回被删 StretchVisualTemplate。
+  */
 final case class DeleteStretchVisualTemplateAPIMessage(
   userId: String,
   templateId: String,
@@ -17,10 +22,17 @@ final case class DeleteStretchVisualTemplateAPIMessage(
 ) extends APIWithTokenMessage[StretchVisualTemplate] {
   override def token: String = userId
 
+  /** 删除拉伸视觉模板。
+    *
+    * 实现：requireAdminLevel(Director) → findById 校验 kind → deleteById。
+    * 关联：expectedKind 由 Router 按 panel/pattern 路由注入。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, StretchVisualTemplate]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 查找并校验 kind 与路由一致
         _ <- PlanSteps.require(
           StretchVisualTemplateTable.findById(connection, templateId) match {
             case None =>
@@ -31,6 +43,7 @@ final case class DeleteStretchVisualTemplateAPIMessage(
               Right(())
           }
         )
+        // 删除并返回被删模板
         template <- PlanSteps.require(
           StretchVisualTemplateTable
             .deleteById(connection, templateId)

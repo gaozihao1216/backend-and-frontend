@@ -4,10 +4,12 @@ package microservice.ui.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
+/** 组件视觉变体：primary/secondary/ghost。 */
 sealed trait ComponentVariant {
   def value: String
 }
 
+/** ComponentVariant 枚举与编解码。 */
 object ComponentVariant {
   case object Primary extends ComponentVariant { override val value: String = "primary" }
   case object Secondary extends ComponentVariant { override val value: String = "secondary" }
@@ -15,6 +17,7 @@ object ComponentVariant {
 
   private val byValue = List(Primary, Secondary, Ghost).map(variant => variant.value -> variant).toMap
 
+  /** 从字符串解析变体。 */
   def fromString(value: String): Option[ComponentVariant] =
     byValue.get(value)
 
@@ -25,6 +28,7 @@ object ComponentVariant {
     Decoder.decodeString.emap(value => byValue.get(value).toRight(s"Unknown component variant: $value"))
 }
 
+/** 组件可选视觉样式。 */
 final case class ComponentStyle(
   variant: Option[ComponentVariant],
   backgroundColor: Option[String],
@@ -35,6 +39,7 @@ final case class ComponentStyle(
   lockAspectRatio: Option[Double]
 )
 
+/** ComponentStyle 编解码。 */
 object ComponentStyle {
   implicit val encoder: Encoder[ComponentStyle] = deriveEncoder
   implicit val decoder: Decoder[ComponentStyle] = deriveDecoder

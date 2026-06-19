@@ -29,11 +29,10 @@ import org.http4s.HttpRoutes
 
 /** 应用级默认装配：数据库会话、种子数据、HTTP 路由树。
   *
-  * 实现：
-  *   - 读取 UGC_DATABASE_* 环境变量选择 in-memory 或 JDBC。
-  *   - 启动时调用 SystemSeedData 填充 InMemoryStore（演示账号与样例关卡）。
-  *   - initializeDatabase 在 JDBC 模式下执行各 Table.initialize 建表。
-  * 关联：Main 启动入口；ApiRouter 消费 databaseSession。
+  * 定义：object 暴露 databaseConfig、databaseSession、apiRoutes、initializeDatabase。
+  * 问题：Main 启动需一处集中读取环境变量、注入演示数据、注册全站路由。
+  * 作用：根据 UGC_DATABASE_MODE 选 in-memory/JDBC；类加载时 reset seed；JDBC 时 DDL+seed。
+  * 关联：Main 入口；[[ApiRouter]]、[[SystemSeedData]]、[[SystemJdbcSeedData]]、各 Table.initialize。
   */
 object SystemDefaults {
   /** 从环境变量组装 JDBC 配置；未设置时使用本地 PostgreSQL 默认值。 */

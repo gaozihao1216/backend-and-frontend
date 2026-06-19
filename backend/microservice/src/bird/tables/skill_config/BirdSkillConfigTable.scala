@@ -1,5 +1,11 @@
 package microservice.bird.tables.skill_config
 
+/** BirdSkillConfigTable 表访问门面。
+  *
+  * 表职责：封装 birdskillconfig 数据的 CRUD。
+  * Row↔Object 映射：通过 RowMapper/Codec 与领域对象互转。
+  * inmemory/jdbc 双实现：connection == null 走 InMemoryStore，否则走 JDBC SQL。
+  */
 import microservice.bird.tables.skill_config.jdbc._
 
 import microservice.bird.objects.skill.BirdSkillConfig

@@ -11,7 +11,13 @@ import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** GET /player/preparation — 获取当前用户全部鸟与弹弓备战状态。 */
+/** GET /player/preparation 备战状态 APIMessage。
+  *
+  * 定义：返回鸟/弹弓升级视图 + 钱包余额 JSON。
+  * 问题：准备页需合并 Catalog 静态配置与玩家升级表行。
+  * 作用：requireRole → getOrCreate 钱包 → PlayerPreparationSupport.buildResponse。
+  * 关联：[[PlayerPreparationRouter]] GET；[[PlayerPreparationSupport]]。
+  */
 final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

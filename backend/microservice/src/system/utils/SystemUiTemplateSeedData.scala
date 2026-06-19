@@ -8,8 +8,10 @@ import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRow}
 
 /** UI 定制模块的 in-memory 演示模板种子。
   *
-  * 实现：内嵌 SVG 字符串经 URLEncoder 转为 data URL，写入 ButtonTemplate / StretchVisualTemplate 行。
-  * 关联：[[SystemSeedData.reset]] 调用 buttonTemplates / stretchVisualTemplates 注入 InMemoryStore。
+  * 定义：内嵌 SVG 经 URLEncoder 转 data URL，写入 Button/StretchVisual 模板行。
+  * 问题：总监 UI 编辑器需要可预览的默认按钮/面板/图案素材。
+  * 作用：提供 btn-demo-primary、panel-demo-surface、pattern-demo-star 三条种子。
+  * 关联：[[SystemSeedData.reset]]、[[SystemJdbcSeedData]] 条件插入同 id 行。
   */
 private[utils] object SystemUiTemplateSeedData {
   // 九宫格切片按钮底座 SVG（蓝紫渐变圆角矩形）

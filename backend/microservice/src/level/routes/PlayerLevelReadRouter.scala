@@ -9,7 +9,12 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
-/** 玩家侧只读 API：已发布关卡列表/详情、评论列表、收藏列表。 */
+/** 玩家侧只读 HTTP 路由。
+  *
+  * HTTP 职责：解析 GET 请求与查询参数，构造 read APIMessage 并返回 ApiSuccess；不含业务逻辑。
+  * 挂载路径：`/player/levels`、`/player/favorites` 等（由 PlayerLevelRouter 合并）。
+  * 为何不写业务逻辑：权限与数据访问在 APIMessage.plan 中，便于事务管理。
+  */
 private[routes] object PlayerLevelReadRouter {
   import PlayerLevelRouteSupport.{sortParam, tagParam}
 

@@ -8,6 +8,7 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 
+/** 页面组件 ADT 根 trait；子类型含 button/panel/text/list。 */
 sealed trait PageComponent {
   def id: String
   def `type`: String
@@ -15,11 +16,13 @@ sealed trait PageComponent {
   def style: Option[ComponentStyle]
 }
 
+/** 面板内容区域相对尺寸（宽/高百分比）。 */
 final case class PanelContentSize(
   widthPercent: Double,
   heightPercent: Double
 )
 
+/** PanelContentSize 编解码。 */
 object PanelContentSize {
   implicit val encoder: Encoder[PanelContentSize] =
     Encoder.forProduct2("widthPercent", "heightPercent")(size => (size.widthPercent, size.heightPercent))
@@ -28,6 +31,7 @@ object PanelContentSize {
     Decoder.forProduct2("widthPercent", "heightPercent")(PanelContentSize.apply)
 }
 
+/** 面板浮动定位：锚定组件、方位与偏移量。 */
 final case class PanelFloating(
   anchorComponentId: String,
   placement: String,
@@ -35,11 +39,13 @@ final case class PanelFloating(
   offsetY: Double
 )
 
+/** PanelFloating 编解码。 */
 object PanelFloating {
   implicit val encoder: Encoder[PanelFloating] = deriveEncoder
   implicit val decoder: Decoder[PanelFloating] = deriveDecoder
 }
 
+/** 组件动态数据源配置（apiKey、刷新模式等）。 */
 final case class UiDataSource(
   `type`: String,
   apiKey: Option[String],
@@ -47,22 +53,26 @@ final case class UiDataSource(
   refreshMode: Option[String]
 )
 
+/** UiDataSource 编解码。 */
 object UiDataSource {
   implicit val encoder: Encoder[UiDataSource] = deriveEncoder
   implicit val decoder: Decoder[UiDataSource] = deriveDecoder
 }
 
+/** 组件数据绑定：文本、可见/禁用条件表达式。 */
 final case class ComponentBinding(
   text: Option[String],
   visibleWhen: Option[String],
   disabledWhen: Option[String]
 )
 
+/** ComponentBinding 编解码。 */
 object ComponentBinding {
   implicit val encoder: Encoder[ComponentBinding] = deriveEncoder
   implicit val decoder: Decoder[ComponentBinding] = deriveDecoder
 }
 
+/** 按钮组件：标签、图标、设计稿与 action。 */
 final case class ButtonComponent(
   id: String,
   label: String,
@@ -79,6 +89,7 @@ final case class ButtonComponent(
   override val `type`: String = "button"
 }
 
+/** 面板组件：可含子组件、浮动定位与装饰。 */
 final case class PanelComponent(
   id: String,
   kind: Option[String],
@@ -97,6 +108,7 @@ final case class PanelComponent(
   override val `type`: String = "panel"
 }
 
+/** 文本组件：静态或绑定文本内容。 */
 final case class TextComponent(
   id: String,
   text: String,
@@ -107,6 +119,7 @@ final case class TextComponent(
   override val `type`: String = "text"
 }
 
+/** 列表组件：dataPath 驱动，含 itemTemplate 子组件树。 */
 final case class ListComponent(
   id: String,
   dataPath: String,
@@ -119,6 +132,7 @@ final case class ListComponent(
   override val `type`: String = "list"
 }
 
+/** PageComponent ADT 的自定义 Circe 编解码（按 type 字段分发）。 */
 object PageComponent {
   implicit lazy val encoder: Encoder[PageComponent] = Encoder.instance {
     case component: ButtonComponent =>

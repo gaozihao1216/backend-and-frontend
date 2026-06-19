@@ -10,7 +10,12 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
-/** 更新页面内指定组件的 APIMessage；路径 componentId 覆盖 body 中的 id。 */
+/** 总监更新页面内组件 APIMessage。
+  *
+  * 定义：PUT /admin/director/ui/pages/:pageId/components/:componentId。
+  * 作用：按 ADT 类型 copy id 后 updateComponent。
+  * 关联：UpdatePageComponentBody.component；路径 componentId 覆盖 body id。
+  */
 final case class UpdatePageComponentAPIMessage(
   userId: String,
   pageId: String,
@@ -19,10 +24,17 @@ final case class UpdatePageComponentAPIMessage(
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 
+  /** 页面组件 CRUD 业务逻辑。
+    *
+    * 实现：requireAdminLevel(Director) → 校验页面与组件存在 → 强制 id → updateComponent。
+    * 关联：返回更新后的完整 PageConfig。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 校验页面与组件存在
         _ <- PlanSteps.require(
           UiPageTable.findById(connection, pageId) match {
             case None =>
@@ -33,6 +45,7 @@ final case class UpdatePageComponentAPIMessage(
               Right(())
           }
         )
+        // 强制 componentId 并更新组件
         page <- PlanSteps.require(
           {
             val component = body.component match {

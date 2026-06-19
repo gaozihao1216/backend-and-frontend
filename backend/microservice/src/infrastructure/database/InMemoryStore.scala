@@ -13,11 +13,26 @@ import microservice.ui.tables.button_template.{ButtonTemplateRow}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRow}
 import microservice.ui.tables.ui_page.{UiPageRow}
 
-/** in-memory 模式下的进程内全局存储。
+/** in-memory 模式下的进程内全局可变存储（模拟关系型数据库各表）。
   *
-  * 实现：各 Table 在 connection == null 时读写此 object 中的可变集合，模拟数据库表。
-  * 关联：[[SystemSeedData]] / [[PlayerRuntimeSeed]] 在启动时调用 reset 注入演示数据；
-  *       [[DatabaseSession.inMemory]] 向 APIMessage 传入 null Connection 以路由到此存储。
+  * == 激活条件 ==
+  * 当 `UGC_DATABASE_MODE` 非 `jdbc` 时，[[DatabaseSession.inMemory]] 向 APIMessage 传入 `null` Connection；
+  * 各 `*Table` 对象检测 `connection == null` 后读写本 object 中的 `var` 集合。
+  *
+  * == 与 JDBC 模式的对称 ==
+  * Table 层 API 签名在两种模式下相同（均接受 `Connection`），仅底层存储实现不同，
+  * 从而业务 APIMessage 无需分支判断数据库模式。
+  *
+  * == 数据生命周期 ==
+  * - 启动时：`SystemSeedData` / `PlayerRuntimeSeed` 调用 [[reset]] 及玩家表初始化注入演示数据；
+  * - 运行时：所有写操作直接修改 `var`，进程重启后数据丢失（符合开发/测试预期）。
+  *
+  * == 线程安全 ==
+  * 当前为单进程单线程 IO 模型下的可变状态；若未来多 fiber 并发写同一表，须加同步或改为 Ref。
+  *
+  * == 关联 ==
+  * - [[DatabaseSession.inMemory]]：传入 null Connection 的会话实现
+  * - `microservice.system.utils.SystemSeedData`：核心 UGC 种子数据
   */
 object InMemoryStore {
   // --- 用户与 UGC 核心实体 ---
@@ -54,7 +69,16 @@ object InMemoryStore {
   var birdDesigns: Vector[BirdDesignRow] = Vector.empty
   var birdSubmissions: Vector[BirdSubmissionRow] = Vector.empty
 
-  /** 批量重置核心演示表；玩家运行时等扩展表由 [[PlayerRuntimeSeed]] 单独初始化。 */
+  /** 批量重置核心演示表（用户、关卡、评分、评论、收藏、提交、UI 模板、关卡槽位）。
+    *
+    * 玩家运行时扩展表（钱包、商店、社交等）由 `PlayerRuntimeSeed` 单独初始化，不在此方法内覆盖。
+    * 调用方通常在应用启动、`SystemSeedData.apply` 流程中执行。
+    *
+    * @param nextUiPages 可选 UI 页面种子，默认空
+    * @param nextButtonTemplates 可选按钮模板种子
+    * @param nextStretchVisualTemplates 可选拉拽视觉模板种子
+    * @param nextLevelSlotAssignments 可选总监关卡槽位分配
+    */
   def reset(
     nextUsers: Vector[UserRow],
     nextLevels: Vector[LevelRow],

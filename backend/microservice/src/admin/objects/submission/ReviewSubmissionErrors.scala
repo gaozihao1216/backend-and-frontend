@@ -3,11 +3,12 @@ package microservice.admin.objects.submission
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.SubmissionStatus
 
-/** 关卡投稿审核 API 的业务错误类型。 */
+/** 关卡投稿审核 API 的业务错误 sealed trait；各 case 提供 toHttpError 映射。 */
 sealed trait AdminReviewApiError {
   def toHttpError: HttpError
 }
 
+/** 关卡投稿审核相关错误码集合，供 ReviewSubmissionAPIMessage 使用。 */
 object ReviewSubmissionErrors {
   /** 投稿 ID 不存在 → 404 SUBMISSION_NOT_FOUND */
   final case class SubmissionMissing(submissionId: String) extends AdminReviewApiError {

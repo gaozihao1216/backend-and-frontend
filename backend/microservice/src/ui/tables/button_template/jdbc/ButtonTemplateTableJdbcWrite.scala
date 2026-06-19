@@ -8,7 +8,12 @@ import microservice.ui.tables.button_template._
 
 import java.sql.Connection
 
+/** button_templates 表 JDBC 写操作（INSERT/UPDATE/DELETE）。
+  *
+  * 关联：ButtonTemplateTable 写路径委托。
+  */
 private[tables] object ButtonTemplateTableJdbcWrite {
+  /** INSERT 新按钮模板行。 */
   def insert(connection: Connection, row: ButtonTemplateRow): ButtonTemplateRow = {
     val statement = connection.prepareStatement(
       """
@@ -25,6 +30,7 @@ private[tables] object ButtonTemplateTableJdbcWrite {
     }
   }
 
+  /** UPDATE 已有行。 */
   def update(connection: Connection, row: ButtonTemplateRow): Option[ButtonTemplateRow] = {
     val statement = connection.prepareStatement(
       """
@@ -48,6 +54,7 @@ private[tables] object ButtonTemplateTableJdbcWrite {
     }
   }
 
+  /** DELETE 并返回被删行。 */
   def deleteById(connection: Connection, templateId: String): Option[ButtonTemplateRow] =
     ButtonTemplateTableJdbcRead.findById(connection, templateId).flatMap { row =>
       val statement = connection.prepareStatement("DELETE FROM ui_button_templates WHERE id = ?")

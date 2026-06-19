@@ -7,11 +7,18 @@ import microservice.level.objects.inventory._
 import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}
 import microservice.system.objects.{AdminLevel, LevelStatus, LevelTag, SubmissionStatus, UserRole}
 
-/** in-memory 与 JDBC 共用的演示数据集（单一来源，避免两套 seed 漂移）。 */
+/** in-memory 与 JDBC 共用的演示 UGC 数据集（单一来源）。
+  *
+  * 定义：private[utils] object，提供 users/levels/submissions/ratings/comments 及 demoLevelData。
+  * 问题：两套 seed（内存 vs JDBC）若分叉会导致 dev/prod 演示行为不一致。
+  * 作用：构造固定 id 的演示行（player-1、level-1 等），供 bind 与浏览联调。
+  * 关联：[[SystemSeedData]]、[[SystemJdbcSeedData]]；id 与前端 mock auth 绑定结果对应。
+  */
 private[utils] object SystemDemoData {
-  /** JDBC UserTableJdbcSchema 与 demo UGC 行使用同一时间戳，便于幂等 upsert。 */
+  /** JDBC 与 demo 行共用的固定时间戳，便于幂等 upsert。 */
   val jdbcDemoTimestamp: String = "2026-06-03T00:00:00Z"
 
+  /** 演示用户：player、designer、standard admin、director admin 各一。 */
   def users(createdAt: String): Vector[UserRow] =
     Vector(
       UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, None, createdAt, createdAt),

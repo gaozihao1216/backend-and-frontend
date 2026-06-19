@@ -3,7 +3,12 @@ package microservice.ui.api.stretchtemplates
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.{PanelTemplateCategory, PatternTemplateCategory, StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
 
-/** 拉伸视觉模板的字段校验、category 规范化与 kind 一致性检查。 */
+/** 拉伸视觉模板的字段校验与规范化。
+  *
+  * 定义：Create/Update StretchVisualTemplate APIMessage 写入前的共享校验层。
+  * 作用：sanitize 去空白并按 kind 规范化 category；ensureKind 校验路由一致。
+  * 关联：PanelTemplateCategory / PatternTemplateCategory。
+  */
 private[api] object StretchVisualTemplateValidation {
   /** 校验 id/name/sourceDataUrl 与 kind 对应的 category 合法性。 */
   def validate(template: StretchVisualTemplate): Either[HttpError, Unit] =
@@ -15,6 +20,7 @@ private[api] object StretchVisualTemplateValidation {
       Right(())
     }
 
+  /** 按 kind 检查 category 是否在合法枚举内。 */
   private def isValidCategory(template: StretchVisualTemplate): Boolean =
     template.kind match {
       case StretchVisualTemplateKind.Panel   => PanelTemplateCategory.isValid(template.category)

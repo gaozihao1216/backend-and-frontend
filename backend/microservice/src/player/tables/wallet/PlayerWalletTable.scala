@@ -8,10 +8,13 @@ import microservice.player.runtime.PlayerRuntimeDefaults
 import java.sql.Connection
 import java.time.Instant
 
-/** 玩家钱包表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
+/**
   *
-  * 存储 coins / gems / fragments 三种货币；新用户首次访问时写入 PlayerRuntimeDefaults 默认值。
-  */
+   * 定义：PlayerWalletTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
+ * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
+ * 作用：initialize/list/find/insert/update 等统一入口。
+ * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
+ */
 object PlayerWalletTable {
   private def isInMemory(connection: Connection): Boolean =
     connection == null

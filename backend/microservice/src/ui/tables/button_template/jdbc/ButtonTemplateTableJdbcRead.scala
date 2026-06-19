@@ -8,13 +8,19 @@ import microservice.ui.tables.button_template._
 
 import java.sql.{Connection, ResultSet}
 
+/** button_templates 表 JDBC 读操作。
+  *
+  * 关联：ButtonTemplateTable 读路径委托。
+  */
 private[tables] object ButtonTemplateTableJdbcRead {
+  /** 查询全部按钮模板。 */
   def listAll(connection: Connection): Vector[ButtonTemplateRow] = {
     val statement = connection.prepareStatement(s"${ButtonTemplateTableCodec.baseSelect} ORDER BY id ASC")
     try rows(statement.executeQuery())
     finally statement.close()
   }
 
+  /** 按 id 查询单条。 */
   def findById(connection: Connection, templateId: String): Option[ButtonTemplateRow] = {
     val statement = connection.prepareStatement(s"${ButtonTemplateTableCodec.baseSelect} WHERE id = ?")
     try {

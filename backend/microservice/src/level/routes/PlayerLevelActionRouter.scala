@@ -10,7 +10,12 @@ import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
-/** 玩家侧写操作：评论、收藏、评分等 mutating API。 */
+/** 玩家侧写操作 HTTP 路由。
+  *
+  * HTTP 职责：解析 POST/DELETE 与请求体，构造 action APIMessage；不含业务逻辑。
+  * 挂载路径：`/player/levels/:id/comments|favorite|ratings`（由 PlayerLevelRouter 合并）。
+  * 为何不写业务逻辑：评论/收藏/评分规则在 APIMessage.plan 中统一校验与持久化。
+  */
 private[routes] object PlayerLevelActionRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {

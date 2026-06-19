@@ -7,10 +7,12 @@ package microservice.ui.objects
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 
+/** 组件交互动作 ADT 根 trait。 */
 sealed trait ComponentAction {
   def `type`: String
 }
 
+/** 导航动作：跳转到 targetPageId/targetPath。 */
 final case class NavigateAction(
   targetPageId: String,
   targetPath: String
@@ -18,18 +20,21 @@ final case class NavigateAction(
   override val `type`: String = "navigate"
 }
 
+/** 打开面板动作。 */
 final case class OpenPanelAction(
   panelId: String
 ) extends ComponentAction {
   override val `type`: String = "openPanel"
 }
 
+/** 打开弹窗动作。 */
 final case class OpenModalAction(
   modalId: String
 ) extends ComponentAction {
   override val `type`: String = "openModal"
 }
 
+/** 调用运行时 apiKey；可链式 afterSuccess。 */
 final case class ApiAction(
   apiKey: String,
   params: Option[Map[String, String]],
@@ -38,16 +43,19 @@ final case class ApiAction(
   override val `type`: String = "apiAction"
 }
 
+/** 关闭面板动作；panelId 可选。 */
 final case class ClosePanelAction(
   panelId: Option[String]
 ) extends ComponentAction {
   override val `type`: String = "closePanel"
 }
 
+/** 无操作占位动作。 */
 case object NoopAction extends ComponentAction {
   override val `type`: String = "none"
 }
 
+/** ComponentAction ADT 自定义 Circe 编解码。 */
 object ComponentAction {
   implicit lazy val encoder: Encoder[ComponentAction] = Encoder.instance {
     case action: NavigateAction =>

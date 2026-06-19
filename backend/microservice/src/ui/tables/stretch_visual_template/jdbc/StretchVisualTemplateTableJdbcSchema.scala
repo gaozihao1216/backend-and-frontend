@@ -8,7 +8,10 @@ import microservice.ui.tables.stretch_visual_template._
 
 import java.sql.Connection
 
+/** stretch_visual_templates 表 JDBC DDL 初始化。
+  */
 private[tables] object StretchVisualTemplateTableJdbcSchema {
+  /** 创建 stretch_visual_templates 表及 kind 索引。 */
   def initialize(connection: Connection): Unit = {
     val statement = connection.createStatement()
     try {

@@ -6,7 +6,12 @@ package microservice.ui.tables.stretch_visual_template
 
 import microservice.ui.objects.StretchVisualTemplate
 
+/** StretchVisualTemplateRow ↔ StretchVisualTemplate 映射器。
+  *
+  * 实现：纯字段拷贝；createdAt/updatedAt 在 Row 为必填，领域对象为 Option。
+  */
 object StretchVisualTemplateRowMapper {
+  /** StretchVisualTemplateRow → StretchVisualTemplate。 */
   def toStretchVisualTemplate(row: StretchVisualTemplateRow): StretchVisualTemplate =
     StretchVisualTemplate(
       id = row.id,
@@ -18,6 +23,7 @@ object StretchVisualTemplateRowMapper {
       updatedAt = Some(row.updatedAt)
     )
 
+  /** StretchVisualTemplate → StretchVisualTemplateRow。 */
   def fromStretchVisualTemplate(template: StretchVisualTemplate, createdAt: String, updatedAt: String): StretchVisualTemplateRow =
     StretchVisualTemplateRow(
       id = template.id,

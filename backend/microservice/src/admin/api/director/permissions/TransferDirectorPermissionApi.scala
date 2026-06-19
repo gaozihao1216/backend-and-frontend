@@ -10,24 +10,25 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, UserRole}
 
-/** 将总监权限移交给另一位 Admin：当前用户降为 Standard，目标用户升为 Director。
-  *
-  * 实现：
-  *   1. requireAdminLevel(Director) 且不可 transfer 给自己
-  *   2. 校验 target 存在且 role == Admin
-  *   3. 原子更新双方 adminLevel（失败则 DIRECTOR_TRANSFER_FAILED）
-  * 关联：POST /admin/director/transfer；TransferDirectorPermissionErrors 定义业务错误码。
-  */
+/** 总监权限移交 APIMessage：当前 Director 降为 Standard，目标 Admin 升为 Director。 */
 final case class TransferDirectorPermissionAPIMessage(
   currentDirectorId: String,
   body: TransferDirectorPermissionBody
 ) extends APIWithTokenMessage[DirectorTransferResult] {
   override def token: String = currentDirectorId
 
+  /** plan 定义了什么业务流程：原子交换两位管理员的 adminLevel，保证系统中始终有且仅有一位 Director。
+    *
+    * 解决了什么问题：总监离职或轮换时需安全移交 UI 定制、槽位分配等高级权限。
+    * 在事务内起到什么作用：连续两次 UserTable.updateAdminLevel；任一失败则 Left 整笔回滚。
+    * 关联的 HTTP 路由/前端 API：POST /admin/director/transfer；前端 `TransferDirectorPermissionApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, DirectorTransferResult]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验当前用户为 Director
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, currentDirectorId, AdminLevel.Director).map(_ => ()))
+        // 步骤 2：禁止移交给自己 → CANNOT_TRANSFER_TO_SELF
         _ <- PlanSteps.require(
           if (body.targetAdminId == currentDirectorId) {
             Left(TransferDirectorPermissionErrors.CannotTransferToSelf.toHttpError)
@@ -35,6 +36,7 @@ final case class TransferDirectorPermissionAPIMessage(
             Right(())
           }
         )
+        // 步骤 3：校验目标用户存在且 role 为 Admin
         _ <- PlanSteps.require(
           UserTable.findById(connection, body.targetAdminId) match {
             case None =>
@@ -45,6 +47,7 @@ final case class TransferDirectorPermissionAPIMessage(
               Right(())
           }
         )
+        // 步骤 4：原子降级当前 Director、升级目标 Admin
         result <- PlanSteps.require(
           {
             val timestamp = Instant.now().toString
@@ -59,6 +62,7 @@ final case class TransferDirectorPermissionAPIMessage(
             }
           }
         )
+      // 返回前任与新任 Director 的用户 ID
       } yield result
     }
 }

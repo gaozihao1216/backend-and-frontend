@@ -7,6 +7,7 @@ package microservice.ui.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
+/** 动态页面完整配置领域对象。 */
 final case class PageConfig(
   id: String,
   name: String,
@@ -16,6 +17,7 @@ final case class PageConfig(
   components: List[PageComponent]
 )
 
+/** PageConfig 的 Circe 编解码。 */
 object PageConfig {
   implicit val encoder: Encoder[PageConfig] = deriveEncoder
   implicit val decoder: Decoder[PageConfig] = deriveDecoder

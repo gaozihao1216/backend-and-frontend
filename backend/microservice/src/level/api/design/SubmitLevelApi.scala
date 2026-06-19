@@ -21,15 +21,19 @@ final case class SubmitLevelAPIMessage(
 ) extends APIWithTokenMessage[Submission] {
   override def token: String = designerId
 
-  /** 设计师将 draft/rejected 关卡提交审核。
+  /** plan 定义了什么业务流程：Designer 将 Draft/Rejected 关卡提交审核，创建 Submission 并置 Level 为 PendingReview。
     *
-    * 实现：校验关卡归属 → 无重复 pending submission → Level 置 PendingReview → 插入 SubmissionRow。
-    * 关联：Admin ReviewSubmissionAPIMessage 处理后续批准/拒绝；与 CreateLevel 共同构成 UGC 主流程。
+    * 解决了什么问题：UGC 关卡上线需经 submit → admin review 流程。
+    * 在事务内起到什么作用：校验通过后双写 Level.status 与 SubmissionRow；失败则回滚。
+    * 关联的 HTTP 路由/前端 API：POST /designer/submissions；前端 `SubmitLevelApi`。
     */
+
   override def plan(connection: Connection): IO[Either[HttpError, Submission]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验用户角色/管理员级别权限
         _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        // 步骤 2：执行业务步骤
         level <- PlanSteps.require(
           LevelTable.findById(connection, body.levelId) match {
             case None =>
@@ -38,6 +42,7 @@ final case class SubmitLevelAPIMessage(
               Right(value)
           }
         )
+        // 步骤 3：执行业务步骤
         _ <- PlanSteps.require(
           // 只能提交自己的关卡
           if (level.authorId != designerId) {
@@ -52,6 +57,7 @@ final case class SubmitLevelAPIMessage(
             Right(())
           }
         )
+        // 步骤 4：读取并组装数据
         submission <- PlanSteps.read {
           val timestamp = Instant.now().toString
           // 关卡与 submission 双写：level.status 与 submission.status 保持同步
@@ -71,6 +77,7 @@ final case class SubmitLevelAPIMessage(
           )
           LevelRowMapper.toSubmission(row)
         }
+      // 返回业务结果 DTO/领域对象
       } yield submission
     }
 }

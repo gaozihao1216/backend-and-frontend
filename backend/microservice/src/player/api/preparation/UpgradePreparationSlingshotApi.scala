@@ -12,7 +12,13 @@ import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** POST /player/preparation/slingshot/upgrade — 消耗金币提升弹弓等级。 */
+/** POST .../slingshot/upgrade 弹弓升级 APIMessage。
+  *
+  * 定义：提升 slingshot 等级并扣金币。
+  * 问题：弹弓等级影响发射力度等备战属性展示。
+  * 作用：校验等级上限与费用 → 扣 wallet → updateSlingshot。
+  * 关联：[[PlayerPreparationTable]] slingshot 行；[[PlayerWalletTable]]。
+  */
 final case class UpgradePreparationSlingshotAPIMessage(userId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

@@ -10,12 +10,14 @@ import java.sql.{Connection, ResultSet}
 import microservice.ui.objects.UiEndpoint
 
 private[tables] object UiPageTableJdbcRead {
+  /** 查询全部页面行，按 id 升序。 */
   def listAll(connection: Connection): Vector[UiPageRow] = {
     val statement = connection.prepareStatement(s"${UiPageTableCodec.baseSelect} ORDER BY id ASC")
     try rows(statement.executeQuery())
     finally statement.close()
   }
 
+  /** 按 role_scope 过滤页面列表。 */
   def listByEndpoint(connection: Connection, endpoint: UiEndpoint): Vector[UiPageRow] = {
     val statement = connection.prepareStatement(
       s"""
@@ -32,6 +34,7 @@ private[tables] object UiPageTableJdbcRead {
     }
   }
 
+  /** 按 id 查询单页配置。 */
   def findById(connection: Connection, pageId: String): Option[UiPageRow] = {
     val statement = connection.prepareStatement(s"${UiPageTableCodec.baseSelect} WHERE id = ?")
     try {
@@ -47,6 +50,7 @@ private[tables] object UiPageTableJdbcRead {
     }
   }
 
+  /** 遍历 ResultSet 批量解析 UiPageRow。 */
   private def rows(resultSet: ResultSet): Vector[UiPageRow] =
     try {
       val builder = Vector.newBuilder[UiPageRow]

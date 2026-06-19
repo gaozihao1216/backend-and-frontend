@@ -22,15 +22,19 @@ final case class RateLevelAPIMessage(
 ) extends APIWithTokenMessage[Rating] {
   override def token: String = playerId
 
-  /** 玩家对已发布关卡评分（1–5），同一玩家重复评分则更新记录并重算平均分。
+  /** plan 定义了什么业务流程：Player 对已 Published 关卡评分 1–5，upsert Rating 并重算 Level 平均分。
     *
-    * 实现：requireRole(Player) → 关卡必须 Published → RatingTable upsert → LevelTable.updateRatingStats。
-    * 关联：GET /player/levels 返回的 averageRating/ratingCount 由此维护。
+    * 解决了什么问题：玩家反馈需持久化且聚合到关卡列表的 averageRating。
+    * 在事务内起到什么作用：RatingTable upsert + LevelTable.updateRatingStats 原子执行。
+    * 关联的 HTTP 路由/前端 API：POST /player/levels/:levelId/ratings；前端 `RateLevelApi`。
     */
+
   override def plan(connection: Connection): IO[Either[HttpError, Rating]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验用户角色/管理员级别权限
         _ <- PlanSteps.require(AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ()))
+        // 步骤 2：执行业务步骤
         level <- PlanSteps.require(
           LevelTable.findById(connection, levelId) match {
             case None =>
@@ -39,6 +43,7 @@ final case class RateLevelAPIMessage(
               Right(value)
           }
         )
+        // 步骤 3：执行业务步骤
         _ <- PlanSteps.require(
           // 仅已发布关卡可评分
           if (level.status != LevelStatus.Published) {
@@ -50,6 +55,7 @@ final case class RateLevelAPIMessage(
             Right(())
           }
         )
+        // 步骤 4：读取并组装数据
         rating <- PlanSteps.read {
           val timestamp = Instant.now().toString
           // 同一玩家对同一关卡：更新分数而非新增多条 rating
@@ -80,6 +86,7 @@ final case class RateLevelAPIMessage(
 
           LevelRowMapper.toRating(ratingRow)
         }
+      // 返回业务结果 DTO/领域对象
       } yield rating
     }
 }

@@ -9,7 +9,13 @@ import io.circe.syntax._
 import java.sql.{PreparedStatement, ResultSet, SQLException}
 import microservice.ui.objects.{ButtonTemplateCategory, ButtonTemplateScalingMode, ButtonTemplateSlice}
 
+/** JDBC 读路径：button_templates 表列 ↔ ButtonTemplateRow 编解码。
+  *
+  * 实现：slice 以 JSON 存储；scaling_mode 存字符串枚举值。
+  * 关联：ButtonTemplateTableJdbcRead / ButtonTemplateTableJdbcWrite。
+  */
 private[tables] object ButtonTemplateTableCodec {
+  /** button_templates 表通用 SELECT 列清单。 */
   val baseSelect: String =
     """
       SELECT id, name, source_data_url, category, scaling_mode, slice, created_at, updated_at
@@ -19,6 +25,7 @@ private[tables] object ButtonTemplateTableCodec {
   def sliceToDb(slice: ButtonTemplateSlice): String =
     slice.asJson.noSpaces
 
+  /** 绑定 INSERT/UPDATE 占位符。 */
   def bindRow(statement: PreparedStatement, row: ButtonTemplateRow): Unit = {
     statement.setString(1, row.id)
     statement.setString(2, row.name)
@@ -30,6 +37,7 @@ private[tables] object ButtonTemplateTableCodec {
     statement.setString(8, row.updatedAt)
   }
 
+  /** 从 ResultSet 解析 ButtonTemplateRow（含 slice JSON）。 */
   def rowFromResultSet(resultSet: ResultSet): ButtonTemplateRow =
     ButtonTemplateRow(
       id = resultSet.getString("id"),

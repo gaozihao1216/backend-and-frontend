@@ -2,10 +2,12 @@ package microservice.system.objects
 
 import io.circe.Encoder
 
-/** 成功响应的统一 JSON 包装，与前端 createSuccessResponseSchema 对齐。
+/** 成功响应的统一 JSON 包装。
   *
-  * 序列化形状：{ "success": true, "data": T }。
-  * 关联：routes 在 HttpError.fromEither 的 Right 分支将业务数据包入 ApiSuccess 后编码。
+  * 定义：泛型 case class，success 默认 true，data 承载业务体 T。
+  * 问题：前后端需统一 { success, data } 形状以便 client.request + Zod 校验。
+  * 作用：routes 在 Right 分支包装 APIMessage 返回值后 Circe 编码。
+  * 关联：[[HttpError.fromEither]]、前端 createSuccessResponseSchema；与 [[ApiFailure]] 对称。
   */
 final case class ApiSuccess[T](
   data: T,                      // 业务载荷，类型由各 APIMessage 的返回类型决定

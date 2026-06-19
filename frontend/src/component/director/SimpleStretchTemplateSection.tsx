@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ClipboardEvent } from "react";
 import {
   createStretchVisualTemplate,
-  deleteStretchVisualTemplate,
-  listStretchVisualTemplates,
-  updateStretchVisualTemplate,
-} from "../../api/ui/stretch-visual-templates-api.js";
+} from "../../api/ui/stretchtemplates/CreateStretchVisualTemplateApi.js";
+import { deleteStretchVisualTemplate } from "../../api/ui/stretchtemplates/DeleteStretchVisualTemplateApi.js";
+import { listStretchVisualTemplates } from "../../api/ui/stretchtemplates/ListStretchVisualTemplatesApi.js";
+import { updateStretchVisualTemplate } from "../../api/ui/stretchtemplates/UpdateStretchVisualTemplateApi.js";
 import { processTemplateImage, readFileAsDataUrl } from "../../lib/template-image-utils.js";
 import {
   StretchVisualTemplateSchema,

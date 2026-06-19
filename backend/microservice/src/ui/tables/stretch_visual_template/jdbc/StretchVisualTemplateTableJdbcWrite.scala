@@ -8,7 +8,10 @@ import microservice.ui.tables.stretch_visual_template._
 
 import java.sql.Connection
 
+/** stretch_visual_templates 表 JDBC 写操作。
+  */
 private[tables] object StretchVisualTemplateTableJdbcWrite {
+  /** INSERT 新模板行。 */
   def insert(connection: Connection, row: StretchVisualTemplateRow): StretchVisualTemplateRow = {
     val statement = connection.prepareStatement(
       """
@@ -25,6 +28,7 @@ private[tables] object StretchVisualTemplateTableJdbcWrite {
     }
   }
 
+  /** UPDATE 已有行。 */
   def update(connection: Connection, row: StretchVisualTemplateRow): Option[StretchVisualTemplateRow] = {
     val statement = connection.prepareStatement(
       """
@@ -47,6 +51,7 @@ private[tables] object StretchVisualTemplateTableJdbcWrite {
     }
   }
 
+  /** DELETE 并返回被删行。 */
   def deleteById(connection: Connection, templateId: String): Option[StretchVisualTemplateRow] =
     StretchVisualTemplateTableJdbcRead.findById(connection, templateId).flatMap { row =>
       val statement = connection.prepareStatement("DELETE FROM ui_stretch_visual_templates WHERE id = ?")

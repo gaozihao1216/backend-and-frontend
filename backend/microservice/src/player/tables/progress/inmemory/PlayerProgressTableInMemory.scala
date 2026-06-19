@@ -1,7 +1,10 @@
-/** InMemoryStore 上的 玩家进度 CRUD；演示模式与单元测试使用。
+/**
   *
-  * 关联：玩家模块 Table 门面在 connection == null 时委托到此实现。
-  */
+   * 定义：PlayerProgressTableInMemory：InMemoryStore 上的 PlayerProgressTable CRUD。
+ * 问题：UGC_DATABASE_MODE 非 jdbc 时 connection=null，需内存向量/Map 模拟表。
+ * 作用：与 JDBC 实现同签名，供 Table 门面透明切换。
+ * 关联：[[InMemoryStore]]；[[PlayerProgressTable]] isInMemory 分支。
+ */
 package microservice.player.tables.progress.inmemory
 
 import microservice.player.tables.progress._

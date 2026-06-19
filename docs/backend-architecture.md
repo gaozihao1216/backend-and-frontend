@@ -291,10 +291,11 @@ bird/
 
 ## API 文件约定
 
-- 后端：`backend/microservice/src/**/api/*Api.scala`（或 `*APIMessage.scala`）
-- 前端：`frontend/src/api/**/*Api.ts`
-- **文件名一一对应**，便于跨端追踪
+- 后端：`backend/microservice/src/<module>/api/<子路径>/*Api.scala`
+- 前端：`frontend/src/api/<module>/<子路径>/*Api.ts`（与后端子路径一致，见 [`frontend/src/api/ARCHITECTURE.md`](../frontend/src/api/ARCHITECTURE.md)）
+- **文件名与子目录一一对应**；例外：`GetBackendUsersApi` / `BindBackendUserApi` 在前端位于 `api/auth/`（路由前缀 `/auth`）
 - HTTP method 与 path 说明维护在文档中，不在 Scala 里写未使用的 `*Endpoint` object
+- 前端 `api-alignment.test.ts` 在 CI/本地 `npm test` 中校验布局对齐
 
 ## 响应格式
 

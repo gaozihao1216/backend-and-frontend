@@ -11,7 +11,13 @@ import microservice.system.objects.UserRole
 import microservice.user.tables.user.UserTable
 import microservice.user.utils.AccessControl
 
-/** POST /player/social/friends — 添加好友并返回最新列表。 */
+/** POST /player/social/friends 添加好友 APIMessage。
+  *
+  * 定义：userId + friendUserId 双参，返回好友列表 JSON。
+  * 问题：添加后需立即返回更新列表，且不能加自己或不存在用户。
+  * 作用：校验 Player 角色 → 业务规则 → insertPair → 重查好友并映射 displayName。
+  * 关联：[[PlayerSocialRouter]] POST；[[PlayerFriendTable.insertPair]]。
+  */
 final case class AddFriendAPIMessage(userId: String, friendUserId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

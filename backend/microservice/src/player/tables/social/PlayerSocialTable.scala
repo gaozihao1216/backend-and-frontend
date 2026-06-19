@@ -4,7 +4,13 @@ import microservice.infrastructure.database.InMemoryStore
 import java.sql.Connection
 import java.time.Instant
 
-/** 玩家好友关系表访问门面：单向存储 userId → friendUserId，加好友时双向 insertPair。 */
+/**
+  *
+   * 定义：PlayerSocialTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
+ * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
+ * 作用：initialize/list/find/insert/update 等统一入口。
+ * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
+ */
 object PlayerFriendTable {
   private def isInMemory(connection: Connection): Boolean = connection == null
 

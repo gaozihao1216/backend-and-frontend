@@ -10,7 +10,12 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 
-/** PUT /admin/director/ui/button-templates/:templateId 的 APIMessage。 */
+/** 总监更新按钮模板 APIMessage。
+  *
+  * 定义：/admin/director/ui/button-templates 相关路由。
+  * 作用：按钮视觉模板的 CRUD 操作之一。
+  * 关联：ButtonTemplateTable；DirectorWorkbench 按钮模板管理。
+  */
 final case class UpdateButtonTemplateAPIMessage(
   userId: String,
   templateId: String,
@@ -18,10 +23,17 @@ final case class UpdateButtonTemplateAPIMessage(
 ) extends APIWithTokenMessage[ButtonTemplate] {
   override def token: String = userId
 
+  /** 执行按钮模板业务逻辑。
+    *
+    * 实现：requireAdminLevel(Director) → findById → sanitize → validate → update。
+    * 关联：userId 取自 header。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, ButtonTemplate]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 查找现有模板行
         existing <- PlanSteps.require(
           ButtonTemplateTable.findById(connection, templateId) match {
             case None =>
@@ -30,8 +42,11 @@ final case class UpdateButtonTemplateAPIMessage(
               Right(row)
           }
         )
+        // 规范化并强制 id 为路径 templateId
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template.copy(id = templateId)))
+        // 校验字段合法性
         _ <- PlanSteps.require(ButtonTemplateValidation.validate(template).map(_ => ()))
+        // 更新 ButtonTemplateRow
         result <- PlanSteps.require(
           ButtonTemplateTable
             .update(

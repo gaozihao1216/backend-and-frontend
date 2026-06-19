@@ -12,7 +12,13 @@ import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** POST /player/preparation/birds/:birdType/ascend — 消耗碎片提升鸟阶位。 */
+/** POST .../birds/:birdType/ascend 鸟升阶 APIMessage。
+  *
+  * 定义：满级后升阶，解锁下一 tier 技能描述。
+  * 问题：升阶与升级是不同阶段，需独立校验 maxTier。
+  * 作用：校验 tier 上限 → 扣费 → ascendBird。
+  * 关联：[[BirdPreparationCatalog.maxTier]]；[[PlayerPreparationTable]]。
+  */
 final case class AscendPreparationBirdAPIMessage(userId: String, birdType: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

@@ -5,10 +5,12 @@ import io.circe.{Decoder, Encoder}
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 
-/** 对外 API 暴露的用户对象（identity 层）。
+/** 对外 API 暴露的用户身份对象（identity 层）。
   *
-  * 与前端 `frontend/src/objects/auth/backend-user.ts` 的 BackendUserSchema 对齐。
-  * 由 UserRow 经 UserRowMapper 转换而来，不直接暴露存储层字段命名差异。
+  * 定义：id/username/displayName/role/adminLevel/时间戳 的 JSON 可序列化 case class。
+  * 问题：UserRow 含存储细节，不宜直接作为 bind/profile 响应返回前端。
+  * 作用：前端保存 id 为 apiUserId，后续 x-user-id 请求头携带。
+  * 关联：[[UserRowMapper.toBackendUser]]；`frontend/src/objects/auth/backend-user.ts`。
   */
 final case class BackendUser(
   id: String,                      // 后端主键，如 player-1；前端保存为 apiUserId

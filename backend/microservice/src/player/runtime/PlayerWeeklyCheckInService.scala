@@ -10,10 +10,12 @@ import io.circe.syntax._
 import java.sql.Connection
 import java.time.{DayOfWeek, LocalDate, ZoneOffset}
 
-/** 玩家周签到运行时服务：7 格签到进度、奖励领取与面板奖励配置。
+/** 周签到 UI 数据与领取动作服务。
   *
-  * 实现：按 UTC 周一为 weekKey；每日仅可领取当前 activeSlot；奖励来自 CheckInPanelRewardTable。
-  * 关联：总监 panel-workflows 注册奖励；PlayerWeeklyCheckInTable 持久化进度。
+  * 定义：7 日签到进度 + claimActionKey 领取当日奖励。
+  * 问题：签到面板奖励由 CheckInPanelRewardTable 配置，进度存 WeeklyCheckInTable。
+  * 作用：getData 合并 panel 配置与玩家进度；executeClaim 发奖入 wallet。
+  * 关联：[[PlayerWeeklyCheckInTable]]；[[CheckInPanelRewardTable]]。
   */
 object PlayerWeeklyCheckInService {
   private val WeeklyCheckInDataKey = "player.weeklyCheckIn"

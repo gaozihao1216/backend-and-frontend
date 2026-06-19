@@ -7,10 +7,12 @@ import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 
-/** 玩家商店运行时服务：商品目录展示与购买扣款。
+/** 玩家商店 UI 数据与购买动作服务。
   *
-  * 实现：按 catalogIndex 过滤商品，购买时校验余额并记录购买历史。
-  * 关联：ShopTable、PlayerWalletTable；前端商店面板通过 apiKey 绑定。
+  * 定义：dataApiKey/getData 列表商品；purchaseActionKey/executePurchase 扣费入库。
+  * 问题：商店页与购买按钮共用 ShopTable 与 wallet 扣费逻辑。
+  * 作用：listItems + 玩家已购标记；purchase 校验库存与余额。
+  * 关联：[[InvokePlayerUiActionAPIMessage]]；[[ShopTable]]。
   */
 object PlayerShopService {
   /** 拉取商店目录与钱包余额的 dataSource apiKey。 */

@@ -12,8 +12,10 @@ import org.http4s.dsl.io._
 
 /** 用户身份（identity）层的 HTTP 路由。
   *
-  * 挂载前缀：/auth（由 ApiRouter 配置，与前端 vite proxy 一致）。
-  * 职责：只做请求解析与响应包装，业务逻辑在 user.api 的 APIMessage 中。
+  * 定义：/auth 前缀下 HttpRoutes，解析 HTTP 并调用 user.api APIMessage。
+  * 问题：bind 与 backend-users 为公开路由，需在 ApiRouter 中排除 AuthMiddleware。
+  * 作用：JSON 编解码 + ApiSuccess/HttpError 统一响应包装。
+  * 关联：[[ApiRouter]] 挂载 /auth；vite proxy /auth；[[BindBackendUserAPIMessage]] 等。
   */
 object AuthRouter {
 

@@ -2,10 +2,12 @@ package microservice.system.objects
 
 import io.circe.Encoder
 
-/** 失败响应的统一 JSON 包装，与前端 ApiFailure Zod schema 对齐。
+/** 失败响应的统一 JSON 包装。
   *
-  * 序列化形状：{ "success": false, "error": ErrorBody }。
-  * 关联：[[microservice.infrastructure.http.HttpError.toApiFailure]] 构造此类型后由 toResponse 编码。
+  * 定义：success 恒 false +嵌套 [[ErrorBody]] error 字段。
+  * 问题：HTTP 4xx/5xx 仍需可解析 JSON 供前端展示 code/message。
+  * 作用：HttpError.toApiFailure 构造后由 toResponse 编码为响应体。
+  * 关联：前端 ApiFailure Zod schema；与 [[ApiSuccess]] 对称。
   */
 final case class ApiFailure(
   success: Boolean = false, // 恒为 false

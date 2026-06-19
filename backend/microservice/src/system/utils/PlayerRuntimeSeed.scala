@@ -8,10 +8,12 @@ import microservice.player.tables.progress.{PlayerLevelProgressTable}
 import microservice.player.tables.shop.{ShopTable}
 import microservice.player.tables.wallet.{PlayerWalletTable}
 
-/** 玩家运行时（钱包、签到、商店、进度）的 in-memory 种子初始化。
+/** 玩家运行时（钱包、签到、商店、进度）的 in-memory 种子。
   *
-  * 实现：通过各 Table 的 API 写入演示数据；connection 传 null 路由到 InMemoryStore。
-  * 关联：[[SystemSeedData.reset]] 在重置核心 UGC 表后调用本 object 的 reset。
+  * 定义：private[utils] object，reset 通过各 Player Table API 写入演示数据（connection=null）。
+  * 问题：UGC 核心 seed 不含玩家侧钱包/商店/签到，需单独初始化。
+  * 作用：为 player-1 建钱包、7 日签到奖励、商店商品，并清空易变集合防叠加。
+  * 关联：[[SystemSeedData.reset]] 第二步；[[PlayerRuntimeDefaults]] 签到 panelId。
   */
 private[utils] object PlayerRuntimeSeed {
   def reset(): Unit = {

@@ -21,16 +21,18 @@ final case class CreateLevelAPIMessage(
 ) extends APIWithTokenMessage[Level] {
   override def token: String = designerId
 
-  /** 设计师创建新关卡，初始状态为 Draft。
+  /** plan 定义了什么业务流程：Designer 创建新关卡，校验 title 后 insert LevelTable，初始 status=Draft。
     *
-    * 实现：requireRole(Designer) → 校验 title → LevelTable.insert → RowMapper 转领域对象 Level。
-    * 关联：authorId 取自 header 中的 designerId；前端 objects/level/level.ts 的 Level schema 对齐返回结构。
+    * 解决了什么问题：UGC 关卡创作入口，authorId 取自 token 而非 body 防伪造。
+    * 在事务内起到什么作用：校验通过后 insert LevelRow；Left 时整笔回滚。
+    * 关联的 HTTP 路由/前端 API：POST /designer/levels；前端 `CreateLevelApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验 Designer 角色
         _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
-        // title 不能为空（trim 后）
+        // 步骤 2：校验 title 非空（trim 后）
         _ <- PlanSteps.require(
           if (body.title.trim.isEmpty) {
             Left(CreateLevelErrors.CreateLevelValidation(List("title")).toHttpError)
@@ -38,9 +40,9 @@ final case class CreateLevelAPIMessage(
             Right(())
           }
         )
+        // 步骤 3：组装 LevelRow 并 insert，映射为 Level 领域对象
         level <- PlanSteps.read {
           val timestamp = Instant.now().toString
-          // 组装 LevelRow 并插入；status 固定为 Draft，评分字段初始化为 0
           val row = LevelTable.insert(
             connection,
             LevelRow(
@@ -61,6 +63,7 @@ final case class CreateLevelAPIMessage(
           )
           LevelRowMapper.toLevel(row)
         }
+      // 返回新创建的 Level 领域对象
       } yield level
     }
 }

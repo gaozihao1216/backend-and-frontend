@@ -10,7 +10,12 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
-/** DELETE /admin/director/ui/pages/:pageId/components/:componentId 的 APIMessage。 */
+/** 总监删除页面内组件 APIMessage。
+  *
+  * 定义：DELETE /admin/director/ui/pages/:pageId/components/:componentId。
+  * 作用：从 PageConfig.components 移除指定组件。
+  * 关联：返回更新后的完整 PageConfig。
+  */
 final case class DeletePageComponentAPIMessage(
   userId: String,
   pageId: String,
@@ -18,10 +23,17 @@ final case class DeletePageComponentAPIMessage(
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 
+  /** 页面组件 CRUD 业务逻辑。
+    *
+    * 实现：requireAdminLevel(Director) → 校验页面与组件存在 → deleteComponent。
+    * 关联：返回更新后的完整 PageConfig。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 校验页面与组件存在
         _ <- PlanSteps.require(
           UiPageTable.findById(connection, pageId) match {
             case None =>
@@ -32,6 +44,7 @@ final case class DeletePageComponentAPIMessage(
               Right(())
           }
         )
+        // 删除组件并返回更新后的 PageConfig
         page <- PlanSteps.require(
           UiPageTable
             .deleteComponent(connection, pageId, componentId, Instant.now().toString)

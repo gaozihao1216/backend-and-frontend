@@ -7,6 +7,7 @@ package microservice.ui.tables.ui_page
 import microservice.ui.objects.PageConfig
 
 object UiPageRowMapper {
+  /** UiPageRow → PageConfig 领域对象。 */
   def toPageConfig(row: UiPageRow): PageConfig =
     PageConfig(
       id = row.id,
@@ -17,6 +18,7 @@ object UiPageRowMapper {
       components = row.components
     )
 
+  /** PageConfig → UiPageRow 持久化行（附带时间戳）。 */
   def fromPageConfig(config: PageConfig, createdAt: String, updatedAt: String): UiPageRow =
     UiPageRow(
       id = config.id,

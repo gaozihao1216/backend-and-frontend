@@ -12,7 +12,13 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
-/** POST /player/ui/actions/:apiKey 的请求体：透传给运行时服务的参数字典。 */
+/** 玩家 UI 运行时 HTTP 路由 /player/ui。
+  *
+  * 定义：level-map/pages/data/actions 五条路由，衔接 ui 与 player 模块。
+  * 问题：动态页面既需 ui 模块 Page 定义，也需 player 运行时 data/action。
+  * 作用：GET 页面与 data；POST actions；部分委托 ui.api APIMessage。
+  * 关联：vite proxy /player/ui；[[GetPlayerUiDataAPIMessage]]。
+  */
 final case class UiActionRequest(params: Map[String, String] = Map.empty)
 
 object UiActionRequest {

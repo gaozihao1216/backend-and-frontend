@@ -7,14 +7,17 @@ package microservice.ui.objects
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
+/** 按钮模板缩放模式：固定比例或九宫格。 */
 sealed abstract class ButtonTemplateScalingMode(val value: String)
 
+/** ButtonTemplateScalingMode 枚举与编解码。 */
 object ButtonTemplateScalingMode {
   case object FixedAspect extends ButtonTemplateScalingMode("fixedAspect")
   case object NineSlice extends ButtonTemplateScalingMode("nineSlice")
 
   val values: List[ButtonTemplateScalingMode] = List(FixedAspect, NineSlice)
 
+  /** 从字符串解析缩放模式。 */
   def fromString(value: String): Option[ButtonTemplateScalingMode] =
     values.find(_.value == value)
 
@@ -25,6 +28,7 @@ object ButtonTemplateScalingMode {
     Decoder.decodeString.emap(value => fromString(value).toRight(s"Unknown button template scaling mode: $value"))
 }
 
+/** 九宫格切片边距（top/right/bottom/left）。 */
 final case class ButtonTemplateSlice(
   top: Double,
   right: Double,
@@ -32,11 +36,13 @@ final case class ButtonTemplateSlice(
   left: Double
 )
 
+/** ButtonTemplateSlice 编解码。 */
 object ButtonTemplateSlice {
   implicit val encoder: Encoder[ButtonTemplateSlice] = deriveEncoder
   implicit val decoder: Decoder[ButtonTemplateSlice] = deriveDecoder
 }
 
+/** 按钮视觉模板领域对象。 */
 final case class ButtonTemplate(
   id: String,
   name: String,
@@ -48,6 +54,7 @@ final case class ButtonTemplate(
   updatedAt: Option[String]
 )
 
+/** ButtonTemplate 编解码（category/scalingMode 含默认值）。 */
 object ButtonTemplate {
   implicit val encoder: Encoder[ButtonTemplate] = deriveEncoder
   implicit val decoder: Decoder[ButtonTemplate] =

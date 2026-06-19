@@ -11,6 +11,7 @@ import microservice.ui.objects.{PageComponent, UiEndpoint}
   * 组件以 JSON 嵌入页面行；总监通过 UiCustomizationRouter 管理，玩家通过 GetSharedLevelMapPage 读取。
   */
 object UiPageTable {
+  /** 判断当前是否为 InMemory 模式（connection == null）。 */
   private def isInMemory(connection: Connection): Boolean =
     connection == null
 

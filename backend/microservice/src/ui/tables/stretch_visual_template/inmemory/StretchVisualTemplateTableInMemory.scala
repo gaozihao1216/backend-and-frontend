@@ -9,18 +9,26 @@ import microservice.ui.tables.stretch_visual_template._
 import microservice.infrastructure.database.InMemoryStore
 import microservice.ui.objects.StretchVisualTemplateKind
 
+/** InMemoryStore 上的拉伸视觉模板 CRUD。
+  *
+  * 关联：StretchVisualTemplateTable 在 connection == null 时委托。
+  */
 private[tables] object StretchVisualTemplateTableInMemory {
+  /** 按 kind 过滤模板列表。 */
   def listByKind(kind: StretchVisualTemplateKind): Vector[StretchVisualTemplateRow] =
     InMemoryStore.stretchVisualTemplates.filter(_.kind == kind).sortBy(_.id)
 
+  /** 按 templateId 查找。 */
   def findById(templateId: String): Option[StretchVisualTemplateRow] =
     InMemoryStore.stretchVisualTemplates.find(_.id == templateId)
 
+  /** 追加新拉伸视觉模板。 */
   def insert(row: StretchVisualTemplateRow): StretchVisualTemplateRow = {
     InMemoryStore.stretchVisualTemplates = InMemoryStore.stretchVisualTemplates :+ row
     row
   }
 
+  /** 更新已有模板。 */
   def update(row: StretchVisualTemplateRow): Option[StretchVisualTemplateRow] =
     InMemoryStore.stretchVisualTemplates.indexWhere(_.id == row.id) match {
       case -1 => None
@@ -29,6 +37,7 @@ private[tables] object StretchVisualTemplateTableInMemory {
         Some(row)
     }
 
+  /** 删除并返回被删行。 */
   def deleteById(templateId: String): Option[StretchVisualTemplateRow] =
     InMemoryStore.stretchVisualTemplates.indexWhere(_.id == templateId) match {
       case -1 => None

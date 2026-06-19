@@ -1,7 +1,10 @@
-/** 玩家进度表的 JDBC 只读查询。
+/**
   *
-  * 实现：PreparedStatement + Codec.rowFromResultSet；由 Table 门面在 connection != null 时委托。
-  */
+   * 定义：PlayerProgressTableJdbcRead：PlayerProgressTable 表的 JDBC 只读实现。
+ * 问题：门面 Table 在 connection!=null 时需 PreparedStatement 查询 PostgreSQL。
+ * 作用：list/find/count 等 SELECT，ResultSet 经 Codec 转 Row。
+ * 关联：[[PlayerProgressTable]] 读路径分流；[[PlayerProgressTableCodec]] rowFromResultSet。
+ */
 package microservice.player.tables.progress.jdbc
 
 import microservice.player.tables.progress._

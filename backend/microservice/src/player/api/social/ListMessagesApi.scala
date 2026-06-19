@@ -10,7 +10,13 @@ import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessag
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** GET /player/social/messages — 列出与指定好友的私信记录。 */
+/** GET /player/social/messages 私信列表 APIMessage。
+  *
+  * 定义：userId + withUserId 查询双方会话历史。
+  * 问题：仅好友可互发私信，需防未授权窥视聊天记录。
+  * 作用：校验好友关系 → listConversation → 标记 mine 字段。
+  * 关联：[[PlayerSocialRouter]] ?withUserId=；[[PlayerPrivateMessageTable]]。
+  */
 final case class ListMessagesAPIMessage(userId: String, withUserId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

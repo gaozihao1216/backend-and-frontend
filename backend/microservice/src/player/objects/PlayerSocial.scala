@@ -1,6 +1,12 @@
 package microservice.player.objects
 
-/** 好友列表中的单个好友摘要（含展示名与加好友时间占位）。 */
+/** 玩家社交 API 领域对象。
+  *
+  * 定义：好友摘要、私信视图、请求体 case class。
+  * 问题：social JSON 形状与前端 Zod schema 一致。
+  * 作用：AddFriendRequest、PlayerPrivateMessageView 等。
+  * 关联：[[PlayerSocialJson]]；social 包下 APIMessage。
+  */
 final case class PlayerFriendSummary(
   userId: String,
   displayName: String,

@@ -3,10 +3,12 @@ package microservice.ui.objects
 /** 页面所属角色端点：player / designer / admin / director，用于按角色过滤页面列表。 */
 import io.circe.{Decoder, Encoder}
 
+/** 页面所属角色端点 ADT。 */
 sealed trait UiEndpoint {
   def value: String
 }
 
+/** UiEndpoint 枚举值与 Circe 编解码。 */
 object UiEndpoint {
   case object Player extends UiEndpoint { override val value: String = "player" }
   case object Designer extends UiEndpoint { override val value: String = "designer" }
@@ -15,6 +17,7 @@ object UiEndpoint {
 
   private val byValue = List(Player, Designer, Admin, Director).map(endpoint => endpoint.value -> endpoint).toMap
 
+  /** 从字符串解析 UiEndpoint；未知值返回 None。 */
   def fromString(value: String): Option[UiEndpoint] =
     byValue.get(value)
 

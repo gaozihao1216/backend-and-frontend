@@ -12,7 +12,13 @@ import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** POST /player/preparation/birds/:birdType/upgrade — 消耗金币提升鸟等级。 */
+/** POST .../birds/:birdType/upgrade 鸟升级 APIMessage。
+  *
+  * 定义：扣费并提升指定 birdType 升级等级。
+  * 问题：升级成本与上限需与 Catalog 一致，余额不足应失败。
+  * 作用：校验 Catalog/Table → 扣 wallet → updateBirdUpgrade。
+  * 关联：[[PlayerPreparationRouter]] POST upgrade；[[PlayerPreparationTable]]。
+  */
 final case class UpgradePreparationBirdAPIMessage(userId: String, birdType: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

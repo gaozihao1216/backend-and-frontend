@@ -2,10 +2,12 @@ package microservice.system.objects
 
 import io.circe.{Decoder, Encoder}
 
-/** 关卡提交流水状态，与 LevelStatus 配合记录审核历史。
+/** 关卡提交流水状态枚举。
   *
-  * 实现：每次 submit 产生一条 SubmissionRow；审核通过后可同步 Level 为 Published。
-  * abolished 表示设计师主动撤回或管理员废止的历史记录。
+  * 定义：sealed trait + PendingReview/Approved/Rejected/Abolished 四态。
+  * 问题：单次 submit 产生独立流水，需与 Level.status 解耦以保留审核历史。
+  * 作用：SubmissionRow.status 记录每条提交流转；abolished 表示撤回或总监废止。
+  * 关联：[[SubmissionRow]]、SubmitLevel/ReviewSubmission APIMessage；与 [[LevelStatus]] 协同。
   */
 sealed trait SubmissionStatus {
   def value: String

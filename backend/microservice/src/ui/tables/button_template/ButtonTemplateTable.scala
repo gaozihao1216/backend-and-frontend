@@ -10,6 +10,7 @@ import java.sql.Connection
   * 总监在 DirectorWorkbench 中管理；动态页面 ButtonComponent 通过 templateId 引用。
   */
 object ButtonTemplateTable {
+  /** 判断当前是否为 InMemory 模式（connection == null）。 */
   private def isInMemory(connection: Connection): Boolean =
     connection == null
 

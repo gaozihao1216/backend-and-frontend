@@ -1,8 +1,11 @@
 package microservice.user.tables
 
-/** 用户资料读模型的投影行（预留结构，当前 GetUserProfile 在 APIMessage 内直接聚合，未使用此类型）。
+/** 用户资料读模型投影行（预留，当前未接入 JDBC）。
   *
-  * 若未来将 profile 查询下沉到独立 table/service，可在此扩展 JDBC 实现。
+  * 定义：userId + 关卡/评论 id 列表 + 计数 的扁平 case class。
+  * 问题：GetUserProfile 现于 APIMessage 内多表聚合，未来可下沉为单 SQL 视图。
+  * 作用：占位类型，便于后续 profile 查询性能优化。
+  * 关联：[[GetUserProfileAPIMessage]] 当前未使用；[[UserProfileTable]] 包级命名空间。
   */
 final case class UserProfileProjectionRow(
   userId: String,

@@ -16,12 +16,15 @@ private[tables] object UiPageTableCodec {
       FROM ui_pages
     """
 
+  /** PageLayout 序列化为 JSON 字符串写入 layout 列。 */
   def layoutToDb(layout: PageLayout): String =
     layout.asJson.noSpaces
 
+  /** PageComponent 列表序列化为 JSON 字符串写入 components 列。 */
   def componentsToDb(components: List[PageComponent]): String =
     components.asJson.noSpaces
 
+  /** 将 UiPageRow 绑定到 INSERT/UPDATE PreparedStatement 占位符。 */
   def bindRow(statement: PreparedStatement, row: UiPageRow): Unit = {
     statement.setString(1, row.id)
     statement.setString(2, row.name)
@@ -33,6 +36,7 @@ private[tables] object UiPageTableCodec {
     statement.setString(8, row.updatedAt)
   }
 
+  /** 从 ResultSet 解析单行 UiPageRow（含 JSON 反序列化 layout/components）。 */
   def rowFromResultSet(resultSet: ResultSet): UiPageRow =
     UiPageRow(
       id = resultSet.getString("id"),

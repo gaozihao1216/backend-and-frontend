@@ -9,7 +9,10 @@ import microservice.ui.tables.stretch_visual_template._
 import java.sql.{Connection, ResultSet}
 import microservice.ui.objects.StretchVisualTemplateKind
 
+/** stretch_visual_templates 表 JDBC 读操作（含 listByKind）。
+  */
 private[tables] object StretchVisualTemplateTableJdbcRead {
+  /** 按 kind 过滤查询。 */
   def listByKind(connection: Connection, kind: StretchVisualTemplateKind): Vector[StretchVisualTemplateRow] = {
     val statement = connection.prepareStatement(s"${StretchVisualTemplateTableCodec.baseSelect} WHERE kind = ? ORDER BY id ASC")
     try {
@@ -20,6 +23,7 @@ private[tables] object StretchVisualTemplateTableJdbcRead {
     }
   }
 
+  /** 按 id 查询单条。 */
   def findById(connection: Connection, templateId: String): Option[StretchVisualTemplateRow] = {
     val statement = connection.prepareStatement(s"${StretchVisualTemplateTableCodec.baseSelect} WHERE id = ?")
     try {

@@ -6,10 +6,12 @@ import microservice.user.objects.BackendUser
 import microservice.level.objects.level.{Level}
 import microservice.level.objects.social.{LevelComment}
 
-/** 用户资料页聚合响应（profile 层）。
+/** 用户资料页聚合响应（profile 读模型）。
   *
-  * 组合 identity（BackendUser）与 level 模块的关卡、评论、统计，供 GET /users/:id/profile 返回。
-  * 与前端 UserProfileSchema 对齐。
+  * 定义：BackendUser + 已发布关卡 + 最近评论 + UserProfileStats 四段组合。
+  * 问题：资料页需跨 level/comment/favorite/rating 多表聚合，不宜让前端多次请求。
+  * 作用：GET /users/:id/profile 一次性返回展示所需数据。
+  * 关联：[[GetUserProfileAPIMessage]]；前端 UserProfileSchema。
   */
 final case class UserProfile(
   user: BackendUser,                    // 用户基本信息

@@ -2,11 +2,12 @@ package microservice.admin.objects.director.permissions
 
 import microservice.infrastructure.http.HttpError
 
-/** 总监权限移交 API 的业务错误类型，统一映射为 HttpError。 */
+/** 总监权限移交 API 的业务错误 sealed trait。 */
 sealed trait TransferDirectorPermissionApiError {
   def toHttpError: HttpError
 }
 
+/** 总监权限移交相关错误码，供 TransferDirectorPermissionAPIMessage 使用。 */
 object TransferDirectorPermissionErrors {
   /** 目标 admin 用户不存在 → 404 TARGET_ADMIN_NOT_FOUND */
   final case class TargetMissing(userId: String) extends TransferDirectorPermissionApiError {

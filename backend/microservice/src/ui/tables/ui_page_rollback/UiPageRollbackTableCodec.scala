@@ -6,13 +6,21 @@ import microservice.ui.objects.PageConfig
 
 import java.sql.{PreparedStatement, ResultSet}
 
+/** JDBC 读路径专用：ui_page_rollbacks 表列 ↔ UiPageRollbackRow 编解码。
+  *
+  * 定义：page_json 列存储完整 PageConfig 的 JSON 序列化。
+  * 实现：baseSelect 复用 SELECT 片段；rowFromResultSet / bindRow 与 PostgreSQL 列对齐。
+  * 关联：UiPageRollbackTableJdbcRead / UiPageRollbackTableJdbcWrite。
+  */
 private[tables] object UiPageRollbackTableCodec {
+  /** 回滚表通用 SELECT 列清单。 */
   val baseSelect: String =
     """
       SELECT page_id, page_json, created_at
       FROM ui_page_rollbacks
     """
 
+  /** 从 ResultSet 解析单行并反序列化 page_json 为 PageConfig。 */
   def rowFromResultSet(resultSet: ResultSet): UiPageRollbackRow = {
     val pageJson = resultSet.getString("page_json")
     val page = decode[PageConfig](pageJson).fold(
@@ -26,6 +34,7 @@ private[tables] object UiPageRollbackTableCodec {
     )
   }
 
+  /** 将 UiPageRollbackRow 绑定到 PreparedStatement 占位符。 */
   def bindRow(statement: PreparedStatement, row: UiPageRollbackRow): Unit = {
     statement.setString(1, row.pageId)
     statement.setString(2, row.page.asJson.noSpaces)

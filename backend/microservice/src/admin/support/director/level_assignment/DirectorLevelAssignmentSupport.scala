@@ -16,8 +16,13 @@ import microservice.level.tables.slot_assignment.LevelSlotAssignmentTable
 import microservice.level.tables.submission.SubmissionTable
 import microservice.player.preparation.BirdPreparationCatalog
 
-/** 总监关卡槽位分配辅助：组装看板数据、关联投稿与关卡、构建可选 bird pool。 */
+/** 总监关卡槽位分配辅助逻辑。
+  *
+  * 解决的问题：APIMessage 不宜内联复杂联查；看板组装需复用 submissionWithLevel、birdPoolOptions。
+  * 使用者：GetDirectorLevelAssignmentBoardAPIMessage、AssignLevelSlotAPIMessage 等。
+  */
 object DirectorLevelAssignmentSupport {
+  /** 按 submissionId 联查 Submission + Level，组装 SubmissionWithLevel。 */
   def submissionWithLevel(connection: Connection, submissionId: String): Option[SubmissionWithLevel] =
     SubmissionTable.findById(connection, submissionId).flatMap { submission =>
       LevelTable.findById(connection, submission.levelId).map { level =>
@@ -25,6 +30,7 @@ object DirectorLevelAssignmentSupport {
       }
     }
 
+  /** 构建总监配置 bird pool 时的下拉选项：系统内置鸟 + 已发布设计师鸟。 */
   def buildBirdPoolOptions(connection: Connection): List[DirectorBirdPoolOption] = {
     val systemOptions =
       BirdPreparationCatalog.entries.map { entry =>
@@ -53,6 +59,7 @@ object DirectorLevelAssignmentSupport {
     systemOptions ++ designerOptions
   }
 
+  /** 组装总监关卡分配看板：已占用槽位、待分配 Approved 投稿、bird pool 选项。 */
   def buildBoard(connection: Connection): DirectorLevelAssignmentBoard = {
     val assignedSubmissionIds =
       LevelSlotAssignmentTable.listAll(connection).map(_.submissionId).toSet

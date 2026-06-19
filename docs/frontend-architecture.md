@@ -29,8 +29,10 @@ frontend/src/
 ### API 层
 
 - 统一入口：`frontend/src/api/client.ts` 的 `request(path, init, responseSchema)`
-- 每个 API 独立文件，例如 `frontend/src/api/level/CreateLevelApi.ts`
-- 模块聚合导出保留在 `*-api.ts`（如 `designer-api.ts`、`admin-api.ts`），供旧页面兼容导入
+- 子目录与后端 `backend/microservice/src/<module>/api/` **对齐**（见 [`frontend/src/api/ARCHITECTURE.md`](../frontend/src/api/ARCHITECTURE.md)）
+- 示例：`level/api/design/CreateLevelApi.scala` ↔ `api/level/design/CreateLevelApi.ts`
+- 模块聚合导出保留在 `*-api.ts`（如 `designer-api.ts`、`admin-api.ts`），供页面快捷 import
+- `npm test` 含 `api-alignment.test.ts`，校验前后端 `*Api` 文件布局一致
 - 所有成功响应经 `createSuccessResponseSchema` 包装后再用 Zod 解析，失败时抛出结构化错误
 
 ### Objects 层
@@ -39,7 +41,7 @@ frontend/src/
 - 类型名与 Scala 后端对象名一致（如 `Level`、`BackendUser`）
 - 模块包括：`system`、`auth`、`user`、`level`、`admin`、`bird`、`ui-customization` 等
 
-前后端对齐原则：**同名 API 文件 + 同名领域对象**，便于从前端调用追到后端实现。
+前后端对齐原则：**同名 API 文件 + 同模块子路径 + 同名领域对象**（`user` 模块中挂载 `/auth` 的两个 API 在前端放在 `api/auth/`）。
 
 ## 路由与页面
 

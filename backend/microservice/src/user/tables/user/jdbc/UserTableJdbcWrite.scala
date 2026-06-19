@@ -5,7 +5,13 @@ import microservice.user.tables.user._
 import java.sql.Connection
 import microservice.system.objects.AdminLevel
 
-/** users 表的 JDBC 写操作。 */
+/** users 表 JDBC 写操作。
+  *
+  * 定义：insert 与 updateAdminLevel 两个写入口。
+  * 问题：admin_level NULL 与 Option 映射需 setNull；update 后 re-read 保证返回最新行。
+  * 作用：INSERT 新 bind 用户；UPDATE director 权限转移。
+  * 关联：[[UserTable]] 写分流；[[UserTableJdbcRead.findById]] re-read。
+  */
 private[tables] object UserTableJdbcWrite {
 
   def insert(connection: Connection, row: UserRow): UserRow = {

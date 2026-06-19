@@ -53,7 +53,11 @@ import org.http4s.dsl.io._
   * 关联：frontend DirectorWorkbenchPage、DynamicPageRenderer 消费配置；部分 workflow 联动 player 签到奖励。
   */
 object UiCustomizationRouter {
-  /** 注册 /admin/director/ui 下的全部路由。 */
+  /** 注册 /admin/director/ui 下的全部路由。
+    *
+    * 实现：解析 path/body → 构造 APIMessage → runAuthenticated → ApiSuccess 包装。
+    * 关联：ApiRouter 挂载此前缀；AuthMiddleware 注入 userId。
+    */
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       // GET /pages?endpoint= — 列出页面配置（可选按角色端点过滤）
@@ -241,6 +245,7 @@ object UiCustomizationRouter {
     }
 
 
+  /** 解析 query 参数 endpoint 为 UiEndpoint；缺省为 None（不过滤）。 */
   private def parseEndpoint(value: Option[String]): Either[HttpError, Option[UiEndpoint]] =
     value match {
       case None => Right(None)

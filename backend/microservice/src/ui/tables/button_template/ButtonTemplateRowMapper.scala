@@ -7,6 +7,7 @@ package microservice.ui.tables.button_template
 import microservice.ui.objects.ButtonTemplate
 
 object ButtonTemplateRowMapper {
+  /** ButtonTemplateRow → ButtonTemplate 领域对象。 */
   def toButtonTemplate(row: ButtonTemplateRow): ButtonTemplate =
     ButtonTemplate(
       id = row.id,
@@ -19,6 +20,7 @@ object ButtonTemplateRowMapper {
       updatedAt = Some(row.updatedAt)
     )
 
+  /** ButtonTemplate → ButtonTemplateRow 持久化行。 */
   def fromButtonTemplate(template: ButtonTemplate, createdAt: String, updatedAt: String): ButtonTemplateRow =
     ButtonTemplateRow(
       id = template.id,

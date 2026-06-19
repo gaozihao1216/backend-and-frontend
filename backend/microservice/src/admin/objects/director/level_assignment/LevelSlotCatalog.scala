@@ -2,8 +2,9 @@ package microservice.admin.objects.director.level_assignment
 
 /** 总监可分配的关卡槽位后缀白名单（level01–level10）。
   *
-  * 实现：isSupported 用于 Assign/Unassign/UpdateBirdPool 路由参数校验。
-  * 关联：DirectorLevelAssignmentApi；与玩家侧固定关卡槽位一一对应。
+  * 领域含义：与玩家侧固定关卡槽位一一对应；仅这些 suffix 可被 Assign/Unassign。
+  * 字段：supportedSuffixes 合法槽位列表；isSupported 用于路由参数校验。
+  * 使用者：DirectorLevelAssignmentApi 各 APIMessage。
   */
 object LevelSlotCatalog {
   val supportedSuffixes: List[String] =

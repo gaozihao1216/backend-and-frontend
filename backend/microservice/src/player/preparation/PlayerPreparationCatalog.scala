@@ -4,10 +4,12 @@ import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdRowMapper}
 import java.sql.Connection
 
-/** 备战鸟目录聚合：系统内置鸟 + 设计师已发布鸟设计。
+/** 备战鸟目录加载（系统 + 已发布设计）。
   *
-  * 实现：合并 BirdPreparationCatalog 与 BirdDesignTable.listPublished。
-  * 关联：PlayerPreparationSupport / APIMessage plan 构建响应时调用。
+  * 定义：loadEntries/find 合并 BirdPreparationCatalog 与 BirdDesignTable。
+  * 问题：玩家可升级鸟包含系统默认与设计师过审鸟种。
+  * 作用：Vector[BirdCatalogEntry] 供 Support 与 upgrade API 校验 birdType。
+  * 关联：[[BirdDesignTable.listPublished]]；[[BirdPreparationCatalog]]。
   */
 object PlayerPreparationCatalog {
   /** 加载完整鸟目录（系统 + 设计师发布）。 */

@@ -2,10 +2,12 @@ package microservice.system.objects
 
 import io.circe.{Decoder, Encoder}
 
-/** 用户角色枚举，与前端 UserRoleSchema 及数据库存储字符串对齐。
+/** 用户角色枚举。
   *
-  * 实现：value 为 JSON/DB 中的字面量；fromString 用于 JDBC 行解析与请求校验。
-  * 关联：UserRow.role、BindBackendUserRequest.role、AccessControl.requireRole。
+  * 定义：Player / Designer / Admin 三角色，value 为 JSON 与 DB 字面量。
+  * 问题：UGC 平台需按身份隔离 API（设计/游玩/审核）。
+  * 作用：UserRow.role 持久化；BindBackendUser 创建时指定；AccessControl 校验。
+  * 关联：[[UserRow]]、[[BindBackendUserRequest]]、前端 UserRoleSchema。
   */
 sealed trait UserRole {
   def value: String // 序列化与持久化用的稳定字符串

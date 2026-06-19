@@ -12,20 +12,25 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
 
-/** 设计师创建新鸟类设计，初始状态为 Draft。
-  *
-  * 实现：requireRole(Designer) → BirdDesignValidation.validate → BirdDesignTable.insert。
-  * 关联：POST /designer/bird-designs；previewImageUrl 缺省时使用 BirdDesignTable.defaultPreviewImageUrl。
-  */
+/** 设计师创建新鸟类设计 APIMessage，初始状态为 Draft。 */
 final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBirdDesignBody)
     extends APIWithTokenMessage[BirdDesign] {
   override def token: String = designerId
 
+  /** plan 定义了什么业务流程：Designer 创建新鸟设计，校验字段后写入 BirdDesignTable，status=Draft。
+    *
+    * 解决了什么问题：UGC 鸟种需由设计师定义属性、三档技能描述与预览图。
+    * 在事务内起到什么作用：校验通过后 insert BirdDesignRow；失败则整笔回滚。
+    * 关联的 HTTP 路由/前端 API：POST /designer/bird-designs；前端 `CreateBirdDesignApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, BirdDesign]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验 Designer 角色
         _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        // 步骤 2：校验 name/summary/stats/tierSkills 等字段
         input <- PlanSteps.require(BirdDesignValidation.validate(toInput(body)))
+        // 步骤 3：组装 BirdDesignRow 并 insert，映射为 BirdDesign 领域对象
         design <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = BirdDesignTable.insert(
@@ -51,9 +56,11 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
           )
           BirdRowMapper.toBirdDesign(row)
         }
+      // 返回新创建的 BirdDesign
       } yield design
     }
 
+  /** 将 CreateBirdDesignBody 转为统一校验输入结构。 */
   private def toInput(body: CreateBirdDesignBody): BirdDesignInputBody =
     BirdDesignInputBody(
       name = body.name,

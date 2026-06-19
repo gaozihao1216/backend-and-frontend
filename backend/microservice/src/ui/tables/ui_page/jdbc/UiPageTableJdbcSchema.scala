@@ -9,6 +9,7 @@ import microservice.ui.tables.ui_page._
 import java.sql.Connection
 
 private[tables] object UiPageTableJdbcSchema {
+  /** 创建 ui_pages 表及 role_scope 索引。 */
   def initialize(connection: Connection): Unit = {
     val statement = connection.createStatement()
     try {

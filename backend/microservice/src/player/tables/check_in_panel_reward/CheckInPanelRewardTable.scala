@@ -1,7 +1,10 @@
-/** 签到面板奖励表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
+/**
   *
-  * 关联：玩家模块 APIMessage 通过此对象读写 签到面板奖励 数据。
-  */
+   * 定义：CheckInPanelRewardTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
+ * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
+ * 作用：initialize/list/find/insert/update 等统一入口。
+ * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
+ */
 package microservice.player.tables.check_in_panel_reward
 
 import microservice.player.tables.check_in_panel_reward.inmemory._

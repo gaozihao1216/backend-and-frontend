@@ -6,10 +6,13 @@ import microservice.player.tables.shop.jdbc._
 import java.sql.Connection
 import java.time.Instant
 
-/** 玩家商店表访问门面：商品目录与购买记录。
+/**
   *
-  * in-memory 模式启动时 seedDefaults；JDBC 模式执行 ShopTableJdbcSchema 建表。
-  */
+   * 定义：ShopTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
+ * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
+ * 作用：initialize/list/find/insert/update 等统一入口。
+ * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
+ */
 object ShopTable {
   private def isInMemory(connection: Connection): Boolean =
     connection == null

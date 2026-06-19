@@ -14,7 +14,10 @@ import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfile
 
 /** GET /users/:profileUserId/profile 的 APIMessage。
   *
-  * 读模型聚合：除用户基本信息外，还 join level/comment/favorite/rating 模块数据。
+  * 定义：viewerUserId + profileUserId 双参，返回 [[UserProfile]] 聚合读模型。
+  * 问题：资料页跨模块 join，需在单事务内一致读取各表快照。
+  * 作用：校验访问者与目标用户存在后，组装关卡/评论/统计。
+  * 关联：[[UserRouter]] GET 路由；level 模块 Comment/Level/Favorite/Rating Table。
   */
 final case class GetUserProfileAPIMessage(
   viewerUserId: String,   // 请求头 x-user-id，当前访问者
@@ -22,6 +25,13 @@ final case class GetUserProfileAPIMessage(
 ) extends APIWithTokenMessage[UserProfile] {
   override def token: String = viewerUserId
 
+  /** plan 实现：鉴权 → 查用户 → 跨表聚合 profile。
+    *
+    * 定义：PlanSteps.finish + for-comprehension 三步。
+    * 问题：未知 viewer 应 401；未知 profile 应 404 而非空数据。
+    * 作用：只读事务，无写操作。
+    * 关联：[[UserRowMapper]]、[[LevelRowMapper.toComment]]。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, UserProfile]] =
     PlanSteps.finish {
       for {

@@ -15,7 +15,13 @@ import microservice.player.tables.progress.PlayerLegacyCheckInTable
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** GET /player/ui/data/:apiKey — 按 apiKey 拉取动态页面运行时数据。 */
+/** GET /player/ui/data/:apiKey 动态 UI 数据 APIMessage。
+  *
+  * 定义：userId + apiKey + query params，按 key 分派 RuntimeService.getData。
+  * 问题：总监 UI 页面通过 apiKey 拉钱包/商店/签到/进度，不宜硬编码在 ui 模块。
+  * 作用：requireRole(Player) → match apiKey → 返回 Circe Json 载荷。
+  * 关联：[[PlayerUiRuntimeRouter]] GET data；[[PlayerWeeklyCheckInService.dataApiKey]] 等。
+  */
 final case class GetPlayerUiDataAPIMessage(
   userId: String,
   apiKey: String,
@@ -26,7 +32,9 @@ final case class GetPlayerUiDataAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
+        // --- 1. 校验 Player 角色 ---
         _ <- PlanSteps.require(AccessControl.requireRole(connection, userId, UserRole.Player).map(_ => ()))
+        // --- 2. 按 apiKey 分派到对应 RuntimeService ---
         payload <- apiKey match {
           case PlayerWeeklyCheckInService.dataApiKey =>
             PlanSteps.require(PlayerWeeklyCheckInService.getData(connection, userId))

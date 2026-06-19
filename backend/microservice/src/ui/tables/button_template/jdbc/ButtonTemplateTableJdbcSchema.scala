@@ -8,7 +8,12 @@ import microservice.ui.tables.button_template._
 
 import java.sql.Connection
 
+/** button_templates 表 JDBC DDL 初始化。
+  *
+  * 关联：ButtonTemplateTable.initialize 在 JDBC 模式下调用。
+  */
 private[tables] object ButtonTemplateTableJdbcSchema {
+  /** 创建 button_templates 表。 */
   def initialize(connection: Connection): Unit = {
     val statement = connection.createStatement()
     try {

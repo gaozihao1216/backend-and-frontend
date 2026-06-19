@@ -9,9 +9,11 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{PageConfig, UiEndpoint}
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
-/** GET /admin/director/ui/pages 的 APIMessage。
+/** 总监列出 UI 页面配置 APIMessage；可选 endpoint 过滤。
   *
-  * 可选 query endpoint 按角色端点过滤；需 Director 权限。
+  * 定义：GET /admin/director/ui/pages?endpoint=player|designer|...
+  * 作用：返回全部或指定角色端点下的 PageConfig 列表。
+  * 关联：UiCustomizationRouter 解析 query endpoint；前端 DirectorWorkbench 页面列表。
   */
 final case class ListUiPagesAPIMessage(
   userId: String,
@@ -19,11 +21,17 @@ final case class ListUiPagesAPIMessage(
 ) extends APIWithTokenMessage[List[PageConfig]] {
   override def token: String = userId
 
-  /** 列出全部或指定 endpoint 的页面配置。 */
+  /** 列出全部或指定 endpoint 的页面配置。
+    *
+    * 实现：requireAdminLevel(Director) → listAll 或 listByEndpoint → RowMapper 批量转换。
+    * 关联：endpoint 为 None 时返回全部页面。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, List[PageConfig]]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 按 endpoint 过滤或返回全部页面行
         pages <- PlanSteps.read {
           val rows = endpoint match {
             case Some(value) => UiPageTable.listByEndpoint(connection, value)

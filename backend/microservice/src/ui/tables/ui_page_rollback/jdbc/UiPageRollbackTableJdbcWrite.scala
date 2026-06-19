@@ -4,7 +4,13 @@ import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbac
 
 import java.sql.Connection
 
+/** ui_page_rollbacks 表的 JDBC 写操作（UPSERT / DELETE）。
+  *
+  * 实现：ON CONFLICT DO UPDATE 实现每页单快照覆盖；删除前先 read 返回被删行。
+  * 关联：UiPageRollbackTable.upsert / deleteById 在 JDBC 模式下委托到此。
+  */
 private[tables] object UiPageRollbackTableJdbcWrite {
+  /** 插入或覆盖该页的回滚快照。 */
   def upsert(connection: Connection, row: UiPageRollbackRow): UiPageRollbackRow = {
     val statement = connection.prepareStatement(
       """
@@ -24,6 +30,7 @@ private[tables] object UiPageRollbackTableJdbcWrite {
     }
   }
 
+  /** 按 pageId 删除回滚快照并返回被删行。 */
   def deleteById(connection: Connection, pageId: String): Option[UiPageRollbackRow] =
     UiPageRollbackTableJdbcRead.findById(connection, pageId).flatMap { row =>
       val statement = connection.prepareStatement("DELETE FROM ui_page_rollbacks WHERE page_id = ?")

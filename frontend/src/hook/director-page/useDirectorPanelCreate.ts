@@ -25,7 +25,7 @@ import type {
   PanelDecoration,
   PlayerCurrencyReward,
 } from "../../objects/ui-customization/ui-customization-objects.js";
-import { registerCheckInPanelRewards } from "../../api/ui/RegisterCheckInPanelRewardsApi.js";
+import { registerCheckInPanelRewards } from "../../api/ui/panelworkflows/RegisterCheckInPanelRewardsApi.js";
 import {
   applyWeeklyCheckInRewards,
   defaultWeeklyCheckInRewards,

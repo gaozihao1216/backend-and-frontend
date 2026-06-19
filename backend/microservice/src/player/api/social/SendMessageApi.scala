@@ -11,7 +11,13 @@ import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessag
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** POST /player/social/messages — 向好友发送私信。 */
+/** POST /player/social/messages 发送私信 APIMessage。
+  *
+  * 定义：userId + receiverId + content，插入后返回完整会话。
+  * 问题：空内容或非好友发送应拒绝；发送后 UI 需刷新线程。
+  * 作用：校验 → insert 新 Row → listConversation 返回更新列表。
+  * 关联：[[PlayerSocialRouter]] POST；[[PlayerPrivateMessageRow]]。
+  */
 final case class SendMessageAPIMessage(userId: String, receiverId: String, content: String)
     extends APIWithTokenMessage[Json] {
   override def token: String = userId

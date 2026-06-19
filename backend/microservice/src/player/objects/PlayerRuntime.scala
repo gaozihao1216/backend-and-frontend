@@ -1,6 +1,12 @@
 package microservice.player.objects
 
-/** 玩家钱包运行时模型：金币、宝石、碎片三种货币。 */
+/** 玩家运行时领域对象聚合。
+  *
+  * 定义：PlayerWallet、WeeklyCheckInProgress、CheckInSlotReward 等 case class。
+  * 问题：钱包/签到/商店状态需与前端 objects/player 对齐。
+  * 作用：Table Row 与 API JSON 的中间表示。
+  * 关联：frontend/src/objects/player/；各 runtime Service。
+  */
 final case class PlayerWallet(
   coins: Int = 0,
   gems: Int = 0,

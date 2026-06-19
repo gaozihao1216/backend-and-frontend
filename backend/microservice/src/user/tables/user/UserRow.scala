@@ -3,9 +3,12 @@ package microservice.user.tables.user
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 
-/** 用户表在存储层的行模型（与 PostgreSQL users 表列一一对应）。
+/** 用户表存储层行模型（PostgreSQL users 表列对齐）。
   *
-  * 不直接作为 API 响应；对外使用 objects.BackendUser，经 UserRowMapper 转换。
+  * 定义：id/username/displayName/role/adminLevel/时间戳 七字段 case class。
+  * 问题：API 不宜直接暴露 SQL 列布局与 snake_case 命名。
+  * 作用：UserTable CRUD 的边界类型；adminLevel 仅 role=admin 时有值。
+  * 关联：[[UserRowMapper.toBackendUser]] → [[BackendUser]]；[[UserTableCodec]] JDBC 映射。
   */
 final case class UserRow(
   id: String,

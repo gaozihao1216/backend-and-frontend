@@ -6,10 +6,12 @@ import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 
-/** 玩家关卡进度运行时服务：为关卡地图页提供各关卡解锁/通关状态。
+/** 关卡进度 UI 数据服务。
   *
-  * 实现：固定 10 个 level 后缀，首关默认解锁，通关前一关解锁下一关。
-  * 关联：PlayerLevelProgressTable；前端 level-map 页面 dataSource 消费。
+  * 定义：返回已通关 suffix 列表等进度 JSON。
+  * 问题：关卡地图 UI 需高亮玩家 cleared 槽位。
+  * 作用：listClearedSuffixes → Json 数组。
+  * 关联：[[PlayerProgressTable]]；[[GetPlayerUiDataAPIMessage]]。
   */
 object PlayerLevelProgressService {
   private val LevelProgressDataKey = "player.levelProgress"

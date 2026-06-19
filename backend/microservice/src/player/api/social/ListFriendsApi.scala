@@ -11,7 +11,13 @@ import microservice.system.objects.UserRole
 import microservice.user.tables.user.UserTable
 import microservice.user.utils.AccessControl
 
-/** GET /player/social/friends — 列出当前用户的好友摘要。 */
+/** GET /player/social/friends 好友列表 APIMessage。
+  *
+  * 定义：单 userId 入参，返回 PlayerFriendListResponse JSON。
+  * 问题：社交页需展示好友昵称而非仅 id。
+  * 作用：listFriendUserIds → UserTable 批量查 displayName → PlayerSocialJson。
+  * 关联：[[PlayerSocialRouter]] GET；[[PlayerFriendTable]]。
+  */
 final case class ListFriendsAPIMessage(userId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 

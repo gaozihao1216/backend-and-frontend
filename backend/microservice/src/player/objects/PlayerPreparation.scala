@@ -2,7 +2,13 @@ package microservice.player.objects
 
 import io.circe.Json
 
-/** 鸟的三维战斗属性视图（攻击、冲击、速度）。 */
+/** 玩家备战 API 领域对象。
+  *
+  * 定义：BirdUpgradeView、SlingshotUpgradeView、PlayerPreparationResponse。
+  * 问题：准备页展示需要结构化升级/升阶信息。
+  * 作用：由 PlayerPreparationSupport 组装。
+  * 关联：frontend preparation schema；preparation 包下 APIMessage。
+  */
 final case class BirdStatsView(
   attack: Int,
   impact: Int,

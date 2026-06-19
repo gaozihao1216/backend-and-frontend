@@ -1,7 +1,10 @@
-/** 每周签到表的 JDBC 写操作（INSERT/UPDATE/DELETE）。
+/**
   *
-  * 实现：PreparedStatement + Codec.bindRow；写成功后必要时 re-read 返回最新行。
-  */
+   * 定义：PlayerWeeklyCheckInTableJdbcWrite：PlayerWeeklyCheckInTable 表的 JDBC 写实现。
+ * 问题：insert/update 需参数化 SQL 防注入且与 Row 字段一一对应。
+ * 作用：INSERT/UPDATE/DELETE；写后必要时 re-read 返回最新 Row。
+ * 关联：[[PlayerWeeklyCheckInTable]] 写路径分流；事务由 APIMessage.run 外层提交。
+ */
 package microservice.player.tables.weekly_check_in.jdbc
 
 import microservice.player.tables.weekly_check_in._

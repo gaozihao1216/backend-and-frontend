@@ -10,18 +10,31 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 
-/** POST /admin/director/ui/button-templates 的 APIMessage：校验并创建按钮模板。 */
+/** 总监创建按钮视觉模板 APIMessage。
+  *
+  * 定义：POST /admin/director/ui/button-templates。
+  * 作用：sanitize → validate → 查重 → ButtonTemplateTable.insert。
+  * 关联：ButtonComponent.baseDesign 可引用 templateId；前端 objects/ui/buttonTemplate.ts。
+  */
 final case class CreateButtonTemplateAPIMessage(
   userId: String,
   body: CreateButtonTemplateBody
 ) extends APIWithTokenMessage[ButtonTemplate] {
   override def token: String = userId
 
+  /** 创建按钮模板。
+    *
+    * 实现：requireAdminLevel(Director) → sanitize → 查重 → validate → insert → RowMapper。
+    * 关联：CreateButtonTemplateBody.template 为完整 ButtonTemplate。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, ButtonTemplate]] =
     PlanSteps.finish {
       for {
+        // 校验总监权限
         _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        // 规范化字符串字段
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template))
+        // id 不可重复
         _ <- PlanSteps.require(
           if (ButtonTemplateTable.findById(connection, template.id).nonEmpty) {
             Left(UiCustomizationErrors.ButtonTemplateAlreadyExists(template.id).toHttpError)
@@ -29,7 +42,9 @@ final case class CreateButtonTemplateAPIMessage(
             Right(())
           }
         )
+        // 校验 id/name/sourceDataUrl/category/slice
         _ <- PlanSteps.require(ButtonTemplateValidation.validate(template).map(_ => ()))
+        // 插入 ButtonTemplateRow 并转为领域对象
         result <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = ButtonTemplateTable.insert(

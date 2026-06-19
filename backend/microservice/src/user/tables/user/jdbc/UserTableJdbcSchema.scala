@@ -4,7 +4,13 @@ import microservice.user.tables.user._
 
 import java.sql.Connection
 
-/** PostgreSQL users 表的 DDL 与种子数据（JDBC 模式首次 initialize 时执行）。 */
+/** PostgreSQL users 表 DDL、迁移与演示种子。
+  *
+  * 定义：initialize(connection) 执行 CREATE/ALTER/INDEX/INSERT ON CONFLICT。
+  * 问题：旧库缺 admin_level 列需迁移；director 需部分唯一索引约束。
+  * 作用：JDBC 冷启动建表并 upsert player-1 等演示账号。
+  * 关联：[[UserTable.initialize]]；[[SystemDemoData.users]] 同 id。
+  */
 private[tables] object UserTableJdbcSchema {
 
   def initialize(connection: Connection): Unit = {

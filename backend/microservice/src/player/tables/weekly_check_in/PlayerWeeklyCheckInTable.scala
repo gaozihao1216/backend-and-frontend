@@ -7,7 +7,13 @@ import microservice.player.objects.WeeklyCheckInProgress
 import java.sql.Connection
 import java.time.Instant
 
-/** 玩家周签到进度表访问门面：按 userId + weekKey 存储已签格子与今日签到标记。 */
+/**
+  *
+   * 定义：PlayerWeeklyCheckInTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
+ * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
+ * 作用：initialize/list/find/insert/update 等统一入口。
+ * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
+ */
 object PlayerWeeklyCheckInTable {
   private def isInMemory(connection: Connection): Boolean =
     connection == null

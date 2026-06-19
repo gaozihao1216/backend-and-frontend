@@ -2,7 +2,13 @@ package microservice.player.objects
 
 import io.circe.Json
 
-/** 备战 API 响应 JSON 编码（无 Connection 依赖）。 */
+/** 备战响应 Circe 编码辅助。
+  *
+  * 定义：toJson(PlayerPreparationResponse) 转 Json。
+  * 问题：与 PlayerSocialJson 同理，隔离 JSON 字段命名。
+  * 作用：preparation APIMessage 统一出口。
+  * 关联：[[GetPreparationStateAPIMessage]] 等。
+  */
 object PlayerPreparationJson {
   def toJson(response: PlayerPreparationResponse): Json =
     Json.obj(

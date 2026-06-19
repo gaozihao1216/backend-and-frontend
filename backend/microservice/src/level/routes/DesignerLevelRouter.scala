@@ -10,7 +10,12 @@ import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
-/** 设计师关卡 HTTP 入口：创建 draft 关卡、提交审核。 */
+/** HTTP 路由聚合器。
+  *
+  * HTTP 职责：解析 HTTP 请求，构造 APIMessage，调用 runAuthenticated；不含业务逻辑。
+  * 挂载路径：见 ApiRouter 中的前缀配置。
+  * 为何不写业务逻辑：业务规则在 APIMessage.plan 中，便于事务与测试。
+  */
 object DesignerLevelRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
