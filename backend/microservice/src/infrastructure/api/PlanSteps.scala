@@ -40,10 +40,6 @@ import microservice.user.utils.AccessControl
 object PlanSteps {
   type Step[A] = PlanStep.Step[A]
 
-  /** 校验 HTTP 头 `x-user-id` 与请求体/路径中的 `token` 是否为同一绑定用户。 */
-  def requireBound(headerUserId: String, token: String): Step[Unit] =
-    AccessControl.requireBoundIdentity(headerUserId, token)
-
   /** 执行同步读操作（Table 查询、内存集合访问等），结果包装为 `Right`。 */
   def read[A](run: => A): Step[A] =
     PlanStep.liftF(IO(run))
