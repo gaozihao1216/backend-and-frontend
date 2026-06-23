@@ -1,6 +1,7 @@
 package microservice.admin
 
-import microservice.admin.tables.{AdminAuditTable, AdminAuditTargetType}
+import microservice.admin.tables.AdminAuditTable
+import microservice.system.objects.AuditTargetType
 import microservice.testsupport.TestSupport
 import microservice.system.objects.SubmissionStatus
 import munit.CatsEffectSuite
@@ -20,7 +21,7 @@ class AdminAuditTableSuite extends CatsEffectSuite {
   test("recordReview persists level submission audit row") {
     AdminAuditTable.recordReview(
       connection = null,
-      targetType = AdminAuditTargetType.LevelSubmission,
+      targetType = AuditTargetType.LevelSubmission,
       submissionId = "submission-audit-test",
       reviewerId = "admin-1",
       decision = SubmissionStatus.Approved.value,
@@ -30,7 +31,7 @@ class AdminAuditTableSuite extends CatsEffectSuite {
 
     val audits = AdminAuditTable.listBySubmissionId(null, "submission-audit-test")
     assertEquals(audits.size, 1)
-    assertEquals(audits.head.targetType, AdminAuditTargetType.LevelSubmission)
+    assertEquals(audits.head.targetType, AuditTargetType.LevelSubmission)
     assertEquals(audits.head.reviewerId, "admin-1")
     assertEquals(audits.head.decision, SubmissionStatus.Approved.value)
   }
@@ -38,7 +39,7 @@ class AdminAuditTableSuite extends CatsEffectSuite {
   test("recordReview supports listByReviewerId") {
     AdminAuditTable.recordReview(
       connection = null,
-      targetType = AdminAuditTargetType.BirdSubmission,
+      targetType = AuditTargetType.BirdSubmission,
       submissionId = "bird-submission-test",
       reviewerId = "admin-1",
       decision = SubmissionStatus.Rejected.value,

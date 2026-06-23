@@ -13,7 +13,7 @@ sealed trait UserApiError {
   def toHttpError: HttpError
 }
 
-object GetUserProfileErrors {
+private[user] object GetUserProfileErrors {
 
   /** 路径中的 profileUserId 在 UserTable 中不存在时返回 404。 */
   final case class UserMissing(userId: String) extends UserApiError {

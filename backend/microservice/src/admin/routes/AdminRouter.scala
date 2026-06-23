@@ -42,19 +42,19 @@ import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
-import microservice.admin.api.director.bird_skill.body.SaveDirectorBirdSkillBody
-import microservice.admin.api.director.level_assignment.body.{
+import microservice.admin.body.director.bird_skill.SaveDirectorBirdSkillBody
+import microservice.admin.body.director.level_assignment.{
   AbolishDirectorSubmissionBody,
   AssignLevelSlotBody,
   UpdateLevelSlotBirdPoolBody
 }
-import microservice.admin.api.director.permissions.body.TransferDirectorPermissionBody
-import microservice.admin.api.shop.body.{
+import microservice.admin.body.director.permissions.TransferDirectorPermissionBody
+import microservice.admin.body.shop.{
   CreateShopItemBody,
   UpdateShopItemBody
 }
-import microservice.admin.api.submissions.body.ReviewSubmissionBody
-import microservice.bird.api.review.body.ReviewBirdSubmissionBody
+import microservice.admin.body.submissions.ReviewSubmissionBody
+import microservice.bird.body.review.ReviewBirdSubmissionBody
 
 /** 管理员域 HTTP 路由聚合器。
   *

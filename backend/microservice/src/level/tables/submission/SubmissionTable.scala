@@ -11,7 +11,7 @@ import microservice.system.objects.SubmissionStatus
   * 实现：TableConnection.isInMemory(connection) 为 true 时直接读写 InMemoryStore；否则走 SubmissionTableJdbc。
   * 关联：SubmitLevelAPIMessage 写入；admin ReviewSubmissionAPIMessage 审核更新。
   */
-object SubmissionTable {
+private[level] object SubmissionTable {
   /** JDBC 启动时建表；in-memory 模式下无需 DDL。 */
   def initialize(connection: Connection): Unit =
     if (!TableConnection.isInMemory(connection)) SubmissionTableJdbc.initialize(connection)

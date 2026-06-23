@@ -19,7 +19,9 @@ final case class ReviewedBirdSubmission(
   reviewedAt: Option[String]
 )
 
-object ReviewedBirdSubmission {
+/** ReviewedBirdSubmission 伴生对象：审核结果转换与 Circe JSON 编解码。 */
+private[bird] object ReviewedBirdSubmission {
+  /** 从 BirdSubmission 领域对象转换为审核成功响应 DTO。 */
   def fromSubmission(submission: BirdSubmission): ReviewedBirdSubmission =
     ReviewedBirdSubmission(
       submission.id,

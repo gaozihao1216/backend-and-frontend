@@ -3,7 +3,6 @@ package microservice.player.tables.preparation
 import java.sql.Connection
 import java.time.Instant
 import microservice.infrastructure.database.{InMemoryStore, TableConnection}
-import microservice.player.preparation.BirdPreparationCatalog
 import microservice.player.tables.preparation.jdbc.PlayerPreparationTableJdbc
 
 /**
@@ -16,19 +15,16 @@ import microservice.player.tables.preparation.jdbc.PlayerPreparationTableJdbc
 object PlayerPreparationTable {
   /** 鸟与弹弓等级上限。 */
   val maxLevel: Int = 5
-  /** 鸟阶位上限（与 BirdPreparationCatalog.maxTier 一致）。 */
-  val maxTier: Int = BirdPreparationCatalog.maxTier
-
-  private val systemBirdTypes: Vector[String] =
-    BirdPreparationCatalog.entries.map(_.birdType)
+  /** 鸟阶位上限（与 bird SystemBirdCatalogSupport.maxTier 对齐）。 */
+  val maxTier: Int = 3
 
   /** 启动时建表/种子数据（含演示用户 player-1 的默认鸟与弹弓）。 */
-  def initialize(connection: Connection): Unit =
+  def initialize(connection: Connection, systemBirdTypes: Vector[String]): Unit =
     if (!TableConnection.isInMemory(connection)) PlayerPreparationTableJdbc.initialize(connection, systemBirdTypes)
-    else seedInMemory("player-1")
+    else seedInMemory("player-1", systemBirdTypes)
 
   /** 为 in-memory 用户写入默认鸟与弹弓等级（幂等）。 */
-  def seedInMemory(userId: String, birdTypes: Vector[String] = systemBirdTypes): Unit = {
+  def seedInMemory(userId: String, birdTypes: Vector[String]): Unit = {
     val now = Instant.now().toString
     birdTypes.foreach { birdType =>
       if (!InMemoryStore.playerBirdUpgrades.exists(row => row.userId == userId && row.birdType == birdType)) {

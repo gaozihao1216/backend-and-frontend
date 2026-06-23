@@ -2,7 +2,7 @@ package microservice.bird.objects.design
 
 /** 鸟类设计可编辑字段的统一输入模型，供校验与 Row 组装共用（非 HTTP 专用 DTO）。
   *
-  * 字段约束（由 [[microservice.bird.api.design.validation.BirdDesignValidation]] 执行）：
+  * 字段约束（由 [[microservice.bird.validation.design.BirdDesignValidation]] 执行）：
   *   - name / skillName：trim 后至少 2 字符
   *   - summary：至少 6 字符
   *   - attack / impact / speed：1–200

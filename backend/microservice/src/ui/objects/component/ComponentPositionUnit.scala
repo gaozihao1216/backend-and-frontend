@@ -8,7 +8,7 @@ sealed trait ComponentPositionUnit {
 }
 
 /** ComponentPositionUnit 枚举与编解码。 */
-object ComponentPositionUnit {
+private[ui] object ComponentPositionUnit {
   case object Percent extends ComponentPositionUnit { override val value: String = "percent" }
   case object Px extends ComponentPositionUnit { override val value: String = "px" }
 

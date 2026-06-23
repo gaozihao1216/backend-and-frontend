@@ -17,7 +17,7 @@ final case class ButtonTemplate(
 )
 
 /** ButtonTemplate 编解码（category/scalingMode 含默认值）。 */
-object ButtonTemplate {
+private[ui] object ButtonTemplate {
   implicit val encoder: Encoder[ButtonTemplate] = deriveEncoder
   implicit val decoder: Decoder[ButtonTemplate] =
     Decoder.instance { cursor =>

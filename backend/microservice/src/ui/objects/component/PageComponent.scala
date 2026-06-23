@@ -12,7 +12,7 @@ trait PageComponent {
 }
 
 /** PageComponent ADT 的自定义 Circe 编解码（按 type 字段分发）。 */
-object PageComponent {
+private[ui] object PageComponent {
   implicit lazy val encoder: Encoder[PageComponent] = Encoder.instance {
     case component: ButtonComponent =>
       Json.obj(

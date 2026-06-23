@@ -11,7 +11,8 @@ trait LevelGround {
   def `type`: String
 }
 
-object LevelGround {
+/** LevelGround 伴生对象：Circe JSON 编解码，旧版地面数据（兼容字段）。 */
+private[level] object LevelGround {
   implicit val encoder: Encoder[LevelGround] = Encoder.instance {
     case line: GroundLine =>
       Json.obj("type" -> Json.fromString(line.`type`), "points" -> line.points.asJson)

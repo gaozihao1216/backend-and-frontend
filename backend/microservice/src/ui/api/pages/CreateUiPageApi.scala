@@ -9,8 +9,8 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.page.PageConfig
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
-import microservice.ui.api.pages.body.CreateUiPageBody
-import microservice.ui.api.pages.support.UiPageAccess
+import microservice.ui.body.pages.CreateUiPageBody
+import microservice.ui.support.pages.UiPageAccess
 
 /** 总监创建新 UI 页面配置 APIMessage；userId 取自 header。
   *
@@ -32,8 +32,11 @@ final case class CreateUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        // 步骤 2：校验 page id 唯一及 id/name/path 必填字段
         _ <- UiPageAccess.requireCreatePage(connection, body.page)
+        // 步骤 3：trim 字段后插入 UiPageRow 并映射为 PageConfig
         page <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = UiPageTable.insert(

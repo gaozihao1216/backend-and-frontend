@@ -9,16 +9,10 @@ import microservice.player.objects.{PlayerFriendListResponse, PlayerFriendSummar
 import microservice.player.support.social.PlayerSocialAccess
 import microservice.player.tables.social.PlayerFriendTable
 import microservice.system.objects.UserRole
-import microservice.user.tables.user.UserTable
+import microservice.user.api.internal.player.ListUserDisplaySummariesInternalAPIMessage
 import microservice.user.utils.AccessControl
 
-/** POST /player/social/friends 添加好友 APIMessage。
-  *
-  * 定义：userId + friendUserId 双参，返回好友列表 JSON。
-  * 问题：添加后需立即返回更新列表，且不能加自己或不存在用户。
-  * 作用：校验 Player 角色 → 业务规则 → insertPair → 重查好友并映射 displayName。
-  * 关联：[[PlayerSocialRouter]] POST；[[PlayerFriendTable.insertPair]]。
-  */
+/** POST /player/social/friends 添加好友 APIMessage。 */
 final case class AddFriendAPIMessage(userId: String, friendUserId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 
@@ -30,13 +24,8 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
         _ <- PlayerSocialAccess.requireExistingUser(connection, friendUserId)
         _ <- PlanSteps.read(PlayerFriendTable.insertPair(connection, userId, friendUserId))
         friendIds <- PlanSteps.read(PlayerFriendTable.listFriendUserIds(connection, userId))
-        friends <- PlanSteps.read(
-          friendIds.flatMap { id =>
-            UserTable.findById(connection, id).map { user =>
-              PlayerFriendSummary(user.id, user.displayName, "linked")
-            }
-          }.toList
-        )
+        summaries <- PlanSteps.runApi(ListUserDisplaySummariesInternalAPIMessage(friendIds.toList), connection)
+        friends = summaries.map(summary => PlayerFriendSummary(summary.userId, summary.displayName, "linked"))
       } yield PlayerSocialJson.toJsonFriends(PlayerFriendListResponse(friends))
     }
 }

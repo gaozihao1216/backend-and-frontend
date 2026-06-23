@@ -11,9 +11,9 @@ import microservice.ui.objects.stretch_template.StretchVisualTemplate
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
-import microservice.ui.api.stretchtemplates.body.UpdateStretchVisualTemplateBody
-import microservice.ui.api.stretchtemplates.support.StretchVisualTemplateAccess
-import microservice.ui.api.stretchtemplates.validation.StretchVisualTemplateValidation
+import microservice.ui.body.stretchtemplates.UpdateStretchVisualTemplateBody
+import microservice.ui.support.stretchtemplates.StretchVisualTemplateAccess
+import microservice.ui.validation.stretchtemplates.StretchVisualTemplateValidation
 
 /** 总监更新拉伸视觉模板 APIMessage。
   *

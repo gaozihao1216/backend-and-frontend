@@ -27,8 +27,11 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
   override def plan(connection: Connection): IO[Either[HttpError, BirdSubmission]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Designer
         _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        // 步骤 2：确认设计处于可提交状态且无重复待审投稿
         _ <- BirdDesignAccess.requireSubmittable(connection, designerId, designId)
+        // 步骤 3：更新设计状态并创建 BirdSubmission 记录
         submission <- BirdDesignAccess.requireSubmitResult(connection, designerId, designId)
       } yield submission
     }

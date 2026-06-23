@@ -1,7 +1,7 @@
 package microservice.ui.objects.category
 
 /** 按钮模板 category 合法值与默认值。 */
-object ButtonTemplateCategory {
+private[ui] object ButtonTemplateCategory {
   val Business: String = "business"
   val Level: String = "level"
 

@@ -10,9 +10,9 @@ import microservice.system.objects.AdminLevel
 import microservice.ui.objects.button_template.ButtonTemplate
 import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
-import microservice.ui.api.buttontemplates.body.UpdateButtonTemplateBody
-import microservice.ui.api.buttontemplates.support.ButtonTemplateAccess
-import microservice.ui.api.buttontemplates.validation.ButtonTemplateValidation
+import microservice.ui.body.buttontemplates.UpdateButtonTemplateBody
+import microservice.ui.support.buttontemplates.ButtonTemplateAccess
+import microservice.ui.validation.buttontemplates.ButtonTemplateValidation
 
 /** 总监更新按钮模板 APIMessage。
   *

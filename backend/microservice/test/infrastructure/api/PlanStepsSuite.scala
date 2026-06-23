@@ -6,14 +6,14 @@ import microservice.testsupport.TestSupport
 import munit.CatsEffectSuite
 import org.http4s.Status
 
-/** PlanSteps 组合器：require 短路、read/blocking 顺序执行。 */
+/** PlanSteps 组合器：fail/succeed 短路、read/blocking 顺序执行。 */
 class PlanStepsSuite extends CatsEffectSuite {
   test("require short-circuits later steps on Left") {
     var readCalls = 0
 
     val resultIO: IO[Either[HttpError, String]] = PlanSteps.finish {
       for {
-        _ <- PlanSteps.require[Unit](Left(HttpError.badRequest("STEP_FAILED", "stop here")))
+        _ <- PlanStep.fail[Unit](HttpError.badRequest("STEP_FAILED", "stop here"))
         _ <- PlanSteps.read {
           readCalls += 1
           ()
@@ -30,7 +30,7 @@ class PlanStepsSuite extends CatsEffectSuite {
   test("read and require compose on success path") {
     PlanSteps.finish {
       for {
-        _ <- PlanSteps.require(Right(()))
+        _ <- PlanStep.succeed(())
         a <- PlanSteps.read(1 + 2)
         b <- PlanSteps.read(a * 2)
       } yield b

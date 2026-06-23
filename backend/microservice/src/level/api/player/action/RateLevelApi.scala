@@ -13,7 +13,7 @@ import microservice.level.tables.shared.{RatingRow}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.support.player.LevelApiSupport
 import microservice.system.objects.UserRole
-import microservice.level.api.player.action.body.RateLevelBody
+import microservice.level.body.player.RateLevelBody
 
 /** 玩家对已发布关卡评分 APIMessage。 */
 final case class RateLevelAPIMessage(
@@ -33,8 +33,11 @@ final case class RateLevelAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Rating]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
+        // 步骤 2：确认关卡可评分且 score 在 1–5 范围内
         _ <- LevelApiSupport.requireRateableLevel(connection, levelId, body.score).map(_ => ())
+        // 步骤 3：upsert Rating 并重算 Level 平均分与评分人数
         rating <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val ratingRow =

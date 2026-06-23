@@ -13,6 +13,7 @@ sealed trait LevelStatus {
   def value: String
 }
 
+/** LevelStatus 伴生对象：枚举常量、字符串解析（fromString）与 Circe 编解码。 */
 object LevelStatus {
   case object Draft extends LevelStatus { override val value: String = "draft" }                   // 设计师草稿，未提交
   case object PendingReview extends LevelStatus { override val value: String = "pending_review" } // 已提交，待管理员审核
@@ -21,6 +22,7 @@ object LevelStatus {
 
   private val byValue = List(Draft, PendingReview, Published, Rejected).map(status => status.value -> status).toMap
 
+  /** 按持久化/JSON 字符串反查枚举；未知值返回 None。 */
   def fromString(value: String): Option[LevelStatus] =
     byValue.get(value)
 

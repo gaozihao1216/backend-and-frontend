@@ -21,12 +21,20 @@ import microservice.user.utils.AccessControl
 final case class ListMessagesAPIMessage(userId: String, withUserId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 
+  /** plan 定义了什么业务流程：Player 查询与指定好友的私信会话历史。
+    *
+    * 关联的 HTTP 路由/前端 API：GET /player/social/messages?withUserId=；前端 `ListMessagesApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        // 步骤 2：校验 withUserId 非空且非自己
         _ <- PlayerSocialAccess.requireValidChatTarget(withUserId)
+        // 步骤 3：确认双方为好友关系
         _ <- PlayerSocialAccess.requireFriendship(connection, userId, withUserId)
+        // 步骤 4：读取会话消息并标记 mine 字段
         messages <- PlanSteps.read(
           PlayerPrivateMessageTable
             .listConversation(connection, userId, withUserId)

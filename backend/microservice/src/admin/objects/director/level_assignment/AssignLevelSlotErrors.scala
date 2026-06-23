@@ -3,7 +3,7 @@ package microservice.admin.objects.director.level_assignment
 import microservice.infrastructure.http.HttpError
 
 /** 总监关卡槽位分配相关 API 的业务错误集合；各 case 提供 toHttpError 映射 HTTP 状态与错误码。 */
-object AssignLevelSlotErrors {
+private[admin] object AssignLevelSlotErrors {
   /** 槽位后缀不在 LevelSlotCatalog 支持列表内 → 400 INVALID_LEVEL_SUFFIX */
   final case class InvalidLevelSuffix(levelSuffix: String) {
     def toHttpError: HttpError =

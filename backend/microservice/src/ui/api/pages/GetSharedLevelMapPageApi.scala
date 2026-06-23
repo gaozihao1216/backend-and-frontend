@@ -7,6 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.page.PageConfig
 import microservice.ui.objects.page.SharedLevelMapPageId
+import microservice.ui.support.pages.UiPagePublishSupport
 
 /** 玩家读取共享关卡地图页 APIMessage；固定 pageId。
   *
@@ -27,7 +28,9 @@ final case class GetSharedLevelMapPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：确认 userId 为已知用户
         _ <- AccessControl.requireKnownUser(connection, userId).map(_ => ())
+        // 步骤 2：读取共享关卡地图页（固定 SharedLevelMapPageId）配置
         page <- UiPagePublishSupport.requirePublishedPage(connection, SharedLevelMapPageId.value)
       } yield page
     }

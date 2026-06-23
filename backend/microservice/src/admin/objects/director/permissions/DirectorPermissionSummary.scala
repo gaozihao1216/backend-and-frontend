@@ -17,7 +17,7 @@ final case class DirectorPermissionSummary(
 )
 
 /** DirectorPermissionSummary 的 Circe 编解码 companion。 */
-object DirectorPermissionSummary {
+private[admin] object DirectorPermissionSummary {
   implicit val encoder: Encoder[DirectorPermissionSummary] = deriveEncoder
   implicit val decoder: Decoder[DirectorPermissionSummary] = deriveDecoder
 }

@@ -19,7 +19,8 @@ final case class BirdSubmission(
   reviewedAt: Option[String]
 )
 
-object BirdSubmission {
+/** BirdSubmission 伴生对象：Circe JSON 编解码，供鸟类投稿 API 响应。 */
+private[bird] object BirdSubmission {
   implicit val encoder: Encoder[BirdSubmission] = deriveEncoder
   implicit val decoder: Decoder[BirdSubmission] = deriveDecoder
 }

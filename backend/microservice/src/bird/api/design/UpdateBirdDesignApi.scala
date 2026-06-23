@@ -7,11 +7,11 @@ import microservice.user.utils.AccessControl
 import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
 import microservice.bird.support.design.BirdDesignAccess
 import microservice.bird.tables.shared.{BirdRowMapper}
-import microservice.bird.api.design.validation.BirdDesignValidation
+import microservice.bird.validation.design.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
-import microservice.bird.api.design.body.UpdateBirdDesignBody
+import microservice.bird.body.design.UpdateBirdDesignBody
 
 /** 更新鸟类设计：仅作者可编辑 Draft/Rejected 状态的设计，保存后重置为 Draft。
   *

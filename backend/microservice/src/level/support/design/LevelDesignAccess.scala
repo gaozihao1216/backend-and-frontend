@@ -1,5 +1,7 @@
 package microservice.level.support.design
 
+import cats.data.EitherT
+import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
@@ -9,28 +11,24 @@ import microservice.level.tables.shared.LevelRow
 import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.LevelStatus
 
-/** 设计师关卡提交前的所有权与状态校验。 */
+/** 设计师关卡设计访问控制：查存在、所有权与可提交状态校验。 */
 object LevelDesignAccess {
+  /** 按 levelId 查找关卡 Row，不存在返回 LEVEL_NOT_FOUND。 */
   def requireLevel(connection: Connection, levelId: String): Step[LevelRow] =
-    PlanStep.fromEither(checkLevel(connection, levelId))
-
-  def requireSubmittable(connection: Connection, designerId: String, level: LevelRow): Step[Unit] =
-    PlanStep.fromEither(checkSubmittable(connection, designerId, level))
-
-  def checkLevel(connection: Connection, levelId: String): Either[HttpError, LevelRow] =
-    LevelTable.findById(connection, levelId) match {
-      case None    => Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
-      case Some(row) => Right(row)
+    EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
+      case None    => EitherT.leftT(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
+      case Some(row) => EitherT.rightT(row)
     }
 
-  def checkSubmittable(connection: Connection, designerId: String, level: LevelRow): Either[HttpError, Unit] =
+  /** 校验设计师本人、无待审投稿、状态为 Draft 或 Rejected。 */
+  def requireSubmittable(connection: Connection, designerId: String, level: LevelRow): Step[Unit] =
     if (level.authorId != designerId) {
-      Left(HttpError.forbidden("Cannot submit another designer's level"))
+      PlanStep.fail(HttpError.forbidden("Cannot submit another designer's level"))
     } else if (SubmissionTable.hasPendingForLevel(connection, level.id)) {
-      Left(HttpError.conflict("SUBMISSION_EXISTS", "Level already has a pending submission"))
+      PlanStep.fail(HttpError.conflict("SUBMISSION_EXISTS", "Level already has a pending submission"))
     } else if (level.status != LevelStatus.Draft && level.status != LevelStatus.Rejected) {
-      Left(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
+      PlanStep.fail(HttpError.conflict("INVALID_LEVEL_STATUS", "Level cannot be submitted in current status"))
     } else {
-      Right(())
+      PlanStep.succeed(())
     }
 }

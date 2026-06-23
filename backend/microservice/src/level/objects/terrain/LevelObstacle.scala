@@ -17,7 +17,8 @@ final case class LevelObstacle(
   angle: Option[Double]
 )
 
-object LevelObstacle {
+/** LevelObstacle 伴生对象：Circe JSON 编解码，关卡障碍物实体。 */
+private[level] object LevelObstacle {
   implicit val encoder: Encoder[LevelObstacle] = deriveEncoder
   implicit val decoder: Decoder[LevelObstacle] = deriveDecoder
 }

@@ -9,22 +9,35 @@ Scala 后端采用按业务模块拆分的结构：
 ```text
 backend/microservice/src
 ├── Main.scala
-├── core
-├── routes
-├── system
-├── user
-├── level
-└── admin
+├── infrastructure/     # APIMessage、PlanStep、DatabaseSession、HttpError
+├── routes/             # ApiRouter、HealthRouter
+├── core/
+├── system/
+├── user/
+├── level/
+├── admin/
+├── ui/
+├── bird/
+└── player/
 ```
+
+**模块内标准子目录**（详见 [`microservice/MODULE-LAYOUT.md`](./microservice/MODULE-LAYOUT.md) 与仓库根 `docs/backend-architecture.md`）：
+
+| 目录 | 职责 |
+| --- | --- |
+| `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` |
+| `body/` | HTTP 请求 DTO（`EntityDecoder`） |
+| `validation/` | `validate*` / `check*` 字段校验 |
+| `objects/` | 领域类型与 API 返回体 |
+| `support/` | `require*` / `check*` 可复用业务规则 |
+| `routes/` | HTTP 解析 → 构造 APIMessage |
+| `tables/` | `*Row` + Table 门面 |
 
 核心约定：
 
-- `api`：定义 `XxxAPIMessage`，负责权限校验、参数校验、业务流程、调用 table 层、返回结果。
-- `objects`：定义对外返回或业务使用的数据对象。
-- `routes`：只负责解析 HTTP 请求，包括 path、query、header、body，然后构造 APIMessage 并调用 `run(databaseSession)`。
-- `tables`：封装数据访问。当前底层仍是 `InMemoryStore`，但对外接口已经逐步统一为 `XxxTable.method(connection, ...)`。
-- `utils`：放模块内复用的小型辅助逻辑，不承载核心 API 业务流程。
-- `core`：放通用能力，例如 APIMessage、DatabaseSession、HttpError、AccessControl、RowMappers、InMemoryStore。
+- `api` 目录内只有 `*Api.scala`，不含 `body/`、`validation/` 子目录。
+- `routes` 只负责解析 HTTP，引用 `body/` 做 `req.as[XxxBody]`，然后 `run(databaseSession)`。
+- `plan` 串联：`AccessControl` → `*Validation` → `*Support` / `*Access` → `PlanSteps.read(Table)`。
 
 ## APIMessage 模式
 

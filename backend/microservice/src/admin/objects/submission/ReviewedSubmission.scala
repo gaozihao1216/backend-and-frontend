@@ -2,7 +2,6 @@ package microservice.admin.objects.submission
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.level.objects.submission.Submission
 
 /** 审核完成后的关卡投稿快照 DTO。
   *
@@ -21,21 +20,7 @@ final case class ReviewedSubmission(
   reviewedAt: Option[String]
 )
 
-/** ReviewedSubmission 的转换与 Circe 编解码 companion。 */
-object ReviewedSubmission {
-  /** 从 level 模块 Submission 领域对象转换为 API DTO。 */
-  def fromSubmission(submission: Submission): ReviewedSubmission =
-    ReviewedSubmission(
-      submission.id,
-      submission.levelId,
-      submission.submitterId,
-      submission.status.value,
-      submission.reviewerId,
-      submission.reviewNote,
-      submission.submittedAt,
-      submission.reviewedAt
-    )
-
+private[admin] object ReviewedSubmission {
   implicit val encoder: Encoder[ReviewedSubmission] = deriveEncoder
   implicit val decoder: Decoder[ReviewedSubmission] = deriveDecoder
 }

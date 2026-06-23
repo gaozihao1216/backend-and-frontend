@@ -24,7 +24,8 @@ final case class DirectorBirdSkillEntry(
   modelImageUrl: Option[String]
 )
 
-object DirectorBirdSkillEntry {
+/** DirectorBirdSkillEntry 伴生对象：Circe JSON 编解码（技能看板单鸟条目）。 */
+private[bird] object DirectorBirdSkillEntry {
   implicit val encoder: Encoder[DirectorBirdSkillEntry] = deriveEncoder
   implicit val decoder: Decoder[DirectorBirdSkillEntry] = deriveDecoder
 }

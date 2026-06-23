@@ -12,7 +12,7 @@ final case class ButtonTemplateSlice(
 )
 
 /** ButtonTemplateSlice 编解码。 */
-object ButtonTemplateSlice {
+private[ui] object ButtonTemplateSlice {
   implicit val encoder: Encoder[ButtonTemplateSlice] = deriveEncoder
   implicit val decoder: Decoder[ButtonTemplateSlice] = deriveDecoder
 }

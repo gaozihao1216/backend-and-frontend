@@ -5,7 +5,7 @@ package microservice.ui.objects.page
   * 定义：总监预置页面，玩家通过 GetSharedLevelMapPage 只读访问。
   * 关联：GetSharedLevelMapPageAPIMessage。
   */
-object SharedLevelMapPageId {
+private[ui] object SharedLevelMapPageId {
   /** 固定 pageId 字符串。 */
   val value: String = "shared.levelMap"
 }

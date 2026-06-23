@@ -11,7 +11,8 @@ final case class DirectorBirdPoolOption(
   authorId: Option[String] = None
 )
 
-object DirectorBirdPoolOption {
+/** DirectorBirdPoolOption 伴生对象：Circe JSON 编解码（bird pool 下拉选项）。 */
+private[admin] object DirectorBirdPoolOption {
   implicit val encoder: Encoder[DirectorBirdPoolOption] = deriveEncoder
   implicit val decoder: Decoder[DirectorBirdPoolOption] = deriveDecoder
 }

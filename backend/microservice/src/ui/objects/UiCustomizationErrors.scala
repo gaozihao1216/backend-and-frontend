@@ -10,7 +10,7 @@ sealed trait UiCustomizationApiError {
 }
 
 /** UI 定制模块全部业务错误 case class 集合；各 toHttpError 映射 HTTP 状态码。 */
-object UiCustomizationErrors {
+private[ui] object UiCustomizationErrors {
   final case class PageNotFound(pageId: String) extends UiCustomizationApiError {
     override def toHttpError: HttpError =
       HttpError.notFound("UI_PAGE_NOT_FOUND", s"UI page not found: $pageId")

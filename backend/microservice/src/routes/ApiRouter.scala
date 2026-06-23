@@ -8,8 +8,9 @@ import microservice.infrastructure.http.AuthMiddleware
 import microservice.user.routes.AuthRouter
 import microservice.level.routes.{DesignerLevelRouter, PlayerLevelRouter}
 import microservice.bird.routes.DesignerBirdRouter
+import microservice.player.routes.{PlayerPreparationRouter, PlayerSocialRouter, PlayerUiRuntimeRouter}
 import microservice.user.routes.UserRouter
-import microservice.ui.routes.UiCustomizationRouter
+import microservice.ui.routes.{UiCustomizationRouter, UiPlayerPageRouter}
 import org.http4s.HttpRoutes
 import org.http4s.server.Router
 
@@ -58,7 +59,13 @@ object ApiRouter {
           "/users" -> UserRouter.routes(databaseSession),
           // designer 下合并关卡与鸟类设计两棵子树
           "/designer" -> (DesignerLevelRouter.routes(databaseSession) <+> DesignerBirdRouter.routes(databaseSession)),
-          "/player" -> PlayerLevelRouter.routes(databaseSession),
+          "/player" -> (
+            PlayerLevelRouter.routes(databaseSession) <+>
+              UiPlayerPageRouter.routes(databaseSession) <+>
+              PlayerUiRuntimeRouter.routes(databaseSession) <+>
+              PlayerSocialRouter.routes(databaseSession) <+>
+              PlayerPreparationRouter.routes(databaseSession)
+          ),
           // 总监 UI 定制：路径更长，须排在 /admin 之前
           "/admin/director/ui" -> UiCustomizationRouter.routes(databaseSession),
           "/admin" -> AdminRouter.routes(databaseSession)

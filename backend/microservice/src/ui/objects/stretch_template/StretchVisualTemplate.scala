@@ -16,7 +16,7 @@ final case class StretchVisualTemplate(
 )
 
 /** StretchVisualTemplate 编解码与 category 规范化辅助方法。 */
-object StretchVisualTemplate {
+private[ui] object StretchVisualTemplate {
   implicit val encoder: Encoder[StretchVisualTemplate] = deriveEncoder
   implicit val decoder: Decoder[StretchVisualTemplate] =
     Decoder.instance { cursor =>

@@ -52,7 +52,7 @@ case object NoopAction extends ComponentAction {
 }
 
 /** ComponentAction ADT 自定义 Circe 编解码。 */
-object ComponentAction {
+private[ui] object ComponentAction {
   implicit lazy val encoder: Encoder[ComponentAction] = Encoder.instance {
     case action: NavigateAction =>
       Json.obj(

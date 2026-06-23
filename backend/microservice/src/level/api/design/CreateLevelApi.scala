@@ -7,11 +7,11 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.utils.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.level.{Level}
+import microservice.level.objects.core.{Level}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.shared.{LevelRow}
-import microservice.level.api.design.body.CreateLevelBody
-import microservice.level.api.design.validation.CreateLevelValidation
+import microservice.level.body.design.CreateLevelBody
+import microservice.level.validation.design.CreateLevelValidation
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
 
@@ -31,8 +31,11 @@ final case class CreateLevelAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Designer
         _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        // 步骤 2：校验 title/description/tags/data 等创建字段
         validated <- CreateLevelValidation.validate(body)
+        // 步骤 3：分配 id 并插入 LevelRow（status=Draft），映射为 Level
         level <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = LevelTable.insert(

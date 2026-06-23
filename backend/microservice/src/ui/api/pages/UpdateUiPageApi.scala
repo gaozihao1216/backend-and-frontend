@@ -7,8 +7,8 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.api.pages.body.UpdateUiPageBody
-import microservice.ui.api.pages.support.UiPageAccess
+import microservice.ui.body.pages.UpdateUiPageBody
+import microservice.ui.support.pages.UiPageAccess
 
 /** 总监更新或 upsert 页面配置 APIMessage。
   *
@@ -31,8 +31,11 @@ final case class UpdateUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        // 步骤 2：校验 name/path 等更新字段
         _ <- UiPageAccess.requireUpdateFields(body.page)
+        // 步骤 3：按 pageId upsert 页面配置
         page <- UiPageAccess.requireUpsertPage(connection, pageId, body.page)
       } yield page
     }

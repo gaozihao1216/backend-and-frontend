@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 sealed abstract class StretchVisualTemplateKind(val value: String)
 
 /** StretchVisualTemplateKind 枚举与编解码。 */
-object StretchVisualTemplateKind {
+private[ui] object StretchVisualTemplateKind {
   case object Panel extends StretchVisualTemplateKind("panel")
   case object Pattern extends StretchVisualTemplateKind("pattern")
 

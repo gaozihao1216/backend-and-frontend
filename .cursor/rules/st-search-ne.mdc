@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+st search = new URLSearchParams();
+    if (query.submissionId) search.set("submissionId", query.submissionId);
+    if (query.reviewerId) search.set("reviewerId", query.reviewerId);
+    if (query.targetType) search.set("targetType", query.targetType);
+    const suffix = search.toString();
+    const path = suffix ? `${ListAdminAuditLogsApi.path}?${suffix}` : ListAdminAuditLogsApi.path;
+    return request(path, { method: "GET", headers: { "x-user-id": userId } }, ListAdminAuditLogsResponseDataSchema);
+  }

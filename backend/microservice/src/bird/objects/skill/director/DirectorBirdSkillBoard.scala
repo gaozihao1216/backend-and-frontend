@@ -11,7 +11,8 @@ final case class DirectorBirdSkillBoard(
   birds: List[DirectorBirdSkillEntry]
 )
 
-object DirectorBirdSkillBoard {
+/** DirectorBirdSkillBoard 伴生对象：Circe JSON 编解码（总监技能配置看板 API 响应）。 */
+private[bird] object DirectorBirdSkillBoard {
   implicit val encoder: Encoder[DirectorBirdSkillBoard] = deriveEncoder
   implicit val decoder: Decoder[DirectorBirdSkillBoard] = deriveDecoder
 }

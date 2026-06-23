@@ -12,7 +12,7 @@ final case class PanelFloating(
 )
 
 /** PanelFloating 编解码。 */
-object PanelFloating {
+private[ui] object PanelFloating {
   implicit val encoder: Encoder[PanelFloating] = deriveEncoder
   implicit val decoder: Decoder[PanelFloating] = deriveDecoder
 }

@@ -27,7 +27,8 @@ final case class BirdDesign(
   publishedAt: Option[String]
 )
 
-object BirdDesign {
+/** BirdDesign 伴生对象：Circe JSON 编解码，供鸟类设计 API 响应。 */
+private[bird] object BirdDesign {
   implicit val encoder: Encoder[BirdDesign] = deriveEncoder
   implicit val decoder: Decoder[BirdDesign] = deriveDecoder
 }

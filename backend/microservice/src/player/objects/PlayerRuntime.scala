@@ -24,7 +24,7 @@ final case class CheckInSlotReward(
   fragments: Int = 0
 )
 
-object CheckInSlotReward {
+private[player] object CheckInSlotReward {
   import io.circe.generic.semiauto._
   implicit val encoder: io.circe.Encoder[CheckInSlotReward] = deriveEncoder
   implicit val decoder: io.circe.Decoder[CheckInSlotReward] = deriveDecoder

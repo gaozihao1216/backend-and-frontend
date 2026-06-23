@@ -1,7 +1,7 @@
 package microservice.ui.objects.category
 
 /** 面板拉伸模板 category 合法值与默认值。 */
-object PanelTemplateCategory {
+private[ui] object PanelTemplateCategory {
   val SmallPanel: String = "smallPanel"
   val LevelBackground: String = "levelBackground"
 

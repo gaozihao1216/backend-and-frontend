@@ -8,7 +8,8 @@ final case class GroundBezier(controlPoints: List[Position]) extends LevelGround
   override val `type`: String = "bezier"
 }
 
-object GroundBezier {
+/** GroundBezier 伴生对象：Circe JSON 编解码，贝塞尔地面曲线段。 */
+private[level] object GroundBezier {
   implicit val encoder: Encoder[GroundBezier] = deriveEncoder
   implicit val decoder: Decoder[GroundBezier] = deriveDecoder
 }

@@ -1,6 +1,5 @@
 package microservice.player.preparation
 
-import microservice.bird.tables.skill_config.BirdSkillConfigTable
 import microservice.player.objects.{
   BirdStatsView,
   BirdUpgradeView,
@@ -8,24 +7,23 @@ import microservice.player.objects.{
   PlayerWallet,
   SlingshotUpgradeView
 }
+import microservice.player.objects.preparation.BirdSkillConfigView
 import microservice.player.tables.preparation.PlayerPreparationTable
 import java.sql.Connection
 
-/** 备战页响应组装支持（纯读表 + 映射）。
-  *
-  * 定义：private[player] object，buildResponse 合并 Catalog/Table/Wallet/SkillConfig。
-  * 问题：GetPreparationState 若在 APIMessage 内手写映射会过长且难测。
-  * 作用：ensureBirdDefaults → 组装 BirdUpgradeView/SlingshotUpgradeView 与 stats。
-  * 关联：[[GetPreparationStateAPIMessage]]；[[PlayerPreparationCatalog.loadEntries]]。
-  */
+/** 备战页响应组装支持（纯读表 + 映射）。 */
 private[player] object PlayerPreparationSupport {
-  def buildResponse(connection: Connection, userId: String, wallet: PlayerWallet): PlayerPreparationResponse = {
-    val catalogEntries = PlayerPreparationCatalog.loadEntries(connection)
+  def buildResponse(
+    connection: Connection,
+    userId: String,
+    wallet: PlayerWallet,
+    catalogEntries: Vector[BirdCatalogEntry],
+    skillConfigs: Map[String, BirdSkillConfigView]
+  ): PlayerPreparationResponse = {
     PlayerPreparationTable.ensureBirdDefaults(connection, userId, catalogEntries.map(_.birdType))
     val birdLevels = PlayerPreparationTable.listBirdLevels(connection, userId)
     val birdTiers = PlayerPreparationTable.listBirdTiers(connection, userId)
     val slingshotLevel = PlayerPreparationTable.getSlingshotLevel(connection, userId)
-    val skillConfigs = BirdSkillConfigTable.skillsJsonMap(connection)
     PlayerPreparationResponse(
       birds = catalogEntries.map { entry =>
         val level = birdLevels.getOrElse(entry.birdType, 1)

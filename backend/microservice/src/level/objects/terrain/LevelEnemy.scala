@@ -17,7 +17,8 @@ final case class LevelEnemy(
   size: Option[Size]
 )
 
-object LevelEnemy {
+/** LevelEnemy 伴生对象：Circe JSON 编解码，关卡敌人实体。 */
+private[level] object LevelEnemy {
   implicit val encoder: Encoder[LevelEnemy] = deriveEncoder
   implicit val decoder: Decoder[LevelEnemy] = deriveDecoder
 }

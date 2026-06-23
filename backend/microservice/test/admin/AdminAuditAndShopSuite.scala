@@ -7,11 +7,12 @@ import microservice.admin.api.shop.{
   ListAdminShopItemsAPIMessage,
   UpdateShopItemAPIMessage
 }
-import microservice.admin.tables.{AdminAuditTable, AdminAuditTargetType}
+import microservice.admin.tables.AdminAuditTable
+import microservice.system.objects.AuditTargetType
 import microservice.testsupport.TestSupport
 import microservice.system.objects.SubmissionStatus
 import munit.CatsEffectSuite
-import microservice.admin.api.shop.body.{CreateShopItemBody, UpdateShopItemBody}
+import microservice.admin.body.shop.{CreateShopItemBody, UpdateShopItemBody}
 
 /** 审计日志与商店管理 API。 */
 class AdminAuditAndShopSuite extends CatsEffectSuite {
@@ -28,7 +29,7 @@ class AdminAuditAndShopSuite extends CatsEffectSuite {
   test("ListAdminAuditLogsAPIMessage returns seeded audit rows after recordReview") {
     AdminAuditTable.recordReview(
       connection = null,
-      targetType = AdminAuditTargetType.LevelSubmission,
+      targetType = AuditTargetType.LevelSubmission,
       submissionId = "submission-audit-api",
       reviewerId = "admin-1",
       decision = SubmissionStatus.Approved.value,

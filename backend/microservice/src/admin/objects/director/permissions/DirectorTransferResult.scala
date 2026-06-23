@@ -15,7 +15,7 @@ final case class DirectorTransferResult(
 )
 
 /** DirectorTransferResult 的 Circe 编解码 companion。 */
-object DirectorTransferResult {
+private[admin] object DirectorTransferResult {
   implicit val encoder: Encoder[DirectorTransferResult] = deriveEncoder
   implicit val decoder: Decoder[DirectorTransferResult] = deriveDecoder
 }

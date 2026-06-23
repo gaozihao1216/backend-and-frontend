@@ -17,7 +17,8 @@ final case class ShopItem(
   updatedAt: String
 )
 
-object ShopItem {
+/** ShopItem 伴生对象：Circe JSON 编解码，供商店 API 响应。 */
+private[player] object ShopItem {
   implicit val encoder: Encoder[ShopItem] = deriveEncoder
   implicit val decoder: Decoder[ShopItem] = deriveDecoder
 }

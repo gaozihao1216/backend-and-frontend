@@ -13,7 +13,7 @@ import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.SubmissionRow
 import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
-import microservice.level.api.design.body.SubmitLevelBody
+import microservice.level.body.design.SubmitLevelBody
 
 /** 设计师提交关卡审核 APIMessage。 */
 final case class SubmitLevelAPIMessage(
@@ -22,12 +22,20 @@ final case class SubmitLevelAPIMessage(
 ) extends APIWithTokenMessage[Submission] {
   override def token: String = designerId
 
+  /** plan 定义了什么业务流程：Designer 将 Draft/Rejected 关卡提交审核，创建 Submission 记录。
+    *
+    * 关联的 HTTP 路由/前端 API：POST /designer/submissions；前端 `SubmitLevelApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Submission]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Designer
         _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        // 步骤 2：加载关卡并确认处于可提交状态
         level <- LevelDesignAccess.requireLevel(connection, body.levelId)
+        // 步骤 3：校验作者身份与关卡状态允许提交
         _ <- LevelDesignAccess.requireSubmittable(connection, designerId, level)
+        // 步骤 4：更新 Level 为 PendingReview 并插入 SubmissionRow
         submission <- PlanSteps.read {
           val timestamp = Instant.now().toString
           LevelTable.updateSubmissionStatus(connection, body.levelId, LevelStatus.PendingReview, None, timestamp)

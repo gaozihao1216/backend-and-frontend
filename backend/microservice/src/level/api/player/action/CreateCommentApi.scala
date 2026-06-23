@@ -12,7 +12,7 @@ import microservice.level.tables.comment.CommentTable
 import microservice.level.tables.shared.CommentRow
 import microservice.level.support.player.LevelApiSupport
 import microservice.system.objects.UserRole
-import microservice.level.api.player.action.body.CreateCommentBody
+import microservice.level.body.player.CreateCommentBody
 
 final case class CreateCommentAPIMessage(
   playerId: String,

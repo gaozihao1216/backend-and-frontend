@@ -15,7 +15,8 @@ final case class UserProfileStats(
   ratingCount: Int    // 该用户提交了多少条评分
 )
 
-object UserProfileStats {
+/** UserProfileStats 伴生对象：Circe JSON 编解码，嵌套于 UserProfile 响应。 */
+private[user] object UserProfileStats {
   implicit val encoder: Encoder[UserProfileStats] = deriveEncoder
   implicit val decoder: Decoder[UserProfileStats] = deriveDecoder
 }

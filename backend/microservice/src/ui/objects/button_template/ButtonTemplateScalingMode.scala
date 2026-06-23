@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 sealed abstract class ButtonTemplateScalingMode(val value: String)
 
 /** ButtonTemplateScalingMode 枚举与编解码。 */
-object ButtonTemplateScalingMode {
+private[ui] object ButtonTemplateScalingMode {
   case object FixedAspect extends ButtonTemplateScalingMode("fixedAspect")
   case object NineSlice extends ButtonTemplateScalingMode("nineSlice")
 

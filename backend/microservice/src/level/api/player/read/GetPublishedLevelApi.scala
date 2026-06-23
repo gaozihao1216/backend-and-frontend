@@ -6,7 +6,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.utils.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.level.Level
+import microservice.level.objects.core.Level
 import microservice.level.support.player.LevelApiSupport
 import microservice.system.objects.UserRole
 

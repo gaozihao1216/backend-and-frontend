@@ -13,7 +13,7 @@ sealed trait BindBackendUserApiError {
   def toHttpError: HttpError
 }
 
-object BindBackendUserErrors {
+private[user] object BindBackendUserErrors {
 
   /** 请求体缺少 localUserId 或 nickname 时返回 400。 */
   final case class BindBackendUserValidation(fields: List[String]) extends BindBackendUserApiError {

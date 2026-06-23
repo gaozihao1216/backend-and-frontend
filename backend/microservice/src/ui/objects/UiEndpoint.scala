@@ -9,7 +9,7 @@ sealed trait UiEndpoint {
 }
 
 /** UiEndpoint 枚举值与 Circe 编解码。 */
-object UiEndpoint {
+private[ui] object UiEndpoint {
   case object Player extends UiEndpoint { override val value: String = "player" }
   case object Designer extends UiEndpoint { override val value: String = "designer" }
   case object Admin extends UiEndpoint { override val value: String = "admin" }

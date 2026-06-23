@@ -10,7 +10,7 @@ final case class PanelContentSize(
 )
 
 /** PanelContentSize 编解码。 */
-object PanelContentSize {
+private[ui] object PanelContentSize {
   implicit val encoder: Encoder[PanelContentSize] =
     Encoder.forProduct2("widthPercent", "heightPercent")(size => (size.widthPercent, size.heightPercent))
 

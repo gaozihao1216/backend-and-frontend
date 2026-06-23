@@ -6,7 +6,7 @@ import io.circe.generic.semiauto._
 /** 总监配置的鸟类技能 JSON 持久化模型（按 birdType 唯一）。
   *
   * 字段说明：
-  *   - skills：技能 JSON，须含非空 `stages` 数组；由 DirectorBirdSkillSupport.checkSkillsJson 校验
+  *   - skills：技能 JSON，须含非空 `stages` 数组；由 BirdSkillDirectorSupport.checkSkillsJson 校验
   *   - modelImageUrl：可选 3D/预览模型图 URL；空字符串在写入时会被过滤
   *   - updatedById / updatedAt：最近一次写入的总监用户 ID 与 ISO 时间戳
   *
@@ -20,7 +20,8 @@ final case class BirdSkillConfig(
   updatedAt: String
 )
 
-object BirdSkillConfig {
+/** BirdSkillConfig 伴生对象：Circe JSON 编解码，供技能配置读写。 */
+private[bird] object BirdSkillConfig {
   implicit val encoder: Encoder[BirdSkillConfig] = deriveEncoder
   implicit val decoder: Decoder[BirdSkillConfig] = deriveDecoder
 }

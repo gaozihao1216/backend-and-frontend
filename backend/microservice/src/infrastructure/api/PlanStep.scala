@@ -11,12 +11,19 @@ import microservice.infrastructure.http.HttpError
 object PlanStep {
   type Step[A] = EitherT[IO, HttpError, A]
 
-  def fromEither[A](check: Either[HttpError, A]): Step[A] =
-    EitherT.fromEither[IO](check)
-
+  /** 将 IO 动作提升为 Step（无副作用读操作）。 */
   def liftF[A](io: IO[A]): Step[A] =
     EitherT.liftF(io)
 
+  /** 在 blocking 线程池执行同步阻塞操作并提升为 Step。 */
   def liftBlocking[A](run: => A): Step[A] =
     EitherT.liftF(IO.blocking(run))
+
+  /** 以 HttpError 短路步骤链。 */
+  def fail[A](error: HttpError): Step[A] =
+    EitherT.leftT(error)
+
+  /** 注入成功值。 */
+  def succeed[A](value: A): Step[A] =
+    EitherT.rightT(value)
 }

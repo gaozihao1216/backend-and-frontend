@@ -13,12 +13,14 @@ sealed trait AdminLevel {
   def value: String
 }
 
+/** AdminLevel 伴生对象：管理员子级别枚举、字符串解析与 Circe 编解码。 */
 object AdminLevel {
   case object Standard extends AdminLevel { override val value: String = "standard" } // 普通审核员
   case object Director extends AdminLevel { override val value: String = "director" } // 总监（全站配置）
 
   private val byValue = List(Standard, Director).map(level => level.value -> level).toMap
 
+  /** 按持久化/JSON 字符串反查管理员级别；未知值返回 None。 */
   def fromString(value: String): Option[AdminLevel] =
     byValue.get(value)
 

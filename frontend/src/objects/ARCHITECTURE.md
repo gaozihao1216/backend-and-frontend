@@ -1,6 +1,6 @@
 # Objects layer
 
-Zod schemas and TypeScript types aligned with the Scala backend `backend/microservice/src/*/objects/` layout. Request/response **bodies** for HTTP APIs live in `frontend/src/api/*/body/`; this folder holds domain objects only.
+Zod schemas and TypeScript types aligned with the Scala backend `backend/microservice/src/*/objects/` layout. HTTP **request** DTOs for APIs live in `frontend/src/api/*/body/` (backend mirror: `<module>/body/<子域>/`, see `backend/microservice/MODULE-LAYOUT.md`); this folder holds domain objects only.
 
 ## Layout
 

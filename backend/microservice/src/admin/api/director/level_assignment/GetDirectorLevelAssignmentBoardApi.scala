@@ -22,8 +22,10 @@ final case class GetDirectorLevelAssignmentBoardAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, DirectorLevelAssignmentBoard]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Director
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
-        board <- PlanSteps.read(DirectorLevelAssignmentSupport.buildBoard(connection))
+        // 步骤 2：组装关卡槽位分配看板（只读）
+        board <- DirectorLevelAssignmentSupport.buildBoardStep(connection)
       } yield board
     }
 }

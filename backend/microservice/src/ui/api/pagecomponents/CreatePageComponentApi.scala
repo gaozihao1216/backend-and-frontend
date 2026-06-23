@@ -7,8 +7,8 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.api.pagecomponents.body.CreatePageComponentBody
-import microservice.ui.api.pagecomponents.support.UiPageComponentAccess
+import microservice.ui.body.pagecomponents.CreatePageComponentBody
+import microservice.ui.support.pagecomponents.UiPageComponentAccess
 
 /** 总监向页面追加组件 APIMessage。
   *
@@ -31,8 +31,11 @@ final case class CreatePageComponentAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        // 步骤 2：确认页面存在且 component.id 不重复
         _ <- UiPageComponentAccess.requirePageForNewComponent(connection, pageId, body.component.id)
+        // 步骤 3：追加组件并返回更新后的 PageConfig
         page <- UiPageComponentAccess.requireAddComponent(connection, pageId, body.component)
       } yield page
     }

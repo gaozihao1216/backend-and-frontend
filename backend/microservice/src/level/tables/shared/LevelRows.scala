@@ -5,7 +5,7 @@
 package microservice.level.tables.shared
 
 import microservice.level.objects.inventory.{BirdPool}
-import microservice.level.objects.level.{LevelData}
+import microservice.level.objects.core.{LevelData}
 import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
 
 final case class LevelRow(
@@ -61,4 +61,11 @@ final case class LevelSlotAssignmentRow(
   assignedAt: String,
   note: Option[String],
   birdPool: Option[BirdPool] = None
+)
+
+final case class FavoriteRow(
+  id: String,
+  levelId: String,
+  userId: String,
+  createdAt: String
 )

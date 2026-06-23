@@ -8,7 +8,8 @@ final case class GroundLine(points: List[Position]) extends LevelGround {
   override val `type`: String = "line"
 }
 
-object GroundLine {
+/** GroundLine 伴生对象：Circe JSON 编解码，直线地面段。 */
+private[level] object GroundLine {
   implicit val encoder: Encoder[GroundLine] = deriveEncoder
   implicit val decoder: Decoder[GroundLine] = deriveDecoder
 }

@@ -8,7 +8,8 @@ import microservice.user.tables.user.{UserRow, UserTable}
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.tables.user.UserRowMapper
-import microservice.user.api.validation.BindBackendUserValidation
+import microservice.user.validation.BindBackendUserValidation
+import microservice.user.body.BindBackendUserRequest
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
 
@@ -33,7 +34,9 @@ final case class BindBackendUserAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, BackendUser]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验 localUserId/nickname/role 等绑定请求字段
         validated <- BindBackendUserValidation.validate(request)
+        // 步骤 2：按确定性 username 查或建 UserRow，映射为 BackendUser
         user <- PlanSteps.read {
           val normalizedNickname = validated.nickname.trim
 

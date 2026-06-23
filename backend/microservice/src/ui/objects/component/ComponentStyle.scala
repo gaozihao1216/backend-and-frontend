@@ -15,7 +15,7 @@ final case class ComponentStyle(
 )
 
 /** ComponentStyle 编解码。 */
-object ComponentStyle {
+private[ui] object ComponentStyle {
   implicit val encoder: Encoder[ComponentStyle] = deriveEncoder
   implicit val decoder: Decoder[ComponentStyle] = deriveDecoder
 }

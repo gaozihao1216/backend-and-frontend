@@ -14,6 +14,7 @@ final case class HealthResponse(
   status: String // 存活标志，当前恒为 "ok"
 )
 
+/** HealthResponse 伴生对象：健康检查响应的 Circe JSON 编解码。 */
 object HealthResponse {
   implicit val encoder: Encoder[HealthResponse] = deriveEncoder
   implicit val decoder: Decoder[HealthResponse] = deriveDecoder

@@ -7,7 +7,7 @@ sealed trait RateLevelApiError {
   def toHttpError: HttpError
 }
 
-object RateLevelErrors {
+private[level] object RateLevelErrors {
   /** 关卡不存在。 */
   final case class LevelMissing(levelId: String) extends RateLevelApiError {
     override def toHttpError: HttpError =

@@ -16,7 +16,8 @@ final case class LevelTerrain(
   voidSpans: List[TerrainVoidSpan]
 )
 
-object LevelTerrain {
+/** LevelTerrain 伴生对象：Circe JSON 编解码，关卡地形边界数据。 */
+private[level] object LevelTerrain {
   implicit val encoder: Encoder[LevelTerrain] = deriveEncoder
   implicit val decoder: Decoder[LevelTerrain] = deriveDecoder
 }

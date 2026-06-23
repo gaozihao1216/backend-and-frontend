@@ -14,6 +14,7 @@ final case class ApiSuccess[T](
   success: Boolean = true       // 恒为 true，与前端 success 字段约定一致
 )
 
+/** ApiSuccess 伴生对象：统一成功响应的 Circe 编码（success + data 字段序固定）。 */
 object ApiSuccess {
   /** 显式字段顺序编码 success 再 data，避免 derive 字段序与前端约定不一致。 */
   implicit def encoder[T: Encoder]: Encoder[ApiSuccess[T]] =

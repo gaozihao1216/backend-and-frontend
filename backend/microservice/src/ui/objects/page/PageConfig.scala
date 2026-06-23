@@ -16,7 +16,7 @@ final case class PageConfig(
 )
 
 /** PageConfig 的 Circe 编解码。 */
-object PageConfig {
+private[ui] object PageConfig {
   implicit val encoder: Encoder[PageConfig] = deriveEncoder
   implicit val decoder: Decoder[PageConfig] = deriveDecoder
 }

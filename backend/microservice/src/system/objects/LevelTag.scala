@@ -13,6 +13,7 @@ sealed trait LevelTag {
   def value: String
 }
 
+/** LevelTag 伴生对象：关卡标签枚举、字符串解析与 Circe 编解码。 */
 object LevelTag {
   case object Puzzle extends LevelTag { override val value: String = "puzzle" }       // 解谜向
   case object Hard extends LevelTag { override val value: String = "hard" }           // 高难度
@@ -22,6 +23,7 @@ object LevelTag {
 
   private val byValue = List(Puzzle, Hard, Beginner, Funny, Strategy).map(tag => tag.value -> tag).toMap
 
+  /** 按持久化/JSON 字符串反查标签；未知值返回 None。 */
   def fromString(value: String): Option[LevelTag] =
     byValue.get(value)
 

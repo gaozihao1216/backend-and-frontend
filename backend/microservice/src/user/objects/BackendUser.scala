@@ -22,7 +22,8 @@ final case class BackendUser(
   updatedAt: String
 )
 
-object BackendUser {
+/** BackendUser 伴生对象：Circe JSON 编解码，供绑定/身份 API 响应。 */
+private[user] object BackendUser {
   implicit val encoder: Encoder[BackendUser] = deriveEncoder
   implicit val decoder: Decoder[BackendUser] = deriveDecoder
 }

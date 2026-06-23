@@ -1,19 +1,30 @@
 package microservice.user.support
 
 import java.sql.Connection
-import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.{PlanStep, PlanSteps}
 import microservice.infrastructure.api.PlanStep.Step
-import microservice.infrastructure.http.HttpError
-import microservice.user.objects.{GetUserProfileErrors, UserProfile}
-import microservice.user.tables.UserProfileTable
+import microservice.level.api.internal.user.GetUserLevelProfileDataInternalAPIMessage
+import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfileStats}
+import microservice.user.tables.user.{UserRowMapper, UserTable}
 
 /** 用户资料只读聚合查询校验。 */
 object UserProfileAccess {
   def requireProfile(connection: Connection, profileUserId: String): Step[UserProfile] =
-    PlanStep.fromEither(checkProfile(connection, profileUserId))
-
-  def checkProfile(connection: Connection, profileUserId: String): Either[HttpError, UserProfile] =
-    UserProfileTable
-      .findProfile(connection, profileUserId)
-      .toRight(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
+    for {
+      user <- UserTable.findById(connection, profileUserId) match {
+        case None =>
+          PlanStep.fail(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
+        case Some(row) =>
+          PlanStep.succeed(row)
+      }
+      levelData <- PlanSteps.runApi(GetUserLevelProfileDataInternalAPIMessage(profileUserId), connection)
+    } yield UserProfile(
+      user = UserRowMapper.toBackendUser(user),
+      publishedLevels = levelData.publishedLevels.map(UserProfileMapping.toPublishedLevel),
+      recentComments = levelData.recentComments.map(UserProfileMapping.toComment),
+      stats = UserProfileStats(
+        favoriteCount = levelData.favoriteCount,
+        ratingCount = levelData.ratingCount
+      )
+    )
 }

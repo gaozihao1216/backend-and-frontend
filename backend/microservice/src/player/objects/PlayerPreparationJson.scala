@@ -9,7 +9,7 @@ import io.circe.Json
   * 作用：preparation APIMessage 统一出口。
   * 关联：[[GetPreparationStateAPIMessage]] 等。
   */
-object PlayerPreparationJson {
+private[player] object PlayerPreparationJson {
   def toJson(response: PlayerPreparationResponse): Json =
     Json.obj(
       "birds" -> Json.arr(response.birds.map(birdToJson): _*),

@@ -71,17 +71,25 @@ api/
 `npm test` 会运行 `api-alignment.test.ts`：
 
 - 扫描后端全部 `*Api.scala`，断言前端存在同布局的 `*Api.ts`（含上述 auth 例外）
-- 扫描后端 `*/body/*Body.scala`，断言前端存在同布局的 `body/*Body.ts`（路径变换与 Api 相同：去掉 `<module>/api/` 前缀）
+- 扫描后端 `<module>/body/**/*.scala`（文件名 `*Body.scala`），断言前端存在对应 `body/*Body.ts`
+- 路径变换：`<module>/body/<area>/XxxBody.scala` → `<module>/<area>/body/XxxBody.ts`；例外见下
 
 ## HTTP 请求体（body/）
 
-与后端 `backend/microservice/src/<module>/api/.../body/XxxBody.scala` 一一对应；前端为 `api/<module>/.../body/XxxBody.ts`。
+后端请求 DTO 在 **`<module>/body/<子域>/`**（与 `api/` 同级），不在 `api/.../body/` 下。前端仍把 body 放在 **紧邻 `*Api.ts` 的 `body/` 子目录**，便于同域 import。
 
 | 后端 | 前端 |
 | --- | --- |
-| `admin/api/shop/body/CreateShopItemBody.scala` | `api/admin/shop/body/CreateShopItemBody.ts` |
-| `level/api/design/body/CreateLevelBody.scala` | `api/level/design/body/CreateLevelBody.ts` |
+| `level/body/design/CreateLevelBody.scala` | `api/level/design/body/CreateLevelBody.ts` |
+| `level/body/player/RateLevelBody.scala` | `api/level/player/action/body/RateLevelBody.ts` |
+| `admin/body/shop/CreateShopItemBody.scala` | `api/admin/shop/body/CreateShopItemBody.ts` |
+| `ui/body/pages/CreateUiPageBody.scala` | `api/ui/pages/body/CreateUiPageBody.ts` |
+
+通用规则：`backend/.../<module>/body/<path>/XxxBody.scala` → `frontend/src/api/<module>/<path>/body/XxxBody.ts`。  
+**例外**：`level/body/player/` 对应前端的 `level/player/action/body/`（与 `level/api/player/action/` 对齐）。
 
 每个 body 文件导出 Zod schema 与类型。为减少调用方改动，`*Api.ts` 与 `api-contracts.ts` 仍可使用既有名称（如 `CreateShopItemRequestBodySchema`），可在 body 文件内作为 export alias 保留。
 
 领域/响应模型仍在 `objects/`；body 文件可 import `objects/` 中的嵌套 schema（如 `ButtonTemplateSchema`）。
+
+后端模块目录全文见 [`backend/microservice/MODULE-LAYOUT.md`](../../../backend/microservice/MODULE-LAYOUT.md)。

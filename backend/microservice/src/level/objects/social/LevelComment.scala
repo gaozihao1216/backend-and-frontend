@@ -18,7 +18,8 @@ final case class LevelComment(
   createdAt: String
 )
 
-object LevelComment {
+/** LevelComment 伴生对象：Circe JSON 编解码，供评论 API 响应。 */
+private[level] object LevelComment {
   implicit val encoder: Encoder[LevelComment] = deriveEncoder
   implicit val decoder: Decoder[LevelComment] = deriveDecoder
 }

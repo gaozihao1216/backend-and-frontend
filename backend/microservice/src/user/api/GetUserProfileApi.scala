@@ -15,11 +15,16 @@ final case class GetUserProfileAPIMessage(
 ) extends APIWithTokenMessage[UserProfile] {
   override def token: String = viewerUserId
 
-  /** plan：校验 viewer 存在 → UserProfileTable.findProfile（只读聚合）。 */
+  /** plan 定义了什么业务流程：已登录用户查看指定用户的公开资料页。
+    *
+    * 关联的 HTTP 路由/前端 API：GET /users/:profileUserId/profile；前端 `GetUserProfileApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, UserProfile]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：确认 viewer 为已知用户
         _ <- AccessControl.requireKnownUser(connection, viewerUserId).map(_ => ())
+        // 步骤 2：聚合查询目标用户的 UserProfile
         profile <- UserProfileAccess.requireProfile(connection, profileUserId)
       } yield profile
     }

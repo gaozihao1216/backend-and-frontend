@@ -7,11 +7,11 @@ import microservice.user.utils.AccessControl
 import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdDesignRow, BirdRowMapper}
-import microservice.bird.api.design.validation.BirdDesignValidation
+import microservice.bird.validation.design.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
-import microservice.bird.api.design.body.CreateBirdDesignBody
+import microservice.bird.body.design.CreateBirdDesignBody
 
 /** 设计师创建新鸟类设计 APIMessage，初始状态为 Draft。 */
 final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBirdDesignBody)
@@ -60,6 +60,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
       } yield design
     }
 
+  /** 将 HTTP 请求体映射为校验层使用的 BirdDesignInput（字段一一对应，无业务变换）。 */
   private def toInput(body: CreateBirdDesignBody): BirdDesignInput =
     BirdDesignInput(
       name = body.name,

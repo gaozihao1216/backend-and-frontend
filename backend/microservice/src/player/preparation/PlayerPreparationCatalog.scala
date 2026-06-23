@@ -1,36 +1,35 @@
 package microservice.player.preparation
 
-import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.shared.{BirdRowMapper}
-import java.sql.Connection
+import microservice.player.objects.catalog.{PreparationPublishedBirdSnapshot, PreparationSystemBirdSnapshot}
 
-/** 备战鸟目录加载（系统 + 已发布设计）。
-  *
-  * 定义：loadEntries/find 合并 BirdPreparationCatalog 与 BirdDesignTable。
-  * 问题：玩家可升级鸟包含系统默认与设计师过审鸟种。
-  * 作用：Vector[BirdCatalogEntry] 供 Support 与 upgrade API 校验 birdType。
-  * 关联：[[BirdDesignTable.listPublished]]；[[BirdPreparationCatalog]]。
-  */
+/** 备战鸟目录合并（player 模块内，不依赖 bird.objects）。 */
 object PlayerPreparationCatalog {
-  /** 加载完整鸟目录（系统 + 设计师发布）。 */
-  def loadEntries(connection: Connection): Vector[BirdCatalogEntry] =
-    BirdPreparationCatalog.entries.map(_.copy(source = "system")) ++
-      BirdDesignTable
-        .listPublished(connection)
-        .map(BirdRowMapper.toBirdDesign)
-        .map(fromPublishedDesign)
+  def merge(
+    system: List[PreparationSystemBirdSnapshot],
+    published: List[PreparationPublishedBirdSnapshot]
+  ): Vector[BirdCatalogEntry] =
+    system.map(fromSystemSnapshot).toVector ++ published.map(fromPublishedSnapshot).toVector
 
-  /** 在完整目录中按 birdType 查找（升级/升阶前校验）。 */
-  def find(connection: Connection, birdType: String): Option[BirdCatalogEntry] =
-    loadEntries(connection).find(_.birdType == birdType)
+  def fromSystemSnapshot(entry: PreparationSystemBirdSnapshot): BirdCatalogEntry =
+    BirdCatalogEntry(
+      birdType = entry.birdType,
+      name = entry.name,
+      summary = entry.summary,
+      previewImageUrl = entry.previewImageUrl,
+      baseStats = BirdBaseStats(entry.attack, entry.impact, entry.speed),
+      skillName = entry.skillName,
+      tierSkillDescriptions = entry.tierSkillDescriptions,
+      source = "system",
+      authorId = None
+    )
 
-  private def fromPublishedDesign(design: microservice.bird.objects.design.BirdDesign): BirdCatalogEntry = {
+  def fromPublishedSnapshot(design: PreparationPublishedBirdSnapshot): BirdCatalogEntry = {
     val tierSkills =
       if (design.tierSkills.length >= BirdPreparationCatalog.maxTier) design.tierSkills.take(BirdPreparationCatalog.maxTier)
       else design.tierSkills ++ List.fill(BirdPreparationCatalog.maxTier - design.tierSkills.length)("待补充技能描述")
 
     BirdCatalogEntry(
-      birdType = design.id,
+      birdType = design.birdType,
       name = design.name,
       summary = design.summary,
       previewImageUrl = design.previewImageUrl,
@@ -41,4 +40,7 @@ object PlayerPreparationCatalog {
       authorId = Some(design.authorId)
     )
   }
+
+  def find(catalog: Vector[BirdCatalogEntry], birdType: String): Option[BirdCatalogEntry] =
+    catalog.find(_.birdType == birdType)
 }

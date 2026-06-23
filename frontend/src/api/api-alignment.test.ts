@@ -46,6 +46,20 @@ const defaultFrontendRel = (backendRel: string): string =>
 const expectedFrontendRel = (backendRel: string): string =>
   frontendPathOverrides[backendRel] ?? defaultFrontendRel(backendRel);
 
+/** 后端 <module>/body/<path>/XxxBody.scala → 前端 <module>/<path>/body/XxxBody.ts */
+const expectedFrontendBodyRel = (backendRel: string): string => {
+  const levelPlayer = backendRel.match(/^level\/body\/player\/(.+\.scala)$/);
+  if (levelPlayer) {
+    return `level/player/action/body/${levelPlayer[1]!.replace(/\.scala$/, ".ts")}`;
+  }
+  const match = backendRel.match(/^([^/]+)\/body\/(.+)\/([^/]+\.scala)$/);
+  if (match) {
+    const [, module, areaPath, file] = match;
+    return `${module}/${areaPath}/body/${file!.replace(/\.scala$/, ".ts")}`;
+  }
+  return backendRel.replace(/\.scala$/, ".ts");
+};
+
 const collectBackendApiFiles = async (directory: string, prefix = ""): Promise<string[]> => {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(
@@ -59,6 +73,7 @@ const collectBackendApiFiles = async (directory: string, prefix = ""): Promise<s
         entry.isFile()
         && entry.name.endsWith("Api.scala")
         && !entry.name.endsWith("Body.scala")
+        && !rel.includes("/api/internal/")
       ) {
         return [rel];
       }
@@ -133,7 +148,7 @@ const collectBackendBodyFiles = async (directory: string, prefix = ""): Promise<
       if (entry.isDirectory()) {
         return collectBackendBodyFiles(full, rel);
       }
-      if (entry.isFile() && entry.name.endsWith("Body.scala") && rel.includes("/body/")) {
+      if (entry.isFile() && entry.name.endsWith("Body.scala") && rel.includes("/body/") && !rel.includes("/api/")) {
         return [rel];
       }
       return [];
@@ -169,7 +184,7 @@ test("frontend body files mirror backend *Body.scala layout", async () => {
 
   const missingOnFrontend: string[] = [];
   for (const backendRel of backendBodies) {
-    const frontendRel = expectedFrontendRel(backendRel);
+    const frontendRel = expectedFrontendBodyRel(backendRel);
     if (!frontendBodies.has(frontendRel)) {
       missingOnFrontend.push(`${backendRel} → ${frontendRel}`);
     }
@@ -177,7 +192,7 @@ test("frontend body files mirror backend *Body.scala layout", async () => {
 
   const extraOnFrontend: string[] = [];
   for (const frontendRel of frontendBodies) {
-    const hasBackend = backendBodies.some((backendRel) => expectedFrontendRel(backendRel) === frontendRel);
+    const hasBackend = backendBodies.some((backendRel) => expectedFrontendBodyRel(backendRel) === frontendRel);
     if (!hasBackend) {
       extraOnFrontend.push(frontendRel);
     }

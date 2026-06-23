@@ -2,42 +2,19 @@ package microservice.system.utils
 
 import cats.effect.IO
 import java.time.Instant
-import microservice.admin.tables.AdminAuditTable
-import microservice.user.tables.user.UserTable
+import microservice.admin.support.bootstrap.AdminStorageBootstrap
+import microservice.bird.support.bootstrap.BirdStorageBootstrap
+import microservice.bird.support.catalog.SystemBirdCatalogSupport
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
-import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.skill_config.{BirdSkillConfigTable}
-import microservice.bird.tables.submission.{BirdSubmissionTable}
-import microservice.level.tables.comment.{CommentTable}
-import microservice.level.tables.favorite.{FavoriteTable}
-import microservice.level.tables.level.{LevelTable}
-import microservice.level.tables.rating.{RatingTable}
-import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
-import microservice.level.tables.submission.{SubmissionTable}
-import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
-import microservice.player.tables.preparation.{PlayerPreparationTable}
-import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
-import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTable
-import microservice.player.tables.shop.{ShopTable}
-import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessageTable}
-import microservice.player.tables.wallet.{PlayerWalletTable}
-import microservice.player.tables.weekly_check_in.{PlayerWeeklyCheckInTable}
+import microservice.level.support.bootstrap.LevelStorageBootstrap
+import microservice.player.support.bootstrap.PlayerStorageBootstrap
 import microservice.routes.ApiRouter
-import microservice.ui.tables.button_template.{ButtonTemplateTable}
-import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateTable}
-import microservice.ui.tables.ui_page.{UiPageTable}
-import microservice.ui.tables.ui_page_rollback.{UiPageRollbackTable}
+import microservice.ui.support.bootstrap.UiStorageBootstrap
+import microservice.user.support.bootstrap.UserStorageBootstrap
 import org.http4s.HttpRoutes
 
-/** 应用级默认装配：数据库会话、种子数据、HTTP 路由树。
-  *
-  * 定义：object 暴露 databaseConfig、databaseSession、apiRoutes、initializeDatabase。
-  * 问题：Main 启动需一处集中读取环境变量、注入演示数据、注册全站路由。
-  * 作用：根据 UGC_DATABASE_MODE 选 in-memory/JDBC；类加载时 reset seed；JDBC 时 DDL+seed。
-  * 关联：Main 入口；[[ApiRouter]]、[[SystemSeedData]]、[[SystemJdbcSeedData]]、各 Table.initialize。
-  */
+/** 应用级默认装配：数据库会话、种子数据、HTTP 路由树。 */
 object SystemDefaults {
-  /** 从环境变量组装 JDBC 配置；未设置时使用本地 PostgreSQL 默认值。 */
   val databaseConfig: DatabaseConfig =
     DatabaseConfig(
       driver = sys.env.getOrElse("UGC_DATABASE_DRIVER", "org.postgresql.Driver"),
@@ -47,7 +24,6 @@ object SystemDefaults {
       password = sys.env.get("UGC_DATABASE_PASSWORD")
     )
 
-  /** 根据 UGC_DATABASE_MODE 选择存储后端；默认 in_memory，显式 jdbc 时连接 PostgreSQL。 */
   val databaseSession: DatabaseSession =
     sys.env.get("UGC_DATABASE_MODE") match {
       case Some("jdbc") =>
@@ -59,45 +35,20 @@ object SystemDefaults {
   private val createdAt = Instant.now().toString
   private val reviewedAt = createdAt
 
-  // 类加载时即注入演示用户、关卡、模板等；ID 与前端 BindBackendUser 绑定结果对应
   SystemSeedData.reset(createdAt, reviewedAt)
 
-  /** 组装完整 HTTP 路由树，供 Main 挂载到 EmberServerBuilder。 */
   def apiRoutes: HttpRoutes[cats.effect.IO] =
     ApiRouter.routes(databaseSession = databaseSession)
 
-  /** 启动阶段调用：JDBC 模式下为各业务表执行 DDL/迁移；in-memory 模式下多为 no-op。 */
   def initializeDatabaseOn(session: DatabaseSession): IO[Unit] =
     session.withTransaction { connection =>
       IO.blocking {
-        // --- 用户与 UGC 核心表 ---
-        UserTable.initialize(connection)
-        LevelTable.initialize(connection)
-        SubmissionTable.initialize(connection)
-        AdminAuditTable.initialize(connection)
-        LevelSlotAssignmentTable.initialize(connection)
-        RatingTable.initialize(connection)
-        CommentTable.initialize(connection)
-        FavoriteTable.initialize(connection)
-        // --- UI 定制表 ---
-        UiPageTable.initialize(connection)
-        UiPageRollbackTable.initialize(connection)
-        ButtonTemplateTable.initialize(connection)
-        StretchVisualTemplateTable.initialize(connection)
-        // --- 玩家运行时表 ---
-        PlayerWalletTable.initialize(connection)
-        PlayerWeeklyCheckInTable.initialize(connection)
-        PlayerLevelProgressTable.initialize(connection)
-        PlayerLegacyCheckInTable.initialize(connection)
-        CheckInPanelRewardTable.initialize(connection)
-        ShopTable.initialize(connection)
-        // --- 鸟类设计与社交 ---
-        BirdDesignTable.initialize(connection)
-        BirdSubmissionTable.initialize(connection)
-        BirdSkillConfigTable.initialize(connection)
-        PlayerFriendTable.initialize(connection)
-        PlayerPrivateMessageTable.initialize(connection)
-        PlayerPreparationTable.initialize(connection)
+        UserStorageBootstrap.initialize(connection)
+        LevelStorageBootstrap.initialize(connection)
+        AdminStorageBootstrap.initialize(connection)
+        UiStorageBootstrap.initialize(connection)
+        PlayerStorageBootstrap.initialize(connection, SystemBirdCatalogSupport.birdTypes)
+        BirdStorageBootstrap.initialize(connection)
         if (connection != null) {
           SystemJdbcSeedData.seed(connection)
         }

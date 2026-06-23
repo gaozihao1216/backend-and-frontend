@@ -15,7 +15,9 @@ final case class ReviewAudit(
   reviewedAt: String
 )
 
-object ReviewAudit {
+/** ReviewAudit 伴生对象：审计 Row 映射与 Circe JSON 编解码。 */
+private[admin] object ReviewAudit {
+  /** 将 ReviewAuditRow 转为 API 领域对象。 */
   def from(row: ReviewAuditRow): ReviewAudit =
     ReviewAudit(
       id = row.id,

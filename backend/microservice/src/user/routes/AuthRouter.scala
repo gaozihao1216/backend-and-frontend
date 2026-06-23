@@ -3,7 +3,8 @@ package microservice.user.routes
 import cats.effect.IO
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{HttpError}
-import microservice.user.api.{BindBackendUserAPIMessage, BindBackendUserRequest, GetBackendUsersAPIMessage}
+import microservice.user.api.{BindBackendUserAPIMessage, GetBackendUsersAPIMessage}
+import microservice.user.body.BindBackendUserRequest
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.Status

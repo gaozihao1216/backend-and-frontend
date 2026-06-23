@@ -8,7 +8,7 @@ sealed trait ComponentVariant {
 }
 
 /** ComponentVariant 枚举与编解码。 */
-object ComponentVariant {
+private[ui] object ComponentVariant {
   case object Primary extends ComponentVariant { override val value: String = "primary" }
   case object Secondary extends ComponentVariant { override val value: String = "secondary" }
   case object Ghost extends ComponentVariant { override val value: String = "ghost" }

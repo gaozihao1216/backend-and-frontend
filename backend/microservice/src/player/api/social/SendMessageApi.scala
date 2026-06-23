@@ -23,12 +23,20 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
     extends APIWithTokenMessage[Json] {
   override def token: String = userId
 
+  /** plan 定义了什么业务流程：Player 向好友发送私信并返回更新后的会话列表。
+    *
+    * 关联的 HTTP 路由/前端 API：POST /player/social/messages；前端 `SendMessageApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        // 步骤 2：校验消息内容与 receiverId 合法性
         trimmed <- PlayerSocialAccess.requireValidMessage(receiverId, content)
+        // 步骤 3：确认双方为好友关系
         _ <- PlayerSocialAccess.requireFriendship(connection, userId, receiverId)
+        // 步骤 4：插入新私信记录
         _ <- PlanSteps.read(
           PlayerPrivateMessageTable.insert(
             connection,
@@ -41,6 +49,7 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
             )
           )
         )
+        // 步骤 5：重查会话消息并标记 mine 字段
         messages <- PlanSteps.read(
           PlayerPrivateMessageTable
             .listConversation(connection, userId, receiverId)

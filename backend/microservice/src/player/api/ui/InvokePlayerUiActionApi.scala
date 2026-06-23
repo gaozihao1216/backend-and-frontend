@@ -17,10 +17,16 @@ final case class InvokePlayerUiActionAPIMessage(
 ) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 
+  /** plan 定义了什么业务流程：Player 调用动态 UI 动作端点执行运行时操作。
+    *
+    * 关联的 HTTP 路由/前端 API：POST /player/ui/actions/:apiKey；前端 `InvokePlayerUiActionApi`。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player).map(_ => ())
+        // 步骤 2：按 apiKey 与 params 执行动态 UI 动作并返回结果
         payload <- PlayerUiRuntimeSupport.requireAction(connection, userId, apiKey, params)
       } yield payload
     }

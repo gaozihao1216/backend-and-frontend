@@ -7,7 +7,7 @@ sealed trait CreateLevelApiError {
   def toHttpError: HttpError
 }
 
-object CreateLevelErrors {
+private[level] object CreateLevelErrors {
   /** 创建关卡校验失败（如 title 为空）。 */
   final case class CreateLevelValidation(fields: List[String]) extends CreateLevelApiError {
     override def toHttpError: HttpError =

@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.button_template.ButtonTemplate
-import microservice.ui.api.buttontemplates.support.ButtonTemplateAccess
+import microservice.ui.support.buttontemplates.ButtonTemplateAccess
 
 /** 总监按 templateId 读取按钮模板 APIMessage。
   *

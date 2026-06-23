@@ -35,20 +35,35 @@ backend/microservice/src/
 
 | 目录 | 职责 |
 | --- | --- |
-| `api/` | `XxxAPIMessage`：权限、校验、业务流程、调用 tables |
+| `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` 编排（鉴权 → 校验 → support → 表读写） |
+| `body/` | HTTP 请求 DTO（Circe + `EntityDecoder`）；`routes` 与 `api` 共同引用 |
+| `validation/` | 字段/结构校验：`validate*` → `PlanStep.Step`，`check*` 供单元测试 |
 | `objects/` | 领域对象（case class + Circe codec）；JSON 辅助如 `PlayerSocialJson` |
+| `support/` | 可复用业务规则（查表、状态机）：`require*` / `check*` |
 | `routes/` | HTTP 解析（path/header/body），构造 APIMessage 并 `run` |
-| `tables/` | 数据访问；`*Row` + Table 门面；in-memory 逻辑内联于 Table，JDBC 集中在单个 `jdbc/*TableJdbc.scala` |
-| `runtime/` / `preparation/` / `support/` | 模块内业务辅助（**不是** domain 类型，不放 `objects/`） |
+| `tables/` | 数据访问；`*Row` + Table 门面；in-memory 内联于 Table，JDBC 在 `jdbc/*TableJdbc.scala` |
+| `runtime/` / `preparation/` | player 模块专属运行时/备战逻辑（**不是** domain 类型） |
 
-**类型分层（老师反馈后的约定）**
+**类型分层（目录规范）** — 完整说明、依赖图与新增 API 清单见 [`backend/microservice/MODULE-LAYOUT.md`](../backend/microservice/MODULE-LAYOUT.md)；领域对象子包见 [`OBJECTS.md`](../backend/microservice/OBJECTS.md)。
 
-- `objects/`：纯数据模型与序列化（如 `PlayerWallet`、`CheckInSlotReward`、`HealthResponse`）；子包布局见 [`backend/microservice/OBJECTS.md`](../backend/microservice/OBJECTS.md)
-- `api/`：仅 `XxxAPIMessage`；HTTP 请求 DTO 放在同模块 `body/XxxBody.scala`（包名 `...api.<module>.body`）；字段校验放在同 API 子树的 `validation/`（包名 `...api.<module>.validation`），对外暴露 `validate*` 返回 `PlanStep.Step[A]`，同步 `check*` 供单元测试
-- `tables/`：仅 `*Row` 与 Table 门面；Row 与 domain 对象分离，Table 负责 `Row ↔ objects` 映射
-- `runtime/`、`preparation/`、`validation/`（位于 `api/.../validation/` 下，非顶层模块目录）、`support/`（如 `level/support/`、`admin/support/`、UI 模板 `*Access`）：可复用逻辑；对外 `require*` 返回 `PlanStep.Step`，`check*` 供测试
+| 层 | 路径 | 做什么 | 不做什么 |
+| --- | --- | --- | --- |
+| `objects/` | `<module>/objects/` | 领域模型、枚举、错误码、API 返回类型 | SQL、路由、`EntityDecoder` |
+| `body/` | `<module>/body/<子域>/` | 入站 JSON 形状；`req.as[XxxBody]` | 权限、写表、业务流程 |
+| `validation/` | `<module>/validation/<子域>/` | 基于 body/objects 的字段校验 | 访问 `Connection` / Table |
+| `support/` | `<module>/support/<子域>/` | 跨步骤可复用的查表与状态规则 | 定义 APIMessage |
+| `api/` | `<module>/api/<子域>/` | 仅 `*Api.scala`，`plan` 串联上述层 | body/validation 子目录、`object` 伴生 |
+| `tables/` | `<module>/tables/` | `*Row` 与持久化；`Row ↔ objects` | HTTP 类型 |
 
-示例：`PlayerPreparationSupport` / `PlayerPreparationAccess` 留在 `player/preparation/`；`PlayerUiRuntimeSupport` 在 `player/runtime/` 分派 UI data/action；`PlayerSocialAccess` 在 `player/support/social/`；`CreateLevelBody` 等在 `level/api/design/body/`；`CreateLevelValidation` 在 `level/api/design/validation/`；`UiPageAccess` / `UiPageComponentAccess` 在 `ui/api/.../support/`；`BirdDesignValidation` 在 `bird/api/design/validation/`；`DirectorLevelAssignmentSupport` 在 `admin/support/director/level_assignment/`。
+**一次请求的数据流：**
+
+```text
+routes  ──解析 JSON──►  body/
+   │
+   └──► api/*Api.plan ──► AccessControl → validation → support → tables → objects（返回）
+```
+
+示例路径：`CreateLevelBody` → `level/body/design/`；`CreateLevelValidation` → `level/validation/design/`；`LevelDesignAccess` → `level/support/design/`；`UiPageAccess` → `ui/support/pages/`；`PlayerSocialAccess` → `player/support/social/`；`PlayerPreparationAccess` → `player/preparation/`。
 
 ## APIMessage 模式
 
@@ -172,9 +187,9 @@ sbt run
 
 **共享能力**：
 
-- `tables/user/`：`UserTable` 持久化；`UserProfileTable` 跨表读聚合（profile 非独立物理表）
+- `tables/user/`：`UserTable` 持久化；用户资料聚合由 `user/support/UserProfileAccess` 经 `level/api/internal/user/` 拉取 level 侧数据
 - `utils/AccessControl.scala`：全项目共用的 `requireRole` / `requireAdminLevel` / `requireKnownUser`（IO 步骤）与 `check*`（同步校验）
-- `support/UserProfileAccess.scala`、`api/validation/BindBackendUserValidation.scala`
+- `support/UserProfileAccess.scala`、`validation/BindBackendUserValidation.scala`
 
 ### level
 
@@ -187,37 +202,32 @@ sbt run
 
 - 已发布关卡列表/详情、评分、收藏、评论
 
-目录按角色与数据域分子包：
+目录按角色与数据域分子包（`body`/`validation` 与 `api` 同级，不在 `api/` 下）：
 
 ```text
 level/
 ├── api/
-│   ├── design/                # 设计师创建与提交
-│   │   ├── CreateLevelApi.scala
-│   │   ├── SubmitLevelApi.scala
-│   │   └── body/
-│   │       ├── CreateLevelBody.scala
-│   │       └── SubmitLevelBody.scala
-│   │   └── validation/
-│   │       └── CreateLevelValidation.scala
+│   ├── design/                # CreateLevelApi、SubmitLevelApi
 │   └── player/
 │       ├── read/              # 已发布关卡、评论、收藏列表
 │       └── action/            # 评分、收藏、评论写入
-│           └── body/
-│               ├── CreateCommentBody.scala
-│               └── RateLevelBody.scala
+├── body/
+│   ├── design/                # CreateLevelBody、SubmitLevelBody
+│   └── player/                # RateLevelBody、CreateCommentBody
+├── validation/
+│   └── design/                # CreateLevelValidation
 ├── objects/
 │   ├── level/                 # Level、LevelData、GameWorld
-│   ├── terrain/               # 地形、障碍物、敌人（Position、LevelGround 等）
+│   ├── terrain/               # 地形、障碍物、敌人
 │   ├── submission/            # Submission、SubmissionWithLevel
-│   ├── social/                # Rating、LevelComment、Favorite 等
+│   ├── social/                # Rating、LevelComment、Favorite
 │   ├── inventory/             # BirdInventory、BirdPool
 │   └── errors/                # CreateLevelErrors
 ├── support/
-│   ├── player/LevelApiSupport.scala      # 已发布关卡、评分、取消收藏
-│   └── design/LevelDesignAccess.scala
-├── routes/                    # DesignerLevelRouter、PlayerLevel*Router
-└── tables/                    # level / submission / rating / comment / favorite / slot_assignment
+│   ├── design/LevelDesignAccess.scala
+│   └── player/LevelApiSupport.scala
+├── routes/
+└── tables/
 ```
 
 ### admin
@@ -237,68 +247,31 @@ level/
 ```text
 admin/
 ├── api/
-│   ├── comments/              # 评论管理
-│   │   ├── DeleteCommentApi.scala
-│   │   └── GetAdminCommentsApi.scala
-│   ├── audit/                 # 审核审计日志
-│   │   └── ListAdminAuditLogsApi.scala
-│   ├── shop/                  # 商店商品维护
-│   │   ├── ListAdminShopItemsApi.scala
-│   │   ├── CreateShopItemApi.scala
-│   │   ├── UpdateShopItemApi.scala
-│   │   ├── DeactivateShopItemApi.scala
-│   │   ├── validation/
-│   │   │   └── AdminShopItemValidation.scala
-│   │   └── body/
-│   │       ├── CreateShopItemBody.scala
-│   │       └── UpdateShopItemBody.scala
-│   ├── submissions/           # 关卡投稿审核
-│   │   ├── GetPendingSubmissionsApi.scala
-│   │   ├── ReviewSubmissionApi.scala
-│   │   └── body/
-│   │       └── ReviewSubmissionBody.scala
-│   └── director/
-│       ├── permissions/       # 总监权限转移
-│       │   ├── GetDirectorPermissionsApi.scala
-│       │   ├── TransferDirectorPermissionApi.scala
-│       │   └── body/
-│       │       └── TransferDirectorPermissionBody.scala
-│       ├── level_assignment/  # 关卡槽位分配
-│       │   ├── GetDirectorLevelAssignmentBoardApi.scala
-│       │   ├── AssignLevelSlotApi.scala
-│       │   ├── UnassignLevelSlotApi.scala
-│       │   ├── UpdateLevelSlotBirdPoolApi.scala
-│       │   ├── AbolishDirectorSubmissionApi.scala
-│       │   └── body/
-│       │       ├── AssignLevelSlotBody.scala
-│       │       ├── UpdateLevelSlotBirdPoolBody.scala
-│       │       └── AbolishDirectorSubmissionBody.scala
-│       └── bird_skill/        # 鸟类技能配置
-│           ├── GetDirectorBirdSkillBoardApi.scala
-│           ├── GetDirectorBirdSkillApi.scala
-│           ├── SaveDirectorBirdSkillApi.scala
-│           └── body/
-│               └── SaveDirectorBirdSkillBody.scala
-├── objects/
-│   ├── submission/            # 审核结果与错误码
+│   ├── comments/
+│   ├── audit/
+│   ├── shop/
+│   ├── submissions/
 │   └── director/
 │       ├── permissions/
-│       └── level_assignment/  # assignment/、board/ 子包；根目录保留 LevelSlotCatalog、AssignLevelSlotErrors
-├── support/
-│   ├── comments/AdminCommentAccess.scala
-│   ├── permissions/DirectorPermissionAccess.scala
-│   ├── shop/AdminShopSupport.scala
-│   ├── submission/LevelSubmissionReviewSupport.scala
-│   └── director/            # 看板组装、校验等可复用逻辑
 │       ├── level_assignment/
 │       └── bird_skill/
-├── routes/AdminRouter.scala
-└── tables/
-    ├── AdminAuditTable.scala
-    ├── ReviewAuditRow.scala
-    ├── AdminAuditTargetType.scala
-    ├── AdminAuditTableCodec.scala
-    └── jdbc/AdminAuditTableJdbc.scala   # DDL + 查询 + 写入合一
+├── body/
+│   ├── shop/                  # CreateShopItemBody、UpdateShopItemBody
+│   ├── submissions/           # ReviewSubmissionBody
+│   └── director/
+│       ├── permissions/
+│       ├── level_assignment/
+│       └── bird_skill/
+├── validation/
+│   └── shop/                  # AdminShopItemValidation
+├── objects/
+├── support/
+│   ├── comments/
+│   ├── shop/
+│   ├── submission/
+│   └── director/
+├── routes/
+└── tables/                    # AdminAuditTable、jdbc/…
 ```
 
 ### ui
@@ -311,7 +284,7 @@ admin/
 
 `objects/` 按子域分子包：`component/`、`button_template/`、`category/`、`stretch_template/`、`page/`；根目录保留 `UiEndpoint`、`UiCustomizationErrors`。
 
-`api/.../support/` 与 `UiPagePublishSupport` 承载页面/组件/模板的 `require*` + `check*` 逻辑（如 `UiPageAccess`、`UiPageComponentAccess`、`ButtonTemplateAccess`、`CheckInPanelAccess`）。
+`ui/support/` 与 `UiPagePublishSupport` 承载页面/组件/模板的 `require*` + `check*` 逻辑（如 `UiPageAccess`、`UiPageComponentAccess`、`ButtonTemplateAccess`）；签到面板奖励注册已迁至 `player/api/internal/ui/`。
 
 ### bird
 
@@ -324,34 +297,19 @@ admin/
 ```text
 bird/
 ├── api/
-│   ├── design/                # 设计师 CRUD + 提交
-│   │   ├── CreateBirdDesignApi.scala
-│   │   ├── UpdateBirdDesignApi.scala
-│   │   ├── ListBirdDesignsApi.scala（含 DeleteBirdDesignAPIMessage）
-│   │   ├── SubmitBirdDesignApi.scala
-│   │   ├── BirdDesignInputBody.scala
-│   │   ├── body/
-│   │   │   ├── CreateBirdDesignBody.scala
-│   │   │   └── UpdateBirdDesignBody.scala
-│   │   └── validation/        # BirdDesignValidation
-│   └── review/                # 管理员审核
-│       ├── GetPendingBirdSubmissionsApi.scala
-│       ├── ReviewBirdSubmissionApi.scala
-│       └── body/
-│           └── ReviewBirdSubmissionBody.scala
+│   ├── design/                # CRUD + Submit（仅 *Api.scala）
+│   └── review/
+├── body/
+│   ├── design/                # CreateBirdDesignBody、UpdateBirdDesignBody
+│   └── review/                # ReviewBirdSubmissionBody
+├── validation/
+│   └── design/                # BirdDesignValidation
 ├── objects/
-│   ├── design/BirdDesign.scala
-│   ├── submission/            # BirdSubmission、ReviewedBirdSubmission 等
-│   └── skill/                 # config/BirdSkillConfig；director/DirectorBirdSkillBoard、DirectorBirdSkillEntry
 ├── support/
-│   ├── design/BirdDesignAccess.scala
-│   └── review/BirdSubmissionReviewSupport.scala
-├── routes/DesignerBirdRouter.scala
+│   ├── design/
+│   └── review/
+├── routes/
 └── tables/
-    ├── design/
-    ├── submission/
-    ├── skill_config/
-    └── shared/                # BirdRowMapper、BirdRows
 ```
 
 ### player

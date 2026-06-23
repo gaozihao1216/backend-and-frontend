@@ -7,7 +7,8 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.api.pages.body.UpdateUiPageBody
+import microservice.ui.body.pages.UpdateUiPageBody
+import microservice.ui.support.pages.UiPagePublishSupport
 
 /** 总监发布页面配置 APIMessage；覆盖前保留回滚快照。
   *

@@ -13,6 +13,7 @@ sealed trait UserRole {
   def value: String // 序列化与持久化用的稳定字符串
 }
 
+/** UserRole 伴生对象：角色枚举常量、字符串解析与 Circe 编解码。 */
 object UserRole {
   case object Player extends UserRole { override val value: String = "player" }     // 玩家：游玩、评分、收藏
   case object Designer extends UserRole { override val value: String = "designer" } // 设计师：创建与提交关卡
@@ -20,6 +21,7 @@ object UserRole {
 
   private val byValue = List(Player, Designer, Admin).map(role => role.value -> role).toMap
 
+  /** 按持久化/JSON 字符串反查角色；未知值返回 None。 */
   def fromString(value: String): Option[UserRole] =
     byValue.get(value)
 

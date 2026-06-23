@@ -14,6 +14,7 @@ final case class ApiFailure(
   error: ErrorBody          // 错误码、消息与可选 details
 )
 
+/** ApiFailure 伴生对象：统一失败响应的 Circe 编码（success + error 字段序固定）。 */
 object ApiFailure {
   implicit val encoder: Encoder[ApiFailure] =
     Encoder.forProduct2("success", "error")(failure => (failure.success, failure.error))

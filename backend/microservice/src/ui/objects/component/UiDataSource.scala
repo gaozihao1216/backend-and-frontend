@@ -12,7 +12,7 @@ final case class UiDataSource(
 )
 
 /** UiDataSource 编解码。 */
-object UiDataSource {
+private[ui] object UiDataSource {
   implicit val encoder: Encoder[UiDataSource] = deriveEncoder
   implicit val decoder: Decoder[UiDataSource] = deriveDecoder
 }

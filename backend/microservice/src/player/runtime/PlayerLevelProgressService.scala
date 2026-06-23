@@ -1,11 +1,11 @@
 package microservice.player.runtime
 
+import cats.effect.IO
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
-import microservice.infrastructure.http.HttpError
 import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
 
 /** 关卡进度 UI 数据服务。
@@ -28,11 +28,9 @@ object PlayerLevelProgressService {
 
   /** 返回各关卡 cleared/notCleared/locked 状态与已通关数量。 */
   def requireData(connection: Connection, userId: String): Step[Json] =
-    PlanStep.fromEither(getData(connection, userId))
+    PlanStep.liftF(IO(buildPayload(connection, userId)))
 
-  def getData(connection: Connection, userId: String): Either[HttpError, Json] =
-    Right(buildPayload(connection, userId))
-
+  /** 组装关卡进度 UI JSON：各 suffix 状态与已通关数量。 */
   private def buildPayload(connection: Connection, userId: String): Json = {
     val clearedLevels = PlayerLevelProgressTable.listClearedSuffixes(connection, userId)
     val levelStatuses = LevelSuffixes.map { suffix =>
@@ -45,6 +43,7 @@ object PlayerLevelProgressService {
     )
   }
 
+  /** 单关状态：cleared / notCleared（已解锁未通）/ locked。 */
   private def resolveStatus(clearedLevels: Set[String], suffix: String): String = {
     if (clearedLevels.contains(suffix)) {
       "cleared"
@@ -55,6 +54,7 @@ object PlayerLevelProgressService {
     }
   }
 
+  /** 首关恒解锁；其余关需前一 suffix 已通关。 */
   private def isUnlocked(clearedLevels: Set[String], suffix: String): Boolean = {
     val index = LevelSuffixes.indexOf(suffix)
     if (index <= 0) {

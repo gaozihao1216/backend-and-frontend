@@ -8,7 +8,7 @@ sealed trait PageLayoutType {
 }
 
 /** PageLayoutType 枚举与编解码。 */
-object PageLayoutType {
+private[ui] object PageLayoutType {
   case object Stack extends PageLayoutType { override val value: String = "stack" }
   case object Grid extends PageLayoutType { override val value: String = "grid" }
   case object Freeform extends PageLayoutType { override val value: String = "freeform" }

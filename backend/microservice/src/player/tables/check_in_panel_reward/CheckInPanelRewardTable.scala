@@ -1,10 +1,3 @@
-/**
-  *
-   * 定义：CheckInPanelRewardTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
- * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
- * 作用：initialize/list/find/insert/update 等统一入口。
- * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
- */
 package microservice.player.tables.check_in_panel_reward
 
 import java.sql.Connection
@@ -21,18 +14,7 @@ object CheckInPanelRewardTable {
   def listByPanelId(connection: Connection, panelId: String): Vector[CheckInSlotReward] = {
     val rows =
       if (TableConnection.isInMemory(connection)) {
-        InMemoryStore.checkInPanelRewards
-          .getOrElse(panelId, Vector.empty)
-          .zipWithIndex
-          .map { case (reward, index) =>
-            CheckInPanelRewardRow(
-              panelId = panelId,
-              slotIndex = index + 1,
-              coins = reward.coins,
-              gems = reward.gems,
-              fragments = reward.fragments
-            )
-          }
+        InMemoryStore.checkInPanelRewards.getOrElse(panelId, Vector.empty)
       } else {
         CheckInPanelRewardTableJdbc.listByPanelId(connection, panelId)
       }
@@ -41,7 +23,16 @@ object CheckInPanelRewardTable {
 
   def replacePanelRewards(connection: Connection, panelId: String, rewards: Vector[CheckInSlotReward]): Unit =
     if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.checkInPanelRewards = InMemoryStore.checkInPanelRewards.updated(panelId, rewards)
+      val rows = rewards.zipWithIndex.map { case (reward, index) =>
+        CheckInPanelRewardRow(
+          panelId = panelId,
+          slotIndex = index + 1,
+          coins = reward.coins,
+          gems = reward.gems,
+          fragments = reward.fragments
+        )
+      }
+      InMemoryStore.checkInPanelRewards = InMemoryStore.checkInPanelRewards.updated(panelId, rows)
     } else {
       val rows = rewards.zipWithIndex.map { case (reward, index) =>
         CheckInPanelRewardRow(

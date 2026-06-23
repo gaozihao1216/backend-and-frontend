@@ -1,7 +1,7 @@
 package microservice.level.objects.social
 
 import io.circe.generic.semiauto._
-import microservice.level.objects.level.Level
+import microservice.level.objects.core.Level
 import io.circe.{Decoder, Encoder}
 
 /** 收藏记录与关卡详情的组合 DTO，供 GET /player/favorites 返回。
@@ -18,7 +18,9 @@ final case class FavoriteWithLevel(
   level: Level
 )
 
-object FavoriteWithLevel {
+/** FavoriteWithLevel 伴生对象：收藏与关卡聚合及 Circe JSON 编解码。 */
+private[level] object FavoriteWithLevel {
+  /** 将 Favorite 与 Level 合并为玩家收藏列表用 DTO。 */
   def from(favorite: Favorite, level: Level): FavoriteWithLevel =
     FavoriteWithLevel(favorite.id, favorite.levelId, favorite.userId, favorite.createdAt, level)
 

@@ -12,7 +12,7 @@ final case class PageLayout(
 )
 
 /** PageLayout 编解码。 */
-object PageLayout {
+private[ui] object PageLayout {
   implicit val encoder: Encoder[PageLayout] = deriveEncoder
   implicit val decoder: Decoder[PageLayout] = deriveDecoder
 }

@@ -4,7 +4,7 @@ import cats.effect.IO
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{AuthMiddleware, HttpError}
 import microservice.level.api.design.{CreateLevelAPIMessage, SubmitLevelAPIMessage}
-import microservice.level.api.design.body.{CreateLevelBody, SubmitLevelBody}
+import microservice.level.body.design.{CreateLevelBody, SubmitLevelBody}
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.Status

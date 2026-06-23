@@ -8,7 +8,7 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.stretch_template.StretchVisualTemplate
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
-import microservice.ui.api.stretchtemplates.support.StretchVisualTemplateAccess
+import microservice.ui.support.stretchtemplates.StretchVisualTemplateAccess
 
 /** 总监删除拉伸视觉模板 APIMessage。
   *

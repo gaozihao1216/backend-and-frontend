@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.api.pages.support.UiPageAccess
+import microservice.ui.support.pages.UiPageAccess
 
 /** 总监按 pageId 读取单页配置 APIMessage。
   *
@@ -29,7 +29,9 @@ final case class GetUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        // 步骤 2：按 pageId 读取 PageConfig（含 layout 与 components）
         page <- UiPageAccess.requirePage(connection, pageId)
       } yield page
     }

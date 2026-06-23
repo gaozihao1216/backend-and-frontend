@@ -9,7 +9,7 @@ sealed trait AdminReviewApiError {
 }
 
 /** 关卡投稿审核相关错误码集合，供 ReviewSubmissionAPIMessage 使用。 */
-object ReviewSubmissionErrors {
+private[admin] object ReviewSubmissionErrors {
   /** 投稿 ID 不存在 → 404 SUBMISSION_NOT_FOUND */
   final case class SubmissionMissing(submissionId: String) extends AdminReviewApiError {
     override def toHttpError: HttpError =

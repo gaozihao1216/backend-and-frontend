@@ -13,7 +13,7 @@ final case class ComponentPosition(
 )
 
 /** ComponentPosition 编解码（unit 默认 percent）。 */
-object ComponentPosition {
+private[ui] object ComponentPosition {
   implicit val encoder: Encoder[ComponentPosition] = Encoder.instance { position =>
     Json.obj(
       "unit" -> position.unit.asJson,

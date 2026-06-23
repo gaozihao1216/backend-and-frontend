@@ -2,6 +2,7 @@ package microservice.infrastructure.api
 
 import cats.data.EitherT
 import cats.effect.IO
+import java.sql.Connection
 import microservice.infrastructure.http.HttpError
 import microservice.user.utils.AccessControl
 
@@ -26,7 +27,7 @@ import microservice.user.utils.AccessControl
   * }}}
   *
   * APIMessage 内只应出现 `AccessControl` / `*Validation` / `*Support` / `*Access` 的 `require*`，
-  * 以及 `PlanSteps.read` / `blocking`；同步 `Either` 校验放在各模块的 `check*` 中。
+  * 以及 `PlanSteps.read` / `blocking`。
   *
   * == 与 APIMessage 的分工 ==
   * - `PlanSteps`：plan 内部的步骤编排与错误短路；
@@ -39,10 +40,6 @@ import microservice.user.utils.AccessControl
 object PlanSteps {
   type Step[A] = PlanStep.Step[A]
 
-  /** 将同步 `Either` 注入步骤链；基础设施封装，APIMessage 应优先使用各模块的 `require*`。 */
-  def require[A](check: Either[HttpError, A]): Step[A] =
-    PlanStep.fromEither(check)
-
   /** 校验 HTTP 头 `x-user-id` 与请求体/路径中的 `token` 是否为同一绑定用户。 */
   def requireBound(headerUserId: String, token: String): Step[Unit] =
     AccessControl.requireBoundIdentity(headerUserId, token)
@@ -51,13 +48,13 @@ object PlanSteps {
   def read[A](run: => A): Step[A] =
     PlanStep.liftF(IO(run))
 
-  /** 执行同步步骤，步骤本身返回 `Either[HttpError, A]`；基础设施封装，优先抽到 validation/support 的 `check*`。 */
-  def attempt[A](run: => Either[HttpError, A]): Step[A] =
-    PlanStep.fromEither(run)
-
   /** 在 `IO.blocking` 线程池中执行可能阻塞的操作（JDBC 批量写入、文件 I/O 等）。 */
   def blocking[A](run: => A): Step[A] =
     PlanStep.liftBlocking(run)
+
+  /** 在同一 `Connection` / 事务内执行另一模块的 [[APIMessage]]（模块间调用入口）。 */
+  def runApi[A](api: APIMessage[A], connection: Connection): Step[A] =
+    EitherT(api.plan(connection))
 
   /** 将完整的 `Step` 链还原为 `IO[Either[HttpError, A]]`，供 [[APIMessage.plan]] 返回。
     *

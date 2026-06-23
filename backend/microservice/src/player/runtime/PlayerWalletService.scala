@@ -1,11 +1,11 @@
 package microservice.player.runtime
 
+import cats.effect.IO
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
-import microservice.infrastructure.http.HttpError
 import microservice.player.tables.wallet.PlayerWalletTable
 
 /** 玩家钱包 UI 数据服务。
@@ -21,11 +21,9 @@ object PlayerWalletService {
 
   /** 读取或创建用户钱包并序列化为 JSON。 */
   def requireData(connection: Connection, userId: String): Step[Json] =
-    PlanStep.fromEither(getData(connection, userId))
+    PlanStep.liftF(IO(buildPayload(connection, userId)))
 
-  def getData(connection: Connection, userId: String): Either[HttpError, Json] =
-    Right(buildPayload(connection, userId))
-
+  /** 读取钱包并序列化为 coins/gems/fragments 字段。 */
   private def buildPayload(connection: Connection, userId: String): Json = {
     val wallet = PlayerWalletTable.getOrCreate(connection, userId)
     Json.obj(

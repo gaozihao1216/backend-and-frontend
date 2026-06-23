@@ -8,7 +8,7 @@ sealed trait TransferDirectorPermissionApiError {
 }
 
 /** 总监权限移交相关错误码，供 TransferDirectorPermissionAPIMessage 使用。 */
-object TransferDirectorPermissionErrors {
+private[admin] object TransferDirectorPermissionErrors {
   /** 目标 admin 用户不存在 → 404 TARGET_ADMIN_NOT_FOUND */
   final case class TargetMissing(userId: String) extends TransferDirectorPermissionApiError {
     override def toHttpError: HttpError =

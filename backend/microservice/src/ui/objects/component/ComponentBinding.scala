@@ -11,7 +11,7 @@ final case class ComponentBinding(
 )
 
 /** ComponentBinding 编解码。 */
-object ComponentBinding {
+private[ui] object ComponentBinding {
   implicit val encoder: Encoder[ComponentBinding] = deriveEncoder
   implicit val decoder: Decoder[ComponentBinding] = deriveDecoder
 }

@@ -16,7 +16,9 @@ final case class BirdPool(
   caps: Map[String, Int] = Map.empty
 )
 
-object BirdPool {
+/** BirdPool 伴生对象：默认鸟池常量与 Circe JSON 编解码。 */
+private[level] object BirdPool {
+  /** 槽位未配置 bird pool 时的默认值（总数 3）。 */
   val default: BirdPool = BirdPool(totalBirds = 3)
 
   implicit val encoder: Encoder[BirdPool] = deriveEncoder

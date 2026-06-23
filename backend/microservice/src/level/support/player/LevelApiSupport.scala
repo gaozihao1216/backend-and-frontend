@@ -1,5 +1,7 @@
 package microservice.level.support.player
 
+import cats.data.EitherT
+import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
@@ -10,38 +12,38 @@ import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.LevelRow
 import microservice.system.objects.LevelStatus
 
-/** 关卡 API 层公共辅助：封装「已发布关卡」校验逻辑。 */
+/** 玩家侧关卡 API 公共辅助：已发布关卡、评分与收藏删除的前置校验。
+  *
+  * 各 `require*` 返回 [[PlanStep.Step]]，供 APIMessage `for` 推导式直接嵌入。
+  */
 object LevelApiSupport {
+  /** 校验关卡存在且状态为 Published。 */
   def requirePublishedLevel(connection: Connection, levelId: String): Step[LevelRow] =
-    PlanStep.fromEither(checkPublishedLevel(connection, levelId))
+    EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
+      case Some(level) if level.status == LevelStatus.Published => EitherT.rightT(level)
+      case Some(_) => EitherT.leftT(HttpError.notFound("LEVEL_NOT_FOUND", "Published level not found"))
+      case None    => EitherT.leftT(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
+    }
 
+  /** 校验关卡可评分：已发布且 score 在 1–5 之间。 */
   def requireRateableLevel(connection: Connection, levelId: String, score: Int): Step[LevelRow] =
-    PlanStep.fromEither(checkRateableLevel(connection, levelId, score))
-
-  def requireDeletedFavorite(connection: Connection, playerId: String, levelId: String): Step[Favorite] =
-    PlanStep.fromEither(checkDeletedFavorite(connection, playerId, levelId))
-
-  def checkPublishedLevel(connection: Connection, levelId: String): Either[HttpError, LevelRow] =
-    LevelTable.findById(connection, levelId) match {
-      case Some(level) if level.status == LevelStatus.Published => Right(level)
-      case Some(_) => Left(HttpError.notFound("LEVEL_NOT_FOUND", "Published level not found"))
-      case None    => Left(HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
-    }
-
-  def checkRateableLevel(connection: Connection, levelId: String, score: Int): Either[HttpError, LevelRow] =
-    LevelTable.findById(connection, levelId) match {
+    EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
       case None =>
-        Left(RateLevelErrors.LevelMissing(levelId).toHttpError)
+        EitherT.leftT(RateLevelErrors.LevelMissing(levelId).toHttpError)
       case Some(level) if level.status != LevelStatus.Published =>
-        Left(RateLevelErrors.LevelNotPublished(levelId).toHttpError)
+        EitherT.leftT(RateLevelErrors.LevelNotPublished(levelId).toHttpError)
       case Some(level) if score < 1 || score > 5 =>
-        Left(RateLevelErrors.InvalidScore(score).toHttpError)
+        EitherT.leftT(RateLevelErrors.InvalidScore(score).toHttpError)
       case Some(level) =>
-        Right(level)
+        EitherT.rightT(level)
     }
 
-  def checkDeletedFavorite(connection: Connection, playerId: String, levelId: String): Either[HttpError, Favorite] =
-    FavoriteTable
-      .delete(connection, playerId, levelId)
-      .toRight(HttpError.notFound("FAVORITE_NOT_FOUND", "Favorite not found"))
+  /** 删除玩家对关卡的收藏记录并返回被删 Favorite。 */
+  def requireDeletedFavorite(connection: Connection, playerId: String, levelId: String): Step[Favorite] =
+    EitherT.liftF(IO(FavoriteTable.delete(connection, playerId, levelId))).flatMap {
+      case None =>
+        EitherT.leftT(HttpError.notFound("FAVORITE_NOT_FOUND", "Favorite not found"))
+      case Some(favorite) =>
+        EitherT.rightT(favorite)
+    }
 }

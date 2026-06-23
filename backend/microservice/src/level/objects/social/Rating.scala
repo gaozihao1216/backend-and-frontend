@@ -19,7 +19,8 @@ final case class Rating(
   updatedAt: String
 )
 
-object Rating {
+/** Rating 伴生对象：Circe JSON 编解码，供评分 API 响应。 */
+private[level] object Rating {
   implicit val encoder: Encoder[Rating] = deriveEncoder
   implicit val decoder: Decoder[Rating] = deriveDecoder
 }

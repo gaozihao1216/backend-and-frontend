@@ -23,7 +23,8 @@ final case class Submission(
   reviewedAt: Option[String]
 )
 
-object Submission {
+/** Submission 伴生对象：Circe JSON 编解码，供关卡投稿 API 响应。 */
+private[level] object Submission {
   implicit val encoder: Encoder[Submission] = deriveEncoder
   implicit val decoder: Decoder[Submission] = deriveDecoder
 }

@@ -21,7 +21,9 @@ final case class BirdSubmissionWithDesign(
   design: BirdDesign
 )
 
-object BirdSubmissionWithDesign {
+/** BirdSubmissionWithDesign 伴生对象：鸟类投稿与设计聚合及 Circe JSON 编解码。 */
+private[bird] object BirdSubmissionWithDesign {
+  /** 将 BirdSubmission 与 BirdDesign 合并为待审列表用 DTO。 */
   def from(submission: BirdSubmission, design: BirdDesign): BirdSubmissionWithDesign =
     BirdSubmissionWithDesign(
       submission.id,

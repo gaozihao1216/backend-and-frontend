@@ -2,17 +2,16 @@ package microservice.admin.api.director.level_assignment
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignment
 import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignmentDetail
+import microservice.admin.objects.level.AdminBirdPool
 import microservice.admin.support.director.level_assignment.DirectorLevelAssignmentSupport
+import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.objects.inventory.BirdPool
-import microservice.level.tables.shared.LevelSlotAssignmentRow
-import microservice.level.tables.slot_assignment.LevelSlotAssignmentTable
+import microservice.level.api.internal.admin.{AssignSlotInternalAPIMessage, GetSubmissionWithLevelInternalAPIMessage}
 import microservice.system.objects.AdminLevel
-import microservice.admin.api.director.level_assignment.body.AssignLevelSlotBody
+import microservice.admin.body.director.level_assignment.AssignLevelSlotBody
 
 /** POST /admin/director/level-assignments/:levelSuffix — 将已批准投稿分配到槽位。 */
 final case class AssignLevelSlotAPIMessage(
@@ -27,29 +26,25 @@ final case class AssignLevelSlotAPIMessage(
       for {
         user <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
         _ <- DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix)
-        submission <- DirectorLevelAssignmentSupport.requireApprovedSubmission(connection, body.submissionId)
-        _ <- DirectorLevelAssignmentSupport.requireLinkedLevel(connection, submission.levelId)
-        detail <- PlanSteps.read {
-          val timestamp = java.time.Instant.now().toString
-          val row = LevelSlotAssignmentRow(
-            id = LevelSlotAssignmentTable.nextId(connection),
+        slot <- PlanSteps.runApi(
+          AssignSlotInternalAPIMessage(
             levelSuffix = levelSuffix,
-            submissionId = submission.id,
-            sourceLevelId = submission.levelId,
+            submissionId = body.submissionId,
             assignedById = user.id,
-            assignedAt = timestamp,
             note = body.note,
-            birdPool = Some(body.birdPool.getOrElse(BirdPool.default))
-          )
-          LevelSlotAssignmentTable.upsert(connection, row)
-          val submissionWithLevel =
-            DirectorLevelAssignmentSupport
-              .submissionWithLevel(connection, submission.id)
-              .getOrElse(
-                throw new IllegalStateException(s"Submission level missing after assign: ${submission.id}")
-              )
-          LevelSlotAssignmentDetail(LevelSlotAssignment.from(row), submissionWithLevel)
-        }
-      } yield detail
+            birdPool = body.birdPool
+              .map(LevelHandoffMapping.toLevelBirdPool)
+              .getOrElse(LevelHandoffMapping.toLevelBirdPool(AdminBirdPool.default))
+          ),
+          connection
+        )
+        submissionWithLevel <- PlanSteps.runApi(
+          GetSubmissionWithLevelInternalAPIMessage(slot.submissionId),
+          connection
+        )
+      } yield LevelSlotAssignmentDetail(
+        LevelHandoffMapping.toSlotAssignment(slot),
+        LevelHandoffMapping.toSubmissionWithLevel(submissionWithLevel)
+      )
     }
 }

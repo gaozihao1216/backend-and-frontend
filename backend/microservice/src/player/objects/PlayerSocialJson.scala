@@ -9,7 +9,7 @@ import io.circe.Json
   * 作用：objects → Json.obj 字段名与前端约定一致。
   * 关联：social 包下 APIMessage yield 分支。
   */
-object PlayerSocialJson {
+private[player] object PlayerSocialJson {
   def toJsonFriends(response: PlayerFriendListResponse): Json =
     Json.obj(
       "friends" -> Json.arr(response.friends.map { friend =>

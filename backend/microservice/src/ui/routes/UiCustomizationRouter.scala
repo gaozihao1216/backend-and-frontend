@@ -32,17 +32,17 @@ import microservice.ui.api.pages.{
   UpdateUiPageAPIMessage
 }
 import microservice.ui.api.panelworkflows.RegisterCheckInPanelRewardsAPIMessage
-import microservice.ui.api.panelworkflows.body.RegisterCheckInPanelRewardsBody
+import microservice.ui.body.panelworkflows.RegisterCheckInPanelRewardsBody
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 import microservice.ui.objects.UiEndpoint
 import microservice.infrastructure.http.AuthMiddleware
 import org.http4s.{HttpRoutes, Status}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
-import microservice.ui.api.buttontemplates.body.{CreateButtonTemplateBody, UpdateButtonTemplateBody}
-import microservice.ui.api.pagecomponents.body.{CreatePageComponentBody, UpdatePageComponentBody}
-import microservice.ui.api.pages.body.{CreateUiPageBody, UpdateUiPageBody}
-import microservice.ui.api.stretchtemplates.body.{CreateStretchVisualTemplateBody, UpdateStretchVisualTemplateBody}
+import microservice.ui.body.buttontemplates.{CreateButtonTemplateBody, UpdateButtonTemplateBody}
+import microservice.ui.body.pagecomponents.{CreatePageComponentBody, UpdatePageComponentBody}
+import microservice.ui.body.pages.{CreateUiPageBody, UpdateUiPageBody}
+import microservice.ui.body.stretchtemplates.{CreateStretchVisualTemplateBody, UpdateStretchVisualTemplateBody}
 
 /** 总监 UI 定制 HTTP 入口，前缀 /admin/director/ui。
   *

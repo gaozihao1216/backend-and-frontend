@@ -5,12 +5,16 @@ import java.sql.Connection
 import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignment
 import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignmentDetail
 import microservice.admin.support.director.level_assignment.DirectorLevelAssignmentSupport
+import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.tables.slot_assignment.LevelSlotAssignmentTable
+import microservice.level.api.internal.admin.{
+  GetSubmissionWithLevelInternalAPIMessage,
+  UpdateSlotBirdPoolInternalAPIMessage
+}
 import microservice.system.objects.AdminLevel
-import microservice.admin.api.director.level_assignment.body.UpdateLevelSlotBirdPoolBody
+import microservice.admin.body.director.level_assignment.UpdateLevelSlotBirdPoolBody
 
 /** PUT /admin/director/level-assignments/:levelSuffix/bird-pool — 更新槽位 bird pool。 */
 final case class UpdateLevelSlotBirdPoolAPIMessage(
@@ -25,18 +29,20 @@ final case class UpdateLevelSlotBirdPoolAPIMessage(
       for {
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         _ <- DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix)
-        existing <- DirectorLevelAssignmentSupport.requireAssignmentForSuffix(connection, levelSuffix)
-        detail <- PlanSteps.read {
-          val updated = existing.copy(birdPool = Some(body.birdPool))
-          LevelSlotAssignmentTable.upsert(connection, updated)
-          val submissionWithLevel =
-            DirectorLevelAssignmentSupport
-              .submissionWithLevel(connection, updated.submissionId)
-              .getOrElse(
-                throw new IllegalStateException(s"Submission level missing after bird pool update: ${updated.submissionId}")
-              )
-          LevelSlotAssignmentDetail(LevelSlotAssignment.from(updated), submissionWithLevel)
-        }
-      } yield detail
+        slot <- PlanSteps.runApi(
+          UpdateSlotBirdPoolInternalAPIMessage(
+            levelSuffix,
+            LevelHandoffMapping.toLevelBirdPool(body.birdPool)
+          ),
+          connection
+        )
+        submissionWithLevel <- PlanSteps.runApi(
+          GetSubmissionWithLevelInternalAPIMessage(slot.submissionId),
+          connection
+        )
+      } yield LevelSlotAssignmentDetail(
+        LevelHandoffMapping.toSlotAssignment(slot),
+        LevelHandoffMapping.toSubmissionWithLevel(submissionWithLevel)
+      )
     }
 }

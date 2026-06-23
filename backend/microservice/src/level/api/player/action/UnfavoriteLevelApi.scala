@@ -24,8 +24,11 @@ final case class UnfavoriteLevelAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Favorite]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
+        // 步骤 2：确认关卡已发布
         _ <- LevelApiSupport.requirePublishedLevel(connection, levelId).map(_ => ())
+        // 步骤 3：删除收藏记录并返回被删 Favorite
         favorite <- LevelApiSupport.requireDeletedFavorite(connection, playerId, levelId)
       } yield favorite
     }

@@ -16,7 +16,8 @@ final case class Favorite(
   createdAt: String
 )
 
-object Favorite {
+/** Favorite 伴生对象：Circe JSON 编解码，供收藏 API 响应。 */
+private[level] object Favorite {
   implicit val encoder: Encoder[Favorite] = deriveEncoder
   implicit val decoder: Decoder[Favorite] = deriveDecoder
 }

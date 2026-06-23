@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.api.pagecomponents.support.UiPageComponentAccess
+import microservice.ui.support.pagecomponents.UiPageComponentAccess
 
 /** 总监删除页面内组件 APIMessage。
   *
@@ -30,8 +30,11 @@ final case class DeletePageComponentAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
+        // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        // 步骤 2：确认页面与目标组件均存在
         _ <- UiPageComponentAccess.requirePageWithComponent(connection, pageId, componentId)
+        // 步骤 3：删除组件并返回更新后的 PageConfig
         page <- UiPageComponentAccess.requireDeleteComponent(connection, pageId, componentId)
       } yield page
     }

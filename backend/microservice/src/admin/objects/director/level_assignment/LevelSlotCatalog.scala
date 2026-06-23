@@ -6,7 +6,7 @@ package microservice.admin.objects.director.level_assignment
   * 字段：supportedSuffixes 合法槽位列表；isSupported 用于路由参数校验。
   * 关联：GetDirectorLevelAssignmentBoardAPIMessage 等。
   */
-object LevelSlotCatalog {
+private[admin] object LevelSlotCatalog {
   val supportedSuffixes: List[String] =
     List(
       "level01",

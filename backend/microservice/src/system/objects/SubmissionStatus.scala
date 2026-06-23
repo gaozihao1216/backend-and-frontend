@@ -13,6 +13,7 @@ sealed trait SubmissionStatus {
   def value: String
 }
 
+/** SubmissionStatus 伴生对象：投稿流水状态枚举、字符串解析与 Circe 编解码。 */
 object SubmissionStatus {
   case object PendingReview extends SubmissionStatus { override val value: String = "pending_review" } // 待审
   case object Approved extends SubmissionStatus { override val value: String = "approved" }               // 已通过
@@ -22,6 +23,7 @@ object SubmissionStatus {
   private val byValue =
     List(PendingReview, Approved, Rejected, Abolished).map(status => status.value -> status).toMap
 
+  /** 按持久化/JSON 字符串反查投稿状态；未知值返回 None。 */
   def fromString(value: String): Option[SubmissionStatus] =
     byValue.get(value)
 

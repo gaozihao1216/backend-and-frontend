@@ -15,6 +15,7 @@ final case class ErrorBody(
   details: Option[String]      // 可选补充（校验字段列表、内部提示等）
 )
 
+/** ErrorBody 伴生对象：错误详情体的 Circe 编码（code + message + details）。 */
 object ErrorBody {
   implicit val encoder: Encoder[ErrorBody] =
     Encoder.forProduct3("code", "message", "details")(error => (error.code, error.message, error.details))
