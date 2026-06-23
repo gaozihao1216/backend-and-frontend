@@ -3,15 +3,17 @@ import type { AuthUser } from "../../lib/auth.js";
 import { LEVEL_MAP_PAGE_ID, LEVEL_NODE_DEFINITIONS, getLevelScreenPageId } from "../../objects/ui-customization/level-map-structure.js";
 import { DynamicPageHost } from "./DynamicPageHost.js";
 import { StaticLevelScreenPreview } from "../../component/static-level-previews.js";
+import { AdminAuditLogsPage } from "../admin/AdminAuditLogsPage.js";
 import { AdminCommunityPage } from "../admin/AdminCommunityPage.js";
-import { AdminPage } from "../admin/AdminPage.js";
+import { AdminPage } from "../admin/AdminPage/index.js";
+import { AdminShopPage } from "../admin/AdminShopPage.js";
 import { DesignerBirdLabPage } from "../designer/DesignerBirdLabPage.js";
 import { DesignerPortfolioPage } from "../designer/DesignerPortfolioPage.js";
 import { DesignerPage } from "../designer/DesignerPage/index.js";
-import { DirectorBirdSkillLabPage } from "../director/DirectorBirdSkillLabPage.js";
+import { DirectorBirdSkillLabPage } from "../director/DirectorBirdSkillLabPage/index.js";
 import { DirectorButtonTemplatesPage } from "../director/DirectorButtonTemplatesPage/index.js";
-import { DirectorLevelAssignmentPage } from "../director/DirectorLevelAssignmentPage.js";
-import { DirectorLevelBackgroundTemplatesPage } from "../director/DirectorLevelBackgroundTemplatesPage.js";
+import { DirectorLevelAssignmentPage } from "../director/DirectorLevelAssignmentPage/index.js";
+import { DirectorLevelBackgroundTemplatesPage } from "../director/DirectorLevelBackgroundTemplatesPage/index.js";
 import { DirectorLevelInterfacePage } from "../director/DirectorLevelInterfacePage/index.js";
 import { DirectorUiCustomizationPage } from "../director/DirectorUiCustomizationPage.js";
 import { DirectorWorkbenchPage } from "../director/DirectorWorkbenchPage.js";
@@ -111,6 +113,8 @@ const staticPageIds = new Set([
   "admin.home",
   "admin.community",
   "admin.proposals",
+  "admin.auditLogs",
+  "admin.shopManagement",
   "director.home",
   "director.workbench",
   "director.uiCustomization",
@@ -179,6 +183,10 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
       ) : unsupportedStaticPage(pageId);
     case "admin.proposals":
       return apiUserId ? <AdminPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
+    case "admin.auditLogs":
+      return apiUserId ? <AdminAuditLogsPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
+    case "admin.shopManagement":
+      return apiUserId ? <AdminShopPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
     case "designer.portfolio":
       return (
         <DesignerPortfolioPage

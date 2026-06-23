@@ -1,8 +1,10 @@
 package microservice.admin.support.director.bird_skill
 
 import java.sql.Connection
-import microservice.bird.objects.skill.{DirectorBirdSkillBoard, DirectorBirdSkillEntry}
+import microservice.bird.objects.skill.director.{DirectorBirdSkillBoard, DirectorBirdSkillEntry}
 import microservice.bird.tables.skill_config.BirdSkillConfigTable
+import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.player.preparation.PlayerPreparationCatalog
 import io.circe.Json
@@ -35,7 +37,10 @@ object DirectorBirdSkillSupport {
   }
 
   /** 校验 skills JSON 须含非空 stages 数组；失败返回 INVALID_SKILLS。 */
-  def validateSkillsJson(skills: Json): Either[HttpError, Json] =
+  def requireSkillsJson(skills: Json): Step[Json] =
+    PlanStep.fromEither(checkSkillsJson(skills))
+
+  def checkSkillsJson(skills: Json): Either[HttpError, Json] =
     skills.hcursor.downField("stages").focus match {
       case None => Left(HttpError.badRequest("INVALID_SKILLS", "skills.stages is required"))
       case Some(stages) if !stages.isArray => Left(HttpError.badRequest("INVALID_SKILLS", "skills.stages must be an array"))

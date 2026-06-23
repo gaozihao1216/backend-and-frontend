@@ -7,10 +7,11 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.utils.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.errors.{CreateLevelErrors}
 import microservice.level.objects.level.{Level}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.shared.{LevelRow}
+import microservice.level.api.design.body.CreateLevelBody
+import microservice.level.api.design.validation.CreateLevelValidation
 import microservice.system.objects.LevelStatus
 import microservice.system.objects.UserRole
 
@@ -30,27 +31,18 @@ final case class CreateLevelAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     PlanSteps.finish {
       for {
-        // 步骤 1：校验 Designer 角色
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
-        // 步骤 2：校验 title 非空（trim 后）
-        _ <- PlanSteps.require(
-          if (body.title.trim.isEmpty) {
-            Left(CreateLevelErrors.CreateLevelValidation(List("title")).toHttpError)
-          } else {
-            Right(())
-          }
-        )
-        // 步骤 3：组装 LevelRow 并 insert，映射为 Level 领域对象
+        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        validated <- CreateLevelValidation.validate(body)
         level <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = LevelTable.insert(
             connection,
             LevelRow(
               id = LevelTable.nextId(connection),
-              title = body.title.trim,
-              description = body.description,
-              tags = body.tags,
-              data = body.data,
+              title = validated.title,
+              description = validated.description,
+              tags = validated.tags,
+              data = validated.data,
               authorId = designerId,
               status = LevelStatus.Draft,
               rejectionReason = None,
@@ -63,7 +55,6 @@ final case class CreateLevelAPIMessage(
           )
           LevelRowMapper.toLevel(row)
         }
-      // 返回新创建的 Level 领域对象
       } yield level
     }
 }

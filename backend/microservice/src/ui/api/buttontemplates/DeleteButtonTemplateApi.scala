@@ -6,8 +6,8 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
-import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
+import microservice.ui.objects.button_template.ButtonTemplate
+import microservice.ui.api.buttontemplates.support.ButtonTemplateAccess
 
 /** 总监删除按钮模板 APIMessage；返回被删模板。
   *
@@ -30,13 +30,9 @@ final case class DeleteButtonTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 删除并返回被删 ButtonTemplate
-        template <- PlanSteps.require(
-          ButtonTemplateTable.deleteById(connection, templateId)
-            .map(ButtonTemplateRowMapper.toButtonTemplate)
-            .toRight(UiCustomizationErrors.ButtonTemplateNotFound(templateId).toHttpError)
-        )
+        template <- ButtonTemplateAccess.requireDeleted(connection, templateId)
       } yield template
     }
 }

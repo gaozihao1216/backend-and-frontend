@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { LevelData, LevelEnemy, LevelObstacle } from "../../lib/level-contracts.js";
+import type { LevelData, LevelEnemy, LevelObstacle } from "../../objects/level/level/level-data.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
 import {
   addEntityToSelection,
@@ -50,7 +50,7 @@ import {
 } from "../../lib/ground.js";
 import type { LevelBackgroundTemplate } from "../../objects/level/level-background-template.js";
 import type { StretchVisualDesign } from "../../objects/ui-customization/ui-customization-objects.js";
-import { LevelBackgroundStageLayer } from "../designer-page/LevelBackgroundStageLayer.js";
+import { LevelBackgroundStageLayer } from "../../page/designer/DesignerPage/components/design/LevelBackgroundStageLayer.js";
 
 type LevelEditorCanvasProps = {
   activeTool: EditorTool;

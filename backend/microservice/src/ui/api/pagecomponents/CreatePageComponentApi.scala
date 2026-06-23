@@ -2,13 +2,13 @@ package microservice.ui.api.pagecomponents
 
 import cats.effect.IO
 import java.sql.Connection
-import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
-import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.api.pagecomponents.body.CreatePageComponentBody
+import microservice.ui.api.pagecomponents.support.UiPageComponentAccess
 
 /** 总监向页面追加组件 APIMessage。
   *
@@ -31,26 +31,9 @@ final case class CreatePageComponentAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
-        // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
-        // 校验页面存在且 component.id 不重复
-        _ <- PlanSteps.require(
-          UiPageTable.findById(connection, pageId) match {
-            case None =>
-              Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-            case Some(page) if page.components.exists(_.id == body.component.id) =>
-              Left(UiCustomizationErrors.ComponentAlreadyExists(body.component.id).toHttpError)
-            case Some(_) =>
-              Right(())
-          }
-        )
-        // 追加组件并返回更新后的 PageConfig
-        page <- PlanSteps.require(
-          UiPageTable
-            .addComponent(connection, pageId, body.component, Instant.now().toString)
-            .map(row => Right(UiPageRowMapper.toPageConfig(row)))
-            .getOrElse(Left(UiCustomizationErrors.ComponentAlreadyExists(body.component.id).toHttpError))
-        )
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- UiPageComponentAccess.requirePageForNewComponent(connection, pageId, body.component.id)
+        page <- UiPageComponentAccess.requireAddComponent(connection, pageId, body.component)
       } yield page
     }
 }

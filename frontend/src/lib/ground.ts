@@ -1,4 +1,7 @@
-import type { LevelData, LevelGround, LevelTerrain, Position, TerrainVoidSpan } from "./level-contracts.js";
+import type { LevelData } from "../objects/level/level/level-data.js";
+import type { LevelGround } from "../objects/level/terrain/level-ground.js";
+import type { LevelTerrain, TerrainVoidSpan } from "../objects/level/terrain/level-terrain.js";
+import type { Position } from "../objects/level/terrain/position.js";
 
 const DEFAULT_GROUND_OFFSET = 48;
 const MIN_CONTROL_POINT_GAP = 24;

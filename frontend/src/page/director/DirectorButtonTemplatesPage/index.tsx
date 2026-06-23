@@ -1,6 +1,6 @@
-import { SimpleStretchTemplateSection } from "../../../component/director/SimpleStretchTemplateSection.js";
-import { ButtonTemplateEditorModal } from "../../../component/director-page/ButtonTemplateEditorModal.js";
-import { ButtonTemplateListSection } from "../../../component/director-page/ButtonTemplateListSection.js";
+import { SimpleStretchTemplateSection } from "./components/SimpleStretchTemplateSection.js";
+import { ButtonTemplateEditorModal } from "./components/ButtonTemplateEditorModal.js";
+import { ButtonTemplateListSection } from "./components/ButtonTemplateListSection.js";
 import { useDirectorButtonTemplates } from "../../../hook/director-page/useDirectorButtonTemplates.js";
 import {
   defaultPanelTemplateDataUrl,

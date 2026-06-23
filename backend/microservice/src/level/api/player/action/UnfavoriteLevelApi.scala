@@ -6,7 +6,6 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.utils.AccessControl
 import microservice.level.objects.social.Favorite
-import microservice.level.tables.favorite.FavoriteTable
 import microservice.level.support.player.LevelApiSupport
 import microservice.system.objects.UserRole
 
@@ -25,17 +24,9 @@ final case class UnfavoriteLevelAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Favorite]] =
     PlanSteps.finish {
       for {
-        // 步骤 1：校验用户角色/管理员级别权限
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ()))
-        // 步骤 2：执行业务步骤
-        _ <- PlanSteps.require(LevelApiSupport.publishedLevel(connection, levelId).map(_ => ()))
-        // 步骤 3：执行业务步骤
-        favorite <- PlanSteps.require(
-          FavoriteTable
-            .delete(connection, playerId, levelId)
-            .toRight(HttpError.notFound("FAVORITE_NOT_FOUND", "Favorite not found"))
-        )
-      // 返回业务结果 DTO/领域对象
+        _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
+        _ <- LevelApiSupport.requirePublishedLevel(connection, levelId).map(_ => ())
+        favorite <- LevelApiSupport.requireDeletedFavorite(connection, playerId, levelId)
       } yield favorite
     }
 }

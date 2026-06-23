@@ -5,6 +5,7 @@ ThisBuild / organization := "com.example"
 lazy val root = (project in file("."))
   .settings(
     name := "UserService",
+    Test / parallelExecution := false,
     Compile / scalaSource := baseDirectory.value / "backend" / "microservice" / "src",
     Test / scalaSource := baseDirectory.value / "backend" / "microservice" / "test",
     libraryDependencies ++= Seq(

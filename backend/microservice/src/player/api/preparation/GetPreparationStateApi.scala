@@ -24,7 +24,7 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, userId, UserRole.Player))
+        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
         wallet <- PlanSteps.read(PlayerWalletTable.getOrCreate(connection, userId))
         response <- PlanSteps.read(PlayerPreparationSupport.buildResponse(connection, userId, wallet))
       } yield PlayerPreparationJson.toJson(response)

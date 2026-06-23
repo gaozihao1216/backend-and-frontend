@@ -1,11 +1,10 @@
 package microservice.player.tables.weekly_check_in
 
-import microservice.player.tables.weekly_check_in.inmemory._
-import microservice.player.tables.weekly_check_in.jdbc._
-
-import microservice.player.objects.WeeklyCheckInProgress
 import java.sql.Connection
 import java.time.Instant
+import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import microservice.player.objects.WeeklyCheckInProgress
+import microservice.player.tables.weekly_check_in.jdbc.PlayerWeeklyCheckInTableJdbc
 
 /**
   *
@@ -15,18 +14,30 @@ import java.time.Instant
  * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
  */
 object PlayerWeeklyCheckInTable {
-  private def isInMemory(connection: Connection): Boolean =
-    connection == null
-
   /** 启动时建表；仅 JDBC 模式执行 DDL。 */
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) PlayerWeeklyCheckInTableJdbcSchema.initialize(connection)
+    if (!TableConnection.isInMemory(connection)) PlayerWeeklyCheckInTableJdbc.initialize(connection)
 
   /** 读取当周签到进度；无记录时返回空进度对象。 */
   def getOrCreate(connection: Connection, userId: String, weekKey: String): WeeklyCheckInProgress = {
     val existing =
-      if (isInMemory(connection)) PlayerWeeklyCheckInTableInMemory.findByUserAndWeek(userId, weekKey)
-      else PlayerWeeklyCheckInTableJdbcRead.findByUserAndWeek(connection, userId, weekKey)
+      if (TableConnection.isInMemory(connection)) {
+        InMemoryStore.playerWeeklyCheckIn.get(userId).flatMap { progress =>
+          if (progress.weekKey == weekKey) {
+            Some(
+              PlayerWeeklyCheckInRow(
+                userId = userId,
+                weekKey = progress.weekKey,
+                signedSlots = PlayerWeeklyCheckInSlotsCodec.encode(progress.signedSlots),
+                signedToday = progress.signedToday,
+                updatedAt = "in-memory"
+              )
+            )
+          } else None
+        }
+      } else {
+        PlayerWeeklyCheckInTableJdbc.findByUserAndWeek(connection, userId, weekKey)
+      }
 
     existing match {
       case Some(row) =>
@@ -49,8 +60,18 @@ object PlayerWeeklyCheckInTable {
       signedToday = progress.signedToday,
       updatedAt = Instant.now().toString
     )
-    if (isInMemory(connection)) PlayerWeeklyCheckInTableInMemory.upsert(row)
-    else PlayerWeeklyCheckInTableJdbcWrite.upsert(connection, row)
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.playerWeeklyCheckIn = InMemoryStore.playerWeeklyCheckIn.updated(
+        row.userId,
+        WeeklyCheckInProgress(
+          weekKey = row.weekKey,
+          signedSlots = PlayerWeeklyCheckInSlotsCodec.decode(row.signedSlots),
+          signedToday = row.signedToday
+        )
+      )
+    } else {
+      PlayerWeeklyCheckInTableJdbc.upsert(connection, row)
+    }
     progress
   }
 }

@@ -7,7 +7,8 @@ import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
-import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessageRow, PlayerPrivateMessageTable}
+import microservice.player.support.social.PlayerSocialAccess
+import microservice.player.tables.social.{PlayerPrivateMessageRow, PlayerPrivateMessageTable}
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
@@ -24,23 +25,10 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
 
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
-      val trimmed = content.trim
       for {
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, userId, UserRole.Player))
-        _ <- PlanSteps.require(
-          if (receiverId.trim.isEmpty || trimmed.isEmpty) {
-            Left(HttpError.badRequest("INVALID_MESSAGE", "receiverId and content are required"))
-          } else {
-            Right(())
-          }
-        )
-        _ <- PlanSteps.require(
-          if (!PlayerFriendTable.exists(connection, userId, receiverId)) {
-            Left(HttpError.forbidden("You can only chat with friends"))
-          } else {
-            Right(())
-          }
-        )
+        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        trimmed <- PlayerSocialAccess.requireValidMessage(receiverId, content)
+        _ <- PlayerSocialAccess.requireFriendship(connection, userId, receiverId)
         _ <- PlanSteps.read(
           PlayerPrivateMessageTable.insert(
             connection,

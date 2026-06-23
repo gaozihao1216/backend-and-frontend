@@ -1,6 +1,6 @@
 package microservice.ui.tables.ui_page_rollback
 
-import microservice.ui.objects.PageConfig
+import microservice.ui.objects.page.PageConfig
 
 /** UI 页面回滚表在存储层的行模型（与 PostgreSQL ui_page_rollbacks 表列一一对应）。
   *

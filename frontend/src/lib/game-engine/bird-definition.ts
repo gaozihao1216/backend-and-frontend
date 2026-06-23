@@ -1,5 +1,5 @@
 import type { BirdUpgradeState } from "../../api/player-preparation-api.js";
-import type { BirdInventory } from "../../objects/level/bird-inventory.js";
+import type { BirdInventory } from "../../objects/level/inventory/bird-inventory.js";
 import {
   DEFAULT_COMBAT_PROFILE,
   type CombatProfile,

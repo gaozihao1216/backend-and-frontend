@@ -1,6 +1,6 @@
 import { getPlayerPreparation } from "../api/player-preparation-api.js";
-import type { LevelData } from "../objects/level/level-data.js";
-import type { BirdPool } from "../objects/level/bird-pool.js";
+import type { LevelData } from "../objects/level/level/level-data.js";
+import type { BirdPool } from "../objects/level/inventory/bird-pool.js";
 import { normalizeBirdPool } from "./bird-pool.js";
 import {
   birdDefinitionFromUpgradeState,

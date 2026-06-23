@@ -1,4 +1,4 @@
-import type { LevelData } from "../../level-contracts.js";
+import type { LevelData } from "../../../objects/level/level/level-data.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../constants.js";
 
 const DROP_TEST_GROUND_Y = WORLD_HEIGHT - 48;

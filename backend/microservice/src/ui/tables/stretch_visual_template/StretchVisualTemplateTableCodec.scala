@@ -5,7 +5,8 @@
 package microservice.ui.tables.stretch_visual_template
 
 import java.sql.{PreparedStatement, ResultSet}
-import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind}
+import microservice.ui.objects.stretch_template.StretchVisualTemplate
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 
 /** JDBC 读路径：stretch_visual_templates 表列 ↔ Row 编解码。
   *

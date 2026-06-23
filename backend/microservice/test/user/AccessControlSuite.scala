@@ -5,11 +5,14 @@ import org.http4s.Status
 
 class AccessControlSuite extends FunSuite {
   test("requireBoundIdentity accepts matching ids") {
-    assertEquals(AccessControl.requireBoundIdentity("player-1", "player-1"), Right(()))
+    AccessControl.checkBoundIdentity("player-1", "player-1") match {
+      case Right(()) => ()
+      case Left(error) => fail(s"expected Right, got $error")
+    }
   }
 
   test("requireBoundIdentity rejects mismatch") {
-    AccessControl.requireBoundIdentity("player-1", "player-2") match {
+    AccessControl.checkBoundIdentity("player-1", "player-2") match {
       case Left(error) =>
         assertEquals(error.status, Status.Forbidden)
         assertEquals(error.code, "USER_ID_MISMATCH")
@@ -19,7 +22,7 @@ class AccessControlSuite extends FunSuite {
   }
 
   test("requireBoundIdentity rejects empty identity") {
-    AccessControl.requireBoundIdentity("", "player-1") match {
+    AccessControl.checkBoundIdentity("", "player-1") match {
       case Left(error) => assertEquals(error.status, Status.Unauthorized)
       case Right(_)      => fail("expected Left")
     }

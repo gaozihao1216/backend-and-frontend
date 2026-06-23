@@ -26,6 +26,19 @@ object ShopItemTableCodec {
       createdAt = resultSet.getString("created_at"),
       updatedAt = resultSet.getString("updated_at")
     )
+
+  def bindRow(statement: java.sql.PreparedStatement, row: ShopItemRow): Unit = {
+    statement.setString(1, row.id)
+    statement.setString(2, row.name)
+    statement.setString(3, row.description)
+    statement.setInt(4, row.price)
+    statement.setString(5, row.currency)
+    statement.setInt(6, row.catalogIndex)
+    statement.setBoolean(7, row.active)
+    statement.setInt(8, row.sortOrder)
+    statement.setString(9, row.createdAt)
+    statement.setString(10, row.updatedAt)
+  }
 }
 
 object ShopPurchaseTableCodec {

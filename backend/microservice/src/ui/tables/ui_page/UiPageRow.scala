@@ -4,7 +4,9 @@
   */
 package microservice.ui.tables.ui_page
 
-import microservice.ui.objects.{PageComponent, PageLayout, UiEndpoint}
+import microservice.ui.objects.component.PageComponent
+import microservice.ui.objects.page.PageLayout
+import microservice.ui.objects.UiEndpoint
 
 /** UI 页面持久化行（layout/components 以 JSON 嵌入）。
   *

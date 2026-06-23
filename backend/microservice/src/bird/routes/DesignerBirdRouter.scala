@@ -3,12 +3,10 @@ package microservice.bird.routes
 import cats.effect.IO
 import microservice.bird.api.design.{
   CreateBirdDesignAPIMessage,
-  CreateBirdDesignBody,
   DeleteBirdDesignAPIMessage,
   ListBirdDesignsAPIMessage,
   SubmitBirdDesignAPIMessage,
-  UpdateBirdDesignAPIMessage,
-  UpdateBirdDesignBody
+  UpdateBirdDesignAPIMessage
 }
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.{AuthMiddleware, HttpError}
@@ -17,6 +15,7 @@ import org.http4s.HttpRoutes
 import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
+import microservice.bird.api.design.body.{CreateBirdDesignBody, UpdateBirdDesignBody}
 
 /** 设计师鸟类设计 HTTP 路由聚合器。
   *

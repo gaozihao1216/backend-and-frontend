@@ -1,6 +1,6 @@
 import { DeleteStretchVisualTemplateResponseDataSchema, type UiStretchVisualTemplate } from "../../api-contracts.js";
 import { request } from "../../client.js";
-import type { StretchVisualTemplateKind } from "../../../objects/ui-customization/stretch-visual-template.js";
+import type { StretchVisualTemplateKind } from "../../../objects/ui/stretch_template/stretch-visual-template.js";
 import { stretchTemplateItemApiPath } from "./stretchTemplatePaths.js";
 
 export class DeleteStretchVisualTemplateApi {

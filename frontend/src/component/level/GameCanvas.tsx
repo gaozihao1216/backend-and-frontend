@@ -4,7 +4,7 @@ import { createGameSession } from "../../lib/game-engine/game-session/index.js";
 import type { BirdPoolLaunchConfig } from "../../lib/game-engine/bird-pool-session.js";
 import type { GameSnapshot } from "../../lib/game-engine/types.js";
 import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
-import type { LevelData } from "../../lib/level-contracts.js";
+import type { LevelData } from "../../objects/level/level/level-data.js";
 
 type GameCanvasProps = {
   levelKey: string;

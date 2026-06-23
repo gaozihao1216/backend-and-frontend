@@ -1,4 +1,4 @@
-import type { ComponentAction, PageComponent, PageConfig } from "./page-config.js";
+import type { ComponentAction, PageComponent, PageConfig } from "../ui/page-config.js";
 import { createAdminProposalsPageConfig } from "./admin-proposals-structure.js";
 import { isRoleLevelMapSyncPageId } from "../../lib/level-map-sync.js";
 import {

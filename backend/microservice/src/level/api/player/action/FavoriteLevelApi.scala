@@ -27,9 +27,9 @@ final case class FavoriteLevelAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验用户角色/管理员级别权限
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ()))
+        _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
         // 步骤 2：执行业务步骤
-        _ <- PlanSteps.require(LevelApiSupport.publishedLevel(connection, levelId).map(_ => ()))
+        _ <- LevelApiSupport.requirePublishedLevel(connection, levelId).map(_ => ())
         // 步骤 3：读取并组装数据
         favorite <- PlanSteps.read(
           FavoriteTable.find(connection, playerId, levelId).getOrElse {
@@ -44,7 +44,6 @@ final case class FavoriteLevelAPIMessage(
             )
           }
         )
-      // 返回业务结果 DTO/领域对象
       } yield favorite
     }
 }

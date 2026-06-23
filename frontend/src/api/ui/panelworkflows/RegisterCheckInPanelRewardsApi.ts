@@ -1,10 +1,9 @@
-import { z } from "zod";
+import { RegisterCheckInPanelRewardsBodySchema } from "./body/RegisterCheckInPanelRewardsBody.js";
 import { PlayerCurrencyRewardSchema } from "../../../objects/ui-customization/ui-customization-objects.js";
 import { request } from "../../client.js";
+import { z } from "zod";
 
-export const RegisterCheckInPanelRewardsBodySchema = z.object({
-  slots: z.array(PlayerCurrencyRewardSchema).length(7),
-});
+export { RegisterCheckInPanelRewardsBodySchema } from "./body/RegisterCheckInPanelRewardsBody.js";
 
 export class RegisterCheckInPanelRewardsApi {
   static path(panelId: string) {

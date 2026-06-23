@@ -6,7 +6,7 @@ import {
 } from "../../lib/designer-level.js";
 import type { EditorClipboardSelection, EditorTool } from "../../lib/designer-level.js";
 import type { TerrainBoundaryKind, TerrainEditMode } from "../../lib/ground.js";
-import type { LevelData } from "../../lib/level-contracts.js";
+import type { LevelData } from "../../objects/level/level/level-data.js";
 import { handleGroundEditorDelete } from "../../lib/designer-page/ground-editor-actions.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;

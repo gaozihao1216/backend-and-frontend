@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createLevel, submitLevel } from "../../api/index.js";
 import type { Level, Submission } from "../../api/api-contracts.js";
-import type { LevelData, LevelTag } from "../../lib/level-contracts.js";
+import type { LevelData } from "../../objects/level/level/level-data.js";
+import type { LevelTag } from "../../objects/system/system-objects.js";
 
 type UseDesignerLevelSubmissionParams = {
   userId: string;

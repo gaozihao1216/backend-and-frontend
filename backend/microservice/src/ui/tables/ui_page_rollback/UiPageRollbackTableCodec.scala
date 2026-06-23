@@ -2,7 +2,7 @@ package microservice.ui.tables.ui_page_rollback
 
 import io.circe.parser.decode
 import io.circe.syntax._
-import microservice.ui.objects.PageConfig
+import microservice.ui.objects.page.PageConfig
 
 import java.sql.{PreparedStatement, ResultSet}
 

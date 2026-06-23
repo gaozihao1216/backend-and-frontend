@@ -68,7 +68,7 @@ import {
   correctGroundPenetration,
 } from "./physics.js";
 import type { GameBody, GameSession, GameSnapshot } from "../types.js";
-import type { LevelData } from "../../level-contracts.js";
+import type { LevelData } from "../../../objects/level/level/level-data.js";
 import { getGroundSurfaceYAtX, getLevelGround, getLevelTerrain, sampleBoundaryPathSegments, sampleGroundPath } from "../../ground.js";
 
 const { Bodies, Body, Engine, Events, Sleeping, World } = Matter;

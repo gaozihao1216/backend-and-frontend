@@ -6,7 +6,8 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{PageConfig, UiEndpoint}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.objects.UiEndpoint
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 /** 总监列出 UI 页面配置 APIMessage；可选 endpoint 过滤。
@@ -30,7 +31,7 @@ final case class ListUiPagesAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 按 endpoint 过滤或返回全部页面行
         pages <- PlanSteps.read {
           val rows = endpoint match {

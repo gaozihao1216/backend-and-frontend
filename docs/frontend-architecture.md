@@ -37,9 +37,10 @@ frontend/src/
 
 ### Objects 层
 
-- 路径：`frontend/src/objects/<module>/<object>.ts`（kebab-case 文件名）
+- 路径：`frontend/src/objects/<module>/…`（子目录镜像后端 `*/objects/` 布局，见 [`frontend/src/objects/ARCHITECTURE.md`](../frontend/src/objects/ARCHITECTURE.md)）
 - 类型名与 Scala 后端对象名一致（如 `Level`、`BackendUser`）
-- 模块包括：`system`、`auth`、`user`、`level`、`admin`、`bird`、`ui-customization` 等
+- 后端对齐域：`system`、`auth`、`user`、`level`（含 `level/`、`social/`、`terrain/` 等子目录）、`admin`、`bird`、`player`、`ui`
+- 前端专用：`ui-customization/`（默认配置、路由树、关卡地图结构）、`*-page/`（页面编辑器类型）；关卡种子数据在 `shared/levels/`
 
 前后端对齐原则：**同名 API 文件 + 同模块子路径 + 同名领域对象**（`user` 模块中挂载 `/auth` 的两个 API 在前端放在 `api/auth/`）。
 
@@ -119,13 +120,14 @@ page/
 - `skills/`：技能规格、执行器、状态效果、区域查询
 - `fracture` 等：障碍物破碎表现
 
-设计器与玩家游玩共用同一套引擎类型（`objects/level/level-data.ts`）。
+设计器与玩家游玩共用同一套引擎类型（`objects/level/level/level-data.ts`）。
 
 ### 6. UI 定制与动态渲染
 
 总监管理员可通过后端 API 配置页面结构，前端负责渲染：
 
-- `objects/ui-customization/`：`PageConfig`、按钮模板、拉伸视觉模板、关卡地图结构
+- `objects/ui/`：`PageConfig`、组件 schema、按钮/拉伸模板（镜像后端 `ui/objects/`）
+- `objects/ui-customization/`：默认页面配置、normalizer、关卡地图结构等前端专用逻辑
 - `component/ui-renderer/`：`DynamicPageRenderer`、`SharedLevelMapRenderer` 等
 - `lib/ui-customization.ts`、`lib/shared-level-map-persistence.ts`：本地缓存与 API  hydration
 

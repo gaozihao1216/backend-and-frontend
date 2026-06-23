@@ -1,43 +1,130 @@
 import { z } from "zod";
 import {
-  CreateLevelInputSchema,
   LevelDataSchema,
-  LevelSchema,
-  LevelTagSchema,
-  type Level as LevelContract,
+  LevelEnemySchema,
+  LevelObstacleSchema,
   type LevelData,
-  type LevelTag,
   type LevelEnemy,
   type LevelObstacle,
-  type LevelGround,
-  type LevelTerrain,
-  type Position,
-  type TerrainVoidSpan,
-  type PublishedLevelsSort,
-  type CreateLevelInput,
-} from "../lib/level-contracts.js";
+} from "../objects/level/level/level-data.js";
+import { LevelSchema, type Level as LevelContract } from "../objects/level/level/level.js";
+import { LevelTagSchema, type LevelTag, type PublishedLevelsSort } from "../objects/system/system-objects.js";
+import type { LevelGround } from "../objects/level/terrain/level-ground.js";
+import type { LevelTerrain, TerrainVoidSpan } from "../objects/level/terrain/level-terrain.js";
+import type { Position } from "../objects/level/terrain/position.js";
+import type { CreateLevelInput } from "../objects/level/level/create-level-input.js";
+import {
+  CreateLevelRequestBodySchema as CreateLevelRequestBodyInputSchema,
+  type CreateLevelRequestBody as CreateLevelRequestBodyObject,
+} from "./level/design/body/CreateLevelBody.js";
+import {
+  SubmitLevelRequestBodySchema as SubmitLevelRequestBodyInputSchema,
+} from "./level/design/body/SubmitLevelBody.js";
+import {
+  RateLevelRequestBodySchema as RateLevelRequestBodyInputSchema,
+  type RateLevelRequestBody as RateLevelRequestBodyObject,
+} from "./level/player/action/body/RateLevelBody.js";
+import {
+  CreateCommentRequestBodySchema as CreateCommentRequestBodyInputSchema,
+  type CreateCommentRequestBody as CreateCommentRequestBodyObject,
+} from "./level/player/action/body/CreateCommentBody.js";
+import {
+  ReviewSubmissionRequestBodySchema as ReviewSubmissionRequestBodyInputSchema,
+  type ReviewSubmissionRequestBody as ReviewSubmissionRequestBodyObject,
+} from "./admin/submissions/body/ReviewSubmissionBody.js";
+import {
+  CreateBirdDesignRequestBodySchema as CreateBirdDesignRequestBodyInputSchema,
+  type CreateBirdDesignRequestBody as CreateBirdDesignRequestBodyObject,
+} from "./bird/design/body/CreateBirdDesignBody.js";
+import {
+  UpdateBirdDesignRequestBodySchema as UpdateBirdDesignRequestBodyInputSchema,
+  type UpdateBirdDesignRequestBody as UpdateBirdDesignRequestBodyObject,
+} from "./bird/design/body/UpdateBirdDesignBody.js";
+import {
+  ReviewBirdSubmissionRequestBodySchema as ReviewBirdSubmissionRequestBodyInputSchema,
+  type ReviewBirdSubmissionRequestBody as ReviewBirdSubmissionRequestBodyObject,
+} from "./bird/review/body/ReviewBirdSubmissionBody.js";
+import {
+  TransferDirectorPermissionRequestBodySchema as TransferDirectorPermissionRequestBodyInputSchema,
+  type TransferDirectorPermissionRequestBody as TransferDirectorPermissionRequestBodyObject,
+} from "./admin/director/permissions/body/TransferDirectorPermissionBody.js";
+import {
+  CreateUiPageRequestBodySchema as CreateUiPageRequestBodyInputSchema,
+  type CreateUiPageRequestBody as CreateUiPageRequestBodyObject,
+} from "./ui/pages/body/CreateUiPageBody.js";
+import {
+  UpdateUiPageRequestBodySchema as UpdateUiPageRequestBodyInputSchema,
+  type UpdateUiPageRequestBody as UpdateUiPageRequestBodyObject,
+} from "./ui/pages/body/UpdateUiPageBody.js";
+import {
+  CreatePageComponentRequestBodySchema as CreatePageComponentRequestBodyInputSchema,
+  type CreatePageComponentRequestBody as CreatePageComponentRequestBodyObject,
+} from "./ui/pagecomponents/body/CreatePageComponentBody.js";
+import {
+  UpdatePageComponentRequestBodySchema as UpdatePageComponentRequestBodyInputSchema,
+  type UpdatePageComponentRequestBody as UpdatePageComponentRequestBodyObject,
+} from "./ui/pagecomponents/body/UpdatePageComponentBody.js";
+import {
+  CreateButtonTemplateRequestBodySchema as CreateButtonTemplateRequestBodyInputSchema,
+  type CreateButtonTemplateRequestBody as CreateButtonTemplateRequestBodyObject,
+} from "./ui/buttontemplates/body/CreateButtonTemplateBody.js";
+import {
+  UpdateButtonTemplateRequestBodySchema as UpdateButtonTemplateRequestBodyInputSchema,
+  type UpdateButtonTemplateRequestBody as UpdateButtonTemplateRequestBodyObject,
+} from "./ui/buttontemplates/body/UpdateButtonTemplateBody.js";
+import {
+  CreateStretchVisualTemplateRequestBodySchema as CreateStretchVisualTemplateRequestBodyInputSchema,
+  type CreateStretchVisualTemplateRequestBody as CreateStretchVisualTemplateRequestBodyObject,
+} from "./ui/stretchtemplates/body/CreateStretchVisualTemplateBody.js";
+import {
+  UpdateStretchVisualTemplateRequestBodySchema as UpdateStretchVisualTemplateRequestBodyInputSchema,
+  type UpdateStretchVisualTemplateRequestBody as UpdateStretchVisualTemplateRequestBodyObject,
+} from "./ui/stretchtemplates/body/UpdateStretchVisualTemplateBody.js";
 import { BackendUserSchema, type BackendUser } from "../objects/auth/backend-user.js";
-import { DirectorPermissionSummarySchema, type DirectorPermissionSummary as DirectorPermissionSummaryObject } from "../objects/admin/director-permission-summary.js";
-import { DirectorTransferResultSchema, type DirectorTransferResult as DirectorTransferResultObject } from "../objects/admin/director-transfer-result.js";
+import { DirectorPermissionSummarySchema, type DirectorPermissionSummary as DirectorPermissionSummaryObject } from "../objects/admin/director/permissions/director-permission-summary.js";
+import { DirectorTransferResultSchema, type DirectorTransferResult as DirectorTransferResultObject } from "../objects/admin/director/permissions/director-transfer-result.js";
 import {
   AssignLevelSlotRequestBodySchema as AssignLevelSlotRequestBodyInputSchema,
+  type AssignLevelSlotRequestBody as AssignLevelSlotRequestBodyObject,
+} from "./admin/director/level_assignment/body/AssignLevelSlotBody.js";
+import {
   AbolishDirectorSubmissionRequestBodySchema as AbolishDirectorSubmissionRequestBodyInputSchema,
-  DirectorLevelAssignmentBoardSchema,
+  type AbolishDirectorSubmissionRequestBody as AbolishDirectorSubmissionRequestBodyObject,
+} from "./admin/director/level_assignment/body/AbolishDirectorSubmissionBody.js";
+import {
   LevelSlotAssignmentDetailSchema,
   LevelSlotAssignmentSchema,
-  type AssignLevelSlotRequestBody as AssignLevelSlotRequestBodyObject,
-  type AbolishDirectorSubmissionRequestBody as AbolishDirectorSubmissionRequestBodyObject,
-  type DirectorLevelAssignmentBoard as DirectorLevelAssignmentBoardObject,
   type LevelSlotAssignment as LevelSlotAssignmentObject,
   type LevelSlotAssignmentDetail as LevelSlotAssignmentDetailObject,
-} from "../objects/admin/level-slot-assignment.js";
-import { ReviewedSubmissionSchema, type ReviewedSubmission as ReviewedSubmissionObject } from "../objects/admin/reviewed-submission.js";
+} from "../objects/admin/director/level_assignment/assignment/level-slot-assignment.js";
+import {
+  DirectorLevelAssignmentBoardSchema,
+  type DirectorLevelAssignmentBoard as DirectorLevelAssignmentBoardObject,
+} from "../objects/admin/director/level_assignment/board/director-level-assignment-board.js";
+import { ReviewedSubmissionSchema, type ReviewedSubmission as ReviewedSubmissionObject } from "../objects/admin/submission/reviewed-submission.js";
+import {
+  ReviewAuditSchema,
+  ListAdminAuditLogsRequestQuerySchema as ListAdminAuditLogsRequestQueryInputSchema,
+  type ReviewAudit as ReviewAuditObject,
+} from "../objects/admin/submission/review-audit.js";
+import {
+  ShopItemSchema,
+  type ShopItem as ShopItemObject,
+} from "../objects/player/shop/shop-item.js";
+import {
+  CreateShopItemRequestBodySchema as CreateShopItemRequestBodyInputSchema,
+  type CreateShopItemRequestBody as CreateShopItemRequestBodyObject,
+} from "./admin/shop/body/CreateShopItemBody.js";
+import {
+  UpdateShopItemRequestBodySchema as UpdateShopItemRequestBodyInputSchema,
+  type UpdateShopItemRequestBody as UpdateShopItemRequestBodyObject,
+} from "./admin/shop/body/UpdateShopItemBody.js";
 import {
   BirdDesignSchema,
   BirdDesignInputSchema,
   type BirdDesign,
   type BirdDesignInput,
-} from "../objects/bird/bird-design.js";
+} from "../objects/bird/design/bird-design.js";
 import {
   BirdSubmissionSchema,
   BirdSubmissionWithDesignSchema,
@@ -45,14 +132,14 @@ import {
   type BirdSubmission,
   type BirdSubmissionWithDesign,
   type ReviewedBirdSubmission,
-} from "../objects/bird/bird-submission.js";
+} from "../objects/bird/submission/bird-submission.js";
 import { LevelStatusSchema } from "../objects/system/level-status.js";
-import { FavoriteSchema, type Favorite } from "../objects/level/favorite.js";
-import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/favorite-with-level.js";
-import { LevelCommentSchema, type LevelComment as LevelCommentObject } from "../objects/level/level-comment.js";
-import { RatingSchema, type Rating } from "../objects/level/rating.js";
-import { SubmissionSchema, type Submission as SubmissionObject } from "../objects/level/submission.js";
-import { SubmissionWithLevelSchema, type SubmissionWithLevel as SubmissionWithLevelObject } from "../objects/level/submission-with-level.js";
+import { FavoriteSchema, type Favorite } from "../objects/level/social/favorite.js";
+import { FavoriteWithLevelSchema, type FavoriteWithLevel as FavoriteWithLevelObject } from "../objects/level/social/favorite-with-level.js";
+import { LevelCommentSchema, type LevelComment as LevelCommentObject } from "../objects/level/social/level-comment.js";
+import { RatingSchema, type Rating } from "../objects/level/social/rating.js";
+import { SubmissionSchema, type Submission as SubmissionObject } from "../objects/level/submission/submission.js";
+import { SubmissionWithLevelSchema, type SubmissionWithLevel as SubmissionWithLevelObject } from "../objects/level/submission/submission-with-level.js";
 import { UserProfileSchema, type UserProfile as UserProfileObject } from "../objects/user/user-profile.js";
 import { UserRoleSchema } from "../objects/system/user-role.js";
 import {
@@ -128,13 +215,11 @@ export const GetUserProfileRequestParamsSchema = z.object({
 });
 export const GetUserProfileResponseDataSchema = UserProfileSchema;
 
-export const CreateLevelRequestBodySchema = CreateLevelInputSchema;
-export type CreateLevelRequestBody = CreateLevelInput;
+export const CreateLevelRequestBodySchema = CreateLevelRequestBodyInputSchema;
+export type CreateLevelRequestBody = CreateLevelRequestBodyObject;
 export const CreateLevelResponseDataSchema = LevelSchema;
 
-export const SubmitLevelRequestBodySchema = z.object({
-  levelId: z.string().min(1),
-});
+export const SubmitLevelRequestBodySchema = SubmitLevelRequestBodyInputSchema;
 export const SubmitLevelResponseDataSchema = SubmissionSchema;
 
 export const GetPublishedLevelsRequestQuerySchema = z.object({
@@ -162,10 +247,8 @@ export const UnfavoriteLevelResponseDataSchema = FavoriteSchema;
 export const RateLevelRequestParamsSchema = z.object({
   levelId: z.string().min(1),
 });
-export const RateLevelRequestBodySchema = z.object({
-  score: z.number().int().min(1).max(5),
-});
-export type RateLevelRequestBody = z.infer<typeof RateLevelRequestBodySchema>;
+export const RateLevelRequestBodySchema = RateLevelRequestBodyInputSchema;
+export type RateLevelRequestBody = RateLevelRequestBodyObject;
 export const RateLevelResponseDataSchema = RatingSchema;
 
 export const GetLevelCommentsRequestParamsSchema = z.object({
@@ -174,10 +257,8 @@ export const GetLevelCommentsRequestParamsSchema = z.object({
 export const GetLevelCommentsResponseDataSchema = z.array(CommentSchema);
 
 export const CreateCommentRequestParamsSchema = GetLevelCommentsRequestParamsSchema;
-export const CreateCommentRequestBodySchema = z.object({
-  content: z.string().trim().min(1).max(500),
-});
-export type CreateCommentRequestBody = z.infer<typeof CreateCommentRequestBodySchema>;
+export const CreateCommentRequestBodySchema = CreateCommentRequestBodyInputSchema;
+export type CreateCommentRequestBody = CreateCommentRequestBodyObject;
 export const CreateCommentResponseDataSchema = CommentSchema;
 
 export const GetAdminCommentsRequestQuerySchema = z.object({});
@@ -187,16 +268,31 @@ export const DeleteCommentRequestParamsSchema = z.object({
 });
 export const DeleteCommentResponseDataSchema = CommentSchema;
 
+export const ListAdminAuditLogsRequestQuerySchema = ListAdminAuditLogsRequestQueryInputSchema;
+export type ListAdminAuditLogsRequestQuery = z.infer<typeof ListAdminAuditLogsRequestQuerySchema>;
+export type ReviewAudit = ReviewAuditObject;
+export const ListAdminAuditLogsResponseDataSchema = z.array(ReviewAuditSchema);
+
+export const ListAdminShopItemsRequestQuerySchema = z.object({});
+export type ShopItem = ShopItemObject;
+export const ListAdminShopItemsResponseDataSchema = z.array(ShopItemSchema);
+export const CreateShopItemRequestBodySchema = CreateShopItemRequestBodyInputSchema;
+export type CreateShopItemRequestBody = CreateShopItemRequestBodyObject;
+export const CreateShopItemResponseDataSchema = ShopItemSchema;
+export const UpdateShopItemRequestParamsSchema = z.object({ itemId: z.string().min(1) });
+export const UpdateShopItemRequestBodySchema = UpdateShopItemRequestBodyInputSchema;
+export type UpdateShopItemRequestBody = UpdateShopItemRequestBodyObject;
+export const UpdateShopItemResponseDataSchema = ShopItemSchema;
+export const DeactivateShopItemRequestParamsSchema = UpdateShopItemRequestParamsSchema;
+export const DeactivateShopItemResponseDataSchema = ShopItemSchema;
+
 export const GetPendingSubmissionsRequestQuerySchema = z.object({});
 export const GetPendingSubmissionsResponseDataSchema = z.array(SubmissionWithLevelSchema);
 export const ReviewSubmissionRequestParamsSchema = z.object({
   submissionId: z.string().min(1),
 });
-export const ReviewSubmissionRequestBodySchema = z.object({
-  status: z.enum(["approved", "rejected"]),
-  reviewNote: z.string().max(1000).optional(),
-});
-export type ReviewSubmissionRequestBody = z.infer<typeof ReviewSubmissionRequestBodySchema>;
+export const ReviewSubmissionRequestBodySchema = ReviewSubmissionRequestBodyInputSchema;
+export type ReviewSubmissionRequestBody = ReviewSubmissionRequestBodyObject;
 export const ReviewSubmissionResponseDataSchema = ReviewedSubmissionSchema;
 
 export const ListBirdDesignsRequestQuerySchema = z.object({
@@ -205,12 +301,12 @@ export const ListBirdDesignsRequestQuerySchema = z.object({
 export type ListBirdDesignsRequestQuery = z.infer<typeof ListBirdDesignsRequestQuerySchema>;
 export const ListBirdDesignsResponseDataSchema = z.array(BirdDesignSchema);
 
-export const CreateBirdDesignRequestBodySchema = BirdDesignInputSchema;
-export type CreateBirdDesignRequestBody = BirdDesignInput;
+export const CreateBirdDesignRequestBodySchema = CreateBirdDesignRequestBodyInputSchema;
+export type CreateBirdDesignRequestBody = CreateBirdDesignRequestBodyObject;
 export const CreateBirdDesignResponseDataSchema = BirdDesignSchema;
 
-export const UpdateBirdDesignRequestBodySchema = BirdDesignInputSchema;
-export type UpdateBirdDesignRequestBody = BirdDesignInput;
+export const UpdateBirdDesignRequestBodySchema = UpdateBirdDesignRequestBodyInputSchema;
+export type UpdateBirdDesignRequestBody = UpdateBirdDesignRequestBodyObject;
 export const UpdateBirdDesignResponseDataSchema = BirdDesignSchema;
 
 export const DeleteBirdDesignRequestParamsSchema = z.object({
@@ -227,20 +323,15 @@ export const GetPendingBirdSubmissionsResponseDataSchema = z.array(BirdSubmissio
 export const ReviewBirdSubmissionRequestParamsSchema = z.object({
   submissionId: z.string().min(1),
 });
-export const ReviewBirdSubmissionRequestBodySchema = z.object({
-  status: z.enum(["approved", "rejected"]),
-  reviewNote: z.string().max(1000).optional(),
-});
-export type ReviewBirdSubmissionRequestBody = z.infer<typeof ReviewBirdSubmissionRequestBodySchema>;
+export const ReviewBirdSubmissionRequestBodySchema = ReviewBirdSubmissionRequestBodyInputSchema;
+export type ReviewBirdSubmissionRequestBody = ReviewBirdSubmissionRequestBodyObject;
 export const ReviewBirdSubmissionResponseDataSchema = ReviewedBirdSubmissionSchema;
 
 export const GetDirectorPermissionsRequestQuerySchema = z.object({});
 export const GetDirectorPermissionsResponseDataSchema = DirectorPermissionSummarySchema;
 
-export const TransferDirectorPermissionRequestBodySchema = z.object({
-  targetAdminId: z.string().min(1),
-});
-export type TransferDirectorPermissionRequestBody = z.infer<typeof TransferDirectorPermissionRequestBodySchema>;
+export const TransferDirectorPermissionRequestBodySchema = TransferDirectorPermissionRequestBodyInputSchema;
+export type TransferDirectorPermissionRequestBody = TransferDirectorPermissionRequestBodyObject;
 export const TransferDirectorPermissionResponseDataSchema = DirectorTransferResultSchema;
 
 export const GetDirectorLevelAssignmentBoardRequestQuerySchema = z.object({});
@@ -273,33 +364,29 @@ export const GetUiPageRequestParamsSchema = z.object({
 });
 export const GetUiPageResponseDataSchema = PageConfigSchema;
 
-export const CreateUiPageRequestBodySchema = z.object({
-  page: PageConfigSchema,
-});
-export type CreateUiPageRequestBody = z.infer<typeof CreateUiPageRequestBodySchema>;
+export const CreateUiPageRequestBodySchema = CreateUiPageRequestBodyInputSchema;
+export type CreateUiPageRequestBody = CreateUiPageRequestBodyObject;
 export const CreateUiPageResponseDataSchema = PageConfigSchema;
 
 export const UpdateUiPageRequestParamsSchema = GetUiPageRequestParamsSchema;
-export const UpdateUiPageRequestBodySchema = CreateUiPageRequestBodySchema;
-export type UpdateUiPageRequestBody = z.infer<typeof UpdateUiPageRequestBodySchema>;
+export const UpdateUiPageRequestBodySchema = UpdateUiPageRequestBodyInputSchema;
+export type UpdateUiPageRequestBody = UpdateUiPageRequestBodyObject;
 export const UpdateUiPageResponseDataSchema = PageConfigSchema;
 
 export const DeleteUiPageRequestParamsSchema = GetUiPageRequestParamsSchema;
 export const DeleteUiPageResponseDataSchema = PageConfigSchema;
 
 export const CreatePageComponentRequestParamsSchema = GetUiPageRequestParamsSchema;
-export const CreatePageComponentRequestBodySchema = z.object({
-  component: PageComponentSchema,
-});
-export type CreatePageComponentRequestBody = z.infer<typeof CreatePageComponentRequestBodySchema>;
+export const CreatePageComponentRequestBodySchema = CreatePageComponentRequestBodyInputSchema;
+export type CreatePageComponentRequestBody = CreatePageComponentRequestBodyObject;
 export const CreatePageComponentResponseDataSchema = PageConfigSchema;
 
 export const UpdatePageComponentRequestParamsSchema = z.object({
   pageId: z.string().min(1),
   componentId: z.string().min(1),
 });
-export const UpdatePageComponentRequestBodySchema = CreatePageComponentRequestBodySchema;
-export type UpdatePageComponentRequestBody = z.infer<typeof UpdatePageComponentRequestBodySchema>;
+export const UpdatePageComponentRequestBodySchema = UpdatePageComponentRequestBodyInputSchema;
+export type UpdatePageComponentRequestBody = UpdatePageComponentRequestBodyObject;
 export const UpdatePageComponentResponseDataSchema = PageConfigSchema;
 
 export const DeletePageComponentRequestParamsSchema = UpdatePageComponentRequestParamsSchema;
@@ -313,15 +400,13 @@ export const GetButtonTemplateRequestParamsSchema = z.object({
 });
 export const GetButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 
-export const CreateButtonTemplateRequestBodySchema = z.object({
-  template: ButtonTemplateSchema,
-});
-export type CreateButtonTemplateRequestBody = z.infer<typeof CreateButtonTemplateRequestBodySchema>;
+export const CreateButtonTemplateRequestBodySchema = CreateButtonTemplateRequestBodyInputSchema;
+export type CreateButtonTemplateRequestBody = CreateButtonTemplateRequestBodyObject;
 export const CreateButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 
 export const UpdateButtonTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
-export const UpdateButtonTemplateRequestBodySchema = CreateButtonTemplateRequestBodySchema;
-export type UpdateButtonTemplateRequestBody = z.infer<typeof UpdateButtonTemplateRequestBodySchema>;
+export const UpdateButtonTemplateRequestBodySchema = UpdateButtonTemplateRequestBodyInputSchema;
+export type UpdateButtonTemplateRequestBody = UpdateButtonTemplateRequestBodyObject;
 export const UpdateButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 
 export const DeleteButtonTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
@@ -330,25 +415,23 @@ export const DeleteButtonTemplateResponseDataSchema = ButtonTemplateSchema;
 export {
   StretchVisualTemplateKindSchema,
   StretchVisualTemplateSchema,
-} from "../objects/ui-customization/stretch-visual-template.js";
+} from "../objects/ui/stretch_template/stretch-visual-template.js";
 export type {
   StretchVisualTemplateKind,
   StretchVisualTemplate as UiStretchVisualTemplate,
-} from "../objects/ui-customization/stretch-visual-template.js";
+} from "../objects/ui/stretch_template/stretch-visual-template.js";
 
-import { StretchVisualTemplateSchema } from "../objects/ui-customization/stretch-visual-template.js";
+import { StretchVisualTemplateSchema } from "../objects/ui/stretch_template/stretch-visual-template.js";
 
 export const ListStretchVisualTemplatesResponseDataSchema = z.array(StretchVisualTemplateSchema);
 
-export const CreateStretchVisualTemplateRequestBodySchema = z.object({
-  template: StretchVisualTemplateSchema,
-});
-export type CreateStretchVisualTemplateRequestBody = z.infer<typeof CreateStretchVisualTemplateRequestBodySchema>;
+export const CreateStretchVisualTemplateRequestBodySchema = CreateStretchVisualTemplateRequestBodyInputSchema;
+export type CreateStretchVisualTemplateRequestBody = CreateStretchVisualTemplateRequestBodyObject;
 export const CreateStretchVisualTemplateResponseDataSchema = StretchVisualTemplateSchema;
 
 export const UpdateStretchVisualTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
-export const UpdateStretchVisualTemplateRequestBodySchema = CreateStretchVisualTemplateRequestBodySchema;
-export type UpdateStretchVisualTemplateRequestBody = z.infer<typeof UpdateStretchVisualTemplateRequestBodySchema>;
+export const UpdateStretchVisualTemplateRequestBodySchema = UpdateStretchVisualTemplateRequestBodyInputSchema;
+export type UpdateStretchVisualTemplateRequestBody = UpdateStretchVisualTemplateRequestBodyObject;
 export const UpdateStretchVisualTemplateResponseDataSchema = StretchVisualTemplateSchema;
 
 export const DeleteStretchVisualTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;

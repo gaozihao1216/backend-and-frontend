@@ -1,4 +1,5 @@
-import { LevelDataSchema, type CreateLevelInput, type LevelData } from "../lib/level-contracts.js";
+import { type CreateLevelInput, CreateLevelInputSchema } from "../objects/level/level/create-level-input.js";
+import { LevelDataSchema, type LevelData } from "../objects/level/level/level-data.js";
 
 export * from "./auth-api.js";
 export * from "./user-api.js";

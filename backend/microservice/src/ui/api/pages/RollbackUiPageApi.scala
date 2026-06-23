@@ -6,7 +6,7 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.PageConfig
+import microservice.ui.objects.page.PageConfig
 
 /** 总监回滚页面配置 APIMessage；恢复上一版已发布快照。
   *
@@ -29,9 +29,9 @@ final case class RollbackUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 委托 UiPagePublishSupport 完成回滚
-        page <- PlanSteps.require(UiPagePublishSupport.rollback(connection, pageId))
+        page <- UiPagePublishSupport.requireRollback(connection, pageId)
       } yield page
     }
 }

@@ -1,14 +1,16 @@
 package microservice.player.runtime
 
-import microservice.infrastructure.http.HttpError
-import microservice.player.objects.{CheckInSlotReward, WeeklyCheckInProgress}
-import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
-import microservice.player.tables.wallet.{PlayerWalletTable}
-import microservice.player.tables.weekly_check_in.{PlayerWeeklyCheckInTable}
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 import java.time.{DayOfWeek, LocalDate, ZoneOffset}
+import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.PlanStep.Step
+import microservice.infrastructure.http.HttpError
+import microservice.player.objects.{CheckInSlotReward, WeeklyCheckInProgress}
+import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
+import microservice.player.tables.wallet.PlayerWalletTable
+import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTable
 
 /** 周签到 UI 数据与领取动作服务。
   *
@@ -28,6 +30,9 @@ object PlayerWeeklyCheckInService {
   val claimActionKey: String = WeeklyCheckInClaimActionKey
 
   /** 返回默认面板（无 panelId）的周签到 payload。 */
+  def requireData(connection: Connection, userId: String): Step[Json] =
+    PlanStep.fromEither(getData(connection, userId))
+
   def getData(connection: Connection, userId: String): Either[HttpError, Json] =
     Right(buildPayload(connection, userId, panelId = None))
 
@@ -36,6 +41,9 @@ object PlayerWeeklyCheckInService {
     Right(buildPayload(connection, userId, Some(panelId)))
 
   /** 领取指定 slot（1-7）的签到奖励：校验 activeSlot、发放钱包奖励并标记今日已签。 */
+  def requireExecuteClaim(connection: Connection, userId: String, params: Map[String, String]): Step[Json] =
+    PlanStep.fromEither(executeClaim(connection, userId, params))
+
   def executeClaim(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
     val panelId = params.getOrElse("panelId", PlayerRuntimeDefaults.roleHomeCheckInPanelId)
     val slot = params.get("slot").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)

@@ -1,4 +1,4 @@
-import type { ButtonTemplateCategory } from "../../objects/ui-customization/template-category.js";
+import type { ButtonTemplateCategory } from "../../objects/ui/category/template-category.js";
 
 export type TemplateTab = "button" | "panel" | "pattern";
 

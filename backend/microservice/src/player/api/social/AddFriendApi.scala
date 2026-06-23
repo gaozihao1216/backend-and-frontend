@@ -6,6 +6,7 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.{PlayerFriendListResponse, PlayerFriendSummary, PlayerSocialJson}
+import microservice.player.support.social.PlayerSocialAccess
 import microservice.player.tables.social.PlayerFriendTable
 import microservice.system.objects.UserRole
 import microservice.user.tables.user.UserTable
@@ -24,22 +25,9 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, userId, UserRole.Player))
-        _ <- PlanSteps.require(
-          if (friendUserId.trim.isEmpty) {
-            Left(HttpError.badRequest("INVALID_FRIEND", "friendUserId is required"))
-          } else if (userId == friendUserId) {
-            Left(HttpError.badRequest("INVALID_FRIEND", "Cannot add yourself as a friend"))
-          } else {
-            Right(())
-          }
-        )
-        _ <- PlanSteps.require(
-          UserTable.findById(connection, friendUserId) match {
-            case None    => Left(HttpError.notFound("FRIEND_NOT_FOUND", s"User not found: $friendUserId"))
-            case Some(_) => Right(())
-          }
-        )
+        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlayerSocialAccess.requireValidFriendRequest(userId, friendUserId)
+        _ <- PlayerSocialAccess.requireExistingUser(connection, friendUserId)
         _ <- PlanSteps.read(PlayerFriendTable.insertPair(connection, userId, friendUserId))
         friendIds <- PlanSteps.read(PlayerFriendTable.listFriendUserIds(connection, userId))
         friends <- PlanSteps.read(

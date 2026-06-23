@@ -2,6 +2,7 @@ package microservice.system.utils
 
 import cats.effect.IO
 import java.time.Instant
+import microservice.admin.tables.AdminAuditTable
 import microservice.user.tables.user.UserTable
 import microservice.infrastructure.database.{DatabaseConfig, DatabaseSession}
 import microservice.bird.tables.design.{BirdDesignTable}
@@ -15,7 +16,8 @@ import microservice.level.tables.slot_assignment.{LevelSlotAssignmentTable}
 import microservice.level.tables.submission.{SubmissionTable}
 import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
 import microservice.player.tables.preparation.{PlayerPreparationTable}
-import microservice.player.tables.progress.{PlayerLegacyCheckInTable, PlayerLevelProgressTable}
+import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
+import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTable
 import microservice.player.tables.shop.{ShopTable}
 import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessageTable}
 import microservice.player.tables.wallet.{PlayerWalletTable}
@@ -72,6 +74,7 @@ object SystemDefaults {
         UserTable.initialize(connection)
         LevelTable.initialize(connection)
         SubmissionTable.initialize(connection)
+        AdminAuditTable.initialize(connection)
         LevelSlotAssignmentTable.initialize(connection)
         RatingTable.initialize(connection)
         CommentTable.initialize(connection)

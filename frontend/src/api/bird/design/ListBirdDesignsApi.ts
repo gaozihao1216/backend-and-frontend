@@ -1,5 +1,4 @@
 import {
-  DeleteBirdDesignResponseDataSchema,
   ListBirdDesignsRequestQuerySchema,
   ListBirdDesignsResponseDataSchema,
   type BirdDesign,
@@ -24,22 +23,3 @@ export class ListBirdDesignsApi {
 export const listBirdDesignsApi = new ListBirdDesignsApi();
 export const listBirdDesigns = async (userId: string, options?: ListBirdDesignsRequestQuery) =>
   listBirdDesignsApi.execute(userId, options);
-
-/** 与后端 ListBirdDesignsApi.scala 中的 DeleteBirdDesignAPIMessage 同文件维护。 */
-export class DeleteBirdDesignApi {
-  static path(designId: string) {
-    return `/designer/bird-designs/${encodeURIComponent(designId)}` as const;
-  }
-
-  async execute(userId: string, designId: string): Promise<BirdDesign> {
-    return request(
-      DeleteBirdDesignApi.path(designId),
-      { method: "DELETE", headers: { "x-user-id": userId } },
-      DeleteBirdDesignResponseDataSchema,
-    );
-  }
-}
-
-export const deleteBirdDesignApi = new DeleteBirdDesignApi();
-export const deleteBirdDesign = async (userId: string, designId: string) =>
-  deleteBirdDesignApi.execute(userId, designId);

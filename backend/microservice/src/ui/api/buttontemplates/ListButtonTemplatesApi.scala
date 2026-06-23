@@ -6,7 +6,7 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.ButtonTemplate
+import microservice.ui.objects.button_template.ButtonTemplate
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 
 /** 总监列出全部按钮模板 APIMessage。
@@ -29,7 +29,7 @@ final case class ListButtonTemplatesAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 列出全部按钮模板
         templates <- PlanSteps.read(
           ButtonTemplateTable.listAll(connection).map(ButtonTemplateRowMapper.toButtonTemplate).toList

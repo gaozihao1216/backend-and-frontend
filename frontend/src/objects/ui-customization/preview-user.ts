@@ -1,4 +1,4 @@
-import type { UiEndpoint } from "./page-config.js";
+import type { UiEndpoint } from "../ui/page-config.js";
 
 export type UiPreviewAccount = {
   coins: number;

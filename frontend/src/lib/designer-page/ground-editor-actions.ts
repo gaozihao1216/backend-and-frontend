@@ -1,5 +1,5 @@
 import { removeTerrainBoundaryPoint, removeTerrainVoidSpan, type TerrainBoundaryKind, type TerrainEditMode } from "../ground.js";
-import type { LevelData } from "../level-contracts.js";
+import type { LevelData } from "../../objects/level/level/level-data.js";
 
 export type HandleGroundEditorDeleteParams = {
   groundEditorEnabled: boolean;

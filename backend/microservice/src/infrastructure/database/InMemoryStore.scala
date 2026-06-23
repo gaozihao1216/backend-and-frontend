@@ -3,6 +3,8 @@ package microservice.infrastructure.database
 import microservice.user.tables.user.UserRow
 import microservice.level.objects.social.Favorite
 import microservice.bird.tables.shared.{BirdDesignRow, BirdSubmissionRow}
+import microservice.bird.tables.skill_config.BirdSkillConfigRow
+import microservice.admin.tables.ReviewAuditRow
 import microservice.level.tables.shared.{CommentRow, LevelRow, LevelSlotAssignmentRow, RatingRow, SubmissionRow}
 import microservice.player.objects.{CheckInSlotReward, PlayerWallet, WeeklyCheckInProgress}
 import microservice.player.tables.preparation.{PlayerBirdUpgradeRow, PlayerSlingshotUpgradeRow}
@@ -42,6 +44,7 @@ object InMemoryStore {
   var comments: Vector[CommentRow] = Vector.empty                   // 关卡评论
   var favorites: Vector[Favorite] = Vector.empty                    // 玩家收藏
   var submissions: Vector[SubmissionRow] = Vector.empty             // 关卡提交流水
+  var reviewAudits: Vector[ReviewAuditRow] = Vector.empty           // 管理员审核审计
   var levelSlotAssignments: Vector[LevelSlotAssignmentRow] = Vector.empty // 总监配置的关卡槽位
 
   // --- UI 定制模板 ---
@@ -68,6 +71,7 @@ object InMemoryStore {
   var playerSlingshotUpgrades: Vector[PlayerSlingshotUpgradeRow] = Vector.empty
   var birdDesigns: Vector[BirdDesignRow] = Vector.empty
   var birdSubmissions: Vector[BirdSubmissionRow] = Vector.empty
+  var birdSkillConfigs: Vector[BirdSkillConfigRow] = Vector.empty
 
   /** 批量重置核心演示表（用户、关卡、评分、评论、收藏、提交、UI 模板、关卡槽位）。
     *
@@ -97,6 +101,7 @@ object InMemoryStore {
     comments = nextComments
     favorites = nextFavorites
     submissions = nextSubmissions
+    reviewAudits = Vector.empty
     uiPages = nextUiPages
     uiPageRollbacks = Vector.empty
     buttonTemplates = nextButtonTemplates

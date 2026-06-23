@@ -2,13 +2,12 @@ package microservice.ui.api.pagecomponents
 
 import cats.effect.IO
 import java.sql.Connection
-import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
-import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.api.pagecomponents.support.UiPageComponentAccess
 
 /** 总监删除页面内组件 APIMessage。
   *
@@ -31,26 +30,9 @@ final case class DeletePageComponentAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
-        // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
-        // 校验页面与组件存在
-        _ <- PlanSteps.require(
-          UiPageTable.findById(connection, pageId) match {
-            case None =>
-              Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-            case Some(page) if !page.components.exists(_.id == componentId) =>
-              Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError)
-            case Some(_) =>
-              Right(())
-          }
-        )
-        // 删除组件并返回更新后的 PageConfig
-        page <- PlanSteps.require(
-          UiPageTable
-            .deleteComponent(connection, pageId, componentId, Instant.now().toString)
-            .map(row => Right(UiPageRowMapper.toPageConfig(row)))
-            .getOrElse(Left(UiCustomizationErrors.ComponentNotFound(componentId).toHttpError))
-        )
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- UiPageComponentAccess.requirePageWithComponent(connection, pageId, componentId)
+        page <- UiPageComponentAccess.requireDeleteComponent(connection, pageId, componentId)
       } yield page
     }
 }

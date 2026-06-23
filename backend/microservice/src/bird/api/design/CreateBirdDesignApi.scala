@@ -4,13 +4,14 @@ import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
-import microservice.bird.objects.design.BirdDesign
+import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
 import microservice.bird.tables.design.{BirdDesignTable}
 import microservice.bird.tables.shared.{BirdDesignRow, BirdRowMapper}
-import microservice.bird.validation.design.BirdDesignValidation
+import microservice.bird.api.design.validation.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
+import microservice.bird.api.design.body.CreateBirdDesignBody
 
 /** 设计师创建新鸟类设计 APIMessage，初始状态为 Draft。 */
 final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBirdDesignBody)
@@ -27,10 +28,10 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
     PlanSteps.finish {
       for {
         // 步骤 1：校验 Designer 角色
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
         // 步骤 2：校验 name/summary/stats/tierSkills 等字段
-        input <- PlanSteps.require(BirdDesignValidation.validate(toInput(body)))
-        // 步骤 3：组装 BirdDesignRow 并 insert，映射为 BirdDesign 领域对象
+        input <- BirdDesignValidation.validate(toInput(body))
+        // 步骤 3：校验通过后 insert BirdDesignRow
         design <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = BirdDesignTable.insert(
@@ -56,13 +57,11 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
           )
           BirdRowMapper.toBirdDesign(row)
         }
-      // 返回新创建的 BirdDesign
       } yield design
     }
 
-  /** 将 CreateBirdDesignBody 转为统一校验输入结构。 */
-  private def toInput(body: CreateBirdDesignBody): BirdDesignInputBody =
-    BirdDesignInputBody(
+  private def toInput(body: CreateBirdDesignBody): BirdDesignInput =
+    BirdDesignInput(
       name = body.name,
       summary = body.summary,
       skillName = body.skillName,

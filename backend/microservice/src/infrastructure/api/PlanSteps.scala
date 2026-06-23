@@ -2,11 +2,10 @@ package microservice.infrastructure.api
 
 import cats.data.EitherT
 import cats.effect.IO
-import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
 import microservice.user.utils.AccessControl
 
-/** [[APIMessage.plan]] 内部的步骤组合工具（基于 `EitherT[IO, HttpError, *]`）。
+/** [[APIMessage.plan]] 内部的步骤组合工具（基于 [[PlanStep.Step]]）。
   *
   * == 设计意图 ==
   * 用 `for` 推导式将多步业务（鉴权 → 校验 → 读表 → 写表 → 组装响应）写成线性流程，
@@ -17,14 +16,17 @@ import microservice.user.utils.AccessControl
   * override def plan(connection: Connection): IO[Either[HttpError, Response]] =
   *   PlanSteps.finish {
   *     for {
-  *       _      <- PlanSteps.require(AccessControl.requireRole(...))
-  *       _      <- PlanSteps.requireBound(headerUserId, token)
-  *       entity <- PlanSteps.read(SomeTable.findById(connection, id))
-  *       result <- PlanSteps.attempt(validateAndTransform(entity))
-  *       _      <- PlanSteps.blocking(SomeTable.update(connection, result))
+  *       _      <- AccessControl.requireRole(connection, userId, UserRole.Player)
+  *       body   <- SomeValidation.validate(requestBody)
+  *       entity <- SomeAccess.requireExisting(connection, body.id)
+  *       _      <- PlanSteps.read(SomeTable.insert(connection, entity))
+  *       _      <- PlanSteps.blocking(SomeTable.syncIndex(connection))
   *     } yield Response(...)
   *   }
   * }}}
+  *
+  * APIMessage 内只应出现 `AccessControl` / `*Validation` / `*Support` / `*Access` 的 `require*`，
+  * 以及 `PlanSteps.read` / `blocking`；同步 `Either` 校验放在各模块的 `check*` 中。
   *
   * == 与 APIMessage 的分工 ==
   * - `PlanSteps`：plan 内部的步骤编排与错误短路；
@@ -35,43 +37,27 @@ import microservice.user.utils.AccessControl
   * - [[microservice.user.utils.AccessControl]]：角色与身份绑定校验
   */
 object PlanSteps {
-  /** 单步类型别名：`EitherT` 将 `IO[Either[HttpError, A]]` 扁平化为可 `flatMap` 的 monad。 */
-  type Step[A] = EitherT[IO, HttpError, A]
+  type Step[A] = PlanStep.Step[A]
 
-  /** 将同步校验结果注入步骤链；`Left` 时后续 `flatMap` 不再执行。
-    *
-    * @param check 通常为 `AccessControl.requireRole` / `requireAdminLevel` 等返回的 `Either`
-    */
+  /** 将同步 `Either` 注入步骤链；基础设施封装，APIMessage 应优先使用各模块的 `require*`。 */
   def require[A](check: Either[HttpError, A]): Step[A] =
-    EitherT.fromEither[IO](check)
+    PlanStep.fromEither(check)
 
-  /** 校验 HTTP 头 `x-user-id` 与请求体/路径中的 `token` 是否为同一绑定用户。
-    *
-    * 用于 `APIWithTokenMessage` 子类在 plan 内部做二次校验，或无需该 trait 时的显式步骤。
-    */
+  /** 校验 HTTP 头 `x-user-id` 与请求体/路径中的 `token` 是否为同一绑定用户。 */
   def requireBound(headerUserId: String, token: String): Step[Unit] =
-    require(AccessControl.requireBoundIdentity(headerUserId, token))
+    AccessControl.requireBoundIdentity(headerUserId, token)
 
-  /** 执行同步读操作（Table 查询、内存集合访问等），结果包装为 `Right`。
-    *
-    * 适用于不会失败的纯读取；若读取可能业务失败，请用 [[attempt]]。
-    */
+  /** 执行同步读操作（Table 查询、内存集合访问等），结果包装为 `Right`。 */
   def read[A](run: => A): Step[A] =
-    EitherT.liftF(IO(run))
+    PlanStep.liftF(IO(run))
 
-  /** 执行同步步骤，步骤本身返回 `Either[HttpError, A]`（如字段校验、状态机检查）。
-    *
-    * 与 [[read]] 的区别：此处允许步骤内部表达业务失败。
-    */
+  /** 执行同步步骤，步骤本身返回 `Either[HttpError, A]`；基础设施封装，优先抽到 validation/support 的 `check*`。 */
   def attempt[A](run: => Either[HttpError, A]): Step[A] =
-    EitherT.fromEither[IO](run)
+    PlanStep.fromEither(run)
 
-  /** 在 `IO.blocking` 线程池中执行可能阻塞的操作（JDBC 批量写入、文件 I/O 等）。
-    *
-    * cats-effect 要求阻塞调用不得运行在 compute 线程池上，以免饿死其他 fiber。
-    */
+  /** 在 `IO.blocking` 线程池中执行可能阻塞的操作（JDBC 批量写入、文件 I/O 等）。 */
   def blocking[A](run: => A): Step[A] =
-    EitherT.liftF(IO.blocking(run))
+    PlanStep.liftBlocking(run)
 
   /** 将完整的 `Step` 链还原为 `IO[Either[HttpError, A]]`，供 [[APIMessage.plan]] 返回。
     *

@@ -1,4 +1,4 @@
-import { PanelCreateWorkspace } from "../../../component/director-page/PanelCreateWorkspace.js";
+import { PanelCreateWorkspace } from "./components/PanelCreateWorkspace.js";
 import { useDirectorPanelCreate } from "../../../hook/director-page/useDirectorPanelCreate.js";
 import type { DirectorPanelCreatePageProps } from "../../../objects/director-page/panel-create-types.js";
 

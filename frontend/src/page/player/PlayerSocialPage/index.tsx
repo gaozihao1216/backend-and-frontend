@@ -1,7 +1,7 @@
 import { usePlayerSocial } from "../../../hook/player-page/usePlayerSocial.js";
-import { PageFeedback } from "../../../component/player-page/PageFeedback.js";
-import { PlayerChatPanel } from "../../../component/player-page/PlayerChatPanel.js";
-import { PlayerFriendsList, PlayerSocialHeader } from "../../../component/player-page/PlayerFriendsPanel.js";
+import { PageFeedback } from "../shared/PageFeedback.js";
+import { PlayerChatPanel } from "./components/PlayerChatPanel.js";
+import { PlayerFriendsList, PlayerSocialHeader } from "./components/PlayerFriendsPanel.js";
 
 type PlayerSocialPageProps = {
   userId: string;

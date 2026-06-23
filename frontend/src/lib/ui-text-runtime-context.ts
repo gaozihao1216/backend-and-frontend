@@ -1,4 +1,4 @@
-import type { UiEndpoint } from "../objects/ui-customization/page-config.js";
+import type { UiEndpoint } from "../objects/ui/page-config.js";
 import type { UiPreviewAccount, UiPreviewUser } from "../objects/ui-customization/preview-user.js";
 
 export const PLAYER_WALLET_UI_DATA_KEY = "player.wallet";

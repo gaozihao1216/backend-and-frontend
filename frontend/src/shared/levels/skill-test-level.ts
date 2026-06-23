@@ -1,4 +1,4 @@
-import type { LevelData } from "../../lib/level-contracts.js";
+import type { LevelData } from "../../objects/level/level/level-data.js";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,

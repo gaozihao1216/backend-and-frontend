@@ -3,45 +3,58 @@ package microservice.admin.routes
 import cats.effect.IO
 import microservice.infrastructure.database.{DatabaseSession}
 import microservice.infrastructure.http.{AuthMiddleware, HttpError}
+import microservice.admin.api.audit.ListAdminAuditLogsAPIMessage
+import microservice.admin.api.shop.{
+  CreateShopItemAPIMessage,
+  DeactivateShopItemAPIMessage,
+  ListAdminShopItemsAPIMessage,
+  UpdateShopItemAPIMessage
+}
 import microservice.admin.api.comments.{
   DeleteCommentAPIMessage,
   GetAdminCommentsAPIMessage
 }
 import microservice.admin.api.submissions.{
   GetPendingSubmissionsAPIMessage,
-  ReviewSubmissionAPIMessage,
-  ReviewSubmissionBody
+  ReviewSubmissionAPIMessage
 }
 import microservice.admin.api.director.permissions.{
   GetDirectorPermissionsAPIMessage,
-  TransferDirectorPermissionAPIMessage,
-  TransferDirectorPermissionBody
+  TransferDirectorPermissionAPIMessage
 }
 import microservice.admin.api.director.level_assignment.{
   AbolishDirectorSubmissionAPIMessage,
-  AbolishDirectorSubmissionBody,
   AssignLevelSlotAPIMessage,
-  AssignLevelSlotBody,
   GetDirectorLevelAssignmentBoardAPIMessage,
   UnassignLevelSlotAPIMessage,
-  UpdateLevelSlotBirdPoolAPIMessage,
-  UpdateLevelSlotBirdPoolBody
+  UpdateLevelSlotBirdPoolAPIMessage
 }
 import microservice.admin.api.director.bird_skill.{
   GetDirectorBirdSkillAPIMessage,
   GetDirectorBirdSkillBoardAPIMessage,
-  SaveDirectorBirdSkillAPIMessage,
-  SaveDirectorBirdSkillBody
+  SaveDirectorBirdSkillAPIMessage
 }
 import microservice.bird.api.review.{
   GetPendingBirdSubmissionsAPIMessage,
-  ReviewBirdSubmissionAPIMessage,
-  ReviewBirdSubmissionBody
+  ReviewBirdSubmissionAPIMessage
 }
 import microservice.system.objects.ApiSuccess
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
+import microservice.admin.api.director.bird_skill.body.SaveDirectorBirdSkillBody
+import microservice.admin.api.director.level_assignment.body.{
+  AbolishDirectorSubmissionBody,
+  AssignLevelSlotBody,
+  UpdateLevelSlotBirdPoolBody
+}
+import microservice.admin.api.director.permissions.body.TransferDirectorPermissionBody
+import microservice.admin.api.shop.body.{
+  CreateShopItemBody,
+  UpdateShopItemBody
+}
+import microservice.admin.api.submissions.body.ReviewSubmissionBody
+import microservice.bird.api.review.body.ReviewBirdSubmissionBody
 
 /** 管理员域 HTTP 路由聚合器。
   *
@@ -53,6 +66,48 @@ import org.http4s.dsl.io._
 object AdminRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      // GET /admin/audit-logs — 审核审计记录（可选 submissionId/reviewerId/targetType 过滤）
+      case req @ GET -> Root / "audit-logs"
+          :? SubmissionIdQueryParamMatcher(submissionId)
+          +& ReviewerIdQueryParamMatcher(reviewerId)
+          +& TargetTypeQueryParamMatcher(targetType) =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        ListAdminAuditLogsAPIMessage(userId, submissionId, reviewerId, targetType)
+          .runAuthenticated(userId, databaseSession)
+          .flatMap(result => HttpError.fromEither(result.map(logs => ApiSuccess(logs))))
+
+      // GET /admin/shop/items — 全部商店商品
+      case req @ GET -> Root / "shop" / "items" =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        ListAdminShopItemsAPIMessage(userId)
+          .runAuthenticated(userId, databaseSession)
+          .flatMap(result => HttpError.fromEither(result.map(items => ApiSuccess(items))))
+
+      // POST /admin/shop/items — 创建商店商品
+      case req @ POST -> Root / "shop" / "items" =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        req.as[CreateShopItemBody].flatMap { body =>
+          CreateShopItemAPIMessage(userId, body)
+            .runAuthenticated(userId, databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(item => ApiSuccess(item))))
+        }
+
+      // PUT /admin/shop/items/:itemId — 更新商店商品
+      case req @ PUT -> Root / "shop" / "items" / itemId =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        req.as[UpdateShopItemBody].flatMap { body =>
+          UpdateShopItemAPIMessage(userId, itemId, body)
+            .runAuthenticated(userId, databaseSession)
+            .flatMap(result => HttpError.fromEither(result.map(item => ApiSuccess(item))))
+        }
+
+      // DELETE /admin/shop/items/:itemId — 下架商店商品
+      case req @ DELETE -> Root / "shop" / "items" / itemId =>
+        val userId = AuthMiddleware.userIdFromRequest(req).get
+        DeactivateShopItemAPIMessage(userId, itemId)
+          .runAuthenticated(userId, databaseSession)
+          .flatMap(result => HttpError.fromEither(result.map(item => ApiSuccess(item))))
+
       // GET /admin/comments — 列出全部关卡评论（Standard 管理员）
       case req @ GET -> Root / "comments" =>
         val userId = AuthMiddleware.userIdFromRequest(req).get
@@ -179,4 +234,8 @@ object AdminRouter {
             .flatMap(result => HttpError.fromEither(result.map(config => ApiSuccess(config))))
         }
     }
+
+  private object SubmissionIdQueryParamMatcher extends OptionalQueryParamDecoderMatcher[String]("submissionId")
+  private object ReviewerIdQueryParamMatcher extends OptionalQueryParamDecoderMatcher[String]("reviewerId")
+  private object TargetTypeQueryParamMatcher extends OptionalQueryParamDecoderMatcher[String]("targetType")
 }

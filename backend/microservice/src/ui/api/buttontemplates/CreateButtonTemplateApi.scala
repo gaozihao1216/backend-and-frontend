@@ -7,8 +7,12 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
+import microservice.ui.objects.button_template.ButtonTemplate
+import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
+import microservice.ui.api.buttontemplates.body.CreateButtonTemplateBody
+import microservice.ui.api.buttontemplates.support.ButtonTemplateAccess
+import microservice.ui.api.buttontemplates.validation.ButtonTemplateValidation
 
 /** 总监创建按钮视觉模板 APIMessage。
   *
@@ -31,19 +35,13 @@ final case class CreateButtonTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 规范化字符串字段
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template))
         // id 不可重复
-        _ <- PlanSteps.require(
-          if (ButtonTemplateTable.findById(connection, template.id).nonEmpty) {
-            Left(UiCustomizationErrors.ButtonTemplateAlreadyExists(template.id).toHttpError)
-          } else {
-            Right(())
-          }
-        )
+        _ <- ButtonTemplateAccess.requireUniqueId(connection, template.id)
         // 校验 id/name/sourceDataUrl/category/slice
-        _ <- PlanSteps.require(ButtonTemplateValidation.validate(template).map(_ => ()))
+        _ <- ButtonTemplateValidation.validate(template)
         // 插入 ButtonTemplateRow 并转为领域对象
         result <- PlanSteps.read {
           val timestamp = Instant.now().toString

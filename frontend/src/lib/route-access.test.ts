@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { AuthUser } from "./auth.js";
 import {
+  ADMIN_AUDIT_LOGS_PATH,
   ADMIN_PROPOSALS_PATH,
+  ADMIN_SHOP_PATH,
   DIRECTOR_CONSOLE_PATH,
   checkDirectorConsoleAccess,
   checkRouteAccess,
@@ -46,6 +48,16 @@ describe("route-access", () => {
     assert.notEqual(checkRouteAccess(ADMIN_PROPOSALS_PATH, directorAdmin), null);
   });
 
+  it("allows standard admin on audit logs and shop paths", () => {
+    assert.equal(checkRouteAccess(ADMIN_AUDIT_LOGS_PATH, standardAdmin), null);
+    assert.equal(checkRouteAccess(ADMIN_SHOP_PATH, standardAdmin), null);
+  });
+
+  it("blocks director admin from audit logs and shop paths", () => {
+    assert.notEqual(checkRouteAccess(ADMIN_AUDIT_LOGS_PATH, directorAdmin), null);
+    assert.notEqual(checkRouteAccess(ADMIN_SHOP_PATH, directorAdmin), null);
+  });
+
   it("blocks standard admin from director console", () => {
     assert.notEqual(checkDirectorConsoleAccess(standardAdmin), null);
     assert.notEqual(checkRouteAccess(DIRECTOR_CONSOLE_PATH, standardAdmin), null);
@@ -58,6 +70,8 @@ describe("route-access", () => {
 
   it("blocks player from admin routes", () => {
     assert.notEqual(checkRouteAccess(ADMIN_PROPOSALS_PATH, player), null);
+    assert.notEqual(checkRouteAccess(ADMIN_AUDIT_LOGS_PATH, player), null);
+    assert.notEqual(checkRouteAccess(ADMIN_SHOP_PATH, player), null);
     assert.notEqual(checkRouteAccess(DIRECTOR_CONSOLE_PATH, player), null);
   });
 });

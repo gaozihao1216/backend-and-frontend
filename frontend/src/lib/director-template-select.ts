@@ -5,7 +5,7 @@ import type {
   PanelDecoration,
   StretchVisualDesign,
 } from "../objects/ui-customization/ui-customization-objects.js";
-import type { StretchVisualTemplate } from "../objects/ui-customization/stretch-visual-template.js";
+import type { StretchVisualTemplate } from "../objects/ui/stretch_template/stretch-visual-template.js";
 
 const DEFAULT_PATTERN_FRAME: NonNullable<StretchVisualDesign["frame"]> = {
   x: 0,

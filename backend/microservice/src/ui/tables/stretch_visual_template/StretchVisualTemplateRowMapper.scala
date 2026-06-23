@@ -4,7 +4,7 @@
   */
 package microservice.ui.tables.stretch_visual_template
 
-import microservice.ui.objects.StretchVisualTemplate
+import microservice.ui.objects.stretch_template.StretchVisualTemplate
 
 /** StretchVisualTemplateRow ↔ StretchVisualTemplate 映射器。
   *

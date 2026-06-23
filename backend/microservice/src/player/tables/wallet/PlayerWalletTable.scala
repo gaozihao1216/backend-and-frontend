@@ -1,12 +1,11 @@
 package microservice.player.tables.wallet
 
-import microservice.player.tables.wallet.inmemory._
-import microservice.player.tables.wallet.jdbc._
-
-import microservice.player.objects.{PlayerWallet}
-import microservice.player.runtime.PlayerRuntimeDefaults
 import java.sql.Connection
 import java.time.Instant
+import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import microservice.player.objects.PlayerWallet
+import microservice.player.runtime.PlayerRuntimeDefaults
+import microservice.player.tables.wallet.jdbc.PlayerWalletTableJdbc
 
 /**
   *
@@ -16,27 +15,23 @@ import java.time.Instant
  * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
  */
 object PlayerWalletTable {
-  private def isInMemory(connection: Connection): Boolean =
-    connection == null
-
   /** 启动时建表；仅 JDBC 模式执行 DDL。 */
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) PlayerWalletTableJdbcSchema.initialize(connection)
+    if (!TableConnection.isInMemory(connection)) PlayerWalletTableJdbc.initialize(connection)
 
   /** 读取用户钱包；不存在则按默认值创建并返回。 */
   def getOrCreate(connection: Connection, userId: String): PlayerWallet = {
     val now = Instant.now().toString
-    if (isInMemory(connection)) {
-      PlayerWalletTableInMemory.seedDefault(userId)
-      PlayerWalletTableInMemory
-        .findByUserId(userId)
-        .map(toWallet)
-        .getOrElse(PlayerRuntimeDefaults.defaultWallet)
+    if (TableConnection.isInMemory(connection)) {
+      if (!InMemoryStore.playerWallets.contains(userId)) {
+        InMemoryStore.playerWallets = InMemoryStore.playerWallets.updated(userId, PlayerRuntimeDefaults.defaultWallet)
+      }
+      InMemoryStore.playerWallets.get(userId).getOrElse(PlayerRuntimeDefaults.defaultWallet)
     } else {
-      PlayerWalletTableJdbcRead.findByUserId(connection, userId) match {
+      PlayerWalletTableJdbc.findByUserId(connection, userId) match {
         case Some(row) => toWallet(row)
         case None =>
-          val row = PlayerWalletTableJdbcWrite.upsert(
+          val row = PlayerWalletTableJdbc.upsert(
             connection,
             PlayerWalletRow(
               userId = userId,
@@ -61,8 +56,15 @@ object PlayerWalletTable {
       updatedAt = Instant.now().toString
     )
     val saved =
-      if (isInMemory(connection)) PlayerWalletTableInMemory.upsert(row)
-      else PlayerWalletTableJdbcWrite.upsert(connection, row)
+      if (TableConnection.isInMemory(connection)) {
+        InMemoryStore.playerWallets = InMemoryStore.playerWallets.updated(
+          row.userId,
+          PlayerWallet(row.coins, row.gems, row.fragments)
+        )
+        row
+      } else {
+        PlayerWalletTableJdbc.upsert(connection, row)
+      }
     toWallet(saved)
   }
 

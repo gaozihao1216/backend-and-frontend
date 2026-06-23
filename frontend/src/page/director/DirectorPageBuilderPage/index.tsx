@@ -1,4 +1,4 @@
-import { PageBuilderWorkspace } from "../../../component/director-page/page-builder/PageBuilderWorkspace.js";
+import { PageBuilderWorkspace } from "./components/PageBuilderWorkspace.js";
 import { useDirectorPageBuilder } from "../../../hook/director-page/useDirectorPageBuilder.js";
 import type { DirectorPageBuilderPageProps } from "../../../objects/director-page/page-builder-types.js";
 

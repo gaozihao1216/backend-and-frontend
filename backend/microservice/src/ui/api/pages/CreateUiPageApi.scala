@@ -7,8 +7,10 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
+import microservice.ui.objects.page.PageConfig
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
+import microservice.ui.api.pages.body.CreateUiPageBody
+import microservice.ui.api.pages.support.UiPageAccess
 
 /** 总监创建新 UI 页面配置 APIMessage；userId 取自 header。
   *
@@ -30,19 +32,8 @@ final case class CreateUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
-        // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
-        // id 不可重复；id/name/path 不可为空
-        _ <- PlanSteps.require(
-          if (UiPageTable.findById(connection, body.page.id).nonEmpty) {
-            Left(UiCustomizationErrors.PageAlreadyExists(body.page.id).toHttpError)
-          } else if (body.page.id.trim.isEmpty || body.page.name.trim.isEmpty || body.page.path.trim.isEmpty) {
-            Left(UiCustomizationErrors.InvalidPageConfig("id, name and path are required").toHttpError)
-          } else {
-            Right(())
-          }
-        )
-        // 组装 UiPageRow 并插入；RowMapper 转领域对象 PageConfig
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- UiPageAccess.requireCreatePage(connection, body.page)
         page <- PlanSteps.read {
           val timestamp = Instant.now().toString
           val row = UiPageTable.insert(

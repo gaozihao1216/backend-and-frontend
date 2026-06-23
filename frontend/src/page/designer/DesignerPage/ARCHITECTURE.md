@@ -6,63 +6,33 @@
 
 这轮重构的目标是把 DesignerPage 拆到前端统一 `src` 分层中：
 
-- `index.tsx`：页面协调层，负责把各个领域 hook 和展示组件组装起来。
-- `frontend/src/hook/designer-page/`：领域状态与业务 actions，例如 level data、keyboard、ground、rotation、backup、submission。
-- `frontend/src/component/designer-page/`：纯展示或透传组件，主要负责 JSX 结构、布局和按钮绑定。
-- `frontend/src/objects/designer-page/`：DesignerPage 专用类型对象。
-- `frontend/src/lib/designer-page/`：DesignerPage 专用纯函数。
+- `index.tsx`：入口；调用 `useDesignerPageViewModel` 并交给 `DesignerPageRouter`。
+- `DesignerPageRouter.tsx`：按 `mode` 分发 archive / json / settings / design_book / design。
+- `hook/designer-page/useDesignerPageViewModel.ts`：组合各领域 hook，返回分组 view model；内含协调逻辑（restore、键盘、portfolio 恢复）。
+- `components/design/`：主设计工作区（`DesignerDesignWorkspace`、`DesignerGroundControlsSection` 及表单/画布等）。
+- `components/archive/`、`json-check/`、`settings/`、`design-book/`：各子模式 UI。
+- `objects/designer-page/`、`lib/designer-page/`：类型与纯函数。
 
 配套还补了测试和 CI，保证 API proxy、auth route、store 隔离、类型检查、测试和 build 都能在后续改动中被持续验证。
 
 ## 2. 当前整体结构
 
 ```text
-page/DesignerPage/index.tsx
-  ├─ 初始化 hooks
-  ├─ 页面 mode routing
-  ├─ restoreDraft / restoreDraftAndClearHistory
-  ├─ switchDesignerPhase
-  ├─ handleDeleteSelected
-  ├─ useDesignerKeyboardShortcuts 注册编排
-  └─ JSX composition
+page/designer/DesignerPage/
+├── index.tsx
+├── DesignerPageRouter.tsx
+├── components/
+│   ├── design/              # 主编辑流 + DesignerDesignWorkspace
+│   ├── archive/
+│   ├── json-check/
+│   ├── settings/
+│   └── design-book/
+└── (hooks 在 hook/designer-page/)
 
 hook/designer-page/
+  ├─ useDesignerPageViewModel   # 组合 hook + 协调逻辑
   ├─ useDesignerDraft
-  ├─ useDesignerFeedback
-  ├─ useDesignerLevelDataController
-  ├─ useDesignerLevelSubmission
-  ├─ useDesignerBackups
-  ├─ useDesignerBackupActions
-  ├─ useDesignerKeyboardActions
-  ├─ useDesignerGroundActions
-  ├─ useDesignerRotationActions
-  ├─ useDesignerEditor
-  ├─ useDesignerGroundEditor
-  ├─ useDesignerGroundTuning
-  └─ useDesignerKeyboardShortcuts
-
-component/designer-page/
-  ├─ DesignerHeader
-  ├─ LevelFormPanel
-  ├─ DesignerEntityControls
-  ├─ DesignerGridControls
-  ├─ DesignerActionBar
-  ├─ DesignerCanvasPanel
-  ├─ DesignerBackupPanel
-  ├─ DraftPreviewPanel
-  ├─ DesignerCreateActions
-  ├─ CreatedLevelsPanel
-  ├─ GroundEditorToggleControls
-  ├─ CeilingControls
-  ├─ GroundPointControls
-  ├─ VoidSpanControls
-  ├─ ArchivePanel
-  ├─ JsonCheckPanel
-  ├─ SettingsPage
-  ├─ DesignBookPage
-  ├─ DesignBookPanel
-  ├─ GroundTuningPanel
-  └─ DesignerWorkspace
+  ...
 ```
 
 ## 3. Hooks 职责说明

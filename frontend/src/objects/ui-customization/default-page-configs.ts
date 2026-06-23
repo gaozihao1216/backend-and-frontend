@@ -1,4 +1,4 @@
-import { PageConfigSchema, type PageConfig, type UiEndpoint } from "./page-config.js";
+import { PageConfigSchema, type PageConfig, type UiEndpoint } from "../ui/page-config.js";
 import { normalizePageConfig } from "./page-config-normalizer.js";
 import { createLevelChainHomeComponents } from "./level-chain-home-structure.js";
 import { createAdminProposalsPageConfig } from "./admin-proposals-structure.js";
@@ -174,10 +174,26 @@ export const defaultPageConfigs = [
         variant: "ghost",
         action: { type: "navigate", targetPageId: "admin.proposals", targetPath: "/admin/proposals" },
       },
+      {
+        id: "auditLogs",
+        label: "审核审计",
+        icon: "scroll-text",
+        variant: "ghost",
+        action: { type: "navigate", targetPageId: "admin.auditLogs", targetPath: "/admin/audit-logs" },
+      },
+      {
+        id: "shopManagement",
+        label: "商店管理",
+        icon: "shopping-bag",
+        variant: "ghost",
+        action: { type: "navigate", targetPageId: "admin.shopManagement", targetPath: "/admin/shop" },
+      },
     ],
   })),
   createPageConfig("admin.community", "社区管理", "/community_hall", "admin"),
   createAdminProposalsPageConfig(),
+  createPageConfig("admin.auditLogs", "审核审计", "/admin/audit-logs", "admin"),
+  createPageConfig("admin.shopManagement", "商店管理", "/admin/shop", "admin"),
 
   createPageConfig("director.home", "总监主界面", "/", "director", createLevelChainHomeComponents({
     prefix: "director.home",

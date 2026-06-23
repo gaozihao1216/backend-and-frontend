@@ -7,8 +7,12 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
+import microservice.ui.objects.button_template.ButtonTemplate
+import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
+import microservice.ui.api.buttontemplates.body.UpdateButtonTemplateBody
+import microservice.ui.api.buttontemplates.support.ButtonTemplateAccess
+import microservice.ui.api.buttontemplates.validation.ButtonTemplateValidation
 
 /** 总监更新按钮模板 APIMessage。
   *
@@ -32,33 +36,21 @@ final case class UpdateButtonTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找现有模板行
-        existing <- PlanSteps.require(
-          ButtonTemplateTable.findById(connection, templateId) match {
-            case None =>
-              Left(UiCustomizationErrors.ButtonTemplateNotFound(templateId).toHttpError)
-            case Some(row) =>
-              Right(row)
-          }
-        )
+        existing <- ButtonTemplateAccess.requireExisting(connection, templateId)
         // 规范化并强制 id 为路径 templateId
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template.copy(id = templateId)))
         // 校验字段合法性
-        _ <- PlanSteps.require(ButtonTemplateValidation.validate(template).map(_ => ()))
+        _ <- ButtonTemplateValidation.validate(template)
         // 更新 ButtonTemplateRow
-        result <- PlanSteps.require(
-          ButtonTemplateTable
-            .update(
-              connection,
-              ButtonTemplateRowMapper.fromButtonTemplate(
-                template,
-                createdAt = existing.createdAt,
-                updatedAt = Instant.now().toString
-              )
-            )
-            .map(row => Right(ButtonTemplateRowMapper.toButtonTemplate(row)))
-            .getOrElse(Left(UiCustomizationErrors.ButtonTemplateNotFound(templateId).toHttpError))
+        result <- ButtonTemplateAccess.requireUpdated(
+          connection,
+          ButtonTemplateRowMapper.fromButtonTemplate(
+            template,
+            createdAt = existing.createdAt,
+            updatedAt = Instant.now().toString
+          )
         )
       } yield result
     }

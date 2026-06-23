@@ -4,13 +4,14 @@ import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.utils.AccessControl
-import microservice.bird.objects.design.BirdDesign
-import microservice.bird.tables.design.{BirdDesignTable}
+import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
+import microservice.bird.support.design.BirdDesignAccess
 import microservice.bird.tables.shared.{BirdRowMapper}
-import microservice.bird.validation.design.BirdDesignValidation
+import microservice.bird.api.design.validation.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
+import microservice.bird.api.design.body.UpdateBirdDesignBody
 
 /** 更新鸟类设计：仅作者可编辑 Draft/Rejected 状态的设计，保存后重置为 Draft。
   *
@@ -31,41 +32,29 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
     PlanSteps.finish {
       for {
         // 步骤 1：校验用户角色/管理员级别权限
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
+        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
         // 步骤 2：执行业务步骤
-        existing <- PlanSteps.require(
-          BirdDesignTable.findById(connection, designId) match {
-            case None =>
-              Left(HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
-            case Some(row) if row.authorId != designerId =>
-              Left(HttpError.forbidden("Cannot edit another designer's bird design"))
-            case Some(row) if row.status != LevelStatus.Draft && row.status != LevelStatus.Rejected =>
-              Left(HttpError.conflict("INVALID_BIRD_STATUS", "Only draft or rejected designs can be edited"))
-            case Some(row) =>
-              Right(row)
-          }
-        )
+        existing <- BirdDesignAccess.requireEditable(connection, designerId, designId)
         // 步骤 3：执行业务步骤
-        input <- PlanSteps.require(
-          BirdDesignValidation.validate(
-            BirdDesignInputBody(
-              name = body.name,
-              summary = body.summary,
-              skillName = body.skillName,
-              attack = body.attack,
-              impact = body.impact,
-              speed = body.speed,
-              tierSkills = body.tierSkills,
-              previewImageUrl = body.previewImageUrl,
-              mechanismTags = body.mechanismTags
-            )
+        input <- BirdDesignValidation.validate(
+          BirdDesignInput(
+            name = body.name,
+            summary = body.summary,
+            skillName = body.skillName,
+            attack = body.attack,
+            impact = body.impact,
+            speed = body.speed,
+            tierSkills = body.tierSkills,
+            previewImageUrl = body.previewImageUrl,
+            mechanismTags = body.mechanismTags
           )
         )
         // 步骤 4：执行业务步骤
-        design <- PlanSteps.require(
+        design <- BirdDesignAccess.requireUpdateResult(
+          connection,
           {
             val timestamp = Instant.now().toString
-            val updatedRow = existing.copy(
+            existing.copy(
               name = input.name,
               summary = input.summary,
               skillName = input.skillName,
@@ -79,13 +68,8 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
               rejectionReason = None,
               updatedAt = timestamp
             )
-            BirdDesignTable.updateEditable(connection, updatedRow) match {
-              case None => Left(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design could not be updated"))
-              case Some(row) => Right(BirdRowMapper.toBirdDesign(row))
-            }
           }
         )
-      // 返回业务结果 DTO/领域对象
       } yield design
     }
 }

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BackendUserSchema } from "../auth/backend-user.js";
-import { LevelSchema } from "../level/level.js";
-import { LevelCommentSchema } from "../level/level-comment.js";
+import { LevelSchema } from "../level/level/level.js";
+import { LevelCommentSchema } from "../level/social/level-comment.js";
 import { UserProfileStatsSchema } from "./user-profile-stats.js";
 
 export const UserProfileSchema = z.object({

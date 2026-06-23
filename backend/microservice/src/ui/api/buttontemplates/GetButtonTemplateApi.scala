@@ -6,8 +6,8 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{ButtonTemplate, UiCustomizationErrors}
-import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
+import microservice.ui.objects.button_template.ButtonTemplate
+import microservice.ui.api.buttontemplates.support.ButtonTemplateAccess
 
 /** 总监按 templateId 读取按钮模板 APIMessage。
   *
@@ -30,13 +30,9 @@ final case class GetButtonTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找并转为 ButtonTemplate
-        template <- PlanSteps.require(
-          ButtonTemplateTable.findById(connection, templateId)
-            .map(ButtonTemplateRowMapper.toButtonTemplate)
-            .toRight(UiCustomizationErrors.ButtonTemplateNotFound(templateId).toHttpError)
-        )
+        template <- ButtonTemplateAccess.requireTemplate(connection, templateId)
       } yield template
     }
 }

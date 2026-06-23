@@ -33,6 +33,8 @@ const PLAYER_SHOP_PATH = "/player_shop";
 const PLAYER_SOCIAL_PATH = "/player_social";
 const PLAYER_PREPARATION_PATH = "/player_preparation";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
+const ADMIN_AUDIT_LOGS_PATH = "/admin/audit-logs";
+const ADMIN_SHOP_PATH = "/admin/shop";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
 const DIRECTOR_LEVEL_INTERFACE_PATH = "/director_console/level_interface_optimization";
@@ -329,6 +331,8 @@ export const App = () => {
       "player.preparation": "备战区域",
       "admin.community": "社区管理",
       "admin.proposals": "提案处理",
+      "admin.auditLogs": "审核审计",
+      "admin.shopManagement": "商店管理",
       "designer.birds": "鸟类开发",
       "director.workbench": "总监控制台",
       "director.levelInterface": "关卡界面优化",
@@ -377,6 +381,10 @@ export const App = () => {
               ? "备战区域"
           : pathname === ADMIN_PROPOSALS_PATH
             ? "提案处理"
+            : pathname === ADMIN_AUDIT_LOGS_PATH
+              ? "审核审计"
+              : pathname === ADMIN_SHOP_PATH
+                ? "商店管理"
           : pathname === DIRECTOR_CONSOLE_PATH
           || pathname === DIRECTOR_UI_CUSTOMIZATION_PATH
           || pathname === DIRECTOR_BUTTON_TEMPLATES_PATH

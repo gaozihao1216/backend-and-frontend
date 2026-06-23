@@ -1,5 +1,6 @@
 import type { Body, Engine } from "matter-js";
-import type { LevelGround, Position } from "../level-contracts.js";
+import type { LevelGround } from "../../objects/level/terrain/level-ground.js";
+import type { Position } from "../../objects/level/terrain/position.js";
 import type { CombatProfile } from "./combat-profile.js";
 import type { BirdSkillSet } from "./skills/skill-spec.js";
 import type { StatusEffectInstance } from "./skills/status-effects.js";

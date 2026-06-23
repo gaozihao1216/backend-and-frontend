@@ -1,4 +1,4 @@
-import type { StretchVisualTemplateKind } from "../../../objects/ui-customization/stretch-visual-template.js";
+import type { StretchVisualTemplateKind } from "../../../objects/ui/stretch_template/stretch-visual-template.js";
 
 /** panel / pattern 两类拉伸视觉模板的后端路径前缀（与 Scala StretchVisualTemplate 路由一致）。 */
 export const stretchTemplateApiPathByKind = {

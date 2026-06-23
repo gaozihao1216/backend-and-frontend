@@ -4,7 +4,7 @@
   */
 package microservice.ui.tables.button_template
 
-import microservice.ui.objects.ButtonTemplate
+import microservice.ui.objects.button_template.ButtonTemplate
 
 object ButtonTemplateRowMapper {
   /** ButtonTemplateRow → ButtonTemplate 领域对象。 */

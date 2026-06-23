@@ -2,15 +2,12 @@ package microservice.bird.api.design
 
 import cats.effect.IO
 import java.sql.Connection
-import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.submission.BirdSubmission
-import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.shared.{BirdRowMapper, BirdSubmissionRow}
-import microservice.bird.tables.submission.{BirdSubmissionTable}
+import microservice.bird.support.design.BirdDesignAccess
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
+import microservice.system.objects.UserRole
 
 /** 将 Draft/Rejected 设计提交审核：设计进入 PendingReview，并创建 BirdSubmission 记录。
   *
@@ -30,56 +27,9 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
   override def plan(connection: Connection): IO[Either[HttpError, BirdSubmission]] =
     PlanSteps.finish {
       for {
-        // 步骤 1：校验用户角色/管理员级别权限
-        _ <- PlanSteps.require(AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ()))
-        // 步骤 2：执行业务步骤
-        _ <- PlanSteps.require(
-          BirdDesignTable.findById(connection, designId) match {
-            case None =>
-              Left(HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
-            case Some(design) if design.authorId != designerId =>
-              Left(HttpError.forbidden("Cannot submit another designer's bird design"))
-            case Some(design) if BirdSubmissionTable.hasPendingForDesign(connection, designId) =>
-              Left(HttpError.conflict("SUBMISSION_EXISTS", "Bird design already has a pending submission"))
-            case Some(design)
-                if design.status != LevelStatus.Draft && design.status != LevelStatus.Rejected =>
-              Left(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design cannot be submitted in current status"))
-            case Some(_) =>
-              Right(())
-          }
-        )
-        // 步骤 3：执行业务步骤
-        submission <- PlanSteps.require(
-          {
-            val timestamp = Instant.now().toString
-            BirdDesignTable.updateSubmissionStatus(
-              connection,
-              designId,
-              LevelStatus.PendingReview,
-              None,
-              timestamp
-            ) match {
-              case None =>
-                Left(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design could not enter review"))
-              case Some(_) =>
-                val row = BirdSubmissionTable.insert(
-                  connection,
-                  BirdSubmissionRow(
-                    id = BirdSubmissionTable.nextId(connection),
-                    birdDesignId = designId,
-                    submitterId = designerId,
-                    status = SubmissionStatus.PendingReview,
-                    reviewerId = None,
-                    reviewNote = None,
-                    submittedAt = timestamp,
-                    reviewedAt = None
-                  )
-                )
-                Right(BirdRowMapper.toBirdSubmission(row))
-            }
-          }
-        )
-      // 返回业务结果 DTO/领域对象
+        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- BirdDesignAccess.requireSubmittable(connection, designerId, designId)
+        submission <- BirdDesignAccess.requireSubmitResult(connection, designerId, designId)
       } yield submission
     }
 }

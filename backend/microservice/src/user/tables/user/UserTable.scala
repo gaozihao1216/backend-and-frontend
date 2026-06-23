@@ -1,73 +1,95 @@
 package microservice.user.tables.user
 
-import microservice.user.tables.user.inmemory._
-import microservice.user.tables.user.jdbc._
-
-import microservice.system.objects.{AdminLevel, UserRole}
 import java.sql.Connection
+import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import microservice.system.objects.{AdminLevel, UserRole}
+import microservice.user.tables.user.jdbc.UserTableJdbc
 
 /** 用户表访问门面：in-memory 与 JDBC 双实现分流。
   *
   * 定义：object 暴露 initialize/listAll/findById/findByUsername/countByRole/insert/updateAdminLevel。
   * 问题：演示 in-memory 与生产 JDBC 需同一 API，APIMessage 不应感知存储后端。
-  * 作用：connection==null → InMemoryStore；否则 PreparedStatement。
+  * 作用：connection==null → InMemoryStore；否则 UserTableJdbc。
   * 关联：[[BindBackendUserAPIMessage]]、[[AccessControl]]、[[GetUserProfileAPIMessage]]。
   */
 object UserTable {
-
-  /** in-memory 模式下 Main 传入的 connection 为 null。 */
-  private def isInMemory(connection: Connection): Boolean =
-    connection == null
-
-  /** 启动时建表/迁移；仅 JDBC 模式执行 DDL（见 UserTableJdbcSchema）。 */
+  /** 启动时建表/迁移；仅 JDBC 模式执行 DDL。 */
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) UserTableJdbcSchema.initialize(connection)
+    if (!TableConnection.isInMemory(connection)) UserTableJdbc.initialize(connection)
 
   /** 返回全部用户（GetBackendUsers 使用）。 */
   def listAll(connection: Connection): Vector[UserRow] =
-    if (isInMemory(connection)) {
-      UserTableInMemory.listAll()
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.users
     } else {
-      UserTableJdbcRead.listAll(connection)
+      UserTableJdbc.listAll(connection)
     }
 
   /** 按主键 id 查询（AccessControl、GetUserProfile 等）。 */
   def findById(connection: Connection, userId: String): Option[UserRow] =
-    if (isInMemory(connection)) {
-      UserTableInMemory.findById(userId)
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.users.find(_.id == userId)
     } else {
-      UserTableJdbcRead.findById(connection, userId)
+      UserTableJdbc.findById(connection, userId)
     }
 
   /** 按 username 唯一键查询（BindBackendUser 幂等绑定）。 */
   def findByUsername(connection: Connection, username: String): Option[UserRow] =
-    if (isInMemory(connection)) {
-      UserTableInMemory.findByUsername(username)
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.users.find(_.username == username)
     } else {
-      UserTableJdbcRead.findByUsername(connection, username)
+      UserTableJdbc.findByUsername(connection, username)
     }
 
   /** 统计某角色已有用户数，用于 bind 时生成 player-N / designer-N 形式 id。 */
   def countByRole(connection: Connection, role: UserRole): Int =
-    if (isInMemory(connection)) {
-      UserTableInMemory.countByRole(role)
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.users.count(_.role == role)
     } else {
-      UserTableJdbcRead.countByRole(connection, role)
+      UserTableJdbc.countByRole(connection, role)
     }
 
   /** 插入新用户行。 */
   def insert(connection: Connection, row: UserRow): UserRow =
-    if (isInMemory(connection)) {
-      UserTableInMemory.insert(row)
+    if (TableConnection.isInMemory(connection)) {
+      if (
+        row.role == UserRole.Admin &&
+        row.adminLevel.contains(AdminLevel.Director) &&
+        InMemoryStore.users.exists(user => user.role == UserRole.Admin && user.adminLevel.contains(AdminLevel.Director))
+      ) {
+        throw new IllegalStateException("Only one director admin is allowed")
+      }
+      InMemoryStore.users = InMemoryStore.users :+ row
+      row
     } else {
-      UserTableJdbcWrite.insert(connection, row)
+      UserTableJdbc.insert(connection, row)
     }
 
   /** 更新管理员等级（TransferDirectorPermission 等总监能力使用）。 */
   def updateAdminLevel(connection: Connection, userId: String, adminLevel: Option[AdminLevel], updatedAt: String): Option[UserRow] =
-    if (isInMemory(connection)) {
-      UserTableInMemory.updateAdminLevel(userId, adminLevel, updatedAt)
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.users.indexWhere(_.id == userId) match {
+        case -1 =>
+          None
+        case index =>
+          val existing = InMemoryStore.users(index)
+          if (
+            existing.role == UserRole.Admin &&
+            adminLevel.contains(AdminLevel.Director) &&
+            InMemoryStore.users.exists(user =>
+              user.id != userId && user.role == UserRole.Admin && user.adminLevel.contains(AdminLevel.Director)
+            )
+          ) {
+            throw new IllegalStateException("Only one director admin is allowed")
+          }
+          val updated = existing.copy(
+            adminLevel = if (existing.role == UserRole.Admin) adminLevel else None,
+            updatedAt = updatedAt
+          )
+          InMemoryStore.users = InMemoryStore.users.updated(index, updated)
+          Some(updated)
+      }
     } else {
-      UserTableJdbcWrite.updateAdminLevel(connection, userId, adminLevel, updatedAt)
+      UserTableJdbc.updateAdminLevel(connection, userId, adminLevel, updatedAt)
     }
 }

@@ -7,7 +7,9 @@ package microservice.ui.tables.ui_page
 import io.circe.parser.decode
 import io.circe.syntax._
 import java.sql.{PreparedStatement, ResultSet, SQLException}
-import microservice.ui.objects.{PageComponent, PageLayout, UiEndpoint}
+import microservice.ui.objects.component.PageComponent
+import microservice.ui.objects.page.PageLayout
+import microservice.ui.objects.UiEndpoint
 
 private[tables] object UiPageTableCodec {
   val baseSelect: String =

@@ -19,7 +19,7 @@ import {
 import {
   normalizeButtonTemplateCategory,
   type ButtonTemplateCategory,
-} from "../../objects/ui-customization/template-category.js";
+} from "../../objects/ui/category/template-category.js";
 import type {
   EditorMode,
   ImageBounds,

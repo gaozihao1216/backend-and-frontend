@@ -1,10 +1,12 @@
 package microservice.player.runtime
 
-import microservice.infrastructure.http.HttpError
-import microservice.player.tables.progress.PlayerLevelProgressTable
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
+import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.PlanStep.Step
+import microservice.infrastructure.http.HttpError
+import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
 
 /** 关卡进度 UI 数据服务。
   *
@@ -25,6 +27,9 @@ object PlayerLevelProgressService {
   val dataApiKey: String = LevelProgressDataKey
 
   /** 返回各关卡 cleared/notCleared/locked 状态与已通关数量。 */
+  def requireData(connection: Connection, userId: String): Step[Json] =
+    PlanStep.fromEither(getData(connection, userId))
+
   def getData(connection: Connection, userId: String): Either[HttpError, Json] =
     Right(buildPayload(connection, userId))
 

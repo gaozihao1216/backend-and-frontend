@@ -10,4 +10,8 @@ object TestSupport {
   def seed(): Unit = {
     val _ = session
   }
+
+  /** 清空审计表 in-memory 状态，避免跨 suite 污染。 */
+  def clearReviewAudits(): Unit =
+    microservice.infrastructure.database.InMemoryStore.reviewAudits = Vector.empty
 }

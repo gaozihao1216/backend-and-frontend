@@ -21,6 +21,8 @@ const PLAYER_SHOP_PATH = "/player_shop";
 const PLAYER_SOCIAL_PATH = "/player_social";
 const PLAYER_PREPARATION_PATH = "/player_preparation";
 const ADMIN_PROPOSALS_PATH = "/admin/proposals";
+const ADMIN_AUDIT_LOGS_PATH = "/admin/audit-logs";
+const ADMIN_SHOP_PATH = "/admin/shop";
 const DIRECTOR_CONSOLE_PATH = "/director_console";
 const DIRECTOR_UI_CUSTOMIZATION_PATH = "/director_console/ui_customization";
 const DIRECTOR_LEVEL_INTERFACE_PATH = "/director_console/level_interface_optimization";
@@ -95,6 +97,14 @@ export const resolvePageId = (
 
   if (pathname === ADMIN_PROPOSALS_PATH) {
     return "admin.proposals";
+  }
+
+  if (pathname === ADMIN_AUDIT_LOGS_PATH) {
+    return "admin.auditLogs";
+  }
+
+  if (pathname === ADMIN_SHOP_PATH) {
+    return "admin.shopManagement";
   }
 
   if (pathname === DIRECTOR_CONSOLE_PATH) {

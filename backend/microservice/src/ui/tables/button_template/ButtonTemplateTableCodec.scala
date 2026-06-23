@@ -7,7 +7,9 @@ package microservice.ui.tables.button_template
 import io.circe.parser.decode
 import io.circe.syntax._
 import java.sql.{PreparedStatement, ResultSet, SQLException}
-import microservice.ui.objects.{ButtonTemplateCategory, ButtonTemplateScalingMode, ButtonTemplateSlice}
+import microservice.ui.objects.category.ButtonTemplateCategory
+import microservice.ui.objects.button_template.ButtonTemplateScalingMode
+import microservice.ui.objects.button_template.ButtonTemplateSlice
 
 /** JDBC 读路径：button_templates 表列 ↔ ButtonTemplateRow 编解码。
   *

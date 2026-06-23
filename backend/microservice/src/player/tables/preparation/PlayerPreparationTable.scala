@@ -1,9 +1,10 @@
 package microservice.player.tables.preparation
 
-import microservice.infrastructure.database.InMemoryStore
-import microservice.player.preparation.BirdPreparationCatalog
 import java.sql.Connection
 import java.time.Instant
+import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import microservice.player.preparation.BirdPreparationCatalog
+import microservice.player.tables.preparation.jdbc.PlayerPreparationTableJdbc
 
 /**
   *
@@ -21,59 +22,10 @@ object PlayerPreparationTable {
   private val systemBirdTypes: Vector[String] =
     BirdPreparationCatalog.entries.map(_.birdType)
 
-  private def isInMemory(connection: Connection): Boolean = connection == null
-
   /** 启动时建表/种子数据（含演示用户 player-1 的默认鸟与弹弓）。 */
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) {
-      val statement = connection.createStatement()
-      try {
-        statement.executeUpdate(
-          """
-            CREATE TABLE IF NOT EXISTS player_bird_upgrades (
-              user_id TEXT NOT NULL REFERENCES users(id),
-              bird_type TEXT NOT NULL,
-              level INTEGER NOT NULL DEFAULT 1,
-              tier INTEGER NOT NULL DEFAULT 1,
-              updated_at TEXT NOT NULL,
-              PRIMARY KEY (user_id, bird_type)
-            )
-          """
-        )
-        statement.executeUpdate(
-          "ALTER TABLE player_bird_upgrades ADD COLUMN IF NOT EXISTS tier INTEGER NOT NULL DEFAULT 1"
-        )
-        statement.executeUpdate(
-          """
-            CREATE TABLE IF NOT EXISTS player_slingshot_upgrades (
-              user_id TEXT PRIMARY KEY REFERENCES users(id),
-              level INTEGER NOT NULL DEFAULT 1,
-              updated_at TEXT NOT NULL
-            )
-          """
-        )
-        systemBirdTypes.foreach { birdType =>
-          statement.executeUpdate(
-            s"""
-              INSERT INTO player_bird_upgrades (user_id, bird_type, level, tier, updated_at)
-              VALUES ('player-1', '$birdType', 1, 1, '2026-06-03T00:00:00Z')
-              ON CONFLICT DO NOTHING
-            """
-          )
-        }
-        statement.executeUpdate(
-          """
-            INSERT INTO player_slingshot_upgrades (user_id, level, updated_at)
-            VALUES ('player-1', 1, '2026-06-03T00:00:00Z')
-            ON CONFLICT DO NOTHING
-          """
-        )
-      } finally {
-        statement.close()
-      }
-    } else {
-      seedInMemory("player-1")
-    }
+    if (!TableConnection.isInMemory(connection)) PlayerPreparationTableJdbc.initialize(connection, systemBirdTypes)
+    else seedInMemory("player-1")
 
   /** 为 in-memory 用户写入默认鸟与弹弓等级（幂等）。 */
   def seedInMemory(userId: String, birdTypes: Vector[String] = systemBirdTypes): Unit = {
@@ -92,33 +44,10 @@ object PlayerPreparationTable {
 
   /** 返回用户全部鸟升级行。 */
   def listBirdRows(connection: Connection, userId: String): Vector[PlayerBirdUpgradeRow] =
-    if (isInMemory(connection)) {
+    if (TableConnection.isInMemory(connection)) {
       InMemoryStore.playerBirdUpgrades.filter(_.userId == userId)
     } else {
-      val statement = connection.prepareStatement(
-        "SELECT bird_type, level, tier, updated_at FROM player_bird_upgrades WHERE user_id = ?"
-      )
-      try {
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        try {
-          val builder = Vector.newBuilder[PlayerBirdUpgradeRow]
-          while (resultSet.next()) {
-            builder += PlayerBirdUpgradeRow(
-              userId = userId,
-              birdType = resultSet.getString("bird_type"),
-              level = resultSet.getInt("level"),
-              tier = resultSet.getInt("tier"),
-              updatedAt = resultSet.getString("updated_at")
-            )
-          }
-          builder.result()
-        } finally {
-          resultSet.close()
-        }
-      } finally {
-        statement.close()
-      }
+      PlayerPreparationTableJdbc.listBirdRows(connection, userId)
     }
 
   /** 返回 birdType → level 映射。 */
@@ -132,20 +61,10 @@ object PlayerPreparationTable {
   /** 读取弹弓等级（不存在时 ensure 默认 1 级）。 */
   def getSlingshotLevel(connection: Connection, userId: String): Int = {
     ensureSlingshotDefault(connection, userId)
-    if (isInMemory(connection)) {
+    if (TableConnection.isInMemory(connection)) {
       InMemoryStore.playerSlingshotUpgrades.find(_.userId == userId).map(_.level).getOrElse(1)
     } else {
-      val statement = connection.prepareStatement(
-        "SELECT level FROM player_slingshot_upgrades WHERE user_id = ?"
-      )
-      try {
-        statement.setString(1, userId)
-        val resultSet = statement.executeQuery()
-        try if (resultSet.next()) resultSet.getInt("level") else 1
-        finally resultSet.close()
-      } finally {
-        statement.close()
-      }
+      PlayerPreparationTableJdbc.getSlingshotLevel(connection, userId)
     }
   }
 
@@ -193,54 +112,24 @@ object PlayerPreparationTable {
 
   /** 确保用户对给定 birdTypes 均有默认 1 级 1 阶记录（幂等）。 */
   def ensureBirdDefaults(connection: Connection, userId: String, birdTypes: Vector[String]): Unit =
-    if (isInMemory(connection)) seedInMemory(userId, birdTypes)
+    if (TableConnection.isInMemory(connection)) seedInMemory(userId, birdTypes)
     else {
       birdTypes.foreach { birdType =>
-        val statement = connection.prepareStatement(
-          """
-            INSERT INTO player_bird_upgrades (user_id, bird_type, level, tier, updated_at)
-            VALUES (?, ?, 1, 1, ?)
-            ON CONFLICT DO NOTHING
-          """
-        )
-        try {
-          statement.setString(1, userId)
-          statement.setString(2, birdType)
-          statement.setString(3, nowString())
-          statement.executeUpdate()
-        } finally {
-          statement.close()
-        }
+        PlayerPreparationTableJdbc.insertBirdDefault(connection, userId, birdType, nowString())
       }
       ensureSlingshotDefault(connection, userId)
     }
 
   /** 确保用户有默认 1 级弹弓记录（幂等）。 */
   def ensureSlingshotDefault(connection: Connection, userId: String): Unit =
-    if (isInMemory(connection)) {
+    if (TableConnection.isInMemory(connection)) {
       if (!InMemoryStore.playerSlingshotUpgrades.exists(_.userId == userId)) {
         InMemoryStore.playerSlingshotUpgrades =
           InMemoryStore.playerSlingshotUpgrades :+ PlayerSlingshotUpgradeRow(userId, 1, Instant.now().toString)
       }
     } else {
-      val slingshotStatement = connection.prepareStatement(
-        """
-          INSERT INTO player_slingshot_upgrades (user_id, level, updated_at)
-          VALUES (?, 1, ?)
-          ON CONFLICT DO NOTHING
-        """
-      )
-      try {
-        slingshotStatement.setString(1, userId)
-        slingshotStatement.setString(2, nowString())
-        slingshotStatement.executeUpdate()
-      } finally {
-        slingshotStatement.close()
-      }
+      PlayerPreparationTableJdbc.ensureSlingshotDefault(connection, userId, nowString())
     }
-
-  private def ensureDefaults(connection: Connection, userId: String): Unit =
-    ensureBirdDefaults(connection, userId, systemBirdTypes)
 
   private def upsertBird(
     connection: Connection,
@@ -250,58 +139,23 @@ object PlayerPreparationTable {
     tier: Int
   ): Unit = {
     val updatedAt = nowString()
-    if (isInMemory(connection)) {
+    if (TableConnection.isInMemory(connection)) {
       InMemoryStore.playerBirdUpgrades =
         InMemoryStore.playerBirdUpgrades.filterNot(row => row.userId == userId && row.birdType == birdType) :+
           PlayerBirdUpgradeRow(userId, birdType, level, tier, updatedAt)
     } else {
-      val statement = connection.prepareStatement(
-        """
-          INSERT INTO player_bird_upgrades (user_id, bird_type, level, tier, updated_at)
-          VALUES (?, ?, ?, ?, ?)
-          ON CONFLICT (user_id, bird_type) DO UPDATE SET
-            level = EXCLUDED.level,
-            tier = EXCLUDED.tier,
-            updated_at = EXCLUDED.updated_at
-        """
-      )
-      try {
-        statement.setString(1, userId)
-        statement.setString(2, birdType)
-        statement.setInt(3, level)
-        statement.setInt(4, tier)
-        statement.setString(5, updatedAt)
-        statement.executeUpdate()
-      } finally {
-        statement.close()
-      }
+      PlayerPreparationTableJdbc.upsertBird(connection, userId, birdType, level, tier, updatedAt)
     }
   }
 
   private def upsertSlingshot(connection: Connection, userId: String, level: Int): Unit = {
     val updatedAt = nowString()
-    if (isInMemory(connection)) {
+    if (TableConnection.isInMemory(connection)) {
       InMemoryStore.playerSlingshotUpgrades =
         InMemoryStore.playerSlingshotUpgrades.filterNot(_.userId == userId) :+
           PlayerSlingshotUpgradeRow(userId, level, updatedAt)
     } else {
-      val statement = connection.prepareStatement(
-        """
-          INSERT INTO player_slingshot_upgrades (user_id, level, updated_at)
-          VALUES (?, ?, ?)
-          ON CONFLICT (user_id) DO UPDATE SET
-            level = EXCLUDED.level,
-            updated_at = EXCLUDED.updated_at
-        """
-      )
-      try {
-        statement.setString(1, userId)
-        statement.setInt(2, level)
-        statement.setString(3, updatedAt)
-        statement.executeUpdate()
-      } finally {
-        statement.close()
-      }
+      PlayerPreparationTableJdbc.upsertSlingshot(connection, userId, level, updatedAt)
     }
   }
 

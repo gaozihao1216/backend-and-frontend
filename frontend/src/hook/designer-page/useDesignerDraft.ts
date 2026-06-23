@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createDefaultLevelInput } from "../../api/index.js";
-import type { LevelTag } from "../../lib/level-contracts.js";
+import type { LevelTag } from "../../objects/system/system-objects.js";
 
 const initialForm = createDefaultLevelInput();
 

@@ -1,5 +1,5 @@
-import type { BirdInventory } from "../objects/level/bird-inventory.js";
-import { DEFAULT_BIRD_POOL, type BirdPool } from "../objects/level/bird-pool.js";
+import type { BirdInventory } from "../objects/level/inventory/bird-inventory.js";
+import { DEFAULT_BIRD_POOL, type BirdPool } from "../objects/level/inventory/bird-pool.js";
 
 type BirdPoolSource = {
   birdInventory: BirdInventory;

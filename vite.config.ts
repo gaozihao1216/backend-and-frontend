@@ -13,6 +13,8 @@ export default defineConfig({
       "/designer/submissions": "http://localhost:3000",
       "/designer/bird-designs": "http://localhost:3000",
       "/admin/comments": "http://localhost:3000",
+      "/admin/audit-logs": "http://localhost:3000",
+      "/admin/shop": "http://localhost:3000",
       "/admin/director": "http://localhost:3000",
       "/admin/submissions": "http://localhost:3000",
       "/admin/bird-submissions": "http://localhost:3000",

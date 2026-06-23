@@ -1,8 +1,8 @@
-import { LevelMapPathEditor } from "../../../component/director/LevelMapPathEditor.js";
-import { LevelNodeButtonFormatEditor } from "../../../component/director/LevelNodeButtonFormatEditor.js";
-import { LevelStageBackgroundEditor } from "../../../component/director/LevelStageBackgroundEditor.js";
-import { DirectorLevelInterfacePreviewPanel } from "../../../component/director-page/DirectorLevelInterfacePreviewPanel.js";
-import { DirectorLevelInterfaceToolbar } from "../../../component/director-page/DirectorLevelInterfaceToolbar.js";
+import { LevelMapPathEditor } from "./components/LevelMapPathEditor.js";
+import { LevelNodeButtonFormatEditor } from "./components/LevelNodeButtonFormatEditor.js";
+import { LevelStageBackgroundEditor } from "./components/LevelStageBackgroundEditor.js";
+import { DirectorLevelInterfacePreviewPanel } from "./components/DirectorLevelInterfacePreviewPanel.js";
+import { DirectorLevelInterfaceToolbar } from "./components/DirectorLevelInterfaceToolbar.js";
 import { useDirectorLevelInterface } from "../../../hook/director-page/useDirectorLevelInterface.js";
 import { countLevelNodes, LEVEL_MAP_PAGE_ID } from "../../../lib/level-stage-structure.js";
 

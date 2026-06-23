@@ -1,11 +1,13 @@
 package microservice.player.runtime
 
-import microservice.infrastructure.http.HttpError
-import microservice.player.tables.shop.{ShopTable}
-import microservice.player.tables.wallet.{PlayerWalletTable}
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
+import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.PlanStep.Step
+import microservice.infrastructure.http.HttpError
+import microservice.player.tables.shop.ShopTable
+import microservice.player.tables.wallet.PlayerWalletTable
 
 /** 玩家商店 UI 数据与购买动作服务。
   *
@@ -21,12 +23,18 @@ object PlayerShopService {
   val purchaseActionKey: String = "player.shop.purchase"
 
   /** 返回指定 catalogIndex 下的商品列表、钱包余额与已购 itemId 列表。 */
+  def requireData(connection: Connection, userId: String, params: Map[String, String]): Step[Json] =
+    PlanStep.fromEither(getData(connection, userId, params))
+
   def getData(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
     val catalogIndex = params.get("catalogIndex").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
     Right(buildPayload(connection, userId, catalogIndex))
   }
 
   /** 购买商品：校验 itemId、余额，扣款并记录购买后返回最新商店 payload。 */
+  def requireExecutePurchase(connection: Connection, userId: String, params: Map[String, String]): Step[Json] =
+    PlanStep.fromEither(executePurchase(connection, userId, params))
+
   def executePurchase(connection: Connection, userId: String, params: Map[String, String]): Either[HttpError, Json] = {
     val itemId = params.getOrElse("itemId", "").trim
     val catalogIndex = params.get("catalogIndex").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)

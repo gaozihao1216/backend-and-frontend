@@ -1,8 +1,12 @@
 package microservice.ui.api.pages
 
 import microservice.testsupport.TestSupport
-import microservice.ui.objects.{PageConfig, PageLayout, PageLayoutType, UiEndpoint}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.objects.page.PageLayout
+import microservice.ui.objects.page.PageLayoutType
+import microservice.ui.objects.UiEndpoint
 import munit.CatsEffectSuite
+import microservice.ui.api.pages.body.UpdateUiPageBody
 
 class UiPagePublishSuite extends CatsEffectSuite {
   private val directorId = "admin-director-1"

@@ -3,8 +3,8 @@ import { saveSharedLevelMapPage } from "./shared-level-map-persistence.js";
 import { loadVisualAsset, saveVisualAsset } from "./ui-visual-asset-store.js";
 import type { PageConfig, PanelDecoration, StretchVisualDesign } from "../objects/ui-customization/ui-customization-objects.js";
 import { LEVEL_MAP_PAGE_ID } from "../objects/ui-customization/level-map-structure.js";
-import type { StretchVisualTemplate } from "../objects/ui-customization/stretch-visual-template.js";
-import { DEFAULT_PANEL_TEMPLATE_CATEGORY } from "../objects/ui-customization/template-category.js";
+import type { StretchVisualTemplate } from "../objects/ui/stretch_template/stretch-visual-template.js";
+import { DEFAULT_PANEL_TEMPLATE_CATEGORY } from "../objects/ui/category/template-category.js";
 
 export { LEVEL_MAP_PAGE_ID as LEVEL_STAGE_BACKGROUND_PAGE_IDS };
 

@@ -1,4 +1,4 @@
-import type { ComponentAction, LevelMapPathDesign, PageConfig } from "./page-config.js";
+import type { ComponentAction, LevelMapPathDesign, PageConfig } from "../ui/page-config.js";
 
 const percentPosition = (x: number, y: number, width: number, height: number) => ({
   unit: "percent" as const,

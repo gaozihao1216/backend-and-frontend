@@ -1,10 +1,12 @@
 package microservice.player.runtime
 
-import microservice.infrastructure.http.HttpError
-import microservice.player.tables.wallet.PlayerWalletTable
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
+import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.PlanStep.Step
+import microservice.infrastructure.http.HttpError
+import microservice.player.tables.wallet.PlayerWalletTable
 
 /** 玩家钱包 UI 数据服务。
   *
@@ -18,6 +20,9 @@ object PlayerWalletService {
   val dataApiKey: String = "player.wallet"
 
   /** 读取或创建用户钱包并序列化为 JSON。 */
+  def requireData(connection: Connection, userId: String): Step[Json] =
+    PlanStep.fromEither(getData(connection, userId))
+
   def getData(connection: Connection, userId: String): Either[HttpError, Json] =
     Right(buildPayload(connection, userId))
 

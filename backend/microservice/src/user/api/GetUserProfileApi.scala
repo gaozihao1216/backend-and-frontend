@@ -2,80 +2,25 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.user.tables.user.{UserRowMapper, UserTable}
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
-import microservice.level.tables.comment.{CommentTable}
-import microservice.level.tables.favorite.{FavoriteTable}
-import microservice.level.tables.level.{LevelTable}
-import microservice.level.tables.rating.{RatingTable}
-import microservice.level.tables.shared.{LevelRowMapper}
-import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfileStats}
+import microservice.user.objects.UserProfile
+import microservice.user.support.UserProfileAccess
+import microservice.user.utils.AccessControl
 
-/** GET /users/:profileUserId/profile 的 APIMessage。
-  *
-  * 定义：viewerUserId + profileUserId 双参，返回 [[UserProfile]] 聚合读模型。
-  * 问题：资料页跨模块 join，需在单事务内一致读取各表快照。
-  * 作用：校验访问者与目标用户存在后，组装关卡/评论/统计。
-  * 关联：[[UserRouter]] GET 路由；level 模块 Comment/Level/Favorite/Rating Table。
-  */
+/** GET /users/:profileUserId/profile 的 APIMessage。 */
 final case class GetUserProfileAPIMessage(
-  viewerUserId: String,   // 请求头 x-user-id，当前访问者
-  profileUserId: String   // 路径参数，被查看的用户
+  viewerUserId: String,
+  profileUserId: String
 ) extends APIWithTokenMessage[UserProfile] {
   override def token: String = viewerUserId
 
-  /** plan 实现：鉴权 → 查用户 → 跨表聚合 profile。
-    *
-    * 定义：PlanSteps.finish + for-comprehension 三步。
-    * 问题：未知 viewer 应 401；未知 profile 应 404 而非空数据。
-    * 作用：只读事务，无写操作。
-    * 关联：[[UserRowMapper]]、[[LevelRowMapper.toComment]]。
-    */
+  /** plan：校验 viewer 存在 → UserProfileTable.findProfile（只读聚合）。 */
   override def plan(connection: Connection): IO[Either[HttpError, UserProfile]] =
     PlanSteps.finish {
       for {
-        // --- 1. 校验访问者存在于系统中（演示级：仅要求 x-user-id 合法） ---
-        _ <- PlanSteps.require(
-          UserTable.findById(connection, viewerUserId) match {
-            case None =>
-              Left(HttpError.unauthorized("Unknown user"))
-            case Some(_) =>
-              Right(())
-          }
-        )
-        user <- PlanSteps.require(
-          UserTable.findById(connection, profileUserId) match {
-            case None =>
-              Left(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
-            case Some(value) =>
-              Right(value)
-          }
-        )
-        profile <- PlanSteps.read(
-          UserProfile(
-            // 用户基本字段 → BackendUser（与 bind 接口返回结构一致）
-            user = UserRowMapper.toBackendUser(user),
-
-            // 该作者已发布的关卡列表
-            publishedLevels = LevelTable
-              .listPublishedByAuthor(connection, user.id)
-              .map(LevelRowMapper.toLevel)
-              .toList,
-
-            // 最近 5 条评论（社区/资料页展示）
-            recentComments = CommentTable
-              .listRecentByUser(connection, user.id, limit = 5)
-              .map(LevelRowMapper.toComment)
-              .toList,
-
-            // 统计摘要：收藏数、评分次数
-            stats = UserProfileStats(
-              favoriteCount = FavoriteTable.countByUser(connection, user.id),
-              ratingCount = RatingTable.countByPlayer(connection, user.id)
-            )
-          )
-        )
+        _ <- AccessControl.requireKnownUser(connection, viewerUserId).map(_ => ())
+        profile <- UserProfileAccess.requireProfile(connection, profileUserId)
       } yield profile
     }
 }

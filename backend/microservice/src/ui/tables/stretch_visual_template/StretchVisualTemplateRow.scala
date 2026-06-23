@@ -4,7 +4,7 @@
   */
 package microservice.ui.tables.stretch_visual_template
 
-import microservice.ui.objects.StretchVisualTemplateKind
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 
 /** 拉伸视觉模板持久化行（含 kind 与 category）。
   *

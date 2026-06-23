@@ -13,12 +13,22 @@ final case class PlayerWallet(
   fragments: Int = 0
 )
 
-/** 周签到单个格子的奖励配置（总监可通过 panel-workflows 注册）。 */
+/** 周签到单个格子的奖励配置（coins / gems / fragments）。
+  *
+  * 总监通过 panel-workflows 注册恰好 7 格；玩家签到运行时按 slotIndex 读取。
+  * 关联：CheckInPanelRewardTable；RegisterCheckInPanelRewardsAPIMessage。
+  */
 final case class CheckInSlotReward(
   coins: Int = 0,
   gems: Int = 0,
   fragments: Int = 0
 )
+
+object CheckInSlotReward {
+  import io.circe.generic.semiauto._
+  implicit val encoder: io.circe.Encoder[CheckInSlotReward] = deriveEncoder
+  implicit val decoder: io.circe.Decoder[CheckInSlotReward] = deriveDecoder
+}
 
 /** 玩家当周签到进度：已签格子集合与今日是否已签。 */
 final case class WeeklyCheckInProgress(

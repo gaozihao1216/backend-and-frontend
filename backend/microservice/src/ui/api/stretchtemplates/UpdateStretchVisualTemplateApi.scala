@@ -7,8 +7,13 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
+import microservice.ui.objects.stretch_template.StretchVisualTemplate
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
+import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
+import microservice.ui.api.stretchtemplates.body.UpdateStretchVisualTemplateBody
+import microservice.ui.api.stretchtemplates.support.StretchVisualTemplateAccess
+import microservice.ui.api.stretchtemplates.validation.StretchVisualTemplateValidation
 
 /** 总监更新拉伸视觉模板 APIMessage。
   *
@@ -33,39 +38,25 @@ final case class UpdateStretchVisualTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找现有行并校验 kind
-        existing <- PlanSteps.require(
-          StretchVisualTemplateTable.findById(connection, templateId) match {
-            case None =>
-              Left(UiCustomizationErrors.StretchVisualTemplateNotFound(templateId).toHttpError)
-            case Some(row) if row.kind != expectedKind =>
-              Left(UiCustomizationErrors.StretchVisualTemplateKindMismatch(expectedKind.value, row.kind.value).toHttpError)
-            case Some(row) =>
-              Right(row)
-          }
-        )
+        existing <- StretchVisualTemplateAccess.requireExistingForKind(connection, templateId, expectedKind)
         // 规范化模板字段
         template <- PlanSteps.read(
           StretchVisualTemplateValidation.sanitize(body.template.copy(id = templateId, kind = expectedKind))
         )
         // 校验 kind 一致
-        validated <- PlanSteps.require(StretchVisualTemplateValidation.ensureKind(template, expectedKind))
+        validated <- StretchVisualTemplateValidation.ensureKind(template, expectedKind)
         // 校验字段合法性
-        _ <- PlanSteps.require(StretchVisualTemplateValidation.validate(validated).map(_ => ()))
+        _ <- StretchVisualTemplateValidation.validate(validated)
         // 更新 StretchVisualTemplateRow
-        result <- PlanSteps.require(
-          StretchVisualTemplateTable
-            .update(
-              connection,
-              StretchVisualTemplateRowMapper.fromStretchVisualTemplate(
-                validated,
-                createdAt = existing.createdAt,
-                updatedAt = Instant.now().toString
-              )
-            )
-            .map(row => Right(StretchVisualTemplateRowMapper.toStretchVisualTemplate(row)))
-            .getOrElse(Left(UiCustomizationErrors.StretchVisualTemplateNotFound(templateId).toHttpError))
+        result <- StretchVisualTemplateAccess.requireUpdated(
+          connection,
+          StretchVisualTemplateRowMapper.fromStretchVisualTemplate(
+            validated,
+            createdAt = existing.createdAt,
+            updatedAt = Instant.now().toString
+          )
         )
       } yield result
     }

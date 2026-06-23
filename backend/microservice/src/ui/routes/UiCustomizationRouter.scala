@@ -6,46 +6,43 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.ApiSuccess
 import microservice.ui.api.buttontemplates.{
   CreateButtonTemplateAPIMessage,
-  CreateButtonTemplateBody,
   DeleteButtonTemplateAPIMessage,
   GetButtonTemplateAPIMessage,
   ListButtonTemplatesAPIMessage,
-  UpdateButtonTemplateAPIMessage,
-  UpdateButtonTemplateBody
+  UpdateButtonTemplateAPIMessage
 }
 import microservice.ui.api.stretchtemplates.{
   CreateStretchVisualTemplateAPIMessage,
-  CreateStretchVisualTemplateBody,
   DeleteStretchVisualTemplateAPIMessage,
   ListStretchVisualTemplatesAPIMessage,
-  UpdateStretchVisualTemplateAPIMessage,
-  UpdateStretchVisualTemplateBody
+  UpdateStretchVisualTemplateAPIMessage
 }
 import microservice.ui.api.pagecomponents.{
   CreatePageComponentAPIMessage,
-  CreatePageComponentBody,
   DeletePageComponentAPIMessage,
-  UpdatePageComponentAPIMessage,
-  UpdatePageComponentBody
+  UpdatePageComponentAPIMessage
 }
 import microservice.ui.api.pages.{
   CreateUiPageAPIMessage,
-  CreateUiPageBody,
   DeleteUiPageAPIMessage,
   GetUiPageAPIMessage,
   ListUiPagesAPIMessage,
   PublishUiPageAPIMessage,
   RollbackUiPageAPIMessage,
-  UpdateUiPageAPIMessage,
-  UpdateUiPageBody
+  UpdateUiPageAPIMessage
 }
-import microservice.ui.api.panelworkflows.{RegisterCheckInPanelRewardsAPIMessage, RegisterCheckInPanelRewardsBody}
-import microservice.ui.objects.{StretchVisualTemplateKind, UiEndpoint}
-import microservice.player.objects.CheckInSlotReward
+import microservice.ui.api.panelworkflows.RegisterCheckInPanelRewardsAPIMessage
+import microservice.ui.api.panelworkflows.body.RegisterCheckInPanelRewardsBody
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
+import microservice.ui.objects.UiEndpoint
 import microservice.infrastructure.http.AuthMiddleware
 import org.http4s.{HttpRoutes, Status}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
+import microservice.ui.api.buttontemplates.body.{CreateButtonTemplateBody, UpdateButtonTemplateBody}
+import microservice.ui.api.pagecomponents.body.{CreatePageComponentBody, UpdatePageComponentBody}
+import microservice.ui.api.pages.body.{CreateUiPageBody, UpdateUiPageBody}
+import microservice.ui.api.stretchtemplates.body.{CreateStretchVisualTemplateBody, UpdateStretchVisualTemplateBody}
 
 /** 总监 UI 定制 HTTP 入口，前缀 /admin/director/ui。
   *
@@ -237,7 +234,7 @@ object UiCustomizationRouter {
         RegisterCheckInPanelRewardsAPIMessage(
           userId,
           panelId,
-          body.slots.map(slot => CheckInSlotReward(slot.coins, slot.gems, slot.fragments))
+          body.slots
         )
           .runAuthenticated(userId, databaseSession)
           .flatMap(result => HttpError.fromEither(result.map(json => ApiSuccess(json))))

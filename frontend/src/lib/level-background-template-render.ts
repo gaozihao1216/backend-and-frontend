@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { toStretchVisualDesign } from "./director-template-select.js";
 import type { LevelBackgroundTemplate } from "../objects/level/level-background-template.js";
 import type { StretchVisualDesign } from "../objects/ui-customization/ui-customization-objects.js";
-import type { StretchVisualTemplate } from "../objects/ui-customization/stretch-visual-template.js";
+import type { StretchVisualTemplate } from "../objects/ui/stretch_template/stretch-visual-template.js";
 import { loadVisualAsset } from "./ui-visual-asset-store.js";
 
 const DEFAULT_CLOUD_FRAME: NonNullable<StretchVisualDesign["frame"]> = {

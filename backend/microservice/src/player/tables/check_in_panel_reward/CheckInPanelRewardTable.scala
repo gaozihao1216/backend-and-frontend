@@ -7,32 +7,41 @@
  */
 package microservice.player.tables.check_in_panel_reward
 
-import microservice.player.tables.check_in_panel_reward.inmemory._
-import microservice.player.tables.check_in_panel_reward.jdbc._
-
-import microservice.infrastructure.database.InMemoryStore
+import java.sql.Connection
+import microservice.infrastructure.database.{InMemoryStore, TableConnection}
 import microservice.player.objects.CheckInSlotReward
 import microservice.player.runtime.PlayerRuntimeDefaults
-import java.sql.Connection
+import microservice.player.tables.check_in_panel_reward.jdbc.CheckInPanelRewardTableJdbc
 
 object CheckInPanelRewardTable {
-  private def isInMemory(connection: Connection): Boolean =
-    connection == null
-
   def initialize(connection: Connection): Unit =
-    if (!isInMemory(connection)) CheckInPanelRewardTableJdbcSchema.initialize(connection)
+    if (!TableConnection.isInMemory(connection)) CheckInPanelRewardTableJdbc.initialize(connection)
     else seedDefaultsInMemory()
 
   def listByPanelId(connection: Connection, panelId: String): Vector[CheckInSlotReward] = {
     val rows =
-      if (isInMemory(connection)) CheckInPanelRewardTableInMemory.listByPanelId(panelId)
-      else CheckInPanelRewardTableJdbcRead.listByPanelId(connection, panelId)
+      if (TableConnection.isInMemory(connection)) {
+        InMemoryStore.checkInPanelRewards
+          .getOrElse(panelId, Vector.empty)
+          .zipWithIndex
+          .map { case (reward, index) =>
+            CheckInPanelRewardRow(
+              panelId = panelId,
+              slotIndex = index + 1,
+              coins = reward.coins,
+              gems = reward.gems,
+              fragments = reward.fragments
+            )
+          }
+      } else {
+        CheckInPanelRewardTableJdbc.listByPanelId(connection, panelId)
+      }
     rows.sortBy(_.slotIndex).map(row => CheckInSlotReward(row.coins, row.gems, row.fragments))
   }
 
   def replacePanelRewards(connection: Connection, panelId: String, rewards: Vector[CheckInSlotReward]): Unit =
-    if (isInMemory(connection)) {
-      CheckInPanelRewardTableInMemory.replacePanelRewards(panelId, rewards)
+    if (TableConnection.isInMemory(connection)) {
+      InMemoryStore.checkInPanelRewards = InMemoryStore.checkInPanelRewards.updated(panelId, rewards)
     } else {
       val rows = rewards.zipWithIndex.map { case (reward, index) =>
         CheckInPanelRewardRow(
@@ -43,12 +52,13 @@ object CheckInPanelRewardTable {
           fragments = reward.fragments
         )
       }
-      CheckInPanelRewardTableJdbcWrite.replacePanelRewards(connection, panelId, rows)
+      CheckInPanelRewardTableJdbc.replacePanelRewards(connection, panelId, rows)
     }
 
   private def seedDefaultsInMemory(): Unit = {
     if (!InMemoryStore.checkInPanelRewards.contains(PlayerRuntimeDefaults.roleHomeCheckInPanelId)) {
-      CheckInPanelRewardTableInMemory.replacePanelRewards(
+      replacePanelRewards(
+        null,
         PlayerRuntimeDefaults.roleHomeCheckInPanelId,
         Vector(
           CheckInSlotReward(10, 0, 0),

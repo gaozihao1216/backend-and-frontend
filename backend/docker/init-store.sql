@@ -225,7 +225,50 @@ CREATE TABLE IF NOT EXISTS bird_submissions (
   reviewed_at TEXT
 );
 
-TRUNCATE TABLE bird_submissions, bird_designs, player_private_messages, player_slingshot_upgrades, player_bird_upgrades, player_friends, shop_purchases, shop_items, check_in_panel_rewards, player_legacy_check_ins, player_level_progress, player_weekly_check_ins, player_wallets, ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
+CREATE TABLE IF NOT EXISTS review_audits (
+  id TEXT PRIMARY KEY,
+  target_type TEXT NOT NULL,
+  submission_id TEXT NOT NULL,
+  reviewer_id TEXT NOT NULL REFERENCES users(id),
+  decision TEXT NOT NULL,
+  review_note TEXT,
+  reviewed_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS review_audits_submission_id_idx
+  ON review_audits (submission_id, reviewed_at DESC);
+
+CREATE INDEX IF NOT EXISTS review_audits_reviewer_id_idx
+  ON review_audits (reviewer_id, reviewed_at DESC);
+
+CREATE TABLE IF NOT EXISTS bird_skill_configs (
+  bird_type TEXT PRIMARY KEY,
+  skills_json TEXT NOT NULL,
+  model_image_url TEXT,
+  updated_by_id TEXT REFERENCES users(id),
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ui_pages (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  path TEXT NOT NULL,
+  role_scope TEXT NOT NULL,
+  layout TEXT NOT NULL,
+  components TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ui_pages_role_scope_idx ON ui_pages(role_scope);
+
+CREATE TABLE IF NOT EXISTS ui_page_rollbacks (
+  page_id TEXT PRIMARY KEY,
+  page_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+TRUNCATE TABLE ui_page_rollbacks, ui_pages, bird_skill_configs, review_audits, bird_submissions, bird_designs, player_private_messages, player_slingshot_upgrades, player_bird_upgrades, player_friends, shop_purchases, shop_items, check_in_panel_rewards, player_legacy_check_ins, player_level_progress, player_weekly_check_ins, player_wallets, ui_stretch_visual_templates, ui_button_templates, level_slot_assignments, favorites, comments, ratings, submissions, levels, users CASCADE;
 
 INSERT INTO users (id, username, display_name, role, admin_level, created_at, updated_at) VALUES
   ('player-1', 'local-player-0000001', 'Player One', 'player', NULL, '2026-06-03T00:00:00Z', '2026-06-03T00:00:00Z'),

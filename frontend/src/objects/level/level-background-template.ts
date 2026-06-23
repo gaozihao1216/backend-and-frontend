@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { StretchVisualDesignSchema } from "../ui-customization/page-config.js";
+import { StretchVisualDesignSchema } from "../ui/component/stretch-visual-design.js";
 
 export const LevelBackgroundWeatherSchema = z.enum(["sunny", "rainy", "thunderstorm"]);
 

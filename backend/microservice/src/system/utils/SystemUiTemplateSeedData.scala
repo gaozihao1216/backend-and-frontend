@@ -2,7 +2,12 @@ package microservice.system.utils
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import microservice.ui.objects.{ButtonTemplateCategory, ButtonTemplateScalingMode, ButtonTemplateSlice, PanelTemplateCategory, PatternTemplateCategory, StretchVisualTemplateKind}
+import microservice.ui.objects.category.ButtonTemplateCategory
+import microservice.ui.objects.button_template.ButtonTemplateScalingMode
+import microservice.ui.objects.button_template.ButtonTemplateSlice
+import microservice.ui.objects.category.PanelTemplateCategory
+import microservice.ui.objects.category.PatternTemplateCategory
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 import microservice.ui.tables.button_template.{ButtonTemplateRow}
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRow}
 

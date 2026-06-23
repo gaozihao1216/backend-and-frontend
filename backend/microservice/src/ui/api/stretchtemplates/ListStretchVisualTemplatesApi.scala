@@ -6,7 +6,8 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind}
+import microservice.ui.objects.stretch_template.StretchVisualTemplate
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
 
 /** 总监按 kind 列出拉伸视觉模板 APIMessage。
@@ -30,7 +31,7 @@ final case class ListStretchVisualTemplatesAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 按 kind 过滤列出模板
         templates <- PlanSteps.read(
           StretchVisualTemplateTable

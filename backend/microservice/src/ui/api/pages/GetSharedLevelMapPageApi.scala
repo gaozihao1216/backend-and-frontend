@@ -2,10 +2,11 @@ package microservice.ui.api.pages
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.user.tables.user.UserTable
+import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.ui.objects.{PageConfig, SharedLevelMapPageId}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.objects.page.SharedLevelMapPageId
 
 /** 玩家读取共享关卡地图页 APIMessage；固定 pageId。
   *
@@ -26,17 +27,8 @@ final case class GetSharedLevelMapPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
-        // 校验用户身份有效
-        _ <- PlanSteps.require(
-          UserTable.findById(connection, userId) match {
-            case None =>
-              Left(HttpError.unauthorized("Unknown user"))
-            case Some(_) =>
-              Right(())
-          }
-        )
-        // 读取固定 pageId 的已发布配置
-        page <- PlanSteps.require(UiPagePublishSupport.getPublishedPage(connection, SharedLevelMapPageId.value))
+        _ <- AccessControl.requireKnownUser(connection, userId).map(_ => ())
+        page <- UiPagePublishSupport.requirePublishedPage(connection, SharedLevelMapPageId.value)
       } yield page
     }
 }

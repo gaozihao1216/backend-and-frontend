@@ -46,10 +46,13 @@ final case class XxxAPIMessage(
 
 - APIMessage 的 case class 参数只包含请求参数，例如 `userId`、`playerId`、`designerId`、`levelId`、`body`。
 - 不再向 APIMessage 注入业务函数，例如 `createLevel`、`rateLevel`、`deleteComment`。
-- `plan(connection)` 内部完成权限校验、参数校验、table 调用和错误处理。
+- `plan(connection)` 用 `PlanSteps.finish { for { ... } yield ... }` 编排步骤：鉴权（`AccessControl`）→ 校验（`*Validation`）→ 业务规则（`*Support` / `*Access`）→ 表读写（`PlanSteps.read` / `blocking`）。
+- APIMessage **禁止**内联 `PlanSteps.require(Either(...))`；同步 `Either` 逻辑放在各模块 `check*`，经 `require*` 注入。
 - routes 不承载核心业务逻辑。
 - 当前仍保留 `IO[Either[HttpError, A]]` 返回模型，因为 routes 仍通过 `HttpError.fromEither` 统一包装响应。
 - `APIWithTokenMessage` 仍要求 `token`，但实际字段已经改为具体 ID 语义，并通过 `override def token = userId/playerId/designerId` 兼容。
+
+详细分层约定见仓库根目录 `docs/backend-architecture.md` 的「APIMessage 模式」一节。
 
 ## Connection 当前阶段说明
 

@@ -10,6 +10,7 @@ import microservice.player.objects.CheckInSlotReward
 import microservice.player.runtime.PlayerWeeklyCheckInService
 import microservice.system.objects.AdminLevel
 import microservice.user.utils.AccessControl
+import microservice.ui.api.panelworkflows.support.CheckInPanelAccess
 
 /** 总监注册签到面板 7 格奖励 APIMessage。
   *
@@ -27,24 +28,12 @@ final case class RegisterCheckInPanelRewardsAPIMessage(
   /** 注册签到面板奖励配置。
     *
     * 实现：requireAdminLevel(Director) → 校验 panelId 与 slots.size==7 → registerPanelRewards。
-    * 关联：slots 为 Vector[CheckInSlotReward]；返回 panelId JSON。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
-        // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
-        // panelId 非空且 slots 必须恰好 7 格
-        _ <- PlanSteps.require(
-          if (panelId.trim.isEmpty) {
-            Left(HttpError.badRequest("INVALID_PANEL", "panelId is required"))
-          } else if (slots.size != 7) {
-            Left(HttpError.badRequest("INVALID_SLOTS", "Exactly 7 slot rewards are required"))
-          } else {
-            Right(())
-          }
-        )
-        // 写入 player 模块签到奖励配置
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
+        _ <- CheckInPanelAccess.requireCheckInRewards(panelId, slots)
         _ <- PlanSteps.blocking(PlayerWeeklyCheckInService.registerPanelRewards(connection, panelId, slots))
       } yield Json.obj("panelId" -> Json.fromString(panelId))
     }

@@ -1,6 +1,7 @@
 import type { GroundMaterialRenderConfig } from "../../lib/game-engine/draw-scene.js";
 import type { GroundStrokeSimplifyConfig } from "../../lib/ground.js";
-import type { LevelData, LevelTag } from "../../lib/level-contracts.js";
+import type { LevelData } from "../level/level/level-data.js";
+import type { LevelTag } from "../system/system-objects.js";
 
 export type DesignerGroundTuningStorage = Partial<GroundStrokeSimplifyConfig> & {
   breakpointEpsilon?: number;

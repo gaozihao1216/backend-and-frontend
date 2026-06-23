@@ -6,7 +6,7 @@ import {
 } from "./game-engine/bird-definition.js";
 import type { BirdPoolLaunchConfig } from "./game-engine/bird-pool-session.js";
 import type { BirdSkillSet } from "./game-engine/skills/skill-spec.js";
-import type { DirectorBirdSkillEntry } from "../objects/bird/bird-skill-config.js";
+import type { DirectorBirdSkillEntry } from "../objects/bird/skill/director/director-bird-skill-entry.js";
 
 export const buildDirectorTestBirdDefinition = (
   entry: DirectorBirdSkillEntry,

@@ -6,8 +6,8 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
-import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.api.pages.support.UiPageAccess
 
 /** 总监删除页面配置 APIMessage；返回被删 PageConfig。
   *
@@ -29,14 +29,8 @@ final case class DeleteUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
-        // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
-        // 删除并返回被删 PageConfig
-        page <- PlanSteps.require(
-          UiPageTable.deleteById(connection, pageId)
-            .map(UiPageRowMapper.toPageConfig)
-            .toRight(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-        )
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        page <- UiPageAccess.requireDeletePage(connection, pageId)
       } yield page
     }
 }

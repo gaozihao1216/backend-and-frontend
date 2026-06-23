@@ -127,7 +127,7 @@ npm run dev:backend:postgres   # 仅 JDBC 后端（需 postgres:up）
 1. **认证为演示级**：`AuthMiddleware` 校验 `x-user-id` 存在；受保护路由通过 `runAuthenticated` 校验 header 与 APIMessage.token 一致（`USER_ID_MISMATCH`）；仍无 JWT/密码哈希
 2. **UI 定制能力偏配置型**：总监可管理 PageConfig 与模板；页面构建器支持发布/回滚，玩家端读服务端配置，但尚非完整 WYSIWYG 编辑器
 3. **玩家经济/社交**：后端有 wallet、shop、social 表与服务，业务规则仍为 MVP/演示深度
-4. **测试覆盖不均衡**：前端有部分单元测试；Scala 端含 PlanSteps、AccessControl、管理员权限、UI 发布/回滚与 JDBC 冒烟（`sbt test` / `npm run test:backend:jdbc`）
+4. **测试覆盖不均衡**：前端有部分单元测试；Scala 端含 PlanSteps、AccessControl、管理员权限、UI 发布/回滚与 JDBC 冒烟（`sbt test` / `npm run test:backend:jdbc`）；APIMessage 层 PlanStep 分层（validation/support/access）已全覆盖，无内联 `PlanSteps.require`
 5. **单实例部署**：无水平扩展、缓存、消息队列等生产设施
 
 ## 建议演示顺序（课程/答辩）

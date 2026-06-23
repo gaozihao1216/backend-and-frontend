@@ -4,7 +4,7 @@
   */
 package microservice.ui.tables.ui_page
 
-import microservice.ui.objects.PageConfig
+import microservice.ui.objects.page.PageConfig
 
 object UiPageRowMapper {
   /** UiPageRow → PageConfig 领域对象。 */

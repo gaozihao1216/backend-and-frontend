@@ -24,7 +24,7 @@ final case class GetAdminCommentsAPIMessage(userId: String) extends APIWithToken
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Standard 及以上管理员
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
         // 步骤 2：读取全部评论 Row 并映射为领域对象 LevelComment
         comments <- PlanSteps.read(CommentTable.listAllForAdmin(connection).map(LevelRowMapper.toComment).toList)
       // 返回评论列表，供 Admin 评论管理页渲染

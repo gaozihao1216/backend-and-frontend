@@ -16,7 +16,7 @@ export type SelectedRoute = {
 export const endpointOptions = [
   { id: "player", label: "玩家端", description: "关卡、社区、商店与个人页" },
   { id: "designer", label: "设计师端", description: "创作入口、编辑器与设计辅助页" },
-  { id: "admin", label: "管理员端", description: "社区管理与提案处理" },
+  { id: "admin", label: "管理员端", description: "社区管理、提案处理、审核审计与商店管理" },
   { id: "director", label: "总监端", description: "总监工作台与平台配置" },
 ] satisfies Array<{ id: UiEndpoint; label: string; description: string }>;
 
@@ -70,6 +70,8 @@ export const routeTrees: Record<UiEndpoint, RouteNode> = {
       { pageId: "shared.profile", label: "个人主页", path: "/own_page" },
       { pageId: "admin.community", label: "社区管理", path: "/community_hall" },
       { pageId: "admin.proposals", label: "提案处理", path: "/admin/proposals" },
+      { pageId: "admin.auditLogs", label: "审核审计", path: "/admin/audit-logs" },
+      { pageId: "admin.shopManagement", label: "商店管理", path: "/admin/shop" },
     ],
   },
   director: {

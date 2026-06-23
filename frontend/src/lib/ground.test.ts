@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { STARTER_LEVEL_DATA } from "./level-contracts.js";
-import type { Position } from "./level-contracts.js";
+import { STARTER_LEVEL_DATA } from "../shared/levels/starter-level.js";
+import type { Position } from "../objects/level/terrain/position.js";
 import { createGroundFromStroke, getLevelGround, insertGroundPoint, removeGroundPoint, reorderGroundPoint, sampleGroundPath, setGroundType, updateGroundPoint } from "./ground.js";
 
 test("sampleGroundPath returns original points for line ground", () => {

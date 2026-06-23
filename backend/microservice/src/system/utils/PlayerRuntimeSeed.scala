@@ -4,7 +4,7 @@ import microservice.infrastructure.database.InMemoryStore
 import microservice.player.objects.CheckInSlotReward
 import microservice.player.runtime.PlayerRuntimeDefaults
 import microservice.player.tables.check_in_panel_reward.{CheckInPanelRewardTable}
-import microservice.player.tables.progress.{PlayerLevelProgressTable}
+import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
 import microservice.player.tables.shop.{ShopTable}
 import microservice.player.tables.wallet.{PlayerWalletTable}
 

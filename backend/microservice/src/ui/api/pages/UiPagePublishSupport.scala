@@ -2,8 +2,11 @@ package microservice.ui.api.pages
 
 import java.sql.Connection
 import java.time.Instant
+import microservice.infrastructure.api.PlanStep
+import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.ui.objects.{PageConfig, UiCustomizationErrors}
+import microservice.ui.objects.page.PageConfig
+import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbackTable}
 
@@ -14,8 +17,20 @@ import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbac
   * 关联：PublishUiPageAPIMessage、RollbackUiPageAPIMessage、GetPlayerUiPageAPIMessage。
   */
 object UiPagePublishSupport {
+  def requireNormalizePageConfig(pageId: String, page: PageConfig): Step[PageConfig] =
+    PlanStep.fromEither(checkNormalizePageConfig(pageId, page))
+
+  def requirePublish(connection: Connection, pageId: String, page: PageConfig): Step[PageConfig] =
+    PlanStep.fromEither(checkPublish(connection, pageId, page))
+
+  def requireRollback(connection: Connection, pageId: String): Step[PageConfig] =
+    PlanStep.fromEither(checkRollback(connection, pageId))
+
+  def requirePublishedPage(connection: Connection, pageId: String): Step[PageConfig] =
+    PlanStep.fromEither(checkPublishedPage(connection, pageId))
+
   /** 校验并规范化 PageConfig：trim name/path，强制 id 为路径 pageId。 */
-  def normalizePageConfig(pageId: String, page: PageConfig): Either[HttpError, PageConfig] =
+  def checkNormalizePageConfig(pageId: String, page: PageConfig): Either[HttpError, PageConfig] =
     if (page.name.trim.isEmpty || page.path.trim.isEmpty) {
       Left(UiCustomizationErrors.InvalidPageConfig("name and path are required").toHttpError)
     } else {
@@ -29,10 +44,9 @@ object UiPagePublishSupport {
     }
 
   /** 发布页面：不存在则 insert；存在则先 upsert 回滚快照再 update。 */
-  def publish(connection: Connection, pageId: String, page: PageConfig): Either[HttpError, PageConfig] =
+  def checkPublish(connection: Connection, pageId: String, page: PageConfig): Either[HttpError, PageConfig] =
     for {
-      // 规范化 PageConfig 字段
-      normalized <- normalizePageConfig(pageId, page)
+      normalized <- checkNormalizePageConfig(pageId, page)
       // 不存在则 insert；存在则写回滚快照再 update
       published <- UiPageTable.findById(connection, pageId) match {
         case None =>
@@ -69,7 +83,7 @@ object UiPagePublishSupport {
     } yield published
 
   /** 回滚页面：读取快照写回 UiPageTable 并删除快照。 */
-  def rollback(connection: Connection, pageId: String): Either[HttpError, PageConfig] =
+  def checkRollback(connection: Connection, pageId: String): Either[HttpError, PageConfig] =
     for {
       // 读取回滚快照
       rollbackRow <- UiPageRollbackTable
@@ -96,7 +110,7 @@ object UiPagePublishSupport {
     } yield restored
 
   /** 读取已发布页面配置（玩家侧只读）。 */
-  def getPublishedPage(connection: Connection, pageId: String): Either[HttpError, PageConfig] =
+  def checkPublishedPage(connection: Connection, pageId: String): Either[HttpError, PageConfig] =
     UiPageTable
       .findById(connection, pageId)
       .map(UiPageRowMapper.toPageConfig)

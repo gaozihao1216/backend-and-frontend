@@ -26,7 +26,7 @@ final case class GetPendingBirdSubmissionsAPIMessage(userId: String)
     PlanSteps.finish {
       for {
         // 步骤 1：校验 Standard 管理员权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
         // 步骤 2：列出待审投稿，逐条 join BirdDesign 组装 BirdSubmissionWithDesign
         submissions <- PlanSteps.read(
           BirdSubmissionTable

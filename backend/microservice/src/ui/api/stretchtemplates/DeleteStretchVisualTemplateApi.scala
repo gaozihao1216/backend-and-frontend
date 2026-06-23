@@ -6,8 +6,9 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
-import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
+import microservice.ui.objects.stretch_template.StretchVisualTemplate
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
+import microservice.ui.api.stretchtemplates.support.StretchVisualTemplateAccess
 
 /** 总监删除拉伸视觉模板 APIMessage。
   *
@@ -31,25 +32,9 @@ final case class DeleteStretchVisualTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找并校验 kind 与路由一致
-        _ <- PlanSteps.require(
-          StretchVisualTemplateTable.findById(connection, templateId) match {
-            case None =>
-              Left(UiCustomizationErrors.StretchVisualTemplateNotFound(templateId).toHttpError)
-            case Some(existing) if existing.kind != expectedKind =>
-              Left(UiCustomizationErrors.StretchVisualTemplateKindMismatch(expectedKind.value, existing.kind.value).toHttpError)
-            case Some(_) =>
-              Right(())
-          }
-        )
-        // 删除并返回被删模板
-        template <- PlanSteps.require(
-          StretchVisualTemplateTable
-            .deleteById(connection, templateId)
-            .map(StretchVisualTemplateRowMapper.toStretchVisualTemplate)
-            .toRight(UiCustomizationErrors.StretchVisualTemplateNotFound(templateId).toHttpError)
-        )
+        template <- StretchVisualTemplateAccess.requireDeleted(connection, templateId, expectedKind)
       } yield template
     }
 }

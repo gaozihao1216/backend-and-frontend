@@ -2,10 +2,10 @@ package microservice.ui.api.pages
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.user.tables.user.UserTable
+import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.ui.objects.PageConfig
+import microservice.ui.objects.page.PageConfig
 
 /** 玩家读取已发布页面配置 APIMessage；任意已登录用户可访问。
   *
@@ -27,17 +27,8 @@ final case class GetPlayerUiPageAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, PageConfig]] =
     PlanSteps.finish {
       for {
-        // 校验用户身份有效
-        _ <- PlanSteps.require(
-          UserTable.findById(connection, userId) match {
-            case None =>
-              Left(HttpError.unauthorized("Unknown user"))
-            case Some(_) =>
-              Right(())
-          }
-        )
-        // 读取已发布 PageConfig
-        page <- PlanSteps.require(UiPagePublishSupport.getPublishedPage(connection, pageId))
+        _ <- AccessControl.requireKnownUser(connection, userId).map(_ => ())
+        page <- UiPagePublishSupport.requirePublishedPage(connection, pageId)
       } yield page
     }
 }

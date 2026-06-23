@@ -1,5 +1,6 @@
 package microservice.infrastructure.api
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.database.DatabaseSession
@@ -70,8 +71,10 @@ trait APIWithTokenMessage[A] extends APIMessage[A] {
     * @param databaseSession 当前进程的数据库会话（in-memory 或 JDBC）
     */
   final def runAuthenticated(headerUserId: String, databaseSession: DatabaseSession): IO[Either[HttpError, A]] =
-    AccessControl.requireBoundIdentity(headerUserId, token) match {
-      case Left(error) => IO.pure(Left(error))
-      case Right(_)    => run(databaseSession)
+    PlanSteps.finish {
+      for {
+        _ <- AccessControl.requireBoundIdentity(headerUserId, token)
+        result <- EitherT(run(databaseSession))
+      } yield result
     }
 }

@@ -7,8 +7,13 @@ import microservice.user.utils.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel
-import microservice.ui.objects.{StretchVisualTemplate, StretchVisualTemplateKind, UiCustomizationErrors}
+import microservice.ui.objects.stretch_template.StretchVisualTemplate
+import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
+import microservice.ui.objects.UiCustomizationErrors
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
+import microservice.ui.api.stretchtemplates.body.CreateStretchVisualTemplateBody
+import microservice.ui.api.stretchtemplates.support.StretchVisualTemplateAccess
+import microservice.ui.api.stretchtemplates.validation.StretchVisualTemplateValidation
 
 /** 总监创建拉伸视觉模板 APIMessage；Router 注入 expectedKind。
   *
@@ -32,21 +37,15 @@ final case class CreateStretchVisualTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ()))
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 规范化并按路由强制 kind
         template <- PlanSteps.read(StretchVisualTemplateValidation.sanitize(body.template.copy(kind = expectedKind)))
         // 二次校验 kind 与路由一致
-        validated <- PlanSteps.require(StretchVisualTemplateValidation.ensureKind(template, expectedKind))
+        validated <- StretchVisualTemplateValidation.ensureKind(template, expectedKind)
         // 校验 id/name/sourceDataUrl/category
-        _ <- PlanSteps.require(StretchVisualTemplateValidation.validate(validated).map(_ => ()))
+        _ <- StretchVisualTemplateValidation.validate(validated)
         // id 不可重复
-        _ <- PlanSteps.require(
-          if (StretchVisualTemplateTable.findById(connection, template.id).nonEmpty) {
-            Left(UiCustomizationErrors.StretchVisualTemplateAlreadyExists(template.id).toHttpError)
-          } else {
-            Right(())
-          }
-        )
+        _ <- StretchVisualTemplateAccess.requireUniqueId(connection, template.id)
         // 插入 StretchVisualTemplateRow
         result <- PlanSteps.read {
           val timestamp = Instant.now().toString

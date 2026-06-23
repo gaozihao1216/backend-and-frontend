@@ -4,7 +4,8 @@
   */
 package microservice.ui.tables.button_template
 
-import microservice.ui.objects.{ButtonTemplateScalingMode, ButtonTemplateSlice}
+import microservice.ui.objects.button_template.ButtonTemplateScalingMode
+import microservice.ui.objects.button_template.ButtonTemplateSlice
 
 /** 按钮模板持久化行（含 scalingMode 与 slice）。
   *

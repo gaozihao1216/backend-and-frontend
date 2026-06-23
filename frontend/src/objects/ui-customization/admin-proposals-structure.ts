@@ -1,4 +1,4 @@
-import type { PageConfig } from "./page-config.js";
+import type { PageConfig } from "../ui/page-config.js";
 
 const PAGE_ID = "admin.proposals";
 

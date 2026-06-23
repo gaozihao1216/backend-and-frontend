@@ -1,4 +1,5 @@
-import type { LevelData, LevelTag } from "../../lib/level-contracts.js";
+import type { LevelData } from "../../objects/level/level/level-data.js";
+import type { LevelTag } from "../../objects/system/system-objects.js";
 import { cloneLevelData, formatArchiveTimestamp, serializeDraft } from "../../lib/designer-page/draft-functions.js";
 import type { DesignerBackup } from "../../objects/designer-page/designer-page-types.js";
 import { MAX_DESIGNER_BACKUPS, useDesignerBackups } from "./useDesignerBackups.js";

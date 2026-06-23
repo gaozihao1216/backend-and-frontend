@@ -5,9 +5,8 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.utils.AccessControl
-import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.social.LevelComment
-import microservice.level.tables.comment.CommentTable
+import microservice.admin.support.comments.AdminCommentAccess
 import microservice.system.objects.AdminLevel
 
 /** 按 ID 删除单条关卡评论 APIMessage。 */
@@ -26,15 +25,8 @@ final case class DeleteCommentAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, LevelComment]] =
     PlanSteps.finish {
       for {
-        // 步骤 1：校验 Standard 管理员权限
-        _ <- PlanSteps.require(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ()))
-        // 步骤 2：按 commentId 删除；不存在则 COMMENT_NOT_FOUND
-        comment <- PlanSteps.require(
-          CommentTable.deleteById(connection, commentId)
-            .map(LevelRowMapper.toComment)
-            .toRight(HttpError.notFound("COMMENT_NOT_FOUND", "Comment not found"))
-        )
-      // 返回已删除的评论对象，便于前端展示确认信息
+        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        comment <- AdminCommentAccess.requireDeletedComment(connection, commentId)
       } yield comment
     }
 }

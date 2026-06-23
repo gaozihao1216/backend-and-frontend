@@ -4,7 +4,7 @@ import {
   listStretchVisualTemplates,
 } from "../api/index.js";
 import type { UiButtonTemplate } from "../api/api-contracts.js";
-import type { StretchVisualTemplate } from "../objects/ui-customization/stretch-visual-template.js";
+import type { StretchVisualTemplate } from "../objects/ui/stretch_template/stretch-visual-template.js";
 
 export const useDirectorTemplateLibrary = (userId: string | null) => {
   const [buttonTemplates, setButtonTemplates] = useState<UiButtonTemplate[]>([]);

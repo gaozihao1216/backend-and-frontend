@@ -2,7 +2,7 @@ import type { UiButtonTemplate } from "../../api/api-contracts.js";
 import {
   DEFAULT_BUTTON_TEMPLATE_CATEGORY,
   normalizeButtonTemplateCategory,
-} from "../../objects/ui-customization/template-category.js";
+} from "../../objects/ui/category/template-category.js";
 import type { ImageBounds, ImageSize, TemplateDraft } from "../../objects/director-page/button-template-types.js";
 
 const defaultTemplateDataUrl = (() => {

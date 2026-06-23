@@ -124,11 +124,83 @@ test("frontend API files mirror backend *Api.scala layout", async () => {
   );
 });
 
+const collectBackendBodyFiles = async (directory: string, prefix = ""): Promise<string[]> => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        return collectBackendBodyFiles(full, rel);
+      }
+      if (entry.isFile() && entry.name.endsWith("Body.scala") && rel.includes("/body/")) {
+        return [rel];
+      }
+      return [];
+    }),
+  );
+  return files.flat();
+};
+
+const collectFrontendBodyFiles = async (directory: string, prefix = ""): Promise<string[]> => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        return collectFrontendBodyFiles(full, rel);
+      }
+      if (entry.isFile() && entry.name.endsWith("Body.ts") && rel.includes("/body/")) {
+        return [rel];
+      }
+      return [];
+    }),
+  );
+  return files.flat();
+};
+
+test("frontend body files mirror backend *Body.scala layout", async () => {
+  const backendBodies = await collectBackendBodyFiles(backendSrc);
+  const frontendBodies = new Set(await collectFrontendBodyFiles(frontendApi));
+
+  assert.ok(backendBodies.length > 0, "expected backend Body.scala files");
+  assert.ok(frontendBodies.size > 0, "expected frontend Body.ts files");
+
+  const missingOnFrontend: string[] = [];
+  for (const backendRel of backendBodies) {
+    const frontendRel = expectedFrontendRel(backendRel);
+    if (!frontendBodies.has(frontendRel)) {
+      missingOnFrontend.push(`${backendRel} → ${frontendRel}`);
+    }
+  }
+
+  const extraOnFrontend: string[] = [];
+  for (const frontendRel of frontendBodies) {
+    const hasBackend = backendBodies.some((backendRel) => expectedFrontendRel(backendRel) === frontendRel);
+    if (!hasBackend) {
+      extraOnFrontend.push(frontendRel);
+    }
+  }
+
+  assert.deepEqual(
+    missingOnFrontend,
+    [],
+    `Backend body files missing matching frontend files:\n${missingOnFrontend.join("\n")}`,
+  );
+  assert.deepEqual(
+    extraOnFrontend,
+    [],
+    `Frontend Body.ts files without backend counterpart:\n${extraOnFrontend.join("\n")}`,
+  );
+});
+
 test("frontend barrel modules re-export aligned API paths", async () => {
   const adminApi = await readFile(path.join(frontendApi, "admin-api.ts"), "utf8");
   assert.match(adminApi, /admin\/comments\/GetAdminCommentsApi/);
   assert.match(adminApi, /bird\/review\/GetPendingBirdSubmissionsApi/);
-  assert.match(adminApi, /admin\/director\/level_assignment\/DirectorLevelAssignmentApi/);
+  assert.match(adminApi, /admin\/audit\/ListAdminAuditLogsApi/);
+  assert.match(adminApi, /admin\/director\/level_assignment\/GetDirectorLevelAssignmentBoardApi/);
 
   const designerApi = await readFile(path.join(frontendApi, "designer-api.ts"), "utf8");
   assert.match(designerApi, /level\/design\/CreateLevelApi/);
