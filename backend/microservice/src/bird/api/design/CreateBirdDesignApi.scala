@@ -6,7 +6,7 @@ import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
 import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.shared.{BirdDesignRow, BirdRowMapper}
+import microservice.bird.tables.design.{BirdDesignRow, BirdDesignTable}
 import microservice.bird.validation.design.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
@@ -22,7 +22,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
     *
     * 解决了什么问题：UGC 鸟种需由设计师定义属性、三档技能描述与预览图。
     * 在事务内起到什么作用：校验通过后 insert BirdDesignRow；失败则整笔回滚。
-    * 关联的 HTTP 路由/前端 API：POST /designer/bird-designs；前端 `CreateBirdDesignApi`。
+    * 关联的前端 API：POST /designer/bird-designs；前端 `CreateBirdDesignApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, BirdDesign]] =
     PlanSteps.finish {
@@ -45,9 +45,9 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
               attack = input.attack,
               impact = input.impact,
               speed = input.speed,
-              tierSkillsJson = BirdRowMapper.encodeStringList(input.tierSkills),
+              tierSkillsJson = BirdDesignTable.encodeStringList(input.tierSkills),
               previewImageUrl = input.previewImageUrl.filter(_.trim.nonEmpty).map(_.trim).getOrElse(BirdDesignTable.defaultPreviewImageUrl),
-              mechanismTagsJson = BirdRowMapper.encodeStringList(input.mechanismTags),
+              mechanismTagsJson = BirdDesignTable.encodeStringList(input.mechanismTags),
               status = LevelStatus.Draft,
               rejectionReason = None,
               createdAt = timestamp,
@@ -55,7 +55,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
               publishedAt = None
             )
           )
-          BirdRowMapper.toBirdDesign(row)
+          BirdDesignTable.toBirdDesign(row)
         }
       } yield design
     }

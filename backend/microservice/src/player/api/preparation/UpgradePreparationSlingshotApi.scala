@@ -18,7 +18,7 @@ final case class UpgradePreparationSlingshotAPIMessage(userId: String) extends A
 
   /** plan 定义了什么业务流程：Player 消耗金币升级弹弓等级。
     *
-    * 关联的 HTTP 路由/前端 API：POST /player/preparation/slingshot/upgrade；前端 `UpgradePreparationSlingshotApi`。
+    * 关联的前端 API：POST /player/preparation/slingshot/upgrade；前端 `UpgradePreparationSlingshotApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

@@ -15,7 +15,7 @@ final case class TransferDirectorPermissionBody(
 )
 
 /** TransferDirectorPermissionBody 的 Circe/http4s 编解码 companion。 */
-object TransferDirectorPermissionBody {
+private[admin] object TransferDirectorPermissionBody {
   implicit val encoder: Encoder[TransferDirectorPermissionBody] = deriveEncoder
   implicit val decoder: Decoder[TransferDirectorPermissionBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, TransferDirectorPermissionBody] = jsonOf

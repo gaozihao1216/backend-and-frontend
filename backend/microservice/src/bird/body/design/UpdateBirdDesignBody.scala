@@ -19,7 +19,7 @@ final case class UpdateBirdDesignBody(
   mechanismTags: List[String] = List.empty
 )
 
-object UpdateBirdDesignBody {
+private[bird] object UpdateBirdDesignBody {
   implicit val encoder: Encoder[UpdateBirdDesignBody] = deriveEncoder
   implicit val decoder: Decoder[UpdateBirdDesignBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, UpdateBirdDesignBody] = jsonOf

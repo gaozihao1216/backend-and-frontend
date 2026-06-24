@@ -13,7 +13,7 @@ import org.http4s.circe.CirceEntityEncoder._
   * ```
   * APIMessage.plan  →  Either[HttpError, A]
   *       ↓
-  * Route handler    →  HttpError.fromEither(result)
+  * APIMessageRouter →  HttpError.fromEither(result)
   *       ↓
   * HTTP Response    →  { "success": false, "error": { code, message, details? } }
   * ```
@@ -28,7 +28,7 @@ import org.http4s.circe.CirceEntityEncoder._
   *
   * == 关联 ==
   * - [[microservice.infrastructure.api.APIMessage]]：plan 的错误载体
-  * - [[microservice.routes.HealthRouter]]：演示 `fromEither` 的标准用法
+  * - [[microservice.infrastructure.api.APIMessageRouter]]：统一将 `Either` 转为 HTTP 响应
   * - 前端 `frontend/src/objects/system/` 中的 `ApiFailureSchema`
   */
 final case class HttpError(

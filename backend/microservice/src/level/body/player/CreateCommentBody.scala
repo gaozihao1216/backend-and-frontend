@@ -15,7 +15,7 @@ final case class CreateCommentBody(
 )
 
 /** CreateCommentBody 的 Circe/http4s 编解码 companion。 */
-object CreateCommentBody {
+private[level] object CreateCommentBody {
   implicit val encoder: Encoder[CreateCommentBody] = deriveEncoder
   implicit val decoder: Decoder[CreateCommentBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, CreateCommentBody] = jsonOf

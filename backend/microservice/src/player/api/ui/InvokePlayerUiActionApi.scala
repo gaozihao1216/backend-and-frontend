@@ -19,7 +19,7 @@ final case class InvokePlayerUiActionAPIMessage(
 
   /** plan 定义了什么业务流程：Player 调用动态 UI 动作端点执行运行时操作。
     *
-    * 关联的 HTTP 路由/前端 API：POST /player/ui/actions/:apiKey；前端 `InvokePlayerUiActionApi`。
+    * 关联的前端 API：POST /player/ui/actions/:apiKey；前端 `InvokePlayerUiActionApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

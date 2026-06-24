@@ -9,7 +9,7 @@ import microservice.level.tables.rating.RatingTable
 import microservice.level.tables.shared.LevelRowMapper
 
 /** 用户资料页 level 侧读聚合（level 模块内）。 */
-object UserProfileReadSupport {
+private[level] object UserProfileReadSupport {
   def loadForUser(connection: Connection, userId: String): UserLevelProfileData =
     UserLevelProfileData(
       publishedLevels =

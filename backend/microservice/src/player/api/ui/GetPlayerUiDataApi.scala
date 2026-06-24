@@ -19,7 +19,7 @@ final case class GetPlayerUiDataAPIMessage(
 
   /** plan 定义了什么业务流程：Player 调用动态 UI 数据端点获取运行时 JSON 载荷。
     *
-    * 关联的 HTTP 路由/前端 API：GET /player/ui/data/:apiKey；前端 `GetPlayerUiDataApi`。
+    * 关联的前端 API：GET /player/ui/data/:apiKey；前端 `GetPlayerUiDataApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

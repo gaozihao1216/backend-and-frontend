@@ -11,7 +11,7 @@ final case class AbolishDirectorSubmissionBody(
   note: Option[String]
 )
 
-object AbolishDirectorSubmissionBody {
+private[admin] object AbolishDirectorSubmissionBody {
   implicit val encoder: Encoder[AbolishDirectorSubmissionBody] = deriveEncoder
   implicit val decoder: Decoder[AbolishDirectorSubmissionBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, AbolishDirectorSubmissionBody] = jsonOf

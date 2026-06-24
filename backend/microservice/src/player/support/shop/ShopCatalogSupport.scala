@@ -11,7 +11,7 @@ import microservice.player.objects.shop.ShopItem
 import microservice.player.tables.shop.{ShopItemRow, ShopItemRowMapper, ShopTable}
 
 /** 商店目录读写（player 模块内）；供 HTTP 与 internal API 复用。 */
-object ShopCatalogSupport {
+private[player] object ShopCatalogSupport {
   def listAllItems(connection: Connection): List[ShopItem] =
     ShopTable.listAllItems(connection).map(ShopItemRowMapper.toShopItem).toList
 

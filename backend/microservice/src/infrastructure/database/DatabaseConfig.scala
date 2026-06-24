@@ -13,9 +13,7 @@ package microservice.infrastructure.database
   * `microservice.system.utils.SystemDefaults.databaseConfig` 中集中定义。
   *
   * == 使用场景 ==
-  * - JDBC 模式：[[DatabaseSession.jdbc]] 用此配置打开 PostgreSQL 连接；
-  * - in-memory 模式：仍构造一份 `DatabaseConfig` 供 `description` 与 Health 端点展示，
-  *   但不会真正建立 JDBC 连接。
+  * [[DatabaseSession.jdbc]] 用此配置打开 PostgreSQL 连接。
   *
   * == 关联 ==
   * - [[DatabaseSession]]：消费本配置的唯一基础设施入口

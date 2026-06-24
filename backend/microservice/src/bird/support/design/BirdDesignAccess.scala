@@ -6,7 +6,8 @@ import java.sql.Connection
 import microservice.bird.objects.design.BirdDesign
 import microservice.bird.objects.submission.BirdSubmission
 import microservice.bird.tables.design.BirdDesignTable
-import microservice.bird.tables.shared.{BirdDesignRow, BirdRowMapper, BirdSubmissionRow}
+import microservice.bird.tables.design.{BirdDesignRow, BirdDesignTable}
+import microservice.bird.tables.submission.{BirdSubmissionRow, BirdSubmissionTable}
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
@@ -14,7 +15,7 @@ import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, SubmissionStatus}
 
 /** 设计师鸟类设计的所有权、状态与写操作结果校验。 */
-object BirdDesignAccess {
+private[bird] object BirdDesignAccess {
   def requireEditable(connection: Connection, designerId: String, designId: String): Step[BirdDesignRow] =
     EitherT.liftF(IO(BirdDesignTable.findById(connection, designId))).flatMap {
       case None =>
@@ -55,14 +56,14 @@ object BirdDesignAccess {
 
   def requireDeleteResult(connection: Connection, designId: String, designerId: String, existing: BirdDesignRow): Step[BirdDesign] =
     EitherT.liftF(IO(BirdDesignTable.deleteDraft(connection, designId, designerId))).flatMap {
-      case true  => EitherT.rightT(BirdRowMapper.toBirdDesign(existing))
+      case true  => EitherT.rightT(BirdDesignTable.toBirdDesign(existing))
       case false => EitherT.leftT(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design could not be deleted"))
     }
 
   def requireUpdateResult(connection: Connection, updatedRow: BirdDesignRow): Step[BirdDesign] =
     EitherT.liftF(IO(BirdDesignTable.updateEditable(connection, updatedRow))).flatMap {
       case None    => EitherT.leftT(HttpError.conflict("INVALID_BIRD_STATUS", "Bird design could not be updated"))
-      case Some(row) => EitherT.rightT(BirdRowMapper.toBirdDesign(row))
+      case Some(row) => EitherT.rightT(BirdDesignTable.toBirdDesign(row))
     }
 
   def requireSubmitResult(connection: Connection, designerId: String, designId: String): Step[BirdSubmission] = {
@@ -95,7 +96,7 @@ object BirdDesignAccess {
               reviewedAt = None
             )
           )
-          BirdRowMapper.toBirdSubmission(row)
+          BirdSubmissionTable.toBirdSubmission(row)
         }
     }
   }

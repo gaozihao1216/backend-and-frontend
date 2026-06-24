@@ -11,7 +11,7 @@ import microservice.system.objects.HealthResponse
   * 定义：无入参的 APIMessage，返回 [[HealthResponse]]。
   * 问题：负载均衡与前端 dev proxy 需要轻量端点确认后端进程存活。
   * 作用：跳过数据库与鉴权，固定返回 status = "ok"。
-  * 关联：GET /health；[[HealthRouter]] 挂载；前端 vite proxy 首项路径。
+  * 关联：[[microservice.routes.HealthRouter]]，经 `GET /health` 调用。
   */
 final case class HealthAPIMessage() extends APIMessage[HealthResponse] {
   /** plan 实现：构造存活响应，不读写 connection。

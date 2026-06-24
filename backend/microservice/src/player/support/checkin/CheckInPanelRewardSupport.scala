@@ -8,7 +8,7 @@ import microservice.player.objects.CheckInSlotReward
 import microservice.player.runtime.PlayerWeeklyCheckInService
 
 /** 签到面板奖励注册的 player 模块内实现。 */
-object CheckInPanelRewardSupport {
+private[player] object CheckInPanelRewardSupport {
   def requireRegisterPanelRewards(
     connection: Connection,
     panelId: String,

@@ -8,12 +8,12 @@ import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.tables.user.UserRowMapper
 
-/** GET /auth/backend-users 的 APIMessage。
+/** 列出后端演示用户的 APIMessage。
   *
   * 定义：无入参 APIMessage，返回 List[[BackendUser]]。
   * 问题：演示环境需列出可绑定账号供前端选择 mock 身份。
   * 作用：UserTable.listAll → UserRowMapper 批量转换。
-  * 关联：[[AuthRouter]] GET /auth/backend-users；[[SystemDemoData.users]] 种子。
+  * 关联：[[microservice.user.routes.UserApiMessages]] 公开注册；[[SystemDemoData.users]] 种子。
   */
 final case class GetBackendUsersAPIMessage() extends APIMessage[List[BackendUser]] {
 

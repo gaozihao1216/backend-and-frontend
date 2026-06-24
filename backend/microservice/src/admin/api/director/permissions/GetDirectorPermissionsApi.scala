@@ -18,7 +18,7 @@ final case class GetDirectorPermissionsAPIMessage(
     *
     * 解决了什么问题：前端需知道当前用户是否为 Director 以及能否管理 UI 定制。
     * 在事务内起到什么作用：只读校验 adminLevel，构造 DirectorPermissionSummary；无 DB 写入。
-    * 关联的 HTTP 路由/前端 API：GET /admin/director/permissions；前端 `GetDirectorPermissionsApi`。
+    * 关联的前端 API：GET /admin/director/permissions；前端 `GetDirectorPermissionsApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, DirectorPermissionSummary]] =
     PlanSteps.finish {

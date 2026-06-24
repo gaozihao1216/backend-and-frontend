@@ -7,7 +7,7 @@ import microservice.bird.objects.skill.config.BirdSkillConfig
 import microservice.bird.objects.skill.director.{DirectorBirdSkillBoard, DirectorBirdSkillEntry}
 
 /** bird 模块 handoff → admin DTO（仅 support 层引用 bird 类型）。 */
-object BirdHandoffMapping {
+private[admin] object BirdHandoffMapping {
   def toDirectorBirdSkillEntry(entry: DirectorBirdSkillEntry): AdminDirectorBirdSkillEntry =
     AdminDirectorBirdSkillEntry(
       birdType = entry.birdType,

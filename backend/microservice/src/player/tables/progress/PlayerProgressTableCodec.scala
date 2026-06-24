@@ -3,13 +3,13 @@
    * 定义：PlayerProgressTableCodec：JDBC ResultSet ↔ Row 列映射与 baseSelect SQL 片段。
  * 问题：snake_case SQL 列名与 Scala camelCase 字段需集中转换。
  * 作用：baseSelect 复用；rowFromResultSet 解析枚举与 Option 列。
- * 关联：[[PlayerProgressTableTableJdbcRead]] / [[PlayerProgressTableTableJdbcWrite]] 共用。
+ * 关联：Player progress tables 共用。
  */
 package microservice.player.tables.progress
 
 import java.sql.ResultSet
 
-object PlayerLevelProgressTableCodec {
+private[player] object PlayerLevelProgressTableCodec {
   val baseSelect: String =
     "SELECT user_id, level_suffix, cleared_at FROM player_level_progress"
 
@@ -21,7 +21,7 @@ object PlayerLevelProgressTableCodec {
     )
 }
 
-object PlayerLegacyCheckInTableCodec {
+private[player] object PlayerLegacyCheckInTableCodec {
   val baseSelect: String =
     "SELECT user_id, status, updated_at FROM player_legacy_check_ins"
 

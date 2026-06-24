@@ -18,7 +18,7 @@ final case class UpgradePreparationBirdAPIMessage(userId: String, birdType: Stri
 
   /** plan 定义了什么业务流程：Player 消耗金币升级指定鸟种的等级。
     *
-    * 关联的 HTTP 路由/前端 API：POST /player/preparation/birds/:birdType/upgrade；前端 `UpgradePreparationBirdApi`。
+    * 关联的前端 API：POST /player/preparation/birds/:birdType/upgrade；前端 `UpgradePreparationBirdApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

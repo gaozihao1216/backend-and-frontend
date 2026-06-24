@@ -13,7 +13,7 @@ final case class SaveDirectorBirdSkillBody(
 )
 
 /** SaveDirectorBirdSkillBody 的 Circe/http4s 编解码 companion。 */
-object SaveDirectorBirdSkillBody {
+private[admin] object SaveDirectorBirdSkillBody {
   implicit val encoder: Encoder[SaveDirectorBirdSkillBody] = deriveEncoder
   implicit val decoder: Decoder[SaveDirectorBirdSkillBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, SaveDirectorBirdSkillBody] = jsonOf

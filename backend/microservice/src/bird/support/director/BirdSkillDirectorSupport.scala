@@ -13,7 +13,7 @@ import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 
 /** 总监鸟类技能配置的 bird 模块内实现。 */
-object BirdSkillDirectorSupport {
+private[bird] object BirdSkillDirectorSupport {
   def buildBoard(connection: Connection): DirectorBirdSkillBoard = {
     val configured = BirdSkillConfigTable.skillsJsonMap(connection)
     val birds =

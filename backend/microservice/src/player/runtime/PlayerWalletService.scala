@@ -15,7 +15,7 @@ import microservice.player.tables.wallet.PlayerWalletTable
   * 作用：getOrCreate 钱包 → Circe Json 字段映射。
   * 关联：[[GetPlayerUiDataAPIMessage]] data 分派；[[PlayerWalletTable]]。
   */
-object PlayerWalletService {
+private[player] object PlayerWalletService {
   /** 前端 dataSource.apiKey 使用的标识。 */
   val dataApiKey: String = "player.wallet"
 

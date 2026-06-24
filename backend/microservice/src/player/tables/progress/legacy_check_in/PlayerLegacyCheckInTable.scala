@@ -2,40 +2,67 @@ package microservice.player.tables.progress.legacy_check_in
 
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
 import microservice.player.tables.progress.PlayerLegacyCheckInRow
-import microservice.player.tables.progress.jdbc.PlayerLegacyCheckInTableJdbc
 
-/** 遗留签到状态表访问门面：兼容旧版 player.checkIn apiKey 的简单 ready/claimed 状态机。 */
-object PlayerLegacyCheckInTable {
-  /** 启动时建表；仅 JDBC 模式执行 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) PlayerLegacyCheckInTableJdbc.initialize(connection)
+/** 遗留签到状态表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
+private[player] object PlayerLegacyCheckInTable {
 
-  /** 读取用户遗留签到状态，无记录时默认 "ready"。 */
-  def getStatus(connection: Connection, userId: String): String = {
-    val row =
-      if (TableConnection.isInMemory(connection)) {
-        InMemoryStore.playerLegacyCheckIns.find(_.userId == userId)
-      } else {
-        PlayerLegacyCheckInTableJdbc.findByUserId(connection, userId)
+  def getStatus(connection: Connection, userId: String): String =
+    PlayerLegacyCheckInTableSql.findByUserId(connection, userId).map(_.status).getOrElse("ready")
+
+  def setStatus(connection: Connection, userId: String, status: String): String = {
+    PlayerLegacyCheckInTableSql.upsert(
+      connection,
+      PlayerLegacyCheckInRow(
+        userId = userId,
+        status = status,
+        updatedAt = Instant.now().toString
+      )
+    )
+    status
+  }
+}
+
+import java.sql.Connection
+import microservice.player.tables.progress._
+
+private[tables] object PlayerLegacyCheckInTableSql {
+
+  def findByUserId(connection: Connection, userId: String): Option[PlayerLegacyCheckInRow] = {
+    val statement = connection.prepareStatement(
+      s"${PlayerLegacyCheckInTableCodec.baseSelect} WHERE user_id = ?"
+    )
+    try {
+      statement.setString(1, userId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(PlayerLegacyCheckInTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
       }
-    row.map(_.status).getOrElse("ready")
+    } finally {
+      statement.close()
+    }
   }
 
-  /** 更新遗留签到状态并返回新状态字符串。 */
-  def setStatus(connection: Connection, userId: String, status: String): String = {
-    val row = PlayerLegacyCheckInRow(
-      userId = userId,
-      status = status,
-      updatedAt = Instant.now().toString
+  def upsert(connection: Connection, row: PlayerLegacyCheckInRow): PlayerLegacyCheckInRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO player_legacy_check_ins (user_id, status, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT (user_id) DO UPDATE SET
+          status = EXCLUDED.status,
+          updated_at = EXCLUDED.updated_at
+      """
     )
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.playerLegacyCheckIns =
-        InMemoryStore.playerLegacyCheckIns.filterNot(_.userId == row.userId) :+ row
-    } else {
-      PlayerLegacyCheckInTableJdbc.upsert(connection, row)
+    try {
+      statement.setString(1, row.userId)
+      statement.setString(2, row.status)
+      statement.setString(3, row.updatedAt)
+      statement.executeUpdate()
+      row
+    } finally {
+      statement.close()
     }
-    status
   }
 }

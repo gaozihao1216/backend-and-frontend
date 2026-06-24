@@ -10,7 +10,7 @@ import java.sql.{PreparedStatement, ResultSet}
   *
   * 定义：page_json 列存储完整 PageConfig 的 JSON 序列化。
   * 实现：baseSelect 复用 SELECT 片段；rowFromResultSet / bindRow 与 PostgreSQL 列对齐。
-  * 关联：UiPageRollbackTableJdbcRead / UiPageRollbackTableJdbcWrite。
+  * 关联：UiPageRollbackTable。
   */
 private[tables] object UiPageRollbackTableCodec {
   /** 回滚表通用 SELECT 列清单。 */

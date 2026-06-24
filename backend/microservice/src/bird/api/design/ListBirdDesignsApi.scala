@@ -5,7 +5,8 @@ import java.sql.Connection
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.design.BirdDesign
 import microservice.bird.tables.design.{BirdDesignTable}
-import microservice.bird.tables.shared.{BirdRowMapper}
+import microservice.bird.tables.design.BirdDesignTable
+import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{LevelStatus, UserRole}
@@ -23,7 +24,7 @@ final case class ListBirdDesignsAPIMessage(
     *
     * 解决了什么问题：封装该 API 的业务规则与数据访问。
     * 在事务内起到什么作用：在 DatabaseSession 事务内执行；Left 时回滚。
-    * 关联的 HTTP 路由/前端 API：见 routes 中对应路径；前端同名 API 文件。
+    * 关联的前端 API：前端同名 API 文件。
     */
 
   override def plan(connection: Connection): IO[Either[HttpError, List[BirdDesign]]] =
@@ -35,7 +36,7 @@ final case class ListBirdDesignsAPIMessage(
         designs <- PlanSteps.read(
           BirdDesignTable
             .listByAuthor(connection, designerId, status)
-            .map(BirdRowMapper.toBirdDesign)
+            .map(BirdDesignTable.toBirdDesign)
             .toList
         )
       } yield designs

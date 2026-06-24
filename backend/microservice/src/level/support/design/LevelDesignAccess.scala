@@ -12,7 +12,7 @@ import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.LevelStatus
 
 /** 设计师关卡设计访问控制：查存在、所有权与可提交状态校验。 */
-object LevelDesignAccess {
+private[level] object LevelDesignAccess {
   /** 按 levelId 查找关卡 Row，不存在返回 LEVEL_NOT_FOUND。 */
   def requireLevel(connection: Connection, levelId: String): Step[LevelRow] =
     EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {

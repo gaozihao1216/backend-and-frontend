@@ -17,7 +17,7 @@ final case class CreateShopItemBody(
   sortOrder: Int = 0
 )
 
-object CreateShopItemBody {
+private[admin] object CreateShopItemBody {
   implicit val encoder: Encoder[CreateShopItemBody] = deriveEncoder
   implicit val decoder: Decoder[CreateShopItemBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, CreateShopItemBody] = jsonOf

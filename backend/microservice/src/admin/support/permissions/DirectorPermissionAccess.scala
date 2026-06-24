@@ -12,7 +12,7 @@ import microservice.user.api.internal.admin.{
 }
 
 /** 总监权限移交的前置校验与原子写操作（经 user internal API）。 */
-object DirectorPermissionAccess {
+private[admin] object DirectorPermissionAccess {
   def requireNotSelfTransfer(currentDirectorId: String, targetAdminId: String): Step[Unit] =
     if (targetAdminId == currentDirectorId) {
       PlanStep.fail(TransferDirectorPermissionErrors.CannotTransferToSelf.toHttpError)

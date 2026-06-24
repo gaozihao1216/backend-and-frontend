@@ -12,12 +12,12 @@ import microservice.player.tables.social.{PlayerPrivateMessageRow, PlayerPrivate
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** POST /player/social/messages 发送私信 APIMessage。
+/** 发送私信 APIMessage。
   *
   * 定义：userId + receiverId + content，插入后返回完整会话。
   * 问题：空内容或非好友发送应拒绝；发送后 UI 需刷新线程。
   * 作用：校验 → insert 新 Row → listConversation 返回更新列表。
-  * 关联：[[PlayerSocialRouter]] POST；[[PlayerPrivateMessageRow]]。
+  * 关联：[[microservice.player.routes.PlayerApiMessages]] 注册；[[PlayerPrivateMessageRow]]。
   */
 final case class SendMessageAPIMessage(userId: String, receiverId: String, content: String)
     extends APIWithTokenMessage[Json] {
@@ -25,7 +25,7 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
 
   /** plan 定义了什么业务流程：Player 向好友发送私信并返回更新后的会话列表。
     *
-    * 关联的 HTTP 路由/前端 API：POST /player/social/messages；前端 `SendMessageApi`。
+    * 关联的前端 API：`SendMessageApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

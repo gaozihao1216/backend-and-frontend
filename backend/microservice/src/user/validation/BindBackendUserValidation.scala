@@ -7,7 +7,7 @@ import microservice.user.body.BindBackendUserRequest
 import microservice.user.objects.BindBackendUserErrors
 
 /** BindBackendUser 请求体字段校验。 */
-object BindBackendUserValidation {
+private[user] object BindBackendUserValidation {
   /** 校验 localUserId 与 nickname 均非空。 */
   def validate(request: BindBackendUserRequest): Step[BindBackendUserRequest] =
     if (request.localUserId.trim.isEmpty || request.nickname.trim.isEmpty) {

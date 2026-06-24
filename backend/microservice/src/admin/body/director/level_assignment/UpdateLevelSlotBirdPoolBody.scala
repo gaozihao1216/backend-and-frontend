@@ -12,7 +12,7 @@ final case class UpdateLevelSlotBirdPoolBody(
   birdPool: AdminBirdPool
 )
 
-object UpdateLevelSlotBirdPoolBody {
+private[admin] object UpdateLevelSlotBirdPoolBody {
   implicit val encoder: Encoder[UpdateLevelSlotBirdPoolBody] = deriveEncoder
   implicit val decoder: Decoder[UpdateLevelSlotBirdPoolBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, UpdateLevelSlotBirdPoolBody] = jsonOf

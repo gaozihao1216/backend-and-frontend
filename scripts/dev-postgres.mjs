@@ -3,7 +3,6 @@ import { spawn, execSync } from "node:child_process";
 const children = [];
 
 const postgresEnv = {
-  UGC_DATABASE_MODE: "jdbc",
   UGC_DATABASE_URL: process.env.UGC_DATABASE_URL ?? "jdbc:postgresql://localhost:5432/ugc_level_platform",
   UGC_DATABASE_USERNAME: process.env.UGC_DATABASE_USERNAME ?? "postgres",
   UGC_DATABASE_PASSWORD: process.env.UGC_DATABASE_PASSWORD ?? "postgres",
@@ -80,6 +79,6 @@ execSync("docker compose up -d postgres", { stdio: "inherit" });
 
 await waitForPostgres();
 
-console.log("[backend] starting with UGC_DATABASE_MODE=jdbc");
+console.log("[backend] starting with PostgreSQL");
 startProcess("backend", "sbt", ["run"], postgresEnv);
 startProcess("frontend", "node_modules/vite/bin/vite.js", []);

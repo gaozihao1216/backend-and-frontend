@@ -21,7 +21,7 @@ final case class TransferDirectorPermissionAPIMessage(
     *
     * 解决了什么问题：总监离职或轮换时需安全移交 UI 定制、槽位分配等高级权限。
     * 在事务内起到什么作用：连续两次 UserTable.updateAdminLevel；任一失败则 Left 整笔回滚。
-    * 关联的 HTTP 路由/前端 API：POST /admin/director/transfer；前端 `TransferDirectorPermissionApi`。
+    * 关联的前端 API：POST /admin/director/transfer；前端 `TransferDirectorPermissionApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, DirectorTransferResult]] =
     PlanSteps.finish {

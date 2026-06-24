@@ -1,75 +1,113 @@
 package microservice.level.tables.slot_assignment
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
 import microservice.level.tables.shared.LevelSlotAssignmentRow
-import microservice.level.tables.slot_assignment.jdbc.LevelSlotAssignmentTableJdbc
+import microservice.level.tables.slot_assignment._
 
-/** 关卡槽位分配表访问门面：Director 将已批准投稿绑定到官方关卡槽位后缀。
-  *
-  * 实现：TableConnection.isInMemory(connection) 为 true 时直接读写 InMemoryStore；否则走 LevelSlotAssignmentTableJdbc。
-  * 关联：admin AssignLevelSlot/UnassignLevelSlot/UpdateLevelSlotBirdPool APIMessage。
-  */
 object LevelSlotAssignmentTable {
-  /** JDBC 启动时建表；in-memory 模式下无需 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) LevelSlotAssignmentTableJdbc.initialize(connection)
 
-  /** 列出全部槽位分配记录（Director 看板用）。 */
-  def listAll(connection: Connection): Vector[LevelSlotAssignmentRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.levelSlotAssignments.sortBy(_.levelSuffix)
-    } else {
-      LevelSlotAssignmentTableJdbc.listAll(connection)
+def listAll(connection: Connection): Vector[LevelSlotAssignmentRow] = {
+    val statement = connection.prepareStatement(
+      s"""
+        ${LevelSlotAssignmentTableCodec.baseSelect}
+        ORDER BY level_suffix ASC, assigned_at ASC
+      """
+    )
+    try rows(statement.executeQuery())
+    finally statement.close()
+  }
+
+  def findBySuffix(connection: Connection, levelSuffix: String): Option[LevelSlotAssignmentRow] = {
+    val statement = connection.prepareStatement(s"${LevelSlotAssignmentTableCodec.baseSelect} WHERE level_suffix = ?")
+    try {
+      statement.setString(1, levelSuffix)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(LevelSlotAssignmentTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def nextId(connection: Connection): String = {
+    val statement = connection.prepareStatement("SELECT COUNT(*) AS assignment_count FROM level_slot_assignments")
+    try {
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) s"level-slot-assignment-${resultSet.getInt("assignment_count") + 1}" else "level-slot-assignment-1"
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  private def rows(resultSet: java.sql.ResultSet): Vector[LevelSlotAssignmentRow] =
+    try {
+      val builder = Vector.newBuilder[LevelSlotAssignmentRow]
+      while (resultSet.next()) {
+        builder += LevelSlotAssignmentTableCodec.rowFromResultSet(resultSet)
+      }
+      builder.result()
+    } finally {
+      resultSet.close()
     }
 
-  /** 按关卡后缀（如 "1-1"）查找槽位分配。 */
-  def findBySuffix(connection: Connection, levelSuffix: String): Option[LevelSlotAssignmentRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.levelSlotAssignments.find(_.levelSuffix == levelSuffix)
-    } else {
-      LevelSlotAssignmentTableJdbc.findBySuffix(connection, levelSuffix)
-    }
+def upsert(connection: Connection, row: LevelSlotAssignmentRow): LevelSlotAssignmentRow = {
+    deleteBySubmissionId(connection, row.submissionId)
+    deleteBySuffix(connection, row.levelSuffix)
 
-  /** 生成下一个槽位分配 ID。 */
-  def nextId(connection: Connection): String =
-    if (TableConnection.isInMemory(connection)) {
-      s"level-slot-assignment-${InMemoryStore.levelSlotAssignments.size + 1}"
-    } else {
-      LevelSlotAssignmentTableJdbc.nextId(connection)
-    }
-
-  /** 插入或更新槽位分配（按 suffix 唯一）。 */
-  def upsert(connection: Connection, row: LevelSlotAssignmentRow): LevelSlotAssignmentRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.levelSlotAssignments =
-        InMemoryStore.levelSlotAssignments.filterNot(existing =>
-          existing.levelSuffix == row.levelSuffix || existing.submissionId == row.submissionId
-        ) :+ row
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO level_slot_assignments (
+          id,
+          level_suffix,
+          submission_id,
+          source_level_id,
+          assigned_by_id,
+          assigned_at,
+          note,
+          bird_pool_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      statement.setString(1, row.id)
+      statement.setString(2, row.levelSuffix)
+      statement.setString(3, row.submissionId)
+      statement.setString(4, row.sourceLevelId)
+      statement.setString(5, row.assignedById)
+      statement.setString(6, row.assignedAt)
+      statement.setString(7, row.note.orNull)
+      statement.setString(8, LevelSlotAssignmentTableCodec.encodeBirdPool(row.birdPool))
+      statement.executeUpdate()
       row
-    } else {
-      LevelSlotAssignmentTableJdbc.upsert(connection, row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 按关卡后缀删除槽位分配。 */
-  def deleteBySuffix(connection: Connection, levelSuffix: String): Boolean =
-    if (TableConnection.isInMemory(connection)) {
-      val before = InMemoryStore.levelSlotAssignments.size
-      InMemoryStore.levelSlotAssignments =
-        InMemoryStore.levelSlotAssignments.filterNot(_.levelSuffix == levelSuffix)
-      InMemoryStore.levelSlotAssignments.size != before
-    } else {
-      LevelSlotAssignmentTableJdbc.deleteBySuffix(connection, levelSuffix)
+  def deleteBySuffix(connection: Connection, levelSuffix: String): Boolean = {
+    val statement = connection.prepareStatement("DELETE FROM level_slot_assignments WHERE level_suffix = ?")
+    try {
+      statement.setString(1, levelSuffix)
+      statement.executeUpdate() > 0
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 按投稿 ID 删除关联的槽位分配（投稿废止时清理）。 */
-  def deleteBySubmissionId(connection: Connection, submissionId: String): Boolean =
-    if (TableConnection.isInMemory(connection)) {
-      val before = InMemoryStore.levelSlotAssignments.size
-      InMemoryStore.levelSlotAssignments =
-        InMemoryStore.levelSlotAssignments.filterNot(_.submissionId == submissionId)
-      InMemoryStore.levelSlotAssignments.size != before
-    } else {
-      LevelSlotAssignmentTableJdbc.deleteBySubmissionId(connection, submissionId)
+  def deleteBySubmissionId(connection: Connection, submissionId: String): Boolean = {
+    val statement = connection.prepareStatement("DELETE FROM level_slot_assignments WHERE submission_id = ?")
+    try {
+      statement.setString(1, submissionId)
+      statement.executeUpdate() > 0
+    } finally {
+      statement.close()
     }
+  }
 }

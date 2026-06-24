@@ -15,7 +15,7 @@ final case class PlayerWeeklyCheckInRow(
   updatedAt: String
 )
 
-object PlayerWeeklyCheckInSlotsCodec {
+private[player] object PlayerWeeklyCheckInSlotsCodec {
   def encode(slots: Set[Int]): String =
     slots.toVector.sorted.mkString(",")
 

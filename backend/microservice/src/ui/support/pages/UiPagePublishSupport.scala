@@ -12,7 +12,7 @@ import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbackTable}
 
 /** 页面发布与回滚的共享存储逻辑。 */
-object UiPagePublishSupport {
+private[ui] object UiPagePublishSupport {
   def requireNormalizePageConfig(pageId: String, page: PageConfig): Step[PageConfig] =
     if (page.name.trim.isEmpty || page.path.trim.isEmpty) {
       PlanStep.fail(UiCustomizationErrors.InvalidPageConfig("name and path are required").toHttpError)

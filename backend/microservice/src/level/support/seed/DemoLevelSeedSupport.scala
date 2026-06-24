@@ -9,7 +9,7 @@ import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, Submis
 import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
 
 /** 演示关卡/投稿/评分/评论种子（level 模块内）。 */
-object DemoLevelSeedSupport {
+private[level] object DemoLevelSeedSupport {
   val jdbcDemoTimestamp: String = "2026-06-03T00:00:00Z"
 
   def levels(createdAt: String): Vector[LevelRow] =

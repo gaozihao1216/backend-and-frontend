@@ -18,7 +18,7 @@ final case class AscendPreparationBirdAPIMessage(userId: String, birdType: Strin
 
   /** plan 定义了什么业务流程：Player 消耗碎片升阶指定鸟种。
     *
-    * 关联的 HTTP 路由/前端 API：POST /player/preparation/birds/:birdType/ascend；前端 `AscendPreparationBirdApi`。
+    * 关联的前端 API：POST /player/preparation/birds/:birdType/ascend；前端 `AscendPreparationBirdApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

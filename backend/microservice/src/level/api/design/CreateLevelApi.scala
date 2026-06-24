@@ -26,7 +26,7 @@ final case class CreateLevelAPIMessage(
     *
     * 解决了什么问题：UGC 关卡创作入口，authorId 取自 token 而非 body 防伪造。
     * 在事务内起到什么作用：校验通过后 insert LevelRow；Left 时整笔回滚。
-    * 关联的 HTTP 路由/前端 API：POST /designer/levels；前端 `CreateLevelApi`。
+    * 关联的前端 API：POST /designer/levels；前端 `CreateLevelApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Level]] =
     PlanSteps.finish {

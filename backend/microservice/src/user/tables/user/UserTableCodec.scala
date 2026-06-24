@@ -8,8 +8,8 @@ import java.sql.{ResultSet, SQLException}
   *
   * 定义：baseSelect SQL 片段 + rowFromResultSet 解析函数。
   * 问题：role/adminLevel 存字符串，需 fromString 并非法值抛 SQLException 回滚事务。
-  * 作用：UserTableJdbc 所有 SELECT 复用 baseSelect。
-  * 关联：[[UserTableJdbc]]。
+  * 作用：UserTable 所有 SELECT 复用 baseSelect。
+  * 关联：[[UserTable]]。
   */
 private[tables] object UserTableCodec {
 

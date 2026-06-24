@@ -4,7 +4,7 @@
 
 - **Scala 3** + **http4s** + **cats-effect**
 - **Circe**：JSON 编解码
-- **PostgreSQL / JDBC**（可选）+ **InMemoryStore**（默认）
+- **PostgreSQL / JDBC**
 - 单进程 monolith：逻辑按模块拆分，统一部署为一个 http4s 服务
 
 入口：`backend/microservice/src/Main.scala`，默认监听 `127.0.0.1:3000`。
@@ -16,7 +16,7 @@
 ```text
 backend/microservice/src/
 ├── Main.scala
-├── routes/              # 根路由挂载（ApiRouter、HealthRouter）
+├── routes/              # 系统健康检查与 APIMessage 统一入口（ApiRouter、HealthRouter、*ApiMessages）
 ├── infrastructure/      # 纯技术基础设施
 │   ├── api/             # APIMessage、APIWithTokenMessage
 │   ├── database/        # DatabaseConfig、DatabaseSession、Connection
@@ -36,12 +36,12 @@ backend/microservice/src/
 | 目录 | 职责 |
 | --- | --- |
 | `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` 编排（鉴权 → 校验 → support → 表读写） |
-| `body/` | HTTP 请求 DTO（Circe + `EntityDecoder`）；`routes` 与 `api` 共同引用 |
+| `body/` | 请求 DTO（Circe 编解码）；由 `api` 层的 APIMessage 引用 |
 | `validation/` | 字段/结构校验：`validate*` → `PlanStep.Step`，`check*` 供单元测试 |
 | `objects/` | 领域对象（case class + Circe codec）；JSON 辅助如 `PlayerSocialJson` |
 | `support/` | 可复用业务规则（查表、状态机）：`require*` / `check*` |
-| `routes/` | HTTP 解析（path/header/body），构造 APIMessage 并 `run` |
-| `tables/` | 数据访问；`*Row` + Table 门面；in-memory 内联于 Table，JDBC 在 `jdbc/*TableJdbc.scala` |
+| `routes/` | 模块 APIMessage 注册表；业务 HTTP 入口统一走 `POST /api/{apiName}` |
+| `tables/` | 数据访问；`*Row` + `*Table.scala` 读写入口 + `*TableInitializer.scala` DDL/seed |
 | `runtime/` / `preparation/` | player 模块专属运行时/备战逻辑（**不是** domain 类型） |
 
 **类型分层（目录规范）** — 完整说明、依赖图与新增 API 清单见 [`backend/microservice/MODULE-LAYOUT.md`](../backend/microservice/MODULE-LAYOUT.md)；领域对象子包见 [`OBJECTS.md`](../backend/microservice/OBJECTS.md)。
@@ -100,31 +100,30 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
 
 原则：
 
-- Route 只做 HTTP 解析，不写业务规则；**禁止**在 route 内直接 `withTransaction` 或调用 service
+- 健康检查保留 `GET /health`；业务入口统一由 `APIMessageRouter` 分发 `POST /api/{apiName}`
 - `plan(connection)` 内完成权限、校验、table 调用；**禁止**内联 `PlanSteps.require(Either(...))` 或手写 `Left`/`toRight` 校验块
 - `APIMessage.run` 调用 `DatabaseSession.withTransactionEither`：`Right` 提交，`Left` 回滚（无异常驱动控制流）
 - 返回 `IO[Either[HttpError, A]]`，由 `HttpError.fromEither` 转为 HTTP 响应
 - 成功体包装为 `ApiSuccess(data)`，失败为 `ApiFailure(error)`
 
-## 路由挂载与鉴权
+## API 入口与鉴权
 
-`ApiRouter.scala` 将模块路由组合如下：
+`ApiRouter.scala` 先挂载系统级 `HealthRouter`，再汇总各模块 `*ApiMessages` 注册表并交给 `APIMessageRouter` 统一分发。外部业务 API 使用 `POST /api/{apiName}`，其中 `apiName` 由 `XxxAPIMessage` 推导为 `xxxapi`。
 
-| 前缀 | 模块 | 鉴权 |
-| --- | --- | --- |
-| `/health` | system | 公开 |
-| `/auth` | user（身份绑定） | 公开 |
-| `/users` | user（资料聚合） | 需 `x-user-id` |
-| `/designer` | level（设计师）+ bird | 需 `x-user-id` |
-| `/player` | level（玩家读/写）+ player（ui/social/preparation） | 需 `x-user-id` |
-| `/admin/director/ui` | ui 定制 | 需 `x-user-id` |
-| `/admin` | admin（审核、评论、总监配置） | 需 `x-user-id` |
+| 注册表 | 模块 |
+| --- | --- |
+| `UserApiMessages` | user（身份绑定、资料聚合） |
+| `LevelRoutes` | level（设计师创建/提交、玩家读写） |
+| `BirdApiMessages` | bird（鸟类设计与审核） |
+| `PlayerApiMessages` | player（ui/social/preparation） |
+| `AdminApiMessages` | admin（审核、评论、总监配置） |
+| `UiApiMessages` | ui 定制 |
 
-受保护前缀由 **`AuthMiddleware.requireUserId`** 统一拦截：缺少 `x-user-id` 时返回 401。Route 内通过 `AuthMiddleware.userIdFromRequest(req).get` 读取当前用户，**不在 route 内重复 401 分支**。
+健康检查是例外：`GET /health` 直接返回 `HealthResponse`，用于前端 dev proxy、负载均衡和运维探针。
 
-认证上下文通过请求头 **`x-user-id`** 传递；后端不信任 body 中的用户身份字段。受保护路由应调用 **`APIWithTokenMessage.runAuthenticated(headerUserId, session)`**，在 plan 执行前校验 header 与 `token` 一致（`USER_ID_MISMATCH`）。角色与管理员等级校验仍在 APIMessage 的 `plan` 内通过 `AccessControl` 完成。
+公开 API 使用 `RegisteredAPIMessage.publicApi`；受保护 API 使用 `protectedApi`。认证上下文通过请求头 **`x-user-id`** 传递；`APIMessageRouter` 读取该 header，并由 `protectedApi` 在进入 `plan` 前调用 `runAuthenticated` 校验 header 与 `token` 一致（`USER_ID_MISMATCH`）。角色与管理员等级校验仍在 APIMessage 的 `plan` 内通过 `AccessControl` 完成。
 
-JDBC 模式下，`SystemDefaults.initializeDatabaseOn` 在 DDL 之后调用 **`SystemJdbcSeedData.seed`**，写入与 in-memory `SystemDemoData` 一致的关卡、投稿、评分、评论与 UI 模板演示数据。
+`SystemDefaults.initializeDatabaseOn` 在 DDL 之后调用 **`SystemJdbcSeedData.seed`**，向 PostgreSQL 幂等写入关卡、投稿、评分、评论与 UI 模板演示数据。
 
 ## 权限模型
 
@@ -139,23 +138,16 @@ JDBC 模式下，`SystemDefaults.initializeDatabaseOn` 在 DDL 之后调用 **`S
 
 ## 存储层
 
-### 默认：In-Memory
-
-- 启动时使用 `DatabaseSession.inMemory`
-- 种子数据由 `SystemSeedData` 注入（演示关卡、用户、模板等）
-- 适合本地开发与课程演示，重启后 in-memory 状态重置（除非改 seed）
-
-### 可选：PostgreSQL/JDBC
+### PostgreSQL/JDBC
 
 ```bash
 npm run postgres:up
-npm run dev:backend:postgres
+npm run dev:backend
 ```
 
 或手动指定环境变量：
 
 ```bash
-UGC_DATABASE_MODE=jdbc \
 UGC_DATABASE_URL=jdbc:postgresql://localhost:5432/ugc_level_platform \
 UGC_DATABASE_USERNAME=postgres \
 UGC_DATABASE_PASSWORD=postgres \
@@ -163,7 +155,7 @@ sbt run
 ```
 
 - 初始化脚本：`backend/docker/init-store.sql`
-- 主要业务表在 Table 门面内直接读写 `InMemoryStore`（`connection == null`），JDBC 路径调用同目录下合并后的 `*TableJdbc` 对象（无 JdbcRead/Write/Schema 多层转发）
+- 主要业务表由 `*Table.scala` 接收 JDBC `Connection` 并执行读写；`*TableInitializer.scala` 单独负责建表和启动 seed（无 JdbcRead/Write/Schema 多层转发）
 - 修改 init SQL 后需 `docker compose down -v` 重建数据卷
 
 ## 模块说明
@@ -176,14 +168,14 @@ sbt run
 
 统一用户模块，内部分 **identity**（身份）与 **profile**（资料聚合）两层：
 
-**身份 / 绑定**（路由前缀 `/auth`，兼容前端现有路径）：
+**身份 / 绑定**：
 
-- `GET /auth/backend-users`：列出可绑定的演示账号
-- `POST /auth/bind`：前端本地 ID 绑定到后端用户（创建或复用 UserRow）
+- `GetBackendUsersAPIMessage`：列出可绑定的演示账号
+- `BindBackendUserAPIMessage`：前端本地 ID 绑定到后端用户（创建或复用 UserRow）
 
-**资料**（路由前缀 `/users`）：
+**资料**：
 
-- `GET /users/:userId/profile`：资料页聚合（发布关卡、评论、统计）
+- `GetUserProfileAPIMessage`：资料页聚合（发布关卡、评论、统计）
 
 **共享能力**：
 
@@ -195,8 +187,8 @@ sbt run
 
 设计师：
 
-- `POST /designer/levels`：创建关卡（status = draft）
-- `POST /designer/submissions`：提交审核
+- `CreateLevelAPIMessage`：创建关卡（status = draft）
+- `SubmitLevelAPIMessage`：提交审核
 
 玩家：
 
@@ -235,12 +227,12 @@ level/
 普通管理员（Standard）：
 
 - 待审核关卡/鸟类、审核操作、评论列表与删除
-- 审核审计日志查询（`GET /admin/audit-logs`）
-- 商店商品 CRUD（`GET/POST/PUT/DELETE /admin/shop/items`）
+- 审核审计日志查询（`ListAdminAuditLogsAPIMessage`）
+- 商店商品 CRUD（`ListAdminShopItemsAPIMessage` 等）
 
 总监（Director）：
 
-- 关卡槽位分配、鸟类技能板、权限转移等（`/admin/director/*` 部分路径）
+- 关卡槽位分配、鸟类技能板、权限转移等（director 相关 APIMessage）
 
 目录按业务域分子包（与 `player/`、`ui/` 一致）：
 
@@ -271,12 +263,12 @@ admin/
 │   ├── submission/
 │   └── director/
 ├── routes/
-└── tables/                    # AdminAuditTable、jdbc/…
+└── tables/                    # AdminAuditTable、AdminAuditTableInitializer
 ```
 
 ### ui
 
-总监专用，挂载在 `/admin/director/ui`：
+总监专用，经 `UiApiMessages` 注册：
 
 - UI 页面 CRUD（`page.PageConfig`）
 - 页面组件、按钮模板、拉伸视觉模板
@@ -290,7 +282,7 @@ admin/
 
 设计师创建/编辑/提交鸟类设计；管理员审核鸟类投稿。
 
-`tables/design/`、`tables/submission/`、`tables/skill_config/` 等均采用 **Table 门面 + 单个 `jdbc/*TableJdbc.scala`** 结构（in-memory 逻辑内联于 Table，经 `TableConnection.isInMemory` 分流）。
+`tables/design/`、`tables/submission/`、`tables/skill_config/` 等均采用 **`*Table.scala` + `*TableInitializer.scala`** 结构。
 
 目录按生命周期分子包：
 
@@ -314,21 +306,21 @@ bird/
 
 ### player
 
-挂载在 `/player` 下若干子路径，业务均通过 `player/api/` 或 `level/api/` 的 APIMessage 执行：
+玩家能力经 `PlayerApiMessages` 与 `LevelRoutes` 注册，业务均通过 `player/api/` 或 `level/api/` 的 APIMessage 执行：
 
 - **ui runtime**：`player/api/ui/` — 动态 UI 数据与动作；关卡地图页走 `ui/api/pages/`
 - **social**：`player/api/social/` — 好友与私信；校验逻辑在 `player/support/social/PlayerSocialAccess`
 - **preparation**：`player/api/preparation/` — 鸟/弹弓备战升级
-- **levels / favorites**：`level/api/` — 已发布关卡读/写（挂载在同一 `/player` 前缀下）
+- **levels / favorites**：`level/api/` — 已发布关卡读/写
 
-`tables/preparation/`、`tables/social/`、`tables/shop/` 使用相同 Table + `*TableJdbc` 模式；管理员可通过 `GET/POST/PUT/DELETE /admin/shop/items` 维护商品目录。
+`tables/preparation/`、`tables/social/`、`tables/shop/` 使用相同 `*Table.scala` + `*TableInitializer.scala` 模式；管理员可通过 shop 相关 APIMessage 维护商品目录。
 
 ## API 文件约定
 
 - 后端：`backend/microservice/src/<module>/api/<子路径>/*Api.scala`
 - 前端：`frontend/src/api/<module>/<子路径>/*Api.ts`（与后端子路径一致，见 [`frontend/src/api/ARCHITECTURE.md`](../frontend/src/api/ARCHITECTURE.md)）
-- **文件名与子目录一一对应**；例外：`GetBackendUsersApi` / `BindBackendUserApi` 在前端位于 `api/auth/`（路由前缀 `/auth`）
-- HTTP method 与 path 说明维护在文档中，不在 Scala 里写未使用的 `*Endpoint` object
+- **文件名与子目录一一对应**；例外：`GetBackendUsersApi` / `BindBackendUserApi` 在前端位于 `api/auth/`
+- HTTP 入口由 `APIMessageRouter` 统一维护，不在 Scala 里写未使用的 `*Endpoint` object 或手写 path router
 - 前端 `api-alignment.test.ts` 在 CI/本地 `npm test` 中校验布局对齐
 
 ## 响应格式
@@ -350,11 +342,11 @@ bird/
 ## 本地开发命令
 
 ```bash
-npm run dev                 # in-memory 后端 + 前端
-npm run dev:postgres        # Postgres + JDBC 后端 + 前端
-npm run dev:backend         # sbt run（默认 in-memory）
+npm run dev                 # Postgres + JDBC 后端 + 前端
+npm run dev:postgres        # 同 npm run dev
+npm run dev:backend         # sbt run（需本地 Postgres）
 npm run dev:backend:watch   # sbt ~run
-npm run dev:backend:postgres # JDBC 模式
+npm run dev:backend:postgres # 兼容别名：sbt run
 npm run postgres:up         # 启动 Docker Postgres
 sbt compile
 sbt test                    # Scala 测试

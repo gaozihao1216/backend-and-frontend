@@ -4,7 +4,7 @@ import java.sql.Connection
 import microservice.bird.objects.catalog.{BirdPoolOptionEntry, PublishedBirdCatalogEntry, SystemBirdCatalogEntry}
 
 /** 合并系统鸟与已发布设计鸟的 catalog 读操作（bird 模块内）。 */
-object BirdCatalogReadSupport {
+private[bird] object BirdCatalogReadSupport {
   def listSystemEntries: List[SystemBirdCatalogEntry] =
     SystemBirdCatalogSupport.entries.toList
 

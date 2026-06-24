@@ -6,7 +6,7 @@
 
 | 优先级 | 方向 | 说明 |
 | --- | --- | --- |
-| P0 | 默认持久化策略 | 明确开发/演示/生产各环境的数据库模式与 seed 策略 |
+| P0 | 默认持久化策略 | PostgreSQL/JDBC 已成为唯一后端存储路径，后续补齐部署与备份策略 |
 | P1 | 真实认证 | 替换 mock auth + `x-user-id` 演示方案 |
 | P1 | 管理员分级完善 | Standard/Director 已存在，需补全权限边界测试与 UI 分流一致性 |
 | P2 | UI 定制体验 | 从配置 JSON 走向更直观的可视化编辑 |
@@ -17,13 +17,13 @@
 
 ## 1. 数据持久化
 
-**现状**：默认 in-memory；JDBC 需手动设 `UGC_DATABASE_MODE=jdbc`。
+**现状**：后端只使用 PostgreSQL/JDBC；`npm run dev` 会启动 Postgres、后端与前端。
 
 **建议**：
 
-- 提供 `.env.example` 与 `npm run dev:postgres` 一键启动「前端 + 后端 + Postgres」（已完成）
+- 提供 `.env.example` 与 `npm run dev` 一键启动「前端 + 后端 + Postgres」（已完成）
 - CI 中增加 JDBC 模式 smoke test（`.github/workflows/ci.yml` 的 `scala-jdbc` job；本地 `npm run test:backend:jdbc`）
-- 明确哪些 player/runtime 表仅 in-memory 有 seed，避免 JDBC 空库体验差
+- 完善 PostgreSQL seed 与迁移策略，避免空库体验差
 
 ## 2. 认证与安全
 

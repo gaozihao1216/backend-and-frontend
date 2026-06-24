@@ -11,7 +11,7 @@ final case class RateLevelBody(
   score: Int
 )
 
-object RateLevelBody {
+private[level] object RateLevelBody {
   implicit val encoder: Encoder[RateLevelBody] = deriveEncoder
   implicit val decoder: Decoder[RateLevelBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, RateLevelBody] = jsonOf

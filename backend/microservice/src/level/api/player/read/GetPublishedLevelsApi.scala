@@ -21,7 +21,7 @@ final case class GetPublishedLevelsAPIMessage(
     *
     * 解决了什么问题：封装该 API 的业务规则与数据访问。
     * 在事务内起到什么作用：在 DatabaseSession 事务内执行；Left 时回滚。
-    * 关联的 HTTP 路由/前端 API：见 routes 中对应路径；前端同名 API 文件。
+    * 关联的前端 API：前端同名 API 文件。
     */
 
   override def plan(connection: Connection): IO[Either[HttpError, List[Level]]] =

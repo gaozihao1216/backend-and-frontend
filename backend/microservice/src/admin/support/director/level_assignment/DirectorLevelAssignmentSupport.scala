@@ -19,7 +19,7 @@ import microservice.level.api.internal.admin.{
 }
 
 /** 总监关卡槽位分配辅助逻辑（admin 模块内编排）。 */
-object DirectorLevelAssignmentSupport {
+private[admin] object DirectorLevelAssignmentSupport {
   def requireSupportedSuffix(levelSuffix: String): Step[Unit] =
     if (LevelSlotCatalog.isSupported(levelSuffix)) {
       PlanStep.succeed(())

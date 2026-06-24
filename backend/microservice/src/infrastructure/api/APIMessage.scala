@@ -13,11 +13,11 @@ import microservice.user.utils.AccessControl
   * 将「HTTP 解析」与「业务执行」彻底分离：
   * - **Routes 层**：只负责从 Request 提取 path/header/body，构造具体的 `XxxAPIMessage` case class，调用 `.run`；
   * - **APIMessage 层**：在 `plan` 中完成权限校验、表读写、领域规则，返回 `Either[HttpError, A]`；
-  * - **Table 层**：接受 `Connection` 参数；in-memory 模式下 connection 为 `null`，路由到 [[InMemoryStore]]。
+  * - **Table 层**：接受 JDBC `Connection` 参数，执行表读写。
   *
   * == 事务语义 ==
   * `run` 委托 [[DatabaseSession.withTransactionEither]]：
-  * - 返回 `Right(value)` → 提交事务（JDBC）或静默完成（in-memory）；
+  * - 返回 `Right(value)` → 提交事务；
   * - 返回 `Left(error)`  → 回滚事务，**不抛异常**，由 routes 通过 [[HttpError.fromEither]] 编码 JSON 错误响应。
   *
   * == 典型子类 ==
@@ -33,7 +33,7 @@ trait APIMessage[A] {
   /** 在单个数据库连接上执行业务逻辑。
     *
     * @param connection
-    *   JDBC 模式为真实 `Connection`；in-memory 模式为 `null`（哨兵值，Table 据此分支）。
+    *   当前事务中的 JDBC `Connection`。
     * @return
     *   `Right` 表示业务成功；`Left(HttpError)` 表示可预期的业务/权限失败，由外层统一转 HTTP 响应。
     */
@@ -68,7 +68,7 @@ trait APIWithTokenMessage[A] extends APIMessage[A] {
   /** 先校验 x-user-id 与 token 绑定，通过后再进入事务化的 [[run]]。
     *
     * @param headerUserId 由路由从 `AuthMiddleware.userIdFromRequest` 取得的已认证用户 ID
-    * @param databaseSession 当前进程的数据库会话（in-memory 或 JDBC）
+    * @param databaseSession 当前进程的 JDBC 数据库会话
     */
   final def runAuthenticated(headerUserId: String, databaseSession: DatabaseSession): IO[Either[HttpError, A]] =
     PlanSteps.finish {

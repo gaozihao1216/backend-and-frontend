@@ -15,7 +15,7 @@ import microservice.ui.tables.button_template.ButtonTemplateTable
 import microservice.ui.tables.stretch_visual_template.StretchVisualTemplateTable
 
 /** UI 演示模板种子（ui 模块内）。 */
-object DemoUiTemplateSeedSupport {
+private[ui] object DemoUiTemplateSeedSupport {
   private val defaultButtonSvg =
     """
       |<svg xmlns="http://www.w3.org/2000/svg" width="360" height="144" viewBox="0 0 360 144">

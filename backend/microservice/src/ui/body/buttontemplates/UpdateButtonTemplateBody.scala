@@ -17,7 +17,7 @@ final case class UpdateButtonTemplateBody(
 )
 
 /** UpdateButtonTemplateBody 的 Circe 编解码与 http4s EntityDecoder。 */
-object UpdateButtonTemplateBody {
+private[ui] object UpdateButtonTemplateBody {
   implicit val encoder: Encoder[UpdateButtonTemplateBody] = deriveEncoder
   implicit val decoder: Decoder[UpdateButtonTemplateBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, UpdateButtonTemplateBody] = jsonOf

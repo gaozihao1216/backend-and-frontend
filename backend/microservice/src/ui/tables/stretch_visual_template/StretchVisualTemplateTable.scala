@@ -1,68 +1,100 @@
 package microservice.ui.tables.stretch_visual_template
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import java.sql.{Connection, ResultSet}
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
-import microservice.ui.tables.stretch_visual_template.jdbc.StretchVisualTemplateTableJdbc
+import microservice.ui.tables.stretch_visual_template._
 
-/** 拉伸视觉模板表访问门面：面板（panel）与图案（pattern）两类可拉伸背景资源。
-  *
-  * 路由层以 /panel-templates 与 /pattern-templates 区分 kind；存储共用一张表。
-  */
 object StretchVisualTemplateTable {
-  /** 启动时建表；仅 JDBC 模式执行 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) StretchVisualTemplateTableJdbc.initialize(connection)
+/** 创建 stretch_visual_templates 表及 kind 索引。 */
 
-  /** 按 kind 过滤返回模板列表。 */
-  def listByKind(connection: Connection, kind: StretchVisualTemplateKind): Vector[StretchVisualTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.stretchVisualTemplates.filter(_.kind == kind).sortBy(_.id)
-    } else {
-      StretchVisualTemplateTableJdbc.listByKind(connection, kind)
+/** 按 kind 过滤查询。 */
+  def listByKind(connection: Connection, kind: StretchVisualTemplateKind): Vector[StretchVisualTemplateRow] = {
+    val statement = connection.prepareStatement(s"${StretchVisualTemplateTableCodec.baseSelect} WHERE kind = ? ORDER BY id ASC")
+    try {
+      statement.setString(1, kind.value)
+      rows(statement.executeQuery())
+    } finally {
+      statement.close()
+    }
+  }
+
+  /** 按 id 查询单条。 */
+  def findById(connection: Connection, templateId: String): Option[StretchVisualTemplateRow] = {
+    val statement = connection.prepareStatement(s"${StretchVisualTemplateTableCodec.baseSelect} WHERE id = ?")
+    try {
+      statement.setString(1, templateId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(StretchVisualTemplateTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  private def rows(resultSet: ResultSet): Vector[StretchVisualTemplateRow] =
+    try {
+      val builder = Vector.newBuilder[StretchVisualTemplateRow]
+      while (resultSet.next()) {
+        builder += StretchVisualTemplateTableCodec.rowFromResultSet(resultSet)
+      }
+      builder.result()
+    } finally {
+      resultSet.close()
     }
 
-  /** 按 templateId 查找模板（不区分 kind）。 */
-  def findById(connection: Connection, templateId: String): Option[StretchVisualTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.stretchVisualTemplates.find(_.id == templateId)
-    } else {
-      StretchVisualTemplateTableJdbc.findById(connection, templateId)
-    }
-
-  /** 插入新拉伸视觉模板。 */
-  def insert(connection: Connection, row: StretchVisualTemplateRow): StretchVisualTemplateRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.stretchVisualTemplates = InMemoryStore.stretchVisualTemplates :+ row
+/** INSERT 新模板行。 */
+  def insert(connection: Connection, row: StretchVisualTemplateRow): StretchVisualTemplateRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO ui_stretch_visual_templates (id, name, source_data_url, kind, category, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      StretchVisualTemplateTableCodec.bindRow(statement, row)
+      statement.executeUpdate()
       row
-    } else {
-      StretchVisualTemplateTableJdbc.insert(connection, row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 更新已有模板；不存在时返回 None。 */
-  def update(connection: Connection, row: StretchVisualTemplateRow): Option[StretchVisualTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.stretchVisualTemplates.indexWhere(_.id == row.id) match {
-        case -1 => None
-        case index =>
-          InMemoryStore.stretchVisualTemplates = InMemoryStore.stretchVisualTemplates.updated(index, row)
-          Some(row)
-      }
-    } else {
-      StretchVisualTemplateTableJdbc.update(connection, row)
+  /** UPDATE 已有行。 */
+  def update(connection: Connection, row: StretchVisualTemplateRow): Option[StretchVisualTemplateRow] = {
+    val statement = connection.prepareStatement(
+      """
+        UPDATE ui_stretch_visual_templates
+        SET name = ?, source_data_url = ?, kind = ?, category = ?, created_at = ?, updated_at = ?
+        WHERE id = ?
+      """
+    )
+    try {
+      statement.setString(1, row.name)
+      statement.setString(2, row.sourceDataUrl)
+      statement.setString(3, row.kind.value)
+      statement.setString(4, row.category)
+      statement.setString(5, row.createdAt)
+      statement.setString(6, row.updatedAt)
+      statement.setString(7, row.id)
+      if (statement.executeUpdate() == 0) None else Some(row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 按 templateId 删除模板并返回被删行。 */
+  /** DELETE 并返回被删行。 */
   def deleteById(connection: Connection, templateId: String): Option[StretchVisualTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.stretchVisualTemplates.indexWhere(_.id == templateId) match {
-        case -1 => None
-        case index =>
-          val deleted = InMemoryStore.stretchVisualTemplates(index)
-          InMemoryStore.stretchVisualTemplates = InMemoryStore.stretchVisualTemplates.patch(index, Nil, 1)
-          Some(deleted)
+    StretchVisualTemplateTable.findById(connection, templateId).flatMap { row =>
+      val statement = connection.prepareStatement("DELETE FROM ui_stretch_visual_templates WHERE id = ?")
+      try {
+        statement.setString(1, templateId)
+        if (statement.executeUpdate() == 0) None else Some(row)
+      } finally {
+        statement.close()
       }
-    } else {
-      StretchVisualTemplateTableJdbc.deleteById(connection, templateId)
     }
 }

@@ -15,7 +15,7 @@ import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.{LevelStatus, SubmissionStatus}
 
 /** 总监槽位分配写操作（level 模块内）；供 internal API 与 HTTP API 复用。 */
-object SlotAssignmentSupport {
+private[level] object SlotAssignmentSupport {
   def requireAssign(
     connection: Connection,
     levelSuffix: String,

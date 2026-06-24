@@ -7,7 +7,7 @@ import microservice.level.body.design.CreateLevelBody
 import microservice.level.objects.errors.CreateLevelErrors
 
 /** 创建关卡请求体字段校验。 */
-object CreateLevelValidation {
+private[level] object CreateLevelValidation {
   /** 校验 title 非空并 trim，返回规范化 body。 */
   def validate(body: CreateLevelBody): Step[CreateLevelBody] =
     if (body.title.trim.isEmpty) {

@@ -17,7 +17,7 @@ final case class CreateUiPageBody(
 )
 
 /** CreateUiPageBody 的 Circe 编解码与 http4s EntityDecoder。 */
-object CreateUiPageBody {
+private[ui] object CreateUiPageBody {
   implicit val encoder: Encoder[CreateUiPageBody] = deriveEncoder
   implicit val decoder: Decoder[CreateUiPageBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, CreateUiPageBody] = jsonOf

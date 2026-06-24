@@ -13,7 +13,7 @@ import microservice.level.tables.submission.SubmissionTable
 import microservice.system.objects.{LevelStatus, SubmissionStatus}
 
 /** 关卡投稿审核写流程（level 模块内）。 */
-object SubmissionReviewSupport {
+private[level] object SubmissionReviewSupport {
   def requireReview(
     connection: Connection,
     submissionId: String,

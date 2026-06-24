@@ -1,113 +1,140 @@
 package microservice.ui.tables.ui_page
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import java.sql.{Connection, ResultSet}
 import microservice.ui.objects.component.PageComponent
 import microservice.ui.objects.UiEndpoint
-import microservice.ui.tables.ui_page.jdbc.UiPageTableJdbc
+import microservice.ui.tables.ui_page._
 
-/** UI 页面配置表访问门面：PageConfig 的 CRUD 与页面内组件的增删改。
-  *
-  * 组件以 JSON 嵌入页面行；总监通过 UiCustomizationRouter 管理，玩家通过 GetSharedLevelMapPage 读取。
-  */
 object UiPageTable {
-  /** 启动时建表；仅 JDBC 模式执行 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) UiPageTableJdbc.initialize(connection)
+/** 创建 ui_pages 表及 role_scope 索引。 */
 
-  /** 返回全部页面配置行。 */
-  def listAll(connection: Connection): Vector[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPages.sortBy(_.id)
-    } else {
-      UiPageTableJdbc.listAll(connection)
+/** 查询全部页面行，按 id 升序。 */
+  def listAll(connection: Connection): Vector[UiPageRow] = {
+    val statement = connection.prepareStatement(s"${UiPageTableCodec.baseSelect} ORDER BY id ASC")
+    try rows(statement.executeQuery())
+    finally statement.close()
+  }
+
+  /** 按 role_scope 过滤页面列表。 */
+  def listByEndpoint(connection: Connection, endpoint: UiEndpoint): Vector[UiPageRow] = {
+    val statement = connection.prepareStatement(
+      s"""
+        ${UiPageTableCodec.baseSelect}
+        WHERE role_scope = ?
+        ORDER BY id ASC
+      """
+    )
+    try {
+      statement.setString(1, endpoint.value)
+      rows(statement.executeQuery())
+    } finally {
+      statement.close()
+    }
+  }
+
+  /** 按 id 查询单页配置。 */
+  def findById(connection: Connection, pageId: String): Option[UiPageRow] = {
+    val statement = connection.prepareStatement(s"${UiPageTableCodec.baseSelect} WHERE id = ?")
+    try {
+      statement.setString(1, pageId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(UiPageTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  /** 遍历 ResultSet 批量解析 UiPageRow。 */
+  private def rows(resultSet: ResultSet): Vector[UiPageRow] =
+    try {
+      val builder = Vector.newBuilder[UiPageRow]
+      while (resultSet.next()) {
+        builder += UiPageTableCodec.rowFromResultSet(resultSet)
+      }
+      builder.result()
+    } finally {
+      resultSet.close()
     }
 
-  /** 按角色端点（player/designer 等）过滤页面列表。 */
-  def listByEndpoint(connection: Connection, endpoint: UiEndpoint): Vector[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPages.filter(_.roleScope == endpoint).sortBy(_.id)
-    } else {
-      UiPageTableJdbc.listByEndpoint(connection, endpoint)
-    }
-
-  /** 按 pageId 查找单页配置。 */
-  def findById(connection: Connection, pageId: String): Option[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPages.find(_.id == pageId)
-    } else {
-      UiPageTableJdbc.findById(connection, pageId)
-    }
-
-  /** 插入新页面配置。 */
-  def insert(connection: Connection, row: UiPageRow): UiPageRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPages = InMemoryStore.uiPages :+ row
+/** INSERT 新页面行。 */
+  def insert(connection: Connection, row: UiPageRow): UiPageRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO ui_pages (id, name, path, role_scope, layout, components, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      UiPageTableCodec.bindRow(statement, row)
+      statement.executeUpdate()
       row
-    } else {
-      UiPageTableJdbc.insert(connection, row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 更新已有页面配置；不存在时返回 None。 */
-  def update(connection: Connection, row: UiPageRow): Option[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPages.indexWhere(_.id == row.id) match {
-        case -1 => None
-        case index =>
-          InMemoryStore.uiPages = InMemoryStore.uiPages.updated(index, row)
-          Some(row)
-      }
-    } else {
-      UiPageTableJdbc.update(connection, row)
+  /** UPDATE 已有页面行；影响行数为 0 时返回 None。 */
+  def update(connection: Connection, row: UiPageRow): Option[UiPageRow] = {
+    val statement = connection.prepareStatement(
+      """
+        UPDATE ui_pages
+        SET name = ?, path = ?, role_scope = ?, layout = ?, components = ?, created_at = ?, updated_at = ?
+        WHERE id = ?
+      """
+    )
+    try {
+      statement.setString(1, row.name)
+      statement.setString(2, row.path)
+      statement.setString(3, row.roleScope.value)
+      statement.setString(4, UiPageTableCodec.layoutToDb(row.layout))
+      statement.setString(5, UiPageTableCodec.componentsToDb(row.components))
+      statement.setString(6, row.createdAt)
+      statement.setString(7, row.updatedAt)
+      statement.setString(8, row.id)
+      if (statement.executeUpdate() == 0) None else Some(row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 按 pageId 删除页面并返回被删行。 */
+  /** DELETE 页面行；先 read 再 delete 返回被删行。 */
   def deleteById(connection: Connection, pageId: String): Option[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPages.indexWhere(_.id == pageId) match {
-        case -1 => None
-        case index =>
-          val deleted = InMemoryStore.uiPages(index)
-          InMemoryStore.uiPages = InMemoryStore.uiPages.patch(index, Nil, 1)
-          Some(deleted)
+    UiPageTable.findById(connection, pageId).flatMap { row =>
+      val statement = connection.prepareStatement("DELETE FROM ui_pages WHERE id = ?")
+      try {
+        statement.setString(1, pageId)
+        if (statement.executeUpdate() == 0) None else Some(row)
+      } finally {
+        statement.close()
       }
-    } else {
-      UiPageTableJdbc.deleteById(connection, pageId)
     }
 
-  /** 向页面追加一个组件并更新 updatedAt。 */
+  /** 向页面 components JSON 追加组件。 */
   def addComponent(connection: Connection, pageId: String, component: PageComponent, updatedAt: String): Option[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      findById(connection, pageId).filterNot(_.components.exists(_.id == component.id)).flatMap { row =>
-        update(connection, row.copy(components = row.components :+ component, updatedAt = updatedAt))
-      }
-    } else {
-      UiPageTableJdbc.addComponent(connection, pageId, component, updatedAt)
+    UiPageTable.findById(connection, pageId).filterNot(_.components.exists(_.id == component.id)).flatMap { row =>
+      update(connection, row.copy(components = row.components :+ component, updatedAt = updatedAt))
     }
 
-  /** 更新页面内指定组件。 */
+  /** 替换页面内指定 id 的组件。 */
   def updateComponent(connection: Connection, pageId: String, componentId: String, component: PageComponent, updatedAt: String): Option[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      findById(connection, pageId).filter(_.components.exists(_.id == componentId)).flatMap { row =>
-        update(connection, row.copy(
-          components = row.components.map(existing => if (existing.id == componentId) component else existing),
-          updatedAt = updatedAt
-        ))
-      }
-    } else {
-      UiPageTableJdbc.updateComponent(connection, pageId, componentId, component, updatedAt)
+    UiPageTable.findById(connection, pageId).filter(_.components.exists(_.id == componentId)).flatMap { row =>
+      update(connection, row.copy(
+        components = row.components.map(existing => if (existing.id == componentId) component else existing),
+        updatedAt = updatedAt
+      ))
     }
 
-  /** 从页面中删除指定组件。 */
+  /** 从页面 components 中移除指定组件。 */
   def deleteComponent(connection: Connection, pageId: String, componentId: String, updatedAt: String): Option[UiPageRow] =
-    if (TableConnection.isInMemory(connection)) {
-      findById(connection, pageId).filter(_.components.exists(_.id == componentId)).flatMap { row =>
-        update(connection, row.copy(
-          components = row.components.filterNot(_.id == componentId),
-          updatedAt = updatedAt
-        ))
-      }
-    } else {
-      UiPageTableJdbc.deleteComponent(connection, pageId, componentId, updatedAt)
+    UiPageTable.findById(connection, pageId).filter(_.components.exists(_.id == componentId)).flatMap { row =>
+      update(connection, row.copy(
+        components = row.components.filterNot(_.id == componentId),
+        updatedAt = updatedAt
+      ))
     }
 }

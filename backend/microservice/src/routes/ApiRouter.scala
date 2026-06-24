@@ -1,24 +1,22 @@
 package microservice.routes
 
 import cats.effect.IO
+import cats.syntax.semigroupk._
 import io.circe.generic.auto._
 import microservice.admin.routes.AdminApiMessages
 import microservice.bird.routes.BirdApiMessages
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.api.{APIMessageRouter, RegisteredAPIMessage}
-import microservice.infrastructure.api.RegisteredAPIMessage.publicApi
-import microservice.level.routes.LevelApiMessages
+import microservice.level.routes.LevelRoutes
 import microservice.player.routes.PlayerApiMessages
-import microservice.system.api.HealthAPIMessage
-import microservice.system.objects.HealthResponse
 import microservice.ui.routes.UiApiMessages
 import microservice.user.routes.UserApiMessages
 import org.http4s.HttpRoutes
 
-/** 根路由挂载：将各业务模块的 APIMessage 注册到统一 RPC 入口。
+/** 根路由挂载：保留系统健康检查，并将业务模块注册到统一 RPC 入口。
   *
   * == 组装方式 ==
-  * 外部业务 API 统一使用 `POST /api/{apiName}`。`apiName` 由 `XxxAPIMessage` 推导为
+  * 健康检查使用 `GET /health`；外部业务 API 统一使用 `POST /api/{apiName}`。`apiName` 由 `XxxAPIMessage` 推导为
   * `xxxapi`，例如 `CreateLevelAPIMessage` → `createlevelapi`。
   *
   * == 公开 vs 受保护 ==
@@ -31,12 +29,12 @@ import org.http4s.HttpRoutes
   */
 object ApiRouter {
   def routes(databaseSession: DatabaseSession): HttpRoutes[IO] =
-    APIMessageRouter.routes(apiMessages, databaseSession)
+    HealthRouter.routes(databaseSession) <+>
+      APIMessageRouter.routes(apiMessages, databaseSession)
 
   private val apiMessages: List[RegisteredAPIMessage] =
-    List(publicApi[HealthAPIMessage, HealthResponse]()) ++
-      UserApiMessages.apiMessages ++
-      LevelApiMessages.apiMessages ++
+    UserApiMessages.apiMessages ++
+      LevelRoutes.apiMessages ++
       BirdApiMessages.apiMessages ++
       PlayerApiMessages.apiMessages ++
       AdminApiMessages.apiMessages ++

@@ -17,7 +17,7 @@ import microservice.player.objects.PlayerWallet
 import microservice.player.tables.preparation.PlayerPreparationTable
 
 /** 备战页升级/升阶与鸟种 catalog 查表的前置校验。 */
-object PlayerPreparationAccess {
+private[player] object PlayerPreparationAccess {
   def requireCatalog(connection: Connection): Step[Vector[BirdCatalogEntry]] =
     for {
       system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)

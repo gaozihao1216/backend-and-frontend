@@ -17,7 +17,7 @@ final case class GetUserProfileAPIMessage(
 
   /** plan 定义了什么业务流程：已登录用户查看指定用户的公开资料页。
     *
-    * 关联的 HTTP 路由/前端 API：GET /users/:profileUserId/profile；前端 `GetUserProfileApi`。
+    * 关联的前端 API：GET /users/:profileUserId/profile；前端 `GetUserProfileApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, UserProfile]] =
     PlanSteps.finish {

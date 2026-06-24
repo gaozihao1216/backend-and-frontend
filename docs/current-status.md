@@ -15,10 +15,10 @@ UGC 关卡平台（灵感来自 Angry Birds 类玩法）：
 
 ```bash
 npm install
-npm run dev              # 默认 in-memory，无需 Docker
+npm run dev              # 一键启动 Postgres + 后端 + 前端
 ```
 
-使用 PostgreSQL 持久化：
+拆分启动：
 
 ```bash
 npm run dev:postgres           # 一键：Postgres + JDBC 后端 + 前端
@@ -116,11 +116,10 @@ npm run dev:backend:postgres   # 仅 JDBC 后端（需 postgres:up）
 
 | 模式 | 启动方式 | 行为 |
 | --- | --- | --- |
-| 默认 in-memory | `npm run dev` | 无需 Docker；重启后回到种子数据 |
-| JDBC | `npm run postgres:up` + `npm run dev:backend:postgres` | PostgreSQL 持久化；`initializeDatabaseOn` 写入与 in-memory 一致的 demo 关卡/投稿/评论/评分/UI 模板 |
-| JDBC 一键 | `npm run dev:postgres` | 启动 compose Postgres + JDBC 后端 + 前端 |
+| PostgreSQL/JDBC | `npm run dev` / `npm run dev:postgres` | 启动 compose Postgres + JDBC 后端 + 前端 |
+| 后端单独启动 | `npm run postgres:up` + `npm run dev:backend` | 使用本地 PostgreSQL；`initializeDatabaseOn` 写入 demo 关卡/投稿/评论/评分/UI 模板 |
 
-环境变量见仓库根目录 `.env.example`；`UGC_DATABASE_MODE=jdbc` 切换 JDBC；未设置时默认 in-memory。
+环境变量见仓库根目录 `.env.example`；后端只使用 JDBC，不再提供 in-memory 运行模式。
 
 ## 已知限制
 
@@ -143,7 +142,7 @@ npm run dev:backend:postgres   # 仅 JDBC 后端（需 postgres:up）
 ```bash
 npm run check    # TypeScript
 npm test         # 前端测试
-npm run test:backend      # Scala 测试（in-memory）
+npm run test:backend      # Scala 测试
 npm run test:backend:jdbc # JDBC 冒烟（需 postgres:up + 默认 postgres/postgres）
 sbt compile      # Scala 编译
 ```

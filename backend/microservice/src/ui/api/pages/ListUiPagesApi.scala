@@ -12,9 +12,9 @@ import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 /** 总监列出 UI 页面配置 APIMessage；可选 endpoint 过滤。
   *
-  * 定义：GET /admin/director/ui/pages?endpoint=player|designer|...
+  * 定义：列出 UI 页面配置，可选 endpoint=player|designer|...
   * 作用：返回全部或指定角色端点下的 PageConfig 列表。
-  * 关联：UiCustomizationRouter 解析 query endpoint；前端 DirectorWorkbench 页面列表。
+  * 关联：[[microservice.ui.routes.UiApiMessages]] 注册；前端 DirectorWorkbench 页面列表。
   */
 final case class ListUiPagesAPIMessage(
   userId: String,

@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "node scripts/dev-postgres.mjs",
     "dev:postgres": "node scripts/dev-postgres.mjs",
     "dev:backend": "sbt run",
     "dev:backend:watch": "sbt ~run",
-    "dev:backend:postgres": "UGC_DATABASE_MODE=jdbc sbt run",
+    "dev:backend:postgres": "sbt run",
     "postgres:up": "docker compose up -d postgres",
     "dev:frontend": "vite",
     "start": "sbt run",
@@ -16,7 +16,7 @@
     "check": "tsc --noEmit",
     "test": "node --import tsx --test frontend/src/**/*.test.ts",
     "test:backend": "sbt test",
-    "test:backend:jdbc": "UGC_DATABASE_MODE=jdbc UGC_DATABASE_USERNAME=postgres UGC_DATABASE_PASSWORD=postgres sbt \"testOnly *JdbcSmokeSuite\"",
+    "test:backend:jdbc": "UGC_DATABASE_USERNAME=postgres UGC_DATABASE_PASSWORD=postgres sbt \"testOnly *JdbcSmokeSuite\"",
     "demo:fracture": "node --import tsx frontend/src/lib/game-engine/fracture-demo.ts"
   },
   "dependencies": {

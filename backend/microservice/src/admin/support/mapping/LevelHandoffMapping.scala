@@ -11,7 +11,7 @@ import microservice.level.objects.social.LevelComment
 import microservice.level.objects.submission.{Submission, SubmissionWithLevel}
 
 /** level 模块 handoff → admin DTO（仅 support 层引用 level 类型）。 */
-object LevelHandoffMapping {
+private[admin] object LevelHandoffMapping {
   def toLevelComment(comment: LevelComment): AdminLevelComment =
     AdminLevelComment(
       id = comment.id,
@@ -83,7 +83,7 @@ object LevelHandoffMapping {
     )
 
   def toLevelBirdPool(pool: AdminBirdPool): BirdPool =
-    BirdPool(
+    new BirdPool(
       totalBirds = pool.totalBirds,
       allowedBirdTypes = pool.allowedBirdTypes,
       caps = pool.caps

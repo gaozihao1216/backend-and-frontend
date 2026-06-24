@@ -10,7 +10,7 @@ import microservice.user.objects.handoff.UserDisplaySummary
 import microservice.user.tables.user.UserTable
 
 /** 用户展示信息读取（user 模块内，供 internal API 复用）。 */
-object UserDisplaySupport {
+private[user] object UserDisplaySupport {
   def requireExists(connection: Connection, userId: String): Step[Unit] =
     EitherT.liftF(IO(UserTable.findById(connection, userId))).flatMap {
       case None =>

@@ -7,7 +7,8 @@ import microservice.user.utils.AccessControl
 import microservice.admin.api.internal.RecordReviewAuditInternalAPIMessage
 import microservice.bird.objects.submission.ReviewedBirdSubmission
 import microservice.bird.support.review.BirdSubmissionReviewSupport
-import microservice.bird.tables.shared.BirdRowMapper
+import microservice.bird.tables.design.BirdDesignTable
+import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.{AdminLevel, AuditTargetType}
@@ -23,7 +24,7 @@ final case class ReviewBirdSubmissionAPIMessage(
 
   /** plan 定义了什么业务流程：Standard 管理员审核鸟类设计投稿（通过/拒绝），同步 BirdDesign 状态并记录审计。
     *
-    * 关联的 HTTP 路由/前端 API：POST /admin/bird-submissions/:submissionId/review；前端 `ReviewBirdSubmissionApi`。
+    * 关联的前端 API：POST /admin/bird-submissions/:submissionId/review；前端 `ReviewBirdSubmissionApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, ReviewedBirdSubmission]] =
     PlanSteps.finish {
@@ -57,6 +58,6 @@ final case class ReviewBirdSubmissionAPIMessage(
           ),
           connection
         )
-      } yield ReviewedBirdSubmission.fromSubmission(BirdRowMapper.toBirdSubmission(reviewed))
+      } yield ReviewedBirdSubmission.fromSubmission(BirdSubmissionTable.toBirdSubmission(reviewed))
     }
 }

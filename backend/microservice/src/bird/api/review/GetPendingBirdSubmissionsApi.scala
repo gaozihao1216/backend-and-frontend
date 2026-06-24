@@ -5,7 +5,8 @@ import java.sql.Connection
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.submission.BirdSubmissionWithDesign
 import microservice.bird.tables.design.BirdDesignTable
-import microservice.bird.tables.shared.BirdRowMapper
+import microservice.bird.tables.design.BirdDesignTable
+import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
@@ -20,7 +21,7 @@ final case class GetPendingBirdSubmissionsAPIMessage(userId: String)
     *
     * 解决了什么问题：审核页需同时展示投稿与设计属性，避免二次请求。
     * 在事务内起到什么作用：只读联查 BirdSubmissionTable + BirdDesignTable。
-    * 关联的 HTTP 路由/前端 API：GET /admin/bird-submissions/pending；前端 admin 鸟审核页。
+    * 关联的前端 API：GET /admin/bird-submissions/pending；前端 admin 鸟审核页。
     */
   override def plan(connection: Connection): IO[Either[HttpError, List[BirdSubmissionWithDesign]]] =
     PlanSteps.finish {
@@ -34,8 +35,8 @@ final case class GetPendingBirdSubmissionsAPIMessage(userId: String)
             .flatMap { submission =>
               BirdDesignTable.findById(connection, submission.birdDesignId).map { design =>
                 BirdSubmissionWithDesign.from(
-                  BirdRowMapper.toBirdSubmission(submission),
-                  BirdRowMapper.toBirdDesign(design)
+                  BirdSubmissionTable.toBirdSubmission(submission),
+                  BirdDesignTable.toBirdDesign(design)
                 )
               }
             }

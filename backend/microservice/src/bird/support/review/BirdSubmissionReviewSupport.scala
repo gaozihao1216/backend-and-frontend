@@ -4,7 +4,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.bird.tables.design.BirdDesignTable
-import microservice.bird.tables.shared.BirdSubmissionRow
+import microservice.bird.tables.submission.BirdSubmissionRow
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
@@ -16,7 +16,7 @@ import microservice.bird.body.review.ReviewBirdSubmissionBody
   *
   * 审核通过/拒绝需同步更新 BirdSubmissionTable 与 BirdDesignTable。
   */
-object BirdSubmissionReviewSupport {
+private[bird] object BirdSubmissionReviewSupport {
   def requirePendingSubmission(connection: Connection, submissionId: String): Step[BirdSubmissionRow] =
     EitherT.liftF(IO(BirdSubmissionTable.findById(connection, submissionId))).flatMap {
       case None    => EitherT.leftT(HttpError.notFound("BIRD_SUBMISSION_NOT_FOUND", s"Bird submission not found: $submissionId"))

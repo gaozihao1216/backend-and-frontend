@@ -10,23 +10,22 @@ import org.typelevel.ci._
   * == 当前实现（开发/演示） ==
   * 本仓库使用 mock 认证：前端登录后将用户 ID 写入 localStorage，
   * API 客户端在每个请求头附带 `x-user-id: <userId>`。
-  * 生产环境可替换为 JWT/Cookie 解析，但路由层读取身份的接口（[[userIdFromRequest]]）应保持稳定。
+  * 生产环境可替换为 JWT/Cookie 解析，但统一 API 分发层读取身份的接口（[[userIdFromRequest]]）应保持稳定。
   *
-  * == 中间件行为 ==
-  * [[requireUserId]] 用 `Kleisli` 包装一组 `HttpRoutes`：
-  * - 请求含非空 `x-user-id` → 透传给内层 routes；
-  * - 缺失或空白 → 短路返回 401 JSON（`UNAUTHORIZED` / "Missing x-user-id header"），不进入业务 handler。
+  * == 当前身份传递 ==
+  * [[microservice.infrastructure.api.APIMessageRouter]] 从请求头提取 `x-user-id`，再交给
+  * `RegisteredAPIMessage.protectedApi` 执行受保护 API 的身份校验。
   *
-  * == 在路由树中的位置 ==
-  * [[microservice.routes.ApiRouter]] 将 `/health`、`/auth` 列为公开路由；
-  * `/users`、`/designer`、`/player`、`/admin` 等挂载在 `requireUserId` 之内。
+  * == 注册层分流 ==
+  * [[microservice.routes.ApiRouter]] 只注册 APIMessage；公开接口使用 `publicApi`，
+  * 受保护接口使用 `protectedApi`，不再按 HTTP path 前缀拆分鉴权。
   *
-  * == Handler 内读取身份 ==
-  * 受保护路由的 handler 应调用 `userIdFromRequest(req).get`（中间件已保证存在），
-  * 再传入 `APIMessage` 或 `runAuthenticated`。
+  * == 兼容说明 ==
+  * [[requireUserId]] 保留为通用 http4s 中间件工具；当前业务入口不直接用它包模块路由。
   *
   * == 关联 ==
-  * - [[microservice.routes.ApiRouter]]：公开/受保护路由分层
+  * - [[microservice.routes.ApiRouter]]：APIMessage 注册入口
+  * - [[microservice.infrastructure.api.RegisteredAPIMessage]]：公开/受保护 API 分流
   * - [[microservice.infrastructure.api.APIWithTokenMessage]]：plan 内二次绑定校验
   */
 object AuthMiddleware {
@@ -39,7 +38,7 @@ object AuthMiddleware {
 
   /** 包装受保护路由：缺少 `x-user-id` 时直接 401，不再进入内层 handler。
     *
-    * @param routes 需要登录后才能访问的 `HttpRoutes`（通常由 `Router(...)` 组合而成）
+    * @param routes 需要登录后才能访问的 `HttpRoutes`
     * @return 包装后的 `HttpRoutes`，未匹配时仍返回 `OptionT.none` 以便外层路由继续匹配
     */
   def requireUserId(routes: HttpRoutes[IO]): HttpRoutes[IO] =

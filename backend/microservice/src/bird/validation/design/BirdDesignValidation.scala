@@ -6,7 +6,7 @@ import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 
 /** 鸟类设计字段校验：trim 字符串、stats 范围 1–200、tierSkills 必须恰好 3 条。 */
-object BirdDesignValidation {
+private[bird] object BirdDesignValidation {
   /** 校验并规范化 BirdDesignInput，返回 trim 后的 body。 */
   def validate(body: BirdDesignInput): Step[BirdDesignInput] = {
     val trimmedName = body.name.trim

@@ -1,73 +1,129 @@
 package microservice.level.tables.submission
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
 import microservice.level.tables.shared.SubmissionRow
-import microservice.level.tables.submission.jdbc.SubmissionTableJdbc
+import microservice.level.tables.submission._
 import microservice.system.objects.SubmissionStatus
 
-/** 关卡投稿表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
-  *
-  * 实现：TableConnection.isInMemory(connection) 为 true 时直接读写 InMemoryStore；否则走 SubmissionTableJdbc。
-  * 关联：SubmitLevelAPIMessage 写入；admin ReviewSubmissionAPIMessage 审核更新。
-  */
-private[level] object SubmissionTable {
-  /** JDBC 启动时建表；in-memory 模式下无需 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) SubmissionTableJdbc.initialize(connection)
+object SubmissionTable {
 
-  /** 列出所有待审核（PendingReview）投稿。 */
-  def listPending(connection: Connection): Vector[SubmissionRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.submissions.filter(_.status == SubmissionStatus.PendingReview)
-    } else {
-      SubmissionTableJdbc.listPending(connection)
+def listPending(connection: Connection): Vector[SubmissionRow] = {
+    val statement = connection.prepareStatement(
+      s"""
+        ${SubmissionTableCodec.baseSelect}
+        WHERE status = ?
+        ORDER BY submitted_at ASC, id ASC
+      """
+    )
+    try {
+      statement.setString(1, SubmissionStatus.PendingReview.value)
+      rows(statement.executeQuery())
+    } finally {
+      statement.close()
+    }
+  }
+
+  def listApproved(connection: Connection): Vector[SubmissionRow] = {
+    val statement = connection.prepareStatement(
+      s"""
+        ${SubmissionTableCodec.baseSelect}
+        WHERE status = ?
+        ORDER BY reviewed_at DESC, submitted_at DESC, id ASC
+      """
+    )
+    try {
+      statement.setString(1, SubmissionStatus.Approved.value)
+      rows(statement.executeQuery())
+    } finally {
+      statement.close()
+    }
+  }
+
+  def hasPendingForLevel(connection: Connection, levelId: String): Boolean = {
+    val statement = connection.prepareStatement(
+      """
+        SELECT 1
+        FROM submissions
+        WHERE level_id = ? AND status = ?
+        LIMIT 1
+      """
+    )
+    try {
+      statement.setString(1, levelId)
+      statement.setString(2, SubmissionStatus.PendingReview.value)
+      val resultSet = statement.executeQuery()
+      try resultSet.next()
+      finally resultSet.close()
+    } finally {
+      statement.close()
+    }
+  }
+
+  def nextId(connection: Connection): String = {
+    val statement = connection.prepareStatement("SELECT COUNT(*) AS submission_count FROM submissions")
+    try {
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) s"submission-${resultSet.getInt("submission_count") + 1}" else "submission-1"
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def findById(connection: Connection, submissionId: String): Option[SubmissionRow] = {
+    val statement = connection.prepareStatement(s"${SubmissionTableCodec.baseSelect} WHERE id = ?")
+    try {
+      statement.setString(1, submissionId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(SubmissionTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  private def rows(resultSet: java.sql.ResultSet): Vector[SubmissionRow] =
+    try {
+      val builder = Vector.newBuilder[SubmissionRow]
+      while (resultSet.next()) {
+        builder += SubmissionTableCodec.rowFromResultSet(resultSet)
+      }
+      builder.result()
+    } finally {
+      resultSet.close()
     }
 
-  /** 列出所有已批准（Approved）投稿。 */
-  def listApproved(connection: Connection): Vector[SubmissionRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.submissions.filter(_.status == SubmissionStatus.Approved)
-    } else {
-      SubmissionTableJdbc.listApproved(connection)
-    }
-
-  /** 检查指定关卡是否已有 pending 投稿（防止重复提交）。 */
-  def hasPendingForLevel(connection: Connection, levelId: String): Boolean =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.submissions.exists(submission =>
-        submission.levelId == levelId && submission.status == SubmissionStatus.PendingReview
-      )
-    } else {
-      SubmissionTableJdbc.hasPendingForLevel(connection, levelId)
-    }
-
-  /** 生成下一个投稿 ID。 */
-  def nextId(connection: Connection): String =
-    if (TableConnection.isInMemory(connection)) {
-      s"submission-${InMemoryStore.submissions.size + 1}"
-    } else {
-      SubmissionTableJdbc.nextId(connection)
-    }
-
-  /** 插入新投稿记录。 */
-  def insert(connection: Connection, row: SubmissionRow): SubmissionRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.submissions = InMemoryStore.submissions :+ row
+def insert(connection: Connection, row: SubmissionRow): SubmissionRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO submissions (
+          id, level_id, submitter_id, status, reviewer_id, review_note, submitted_at, reviewed_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      statement.setString(1, row.id)
+      statement.setString(2, row.levelId)
+      statement.setString(3, row.submitterId)
+      statement.setString(4, row.status.value)
+      SubmissionTableCodec.setNullableString(statement, 5, row.reviewerId)
+      SubmissionTableCodec.setNullableString(statement, 6, row.reviewNote)
+      statement.setString(7, row.submittedAt)
+      SubmissionTableCodec.setNullableString(statement, 8, row.reviewedAt)
+      statement.executeUpdate()
       row
-    } else {
-      SubmissionTableJdbc.insert(connection, row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 按 ID 查找投稿。 */
-  def findById(connection: Connection, submissionId: String): Option[SubmissionRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.submissions.find(_.id == submissionId)
-    } else {
-      SubmissionTableJdbc.findById(connection, submissionId)
-    }
-
-  /** 更新审核结果：状态、审核人、备注与审核时间。 */
   def updateReview(
     connection: Connection,
     submissionId: String,
@@ -75,21 +131,23 @@ private[level] object SubmissionTable {
     reviewerId: String,
     reviewNote: Option[String],
     reviewedAt: String
-  ): Option[SubmissionRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.submissions.indexWhere(_.id == submissionId) match {
-        case -1 => None
-        case index =>
-          val updated = InMemoryStore.submissions(index).copy(
-            status = status,
-            reviewerId = Some(reviewerId),
-            reviewNote = reviewNote,
-            reviewedAt = Some(reviewedAt)
-          )
-          InMemoryStore.submissions = InMemoryStore.submissions.updated(index, updated)
-          Some(updated)
-      }
-    } else {
-      SubmissionTableJdbc.updateReview(connection, submissionId, status, reviewerId, reviewNote, reviewedAt)
+  ): Option[SubmissionRow] = {
+    val statement = connection.prepareStatement(
+      """
+        UPDATE submissions
+        SET status = ?, reviewer_id = ?, review_note = ?, reviewed_at = ?
+        WHERE id = ?
+      """
+    )
+    try {
+      statement.setString(1, status.value)
+      statement.setString(2, reviewerId)
+      SubmissionTableCodec.setNullableString(statement, 3, reviewNote)
+      statement.setString(4, reviewedAt)
+      statement.setString(5, submissionId)
+      if (statement.executeUpdate() == 0) None else SubmissionTable.findById(connection, submissionId)
+    } finally {
+      statement.close()
     }
+  }
 }

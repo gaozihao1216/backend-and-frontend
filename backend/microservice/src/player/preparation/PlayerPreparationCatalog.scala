@@ -3,7 +3,7 @@ package microservice.player.preparation
 import microservice.player.objects.catalog.{PreparationPublishedBirdSnapshot, PreparationSystemBirdSnapshot}
 
 /** 备战鸟目录合并（player 模块内，不依赖 bird.objects）。 */
-object PlayerPreparationCatalog {
+private[player] object PlayerPreparationCatalog {
   def merge(
     system: List[PreparationSystemBirdSnapshot],
     published: List[PreparationPublishedBirdSnapshot]

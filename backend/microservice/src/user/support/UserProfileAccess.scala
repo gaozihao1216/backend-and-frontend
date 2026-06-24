@@ -8,7 +8,7 @@ import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfile
 import microservice.user.tables.user.{UserRowMapper, UserTable}
 
 /** 用户资料只读聚合查询校验。 */
-object UserProfileAccess {
+private[user] object UserProfileAccess {
   def requireProfile(connection: Connection, profileUserId: String): Step[UserProfile] =
     for {
       user <- UserTable.findById(connection, profileUserId) match {

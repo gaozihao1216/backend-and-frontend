@@ -18,7 +18,7 @@ final case class ReviewSubmissionBody(
 )
 
 /** ReviewSubmissionBody 的 Circe/http4s 编解码 companion。 */
-object ReviewSubmissionBody {
+private[admin] object ReviewSubmissionBody {
   implicit val encoder: Encoder[ReviewSubmissionBody] = deriveEncoder
   implicit val decoder: Decoder[ReviewSubmissionBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, ReviewSubmissionBody] = jsonOf

@@ -12,7 +12,7 @@ import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.tables.submission.SubmissionTable
 
 /** 投稿与关卡联查（level 模块内）；供 internal API 与 HTTP API 复用。 */
-object SubmissionReadSupport {
+private[level] object SubmissionReadSupport {
   def listPendingWithLevel(connection: Connection): List[SubmissionWithLevel] =
     SubmissionTable.listPending(connection)
       .flatMap { submission =>

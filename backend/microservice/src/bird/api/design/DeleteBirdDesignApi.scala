@@ -16,7 +16,7 @@ final case class DeleteBirdDesignAPIMessage(designerId: String, designId: String
 
   /** plan 定义了什么业务流程：Designer 删除自己名下 Draft 状态的鸟类设计。
     *
-    * 关联的 HTTP 路由/前端 API：DELETE /designer/bird-designs/:designId；前端 `DeleteBirdDesignApi`。
+    * 关联的前端 API：DELETE /designer/bird-designs/:designId；前端 `DeleteBirdDesignApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, BirdDesign]] =
     PlanSteps.finish {

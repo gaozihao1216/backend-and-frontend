@@ -3,7 +3,7 @@ package microservice.player.support.seed
 import microservice.player.objects.CheckInSlotReward
 
 /** 演示用签到奖励槽（player 模块内，供 system seed 调用）。 */
-object DemoCheckInRewardsFactory {
+private[player] object DemoCheckInRewardsFactory {
   val roleHomePanelRewards: Vector[CheckInSlotReward] =
     Vector(
       CheckInSlotReward(10, 0, 0),

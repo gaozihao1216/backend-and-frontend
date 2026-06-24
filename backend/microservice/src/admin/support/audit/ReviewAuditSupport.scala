@@ -5,7 +5,7 @@ import microservice.admin.objects.submission.ReviewAudit
 import microservice.admin.tables.AdminAuditTable
 
 /** 审核审计写入（admin 模块内）；供 HTTP API 与 internal API 复用。 */
-object ReviewAuditSupport {
+private[admin] object ReviewAuditSupport {
   def recordReview(
     connection: Connection,
     targetType: String,

@@ -17,7 +17,7 @@ final case class UpdatePageComponentBody(
 )
 
 /** UpdatePageComponentBody 的 Circe 编解码与 http4s EntityDecoder。 */
-object UpdatePageComponentBody {
+private[ui] object UpdatePageComponentBody {
   implicit val encoder: Encoder[UpdatePageComponentBody] = deriveEncoder
   implicit val decoder: Decoder[UpdatePageComponentBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, UpdatePageComponentBody] = jsonOf

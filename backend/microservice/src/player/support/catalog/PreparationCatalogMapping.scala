@@ -6,7 +6,7 @@ import microservice.player.objects.catalog.{PreparationPublishedBirdSnapshot, Pr
 import microservice.player.objects.preparation.BirdSkillConfigView
 
 /** bird internal API 响应 → player 边界 DTO（仅在 support 层引用 bird 类型）。 */
-object PreparationCatalogMapping {
+private[player] object PreparationCatalogMapping {
   def toSystemSnapshot(entry: SystemBirdCatalogEntry): PreparationSystemBirdSnapshot =
     PreparationSystemBirdSnapshot(
       birdType = entry.birdType,

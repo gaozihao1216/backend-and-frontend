@@ -16,7 +16,7 @@ import microservice.system.objects.LevelStatus
   *
   * 各 `require*` 返回 [[PlanStep.Step]]，供 APIMessage `for` 推导式直接嵌入。
   */
-object LevelApiSupport {
+private[level] object LevelApiSupport {
   /** 校验关卡存在且状态为 Published。 */
   def requirePublishedLevel(connection: Connection, levelId: String): Step[LevelRow] =
     EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {

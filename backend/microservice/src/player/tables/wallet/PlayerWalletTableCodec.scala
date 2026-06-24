@@ -3,13 +3,13 @@
    * 定义：PlayerWalletTableCodec：JDBC ResultSet ↔ Row 列映射与 baseSelect SQL 片段。
  * 问题：snake_case SQL 列名与 Scala camelCase 字段需集中转换。
  * 作用：baseSelect 复用；rowFromResultSet 解析枚举与 Option 列。
- * 关联：[[PlayerWalletTableTableJdbcRead]] / [[PlayerWalletTableTableJdbcWrite]] 共用。
+ * 关联：PlayerWalletTable 共用。
  */
 package microservice.player.tables.wallet
 
 import java.sql.ResultSet
 
-object PlayerWalletTableCodec {
+private[player] object PlayerWalletTableCodec {
   val baseSelect: String =
     "SELECT user_id, coins, gems, fragments, updated_at FROM player_wallets"
 

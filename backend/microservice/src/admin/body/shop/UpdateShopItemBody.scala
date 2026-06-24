@@ -17,7 +17,7 @@ final case class UpdateShopItemBody(
   sortOrder: Int
 )
 
-object UpdateShopItemBody {
+private[admin] object UpdateShopItemBody {
   implicit val encoder: Encoder[UpdateShopItemBody] = deriveEncoder
   implicit val decoder: Decoder[UpdateShopItemBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, UpdateShopItemBody] = jsonOf

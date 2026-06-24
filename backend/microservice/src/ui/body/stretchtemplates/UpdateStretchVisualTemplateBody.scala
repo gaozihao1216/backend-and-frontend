@@ -17,7 +17,7 @@ final case class UpdateStretchVisualTemplateBody(
 )
 
 /** UpdateStretchVisualTemplateBody 的 Circe 编解码与 http4s EntityDecoder。 */
-object UpdateStretchVisualTemplateBody {
+private[ui] object UpdateStretchVisualTemplateBody {
   implicit val encoder: Encoder[UpdateStretchVisualTemplateBody] = deriveEncoder
   implicit val decoder: Decoder[UpdateStretchVisualTemplateBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, UpdateStretchVisualTemplateBody] = jsonOf

@@ -15,7 +15,7 @@ import microservice.player.tables.progress.level_progress.PlayerLevelProgressTab
   * 作用：listClearedSuffixes → Json 数组。
   * 关联：[[PlayerProgressTable]]；[[GetPlayerUiDataAPIMessage]]。
   */
-object PlayerLevelProgressService {
+private[player] object PlayerLevelProgressService {
   private val LevelProgressDataKey = "player.levelProgress"
 
   private val LevelSuffixes = Vector(

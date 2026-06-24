@@ -17,7 +17,7 @@ import microservice.player.tables.wallet.PlayerWalletTable
   * 作用：listItems + 玩家已购标记；purchase 校验库存与余额。
   * 关联：[[InvokePlayerUiActionAPIMessage]]；[[ShopTable]]。
   */
-object PlayerShopService {
+private[player] object PlayerShopService {
   /** 拉取商店目录与钱包余额的 dataSource apiKey。 */
   val dataApiKey: String = "player.shop"
   /** 购买商品的 action apiKey。 */

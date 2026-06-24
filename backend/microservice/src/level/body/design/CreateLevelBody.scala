@@ -16,7 +16,7 @@ final case class CreateLevelBody(
   data: LevelData
 )
 
-object CreateLevelBody {
+private[level] object CreateLevelBody {
   implicit val encoder: Encoder[CreateLevelBody] = deriveEncoder
   implicit val decoder: Decoder[CreateLevelBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, CreateLevelBody] = jsonOf

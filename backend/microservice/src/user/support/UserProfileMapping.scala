@@ -4,7 +4,7 @@ import microservice.level.objects.user.{ProfileCommentSnapshot, ProfileLevelSnap
 import microservice.user.objects.profile.{UserProfileComment, UserProfilePublishedLevel}
 
 /** user 模块内：level handoff DTO → 用户资料 API 响应 DTO。 */
-object UserProfileMapping {
+private[user] object UserProfileMapping {
   def toPublishedLevel(snapshot: ProfileLevelSnapshot): UserProfilePublishedLevel =
     UserProfilePublishedLevel(
       id = snapshot.id,

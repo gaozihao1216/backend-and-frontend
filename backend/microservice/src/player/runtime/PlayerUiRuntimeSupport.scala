@@ -12,7 +12,7 @@ import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTa
   *
   * 按 apiKey 路由到各 Player*Service；未知 key 返回 404。
   */
-object PlayerUiRuntimeSupport {
+private[player] object PlayerUiRuntimeSupport {
   private val LegacyCheckInDataKey = "player.checkIn"
   private val LegacyCheckInClaimActionKey = "player.checkIn.claim"
 

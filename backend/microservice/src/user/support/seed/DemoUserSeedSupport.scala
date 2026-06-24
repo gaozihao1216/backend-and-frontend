@@ -4,7 +4,7 @@ import microservice.system.objects.{AdminLevel, UserRole}
 import microservice.user.tables.user.UserRow
 
 /** 演示用户种子（user 模块内）。 */
-object DemoUserSeedSupport {
+private[user] object DemoUserSeedSupport {
   def users(createdAt: String): Vector[UserRow] =
     Vector(
       UserRow("player-1", "local-player-0000001", "Player One", UserRole.Player, None, createdAt, createdAt),

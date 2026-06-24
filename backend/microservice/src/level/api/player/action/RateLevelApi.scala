@@ -27,7 +27,7 @@ final case class RateLevelAPIMessage(
     *
     * 解决了什么问题：玩家反馈需持久化且聚合到关卡列表的 averageRating。
     * 在事务内起到什么作用：RatingTable upsert + LevelTable.updateRatingStats 原子执行。
-    * 关联的 HTTP 路由/前端 API：POST /player/levels/:levelId/ratings；前端 `RateLevelApi`。
+    * 关联的前端 API：POST /player/levels/:levelId/ratings；前端 `RateLevelApi`。
     */
 
   override def plan(connection: Connection): IO[Either[HttpError, Rating]] =

@@ -12,7 +12,7 @@ import microservice.user.objects.handoff.DirectorAdminLevelTransferResult
 import microservice.user.tables.user.UserTable
 
 /** 总监 adminLevel 读写（user 模块内，供 internal API 复用）。 */
-object DirectorPermissionSupport {
+private[user] object DirectorPermissionSupport {
   def requireValidateAdminTransferTarget(connection: Connection, targetAdminId: String): Step[Unit] =
     EitherT.liftF(IO(UserTable.findById(connection, targetAdminId))).flatMap {
       case None =>

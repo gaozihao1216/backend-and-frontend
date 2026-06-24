@@ -14,7 +14,7 @@ import microservice.ui.objects.button_template.ButtonTemplateSlice
 /** JDBC 读路径：button_templates 表列 ↔ ButtonTemplateRow 编解码。
   *
   * 实现：slice 以 JSON 存储；scaling_mode 存字符串枚举值。
-  * 关联：ButtonTemplateTableJdbcRead / ButtonTemplateTableJdbcWrite。
+  * 关联：ButtonTemplateTable。
   */
 private[tables] object ButtonTemplateTableCodec {
   /** button_templates 表通用 SELECT 列清单。 */

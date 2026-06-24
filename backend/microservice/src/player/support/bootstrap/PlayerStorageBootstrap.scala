@@ -1,26 +1,26 @@
 package microservice.player.support.bootstrap
 
 import java.sql.Connection
-import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
-import microservice.player.tables.preparation.PlayerPreparationTable
-import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
-import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTable
-import microservice.player.tables.shop.ShopTable
-import microservice.player.tables.social.{PlayerFriendTable, PlayerPrivateMessageTable}
-import microservice.player.tables.wallet.PlayerWalletTable
-import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTable
+import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTableInitializer
+import microservice.player.tables.preparation.PlayerPreparationTableInitializer
+import microservice.player.tables.progress.level_progress.PlayerLevelProgressTableInitializer
+import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTableInitializer
+import microservice.player.tables.shop.ShopTableInitializer
+import microservice.player.tables.social.{PlayerFriendTableInitializer, PlayerPrivateMessageTableInitializer}
+import microservice.player.tables.wallet.PlayerWalletTableInitializer
+import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTableInitializer
 
 /** player 模块存储初始化入口（供 system 启动编排调用）。 */
-object PlayerStorageBootstrap {
+private[player] object PlayerStorageBootstrap {
   def initialize(connection: Connection, systemBirdTypes: Vector[String]): Unit = {
-    PlayerWalletTable.initialize(connection)
-    PlayerWeeklyCheckInTable.initialize(connection)
-    PlayerLevelProgressTable.initialize(connection)
-    PlayerLegacyCheckInTable.initialize(connection)
-    CheckInPanelRewardTable.initialize(connection)
-    ShopTable.initialize(connection)
-    PlayerFriendTable.initialize(connection)
-    PlayerPrivateMessageTable.initialize(connection)
-    PlayerPreparationTable.initialize(connection, systemBirdTypes)
+    PlayerWalletTableInitializer.initialize(connection)
+    PlayerWeeklyCheckInTableInitializer.initialize(connection)
+    PlayerLevelProgressTableInitializer.initialize(connection)
+    PlayerLegacyCheckInTableInitializer.initialize(connection)
+    CheckInPanelRewardTableInitializer.initialize(connection)
+    ShopTableInitializer.initialize(connection)
+    PlayerFriendTableInitializer.initialize(connection)
+    PlayerPrivateMessageTableInitializer.initialize(connection)
+    PlayerPreparationTableInitializer.initialize(connection, systemBirdTypes)
   }
 }

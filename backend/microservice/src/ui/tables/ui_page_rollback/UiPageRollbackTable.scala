@@ -1,54 +1,56 @@
 package microservice.ui.tables.ui_page_rollback
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
-import microservice.ui.tables.ui_page_rollback.jdbc.UiPageRollbackTableJdbc
+import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbackTableCodec}
 
-/** UI 页面回滚快照表访问门面：每页最多保留一版上一发布配置。
-  *
-  * 定义：PublishUiPage 写入快照，RollbackUiPage 读取并恢复后删除。
-  * 作用：总监误发布时可一键回滚，无需手动重建 PageConfig。
-  * 关联：UiPagePublishSupport.publish/rollback；前端 DirectorWorkbench 发布/回滚按钮。
-  */
 object UiPageRollbackTable {
-  /** 启动时建表；仅 JDBC 模式执行 DDL。 */
-  def initialize(connection: Connection): Unit = {
-    if (!TableConnection.isInMemory(connection)) UiPageRollbackTableJdbc.initialize(connection)
+/** 创建 ui_page_rollbacks 表（IF NOT EXISTS）。 */
+
+/** 按 pageId 查询单条回滚快照。 */
+  def findById(connection: Connection, pageId: String): Option[UiPageRollbackRow] = {
+    val statement = connection.prepareStatement(s"${UiPageRollbackTableCodec.baseSelect} WHERE page_id = ?")
+    try {
+      statement.setString(1, pageId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(UiPageRollbackTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
   }
 
-  /** 按 pageId 查找回滚快照。 */
-  def findById(connection: Connection, pageId: String): Option[UiPageRollbackRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPageRollbacks.find(_.pageId == pageId)
-    } else {
-      UiPageRollbackTableJdbc.findById(connection, pageId)
-    }
-
-  /** 插入或覆盖该页的回滚快照（每页仅保留最新一版）。 */
-  def upsert(connection: Connection, row: UiPageRollbackRow): UiPageRollbackRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPageRollbacks.indexWhere(_.pageId == row.pageId) match {
-        case -1 =>
-          InMemoryStore.uiPageRollbacks = InMemoryStore.uiPageRollbacks :+ row
-        case index =>
-          InMemoryStore.uiPageRollbacks = InMemoryStore.uiPageRollbacks.updated(index, row)
-      }
+/** 插入或覆盖该页的回滚快照。 */
+  def upsert(connection: Connection, row: UiPageRollbackRow): UiPageRollbackRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO ui_page_rollbacks (page_id, page_json, created_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT (page_id) DO UPDATE SET
+          page_json = EXCLUDED.page_json,
+          created_at = EXCLUDED.created_at
+      """
+    )
+    try {
+      UiPageRollbackTableCodec.bindRow(statement, row)
+      statement.executeUpdate()
       row
-    } else {
-      UiPageRollbackTableJdbc.upsert(connection, row)
+    } finally {
+      statement.close()
     }
+  }
 
   /** 按 pageId 删除回滚快照并返回被删行。 */
   def deleteById(connection: Connection, pageId: String): Option[UiPageRollbackRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.uiPageRollbacks.indexWhere(_.pageId == pageId) match {
-        case -1 => None
-        case index =>
-          val deleted = InMemoryStore.uiPageRollbacks(index)
-          InMemoryStore.uiPageRollbacks = InMemoryStore.uiPageRollbacks.patch(index, Nil, 1)
-          Some(deleted)
+    UiPageRollbackTable.findById(connection, pageId).flatMap { row =>
+      val statement = connection.prepareStatement("DELETE FROM ui_page_rollbacks WHERE page_id = ?")
+      try {
+        statement.setString(1, pageId)
+        if (statement.executeUpdate() > 0) Some(row) else None
+      } finally {
+        statement.close()
       }
-    } else {
-      UiPageRollbackTableJdbc.deleteById(connection, pageId)
     }
 }

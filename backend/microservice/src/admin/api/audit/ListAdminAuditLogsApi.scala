@@ -22,7 +22,7 @@ final case class ListAdminAuditLogsAPIMessage(
     *
     * 解决了什么问题：后台需追溯关卡/鸟类投稿的审核历史与总监废止操作。
     * 在事务内起到什么作用：只读查询 AdminAuditTable；权限失败则整笔回滚（无副作用）。
-    * 关联的 HTTP 路由/前端 API：GET /admin/audit-logs；前端 `ListAdminAuditLogsApi`。
+    * 关联的前端 API：GET /admin/audit-logs；前端 `ListAdminAuditLogsApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, List[ReviewAudit]]] =
     PlanSteps.finish {

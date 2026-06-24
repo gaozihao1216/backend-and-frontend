@@ -11,7 +11,7 @@ import microservice.level.tables.comment.CommentTable
 import microservice.level.tables.shared.LevelRowMapper
 
 /** 管理员评论读写的 level 模块内实现。 */
-object CommentAdminSupport {
+private[level] object CommentAdminSupport {
   def listAll(connection: Connection): List[LevelComment] =
     CommentTable.listAllForAdmin(connection).map(LevelRowMapper.toComment).toList
 

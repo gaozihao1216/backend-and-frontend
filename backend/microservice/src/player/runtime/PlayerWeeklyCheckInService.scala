@@ -13,7 +13,7 @@ import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTable
 
 /** 周签到 UI 数据与领取动作服务。 */
-object PlayerWeeklyCheckInService {
+private[player] object PlayerWeeklyCheckInService {
   private val WeeklyCheckInDataKey = "player.weeklyCheckIn"
   private val WeeklyCheckInClaimActionKey = "player.weeklyCheckIn.claim"
 

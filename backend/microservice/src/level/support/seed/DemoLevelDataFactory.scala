@@ -5,7 +5,7 @@ import microservice.level.objects.inventory.BirdInventory
 import microservice.level.objects.terrain.{GroundLine, LevelEnemy, LevelObstacle, Position, Size}
 
 /** 演示用 LevelData 构造（level 模块内，供 system seed 调用）。 */
-object DemoLevelDataFactory {
+private[level] object DemoLevelDataFactory {
   def demoLevelData: LevelData =
     LevelData(
       world = GameWorld(width = 1600, height = 900, gravity = 1.0),

@@ -3,13 +3,13 @@
    * 定义：ShopTableCodec：JDBC ResultSet ↔ Row 列映射与 baseSelect SQL 片段。
  * 问题：snake_case SQL 列名与 Scala camelCase 字段需集中转换。
  * 作用：baseSelect 复用；rowFromResultSet 解析枚举与 Option 列。
- * 关联：[[ShopTableTableJdbcRead]] / [[ShopTableTableJdbcWrite]] 共用。
+ * 关联：ShopTable 共用。
  */
 package microservice.player.tables.shop
 
 import java.sql.ResultSet
 
-object ShopItemTableCodec {
+private[player] object ShopItemTableCodec {
   val baseSelect: String =
     "SELECT id, name, description, price, currency, catalog_index, active, sort_order, created_at, updated_at FROM shop_items"
 
@@ -41,7 +41,7 @@ object ShopItemTableCodec {
   }
 }
 
-object ShopPurchaseTableCodec {
+private[player] object ShopPurchaseTableCodec {
   val baseSelect: String =
     "SELECT id, user_id, item_id, price, currency, purchased_at FROM shop_purchases"
 

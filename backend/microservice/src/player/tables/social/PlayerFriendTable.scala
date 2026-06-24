@@ -2,61 +2,82 @@ package microservice.player.tables.social
 
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
-import microservice.player.tables.social.jdbc.PlayerFriendTableJdbc
 
-/**
-  *
-   * 定义：PlayerFriendTable 表访问门面，connection==null 走 in-memory，否则 JDBC。
- * 问题：player 持久化需双后端一致 API，避免 APIMessage 分支存储逻辑。
- * 作用：initialize/list/find/insert/update 等统一入口。
- * 关联：[[DatabaseSession]]；inmemory 与 jdbc 子包实现。
- */
-object PlayerFriendTable {
-  /** 启动时建表/种子数据（含演示好友 player-1 ↔ designer-1）。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) PlayerFriendTableJdbc.initialize(connection)
-    else seedDefaultsInMemory()
+/** 玩家好友表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
+private[player] object PlayerFriendTable {
 
-  /** 返回用户的全部好友 userId 列表（按 created_at 升序）。 */
   def listFriendUserIds(connection: Connection, userId: String): Vector[String] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.playerFriends.filter(_.userId == userId).map(_.friendUserId)
-    } else {
-      PlayerFriendTableJdbc.listFriendUserIds(connection, userId)
-    }
+    PlayerFriendTableSql.listFriendUserIds(connection, userId)
 
-  /** 判断两用户是否已为好友（单向存在即 true）。 */
   def exists(connection: Connection, userId: String, friendUserId: String): Boolean =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.playerFriends.exists(row => row.userId == userId && row.friendUserId == friendUserId)
-    } else {
-      PlayerFriendTableJdbc.exists(connection, userId, friendUserId)
-    }
+    PlayerFriendTableSql.exists(connection, userId, friendUserId)
 
-  /** 双向插入好友关系（幂等，已存在则跳过）。 */
   def insertPair(connection: Connection, userId: String, friendUserId: String): Unit = {
     val createdAt = Instant.now().toString
     insertOne(connection, userId, friendUserId, createdAt)
     insertOne(connection, friendUserId, userId, createdAt)
   }
 
-  private def insertOne(connection: Connection, userId: String, friendUserId: String, createdAt: String): Unit = {
-    if (exists(connection, userId, friendUserId)) {
-      return
+  private def insertOne(connection: Connection, userId: String, friendUserId: String, createdAt: String): Unit =
+    if (!exists(connection, userId, friendUserId)) {
+      PlayerFriendTableSql.insert(connection, userId, friendUserId, createdAt)
     }
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.playerFriends = InMemoryStore.playerFriends :+ PlayerFriendRow(userId, friendUserId, createdAt)
-    } else {
-      PlayerFriendTableJdbc.insert(connection, userId, friendUserId, createdAt)
+}
+
+import java.sql.Connection
+
+private[tables] object PlayerFriendTableSql {
+
+def listFriendUserIds(connection: Connection, userId: String): Vector[String] = {
+    val statement = connection.prepareStatement(
+      "SELECT friend_user_id FROM player_friends WHERE user_id = ? ORDER BY created_at ASC"
+    )
+    try {
+      statement.setString(1, userId)
+      val resultSet = statement.executeQuery()
+      try {
+        val builder = Vector.newBuilder[String]
+        while (resultSet.next()) {
+          builder += resultSet.getString("friend_user_id")
+        }
+        builder.result()
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
     }
   }
 
-  private def seedDefaultsInMemory(): Unit =
-    if (InMemoryStore.playerFriends.isEmpty) {
-      InMemoryStore.playerFriends = Vector(
-        PlayerFriendRow("player-1", "designer-1", "2026-06-03T00:00:00Z"),
-        PlayerFriendRow("designer-1", "player-1", "2026-06-03T00:00:00Z")
-      )
+  def exists(connection: Connection, userId: String, friendUserId: String): Boolean = {
+    val statement = connection.prepareStatement(
+      "SELECT 1 FROM player_friends WHERE user_id = ? AND friend_user_id = ?"
+    )
+    try {
+      statement.setString(1, userId)
+      statement.setString(2, friendUserId)
+      val resultSet = statement.executeQuery()
+      try resultSet.next() finally resultSet.close()
+    } finally {
+      statement.close()
     }
+  }
+
+def insert(connection: Connection, userId: String, friendUserId: String, createdAt: String): Unit = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO player_friends (user_id, friend_user_id, created_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT DO NOTHING
+      """
+    )
+    try {
+      statement.setString(1, userId)
+      statement.setString(2, friendUserId)
+      statement.setString(3, createdAt)
+      statement.executeUpdate()
+    } finally {
+      statement.close()
+    }
+  }
 }

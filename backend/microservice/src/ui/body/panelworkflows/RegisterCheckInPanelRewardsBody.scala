@@ -9,6 +9,6 @@ final case class RegisterCheckInPanelRewardsBody(
   slots: Vector[UiCheckInSlotReward]
 )
 
-object RegisterCheckInPanelRewardsBody {
+private[ui] object RegisterCheckInPanelRewardsBody {
   implicit val registerCheckInPanelRewardsBodyDecoder: Decoder[RegisterCheckInPanelRewardsBody] = deriveDecoder
 }

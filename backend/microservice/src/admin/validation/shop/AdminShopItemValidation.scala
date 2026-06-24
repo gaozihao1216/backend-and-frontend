@@ -6,7 +6,7 @@ import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 
 /** 管理员商店商品创建/更新请求体字段校验。 */
-object AdminShopItemValidation {
+private[admin] object AdminShopItemValidation {
   private val allowedCurrencies: Set[String] = Set("coins", "gems")
 
   /** 校验创建商品请求体字段。 */

@@ -3,7 +3,7 @@ package microservice.bird.support.catalog
 import microservice.bird.objects.catalog.SystemBirdCatalogEntry
 
 /** 系统内置鸟静态 catalog（bird 模块内单一数据源）。 */
-object SystemBirdCatalogSupport {
+private[bird] object SystemBirdCatalogSupport {
   val maxTier: Int = 3
 
   private val basicPreview =

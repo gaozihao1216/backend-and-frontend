@@ -6,7 +6,8 @@ import java.time.Instant
 import microservice.user.utils.AccessControl
 import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
 import microservice.bird.support.design.BirdDesignAccess
-import microservice.bird.tables.shared.{BirdRowMapper}
+import microservice.bird.tables.design.BirdDesignTable
+import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.bird.validation.design.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
@@ -25,7 +26,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
     *
     * 解决了什么问题：封装该 API 的业务规则与数据访问。
     * 在事务内起到什么作用：在 DatabaseSession 事务内执行；Left 时回滚。
-    * 关联的 HTTP 路由/前端 API：见 routes 中对应路径；前端同名 API 文件。
+    * 关联的前端 API：前端同名 API 文件。
     */
 
   override def plan(connection: Connection): IO[Either[HttpError, BirdDesign]] =
@@ -61,9 +62,9 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
               attack = input.attack,
               impact = input.impact,
               speed = input.speed,
-              tierSkillsJson = BirdRowMapper.encodeStringList(input.tierSkills),
+              tierSkillsJson = BirdDesignTable.encodeStringList(input.tierSkills),
               previewImageUrl = input.previewImageUrl.filter(_.trim.nonEmpty).map(_.trim).getOrElse(existing.previewImageUrl),
-              mechanismTagsJson = BirdRowMapper.encodeStringList(input.mechanismTags),
+              mechanismTagsJson = BirdDesignTable.encodeStringList(input.mechanismTags),
               status = LevelStatus.Draft,
               rejectionReason = None,
               updatedAt = timestamp

@@ -14,7 +14,7 @@
 ├── objects/          # 领域类型（响应体、实体、错误码对象）
 ├── support/          # 可复用业务规则（require* / check*）
 ├── routes/           # path/header/body 解析 → 构造 APIMessage
-└── tables/           # *Row + Table 门面（in-memory / JDBC）
+└── tables/           # *Row + Table + TableInitializer
 ```
 
 另有模块专属目录（非全模块通用）：
@@ -74,7 +74,7 @@
 
 ### `tables/` — 持久化
 
-- `*Row` 对应存储列；Table 门面提供 `connection` 入参的方法，内部 in-memory / JDBC 分流。
+- `*Row` 对应存储列；`*Table.scala` 负责表读写，`*TableInitializer.scala` 负责 DDL/seed 初始化。
 - Row ↔ objects 映射在 Table 或 `*RowMapper` 中，不在 `objects/` 内嵌 SQL。
 
 ## 请求流转（依赖方向）

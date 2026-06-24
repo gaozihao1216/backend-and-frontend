@@ -1,72 +1,128 @@
 package microservice.level.tables.rating
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
-import microservice.level.tables.rating.jdbc.RatingTableJdbc
+import microservice.level.tables.rating._
 import microservice.level.tables.shared.RatingRow
 
-/** 关卡评分表访问门面：根据 connection 是否为 null 在 in-memory 与 JDBC 实现间分流。
-  *
-  * 实现：TableConnection.isInMemory(connection) 为 true 时直接读写 InMemoryStore；否则走 RatingTableJdbc。
-  * 关联：RateLevelAPIMessage 读写；LevelTable.updateRatingStats 维护聚合分。
-  */
 object RatingTable {
-  /** JDBC 启动时建表；in-memory 模式下无需 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) RatingTableJdbc.initialize(connection)
 
-  /** 统计指定玩家的评分总数（可用于成就或限制）。 */
-  def countByPlayer(connection: Connection, playerId: String): Int =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.ratings.count(_.playerId == playerId)
-    } else {
-      RatingTableJdbc.countByPlayer(connection, playerId)
-    }
-
-  /** 查找指定玩家对指定关卡的评分记录（用于 upsert 判断）。 */
-  def findByLevelAndPlayer(connection: Connection, levelId: String, playerId: String): Option[RatingRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.ratings.find(rating => rating.levelId == levelId && rating.playerId == playerId)
-    } else {
-      RatingTableJdbc.findByLevelAndPlayer(connection, levelId, playerId)
-    }
-
-  /** 列出指定关卡的全部评分（用于重算平均分）。 */
-  def listByLevel(connection: Connection, levelId: String): Vector[RatingRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.ratings.filter(_.levelId == levelId)
-    } else {
-      RatingTableJdbc.listByLevel(connection, levelId)
-    }
-
-  /** 生成下一个评分 ID。 */
-  def nextId(connection: Connection): String =
-    if (TableConnection.isInMemory(connection)) {
-      s"rating-${InMemoryStore.ratings.size + 1}"
-    } else {
-      RatingTableJdbc.nextId(connection)
-    }
-
-  /** 插入新评分记录。 */
-  def insert(connection: Connection, row: RatingRow): RatingRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.ratings = InMemoryStore.ratings :+ row
-      row
-    } else {
-      RatingTableJdbc.insert(connection, row)
-    }
-
-  /** 更新已有评分的分数与时间戳。 */
-  def updateScore(connection: Connection, ratingId: String, score: Int, updatedAt: String): Option[RatingRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.ratings.indexWhere(_.id == ratingId) match {
-        case -1 => None
-        case index =>
-          val updated = InMemoryStore.ratings(index).copy(score = score, updatedAt = updatedAt)
-          InMemoryStore.ratings = InMemoryStore.ratings.updated(index, updated)
-          Some(updated)
+def countByPlayer(connection: Connection, playerId: String): Int = {
+    val statement = connection.prepareStatement("SELECT COUNT(*) AS rating_count FROM ratings WHERE player_id = ?")
+    try {
+      statement.setString(1, playerId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) resultSet.getInt("rating_count") else 0
+      } finally {
+        resultSet.close()
       }
-    } else {
-      RatingTableJdbc.updateScore(connection, ratingId, score, updatedAt)
+    } finally {
+      statement.close()
     }
+  }
+
+  def findByLevelAndPlayer(connection: Connection, levelId: String, playerId: String): Option[RatingRow] = {
+    val statement = connection.prepareStatement(s"${RatingTableCodec.baseSelect} WHERE level_id = ? AND player_id = ?")
+    try {
+      statement.setString(1, levelId)
+      statement.setString(2, playerId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(RatingTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def listByLevel(connection: Connection, levelId: String): Vector[RatingRow] = {
+    val statement = connection.prepareStatement(s"${RatingTableCodec.baseSelect} WHERE level_id = ? ORDER BY created_at ASC, id ASC")
+    try {
+      statement.setString(1, levelId)
+      rows(statement.executeQuery())
+    } finally {
+      statement.close()
+    }
+  }
+
+  def nextId(connection: Connection): String = {
+    val statement = connection.prepareStatement("SELECT COUNT(*) AS rating_count FROM ratings")
+    try {
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) s"rating-${resultSet.getInt("rating_count") + 1}" else "rating-1"
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def findById(connection: Connection, ratingId: String): Option[RatingRow] = {
+    val statement = connection.prepareStatement(s"${RatingTableCodec.baseSelect} WHERE id = ?")
+    try {
+      statement.setString(1, ratingId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(RatingTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  private def rows(resultSet: java.sql.ResultSet): Vector[RatingRow] =
+    try {
+      val builder = Vector.newBuilder[RatingRow]
+      while (resultSet.next()) {
+        builder += RatingTableCodec.rowFromResultSet(resultSet)
+      }
+      builder.result()
+    } finally {
+      resultSet.close()
+    }
+
+def insert(connection: Connection, row: RatingRow): RatingRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO ratings (id, level_id, player_id, score, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      statement.setString(1, row.id)
+      statement.setString(2, row.levelId)
+      statement.setString(3, row.playerId)
+      statement.setInt(4, row.score)
+      statement.setString(5, row.createdAt)
+      statement.setString(6, row.updatedAt)
+      statement.executeUpdate()
+      row
+    } finally {
+      statement.close()
+    }
+  }
+
+  def updateScore(connection: Connection, ratingId: String, score: Int, updatedAt: String): Option[RatingRow] = {
+    val statement = connection.prepareStatement(
+      """
+        UPDATE ratings
+        SET score = ?, updated_at = ?
+        WHERE id = ?
+      """
+    )
+    try {
+      statement.setInt(1, score)
+      statement.setString(2, updatedAt)
+      statement.setString(3, ratingId)
+      if (statement.executeUpdate() == 0) None else RatingTable.findById(connection, ratingId)
+    } finally {
+      statement.close()
+    }
+  }
 }

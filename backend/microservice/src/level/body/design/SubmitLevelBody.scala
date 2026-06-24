@@ -11,7 +11,7 @@ final case class SubmitLevelBody(
   levelId: String
 )
 
-object SubmitLevelBody {
+private[level] object SubmitLevelBody {
   implicit val encoder: Encoder[SubmitLevelBody] = deriveEncoder
   implicit val decoder: Decoder[SubmitLevelBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, SubmitLevelBody] = jsonOf

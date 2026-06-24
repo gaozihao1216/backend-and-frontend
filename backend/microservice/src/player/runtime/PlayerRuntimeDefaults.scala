@@ -9,7 +9,7 @@ import microservice.player.objects.PlayerWallet
   * 作用：集中定义 roleHomeCheckInPanelId 等供 seed 与 UI 绑定。
   * 关联：[[PlayerRuntimeSeed]]；[[CheckInPanelRewardTable.replacePanelRewards]]。
   */
-object PlayerRuntimeDefaults {
+private[player] object PlayerRuntimeDefaults {
   /** 新用户默认金币。 */
   val defaultCoins: Int = 1280
   /** 新用户默认宝石。 */

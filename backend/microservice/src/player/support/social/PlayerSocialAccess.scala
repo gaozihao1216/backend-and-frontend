@@ -11,7 +11,7 @@ import microservice.player.tables.social.PlayerFriendTable
 import microservice.user.api.internal.player.UserExistsInternalAPIMessage
 
 /** 玩家社交（好友、私信）的前置校验。 */
-object PlayerSocialAccess {
+private[player] object PlayerSocialAccess {
   def requireValidFriendRequest(userId: String, friendUserId: String): Step[Unit] =
     if (friendUserId.trim.isEmpty) {
       PlanStep.fail(HttpError.badRequest("INVALID_FRIEND", "friendUserId is required"))

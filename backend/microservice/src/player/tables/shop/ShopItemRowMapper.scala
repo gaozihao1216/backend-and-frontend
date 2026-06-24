@@ -2,7 +2,7 @@ package microservice.player.tables.shop
 
 import microservice.player.objects.shop.ShopItem
 
-object ShopItemRowMapper {
+private[player] object ShopItemRowMapper {
   def toShopItem(row: ShopItemRow): ShopItem =
     ShopItem(
       id = row.id,

@@ -10,7 +10,7 @@ import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 
 /** JDBC 读路径：stretch_visual_templates 表列 ↔ Row 编解码。
   *
-  * 关联：StretchVisualTemplateTableJdbcRead / Write。
+  * 关联：StretchVisualTemplateTable。
   */
 private[tables] object StretchVisualTemplateTableCodec {
   /** stretch_visual_templates 表通用 SELECT 列清单。 */

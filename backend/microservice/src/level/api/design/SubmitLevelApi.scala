@@ -24,7 +24,7 @@ final case class SubmitLevelAPIMessage(
 
   /** plan 定义了什么业务流程：Designer 将 Draft/Rejected 关卡提交审核，创建 Submission 记录。
     *
-    * 关联的 HTTP 路由/前端 API：POST /designer/submissions；前端 `SubmitLevelApi`。
+    * 关联的前端 API：POST /designer/submissions；前端 `SubmitLevelApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Submission]] =
     PlanSteps.finish {

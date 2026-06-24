@@ -8,7 +8,7 @@ package microservice.level.tables.rating
   *
   * 表职责：封装 ratingcodec 数据的 CRUD。
   * Row↔Object 映射：通过 RowMapper/Codec 与领域对象互转。
-  * inmemory/jdbc 双实现：connection == null 走 InMemoryStore，否则走 JDBC SQL。
+  * JDBC 表字段编解码：负责 ResultSet 映射与 SQL 参数绑定。
   */
 import microservice.level.tables.shared.RatingRow
 

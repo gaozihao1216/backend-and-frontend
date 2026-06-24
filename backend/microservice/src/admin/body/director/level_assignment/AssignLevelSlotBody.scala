@@ -14,7 +14,7 @@ final case class AssignLevelSlotBody(
   birdPool: Option[AdminBirdPool] = None
 )
 
-object AssignLevelSlotBody {
+private[admin] object AssignLevelSlotBody {
   implicit val encoder: Encoder[AssignLevelSlotBody] = deriveEncoder
   implicit val decoder: Decoder[AssignLevelSlotBody] = deriveDecoder
   implicit val entityDecoder: EntityDecoder[IO, AssignLevelSlotBody] = jsonOf

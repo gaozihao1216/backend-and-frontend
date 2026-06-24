@@ -5,7 +5,7 @@ import microservice.bird.objects.skill.config.BirdSkillConfig
 import microservice.bird.tables.skill_config.BirdSkillConfigTable
 
 /** 鸟类技能配置只读（bird 模块内）。 */
-object BirdSkillConfigReadSupport {
+private[bird] object BirdSkillConfigReadSupport {
   def skillsMap(connection: Connection): Map[String, BirdSkillConfig] =
     BirdSkillConfigTable.skillsJsonMap(connection)
 }

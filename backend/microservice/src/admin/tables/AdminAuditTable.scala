@@ -1,84 +1,182 @@
 package microservice.admin.tables
 
-import java.sql.Connection
-import microservice.admin.tables.jdbc.AdminAuditTableJdbc
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
+import java.sql.{Connection, PreparedStatement, ResultSet}
 
-/** 管理员审核审计表访问门面：append-only 记录关卡/鸟类审核与总监废止决策。
+/** 管理员审核审计行：append-only 记录每次投稿审核或总监废止决策。
   *
-  * 实现：connection == null 时走 InMemoryStore；否则走 PostgreSQL review_audits 表。
-  * 关联：ReviewSubmissionAPIMessage、ReviewBirdSubmissionAPIMessage、AbolishDirectorSubmissionAPIMessage。
+  * 字段：targetType 区分关卡/鸟类投稿或总监废止；decision 为 SubmissionStatus.value 字符串。
+  * 关联：[[AdminAuditTable]]；映射为 [[microservice.admin.objects.submission.ReviewAudit]]。
   */
+final case class ReviewAuditRow(
+  id: String,
+  targetType: String,
+  submissionId: String,
+  reviewerId: String,
+  decision: String,
+  reviewNote: Option[String],
+  reviewedAt: String
+)
+
+/** 审核日志表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
 object AdminAuditTable {
-  /** JDBC 启动时建表；in-memory 模式下无需 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) AdminAuditTableJdbc.initialize(connection)
 
-  /** 列出全部审计记录（按 reviewedAt 降序）。 */
   def listAll(connection: Connection): Vector[ReviewAuditRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.reviewAudits.sortBy(_.reviewedAt)(Ordering[String].reverse)
-    } else {
-      AdminAuditTableJdbc.listAll(connection)
-    }
+    AdminAuditTableSql.listAll(connection)
 
-  /** 按投稿 ID 列出审计记录（同一投稿可有多条，如复审/废止）。 */
   def listBySubmissionId(connection: Connection, submissionId: String): Vector[ReviewAuditRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.reviewAudits
-        .filter(_.submissionId == submissionId)
-        .sortBy(_.reviewedAt)(Ordering[String].reverse)
-    } else {
-      AdminAuditTableJdbc.listBySubmissionId(connection, submissionId)
-    }
+    AdminAuditTableSql.listBySubmissionId(connection, submissionId)
 
-  /** 按审核人 ID 列出审计记录。 */
   def listByReviewerId(connection: Connection, reviewerId: String): Vector[ReviewAuditRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.reviewAudits
-        .filter(_.reviewerId == reviewerId)
-        .sortBy(_.reviewedAt)(Ordering[String].reverse)
-    } else {
-      AdminAuditTableJdbc.listByReviewerId(connection, reviewerId)
-    }
+    AdminAuditTableSql.listByReviewerId(connection, reviewerId)
 
-  /** 生成下一个审计 ID。 */
   def nextId(connection: Connection): String =
-    if (TableConnection.isInMemory(connection)) {
-      s"review-audit-${InMemoryStore.reviewAudits.size + 1}"
-    } else {
-      AdminAuditTableJdbc.nextId(connection)
-    }
+    AdminAuditTableSql.nextId(connection)
 
-  /** 插入审计记录（append-only，不更新历史行）。 */
   def insert(connection: Connection, row: ReviewAuditRow): ReviewAuditRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.reviewAudits = InMemoryStore.reviewAudits :+ row
-      row
-    } else {
-      AdminAuditTableJdbc.insert(connection, row)
-    }
+    AdminAuditTableSql.insert(connection, row)
 
-  /** 便捷写入：自动生成 ID 并 insert。 */
   def recordReview(
     connection: Connection,
-    targetType: String,
     submissionId: String,
     reviewerId: String,
+    targetType: String,
     decision: String,
     reviewNote: Option[String],
     reviewedAt: String
-  ): ReviewAuditRow =
-    insert(
-      connection,
-      ReviewAuditRow(
-        id = nextId(connection),
-        targetType = targetType,
-        submissionId = submissionId,
-        reviewerId = reviewerId,
-        decision = decision,
-        reviewNote = reviewNote,
-        reviewedAt = reviewedAt
-      )
+  ): ReviewAuditRow = {
+    val row = ReviewAuditRow(
+      id = nextId(connection),
+      submissionId = submissionId,
+      reviewerId = reviewerId,
+      targetType = targetType,
+      decision = decision,
+      reviewNote = reviewNote,
+      reviewedAt = reviewedAt
     )
+    insert(connection, row)
+  }
+}
+
+private[tables] object AdminAuditTableSql {
+  private val baseSelect: String =
+    """
+      SELECT id, target_type, submission_id, reviewer_id, decision, review_note, reviewed_at
+      FROM review_audits
+    """
+
+def listAll(connection: Connection): Vector[ReviewAuditRow] = {
+    val statement = connection.prepareStatement(s"$baseSelect ORDER BY reviewed_at DESC, id ASC")
+    try {
+      val resultSet = statement.executeQuery()
+      try {
+        val rows = Vector.newBuilder[ReviewAuditRow]
+        while (resultSet.next()) {
+          rows += rowFromResultSet(resultSet)
+        }
+        rows.result()
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def listBySubmissionId(connection: Connection, submissionId: String): Vector[ReviewAuditRow] = {
+    val statement = connection.prepareStatement(
+      s"$baseSelect WHERE submission_id = ? ORDER BY reviewed_at DESC, id ASC"
+    )
+    try {
+      statement.setString(1, submissionId)
+      val resultSet = statement.executeQuery()
+      try {
+        val rows = Vector.newBuilder[ReviewAuditRow]
+        while (resultSet.next()) {
+          rows += rowFromResultSet(resultSet)
+        }
+        rows.result()
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def listByReviewerId(connection: Connection, reviewerId: String): Vector[ReviewAuditRow] = {
+    val statement = connection.prepareStatement(
+      s"$baseSelect WHERE reviewer_id = ? ORDER BY reviewed_at DESC, id ASC"
+    )
+    try {
+      statement.setString(1, reviewerId)
+      val resultSet = statement.executeQuery()
+      try {
+        val rows = Vector.newBuilder[ReviewAuditRow]
+        while (resultSet.next()) {
+          rows += rowFromResultSet(resultSet)
+        }
+        rows.result()
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  def nextId(connection: Connection): String = {
+    val statement = connection.prepareStatement("SELECT COUNT(*) AS audit_count FROM review_audits")
+    try {
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) s"review-audit-${resultSet.getInt("audit_count") + 1}" else "review-audit-1"
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+def insert(connection: Connection, row: ReviewAuditRow): ReviewAuditRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO review_audits (
+          id, target_type, submission_id, reviewer_id, decision, review_note, reviewed_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      bindRow(statement, row)
+      statement.executeUpdate()
+      row
+    } finally {
+      statement.close()
+    }
+  }
+
+  private def rowFromResultSet(resultSet: ResultSet): ReviewAuditRow =
+    ReviewAuditRow(
+      id = resultSet.getString("id"),
+      targetType = resultSet.getString("target_type"),
+      submissionId = resultSet.getString("submission_id"),
+      reviewerId = resultSet.getString("reviewer_id"),
+      decision = resultSet.getString("decision"),
+      reviewNote = Option(resultSet.getString("review_note")),
+      reviewedAt = resultSet.getString("reviewed_at")
+    )
+
+  private def bindRow(statement: PreparedStatement, row: ReviewAuditRow): Unit = {
+    statement.setString(1, row.id)
+    statement.setString(2, row.targetType)
+    statement.setString(3, row.submissionId)
+    statement.setString(4, row.reviewerId)
+    statement.setString(5, row.decision)
+    row.reviewNote match {
+      case Some(note) => statement.setString(6, note)
+      case None       => statement.setNull(6, java.sql.Types.VARCHAR)
+    }
+    statement.setString(7, row.reviewedAt)
+  }
 }

@@ -11,19 +11,19 @@ import microservice.player.tables.social.PlayerPrivateMessageTable
 import microservice.system.objects.UserRole
 import microservice.user.utils.AccessControl
 
-/** GET /player/social/messages 私信列表 APIMessage。
+/** 私信列表 APIMessage。
   *
   * 定义：userId + withUserId 查询双方会话历史。
   * 问题：仅好友可互发私信，需防未授权窥视聊天记录。
   * 作用：校验好友关系 → listConversation → 标记 mine 字段。
-  * 关联：[[PlayerSocialRouter]] ?withUserId=；[[PlayerPrivateMessageTable]]。
+  * 关联：[[microservice.player.routes.PlayerApiMessages]] 注册；[[PlayerPrivateMessageTable]]。
   */
 final case class ListMessagesAPIMessage(userId: String, withUserId: String) extends APIWithTokenMessage[Json] {
   override def token: String = userId
 
   /** plan 定义了什么业务流程：Player 查询与指定好友的私信会话历史。
     *
-    * 关联的 HTTP 路由/前端 API：GET /player/social/messages?withUserId=；前端 `ListMessagesApi`。
+    * 关联的前端 API：`ListMessagesApi`。
     */
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {

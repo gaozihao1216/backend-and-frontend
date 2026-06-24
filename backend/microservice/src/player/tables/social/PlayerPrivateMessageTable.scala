@@ -1,43 +1,62 @@
 package microservice.player.tables.social
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
-import microservice.player.tables.social.jdbc.PlayerPrivateMessageTableJdbc
+import microservice.player.tables.social.{PlayerPrivateMessageRow, PlayerPrivateMessageTableCodec}
 
-/** 玩家私信表访问门面：存储好友间的双向私信记录。 */
 object PlayerPrivateMessageTable {
-  /** 启动时建表与对话查询索引；仅 JDBC 模式执行 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) PlayerPrivateMessageTableJdbc.initialize(connection)
 
-  /** 列出两用户间的全部私信（双向，按时间升序）。 */
-  def listConversation(connection: Connection, userId: String, withUserId: String): Vector[PlayerPrivateMessageRow] = {
-    val rows =
-      if (TableConnection.isInMemory(connection)) {
-        InMemoryStore.playerPrivateMessages.filter { row =>
-          (row.senderId == userId && row.receiverId == withUserId) ||
-          (row.senderId == withUserId && row.receiverId == userId)
+def listConversation(connection: Connection, userId: String, withUserId: String): Vector[PlayerPrivateMessageRow] = {
+    val statement = connection.prepareStatement(
+      s"""
+        ${PlayerPrivateMessageTableCodec.baseSelect}
+        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+        ORDER BY created_at ASC, id ASC
+      """
+    )
+    try {
+      statement.setString(1, userId)
+      statement.setString(2, withUserId)
+      statement.setString(3, withUserId)
+      statement.setString(4, userId)
+      val resultSet = statement.executeQuery()
+      try {
+        val builder = Vector.newBuilder[PlayerPrivateMessageRow]
+        while (resultSet.next()) {
+          builder += PlayerPrivateMessageTableCodec.rowFromResultSet(resultSet)
         }
-      } else {
-        PlayerPrivateMessageTableJdbc.listConversation(connection, userId, withUserId)
+        builder.result()
+      } finally {
+        resultSet.close()
       }
-    rows.sortBy(row => (row.createdAt, row.id))
+    } finally {
+      statement.close()
+    }
   }
 
-  /** 插入一条私信并返回写入的行。 */
-  def insert(connection: Connection, row: PlayerPrivateMessageRow): PlayerPrivateMessageRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.playerPrivateMessages = InMemoryStore.playerPrivateMessages :+ row
-      row
-    } else {
-      PlayerPrivateMessageTableJdbc.insert(connection, row)
+  def nextId(connection: Connection): String = {
+    val statement = connection.prepareStatement("SELECT COUNT(*) AS message_count FROM player_private_messages")
+    try {
+      val resultSet = statement.executeQuery()
+      try if (resultSet.next()) f"pm-${resultSet.getInt("message_count") + 1}%04d" else "pm-0001"
+      finally resultSet.close()
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 生成下一条私信 id（格式 pm-0001）。 */
-  def nextId(connection: Connection): String =
-    if (TableConnection.isInMemory(connection)) {
-      f"pm-${InMemoryStore.playerPrivateMessages.size + 1}%04d"
-    } else {
-      PlayerPrivateMessageTableJdbc.nextId(connection)
+def insert(connection: Connection, row: PlayerPrivateMessageRow): PlayerPrivateMessageRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO player_private_messages (id, sender_id, receiver_id, content, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      PlayerPrivateMessageTableCodec.bindRow(statement, row)
+      statement.executeUpdate()
+      row
+    } finally {
+      statement.close()
     }
+  }
 }

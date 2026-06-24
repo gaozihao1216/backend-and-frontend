@@ -2,45 +2,17 @@ package microservice.player.tables.wallet
 
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
 import microservice.player.objects.PlayerWallet
 import microservice.player.runtime.PlayerRuntimeDefaults
-import microservice.player.tables.wallet.jdbc.PlayerWalletTableJdbc
 
-object PlayerWalletTable {
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) PlayerWalletTableJdbc.initialize(connection)
+private[player] object PlayerWalletTable {
 
   def getOrCreate(connection: Connection, userId: String): PlayerWallet = {
     val now = Instant.now().toString
-    if (TableConnection.isInMemory(connection)) {
-      if (!InMemoryStore.playerWallets.contains(userId)) {
-        val defaultRow = PlayerWalletRow(
-          userId = userId,
-          coins = PlayerRuntimeDefaults.defaultCoins,
-          gems = PlayerRuntimeDefaults.defaultGems,
-          fragments = PlayerRuntimeDefaults.defaultFragments,
-          updatedAt = now
-        )
-        InMemoryStore.playerWallets = InMemoryStore.playerWallets.updated(userId, defaultRow)
-      }
-      toWallet(InMemoryStore.playerWallets.getOrElse(userId, defaultWalletRow(userId, now)))
-    } else {
-      PlayerWalletTableJdbc.findByUserId(connection, userId) match {
-        case Some(row) => toWallet(row)
-        case None =>
-          val row = PlayerWalletTableJdbc.upsert(
-            connection,
-            PlayerWalletRow(
-              userId = userId,
-              coins = PlayerRuntimeDefaults.defaultCoins,
-              gems = PlayerRuntimeDefaults.defaultGems,
-              fragments = PlayerRuntimeDefaults.defaultFragments,
-              updatedAt = now
-            )
-          )
-          toWallet(row)
-      }
+    PlayerWalletTableSql.findByUserId(connection, userId) match {
+      case Some(row) => toWallet(row)
+      case None =>
+        toWallet(PlayerWalletTableSql.upsert(connection, defaultWalletRow(userId, now)))
     }
   }
 
@@ -52,14 +24,7 @@ object PlayerWalletTable {
       fragments = wallet.fragments,
       updatedAt = Instant.now().toString
     )
-    val saved =
-      if (TableConnection.isInMemory(connection)) {
-        InMemoryStore.playerWallets = InMemoryStore.playerWallets.updated(row.userId, row)
-        row
-      } else {
-        PlayerWalletTableJdbc.upsert(connection, row)
-      }
-    toWallet(saved)
+    toWallet(PlayerWalletTableSql.upsert(connection, row))
   }
 
   private def defaultWalletRow(userId: String, updatedAt: String): PlayerWalletRow =
@@ -73,4 +38,50 @@ object PlayerWalletTable {
 
   private def toWallet(row: PlayerWalletRow): PlayerWallet =
     PlayerWallet(coins = row.coins, gems = row.gems, fragments = row.fragments)
+}
+
+import java.sql.Connection
+import microservice.player.tables.wallet._
+
+private[tables] object PlayerWalletTableSql {
+
+def findByUserId(connection: Connection, userId: String): Option[PlayerWalletRow] = {
+    val statement = connection.prepareStatement(s"${PlayerWalletTableCodec.baseSelect} WHERE user_id = ?")
+    try {
+      statement.setString(1, userId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(PlayerWalletTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+def upsert(connection: Connection, row: PlayerWalletRow): PlayerWalletRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO player_wallets (user_id, coins, gems, fragments, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (user_id) DO UPDATE SET
+          coins = EXCLUDED.coins,
+          gems = EXCLUDED.gems,
+          fragments = EXCLUDED.fragments,
+          updated_at = EXCLUDED.updated_at
+      """
+    )
+    try {
+      statement.setString(1, row.userId)
+      statement.setInt(2, row.coins)
+      statement.setInt(3, row.gems)
+      statement.setInt(4, row.fragments)
+      statement.setString(5, row.updatedAt)
+      statement.executeUpdate()
+      row
+    } finally {
+      statement.close()
+    }
+  }
 }

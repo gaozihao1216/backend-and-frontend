@@ -1,67 +1,96 @@
 package microservice.ui.tables.button_template
 
 import java.sql.Connection
-import microservice.infrastructure.database.{InMemoryStore, TableConnection}
-import microservice.ui.tables.button_template.jdbc.ButtonTemplateTableJdbc
+import java.sql.{Connection, ResultSet}
+import microservice.ui.tables.button_template._
 
-/** 按钮视觉模板表访问门面：九宫格切片等按钮皮肤资源的 CRUD。
-  *
-  * 总监在 DirectorWorkbench 中管理；动态页面 ButtonComponent 通过 templateId 引用。
-  */
 object ButtonTemplateTable {
-  /** 启动时建表；仅 JDBC 模式执行 DDL。 */
-  def initialize(connection: Connection): Unit =
-    if (!TableConnection.isInMemory(connection)) ButtonTemplateTableJdbc.initialize(connection)
+/** 创建 button_templates 表。 */
 
-  /** 返回全部按钮模板。 */
-  def listAll(connection: Connection): Vector[ButtonTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.buttonTemplates.sortBy(_.id)
-    } else {
-      ButtonTemplateTableJdbc.listAll(connection)
+/** 查询全部按钮模板。 */
+  def listAll(connection: Connection): Vector[ButtonTemplateRow] = {
+    val statement = connection.prepareStatement(s"${ButtonTemplateTableCodec.baseSelect} ORDER BY id ASC")
+    try rows(statement.executeQuery())
+    finally statement.close()
+  }
+
+  /** 按 id 查询单条。 */
+  def findById(connection: Connection, templateId: String): Option[ButtonTemplateRow] = {
+    val statement = connection.prepareStatement(s"${ButtonTemplateTableCodec.baseSelect} WHERE id = ?")
+    try {
+      statement.setString(1, templateId)
+      val resultSet = statement.executeQuery()
+      try {
+        if (resultSet.next()) Some(ButtonTemplateTableCodec.rowFromResultSet(resultSet)) else None
+      } finally {
+        resultSet.close()
+      }
+    } finally {
+      statement.close()
+    }
+  }
+
+  private def rows(resultSet: ResultSet): Vector[ButtonTemplateRow] =
+    try {
+      val builder = Vector.newBuilder[ButtonTemplateRow]
+      while (resultSet.next()) {
+        builder += ButtonTemplateTableCodec.rowFromResultSet(resultSet)
+      }
+      builder.result()
+    } finally {
+      resultSet.close()
     }
 
-  /** 按 templateId 查找按钮模板。 */
-  def findById(connection: Connection, templateId: String): Option[ButtonTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.buttonTemplates.find(_.id == templateId)
-    } else {
-      ButtonTemplateTableJdbc.findById(connection, templateId)
-    }
-
-  /** 插入新按钮模板。 */
-  def insert(connection: Connection, row: ButtonTemplateRow): ButtonTemplateRow =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.buttonTemplates = InMemoryStore.buttonTemplates :+ row
+/** INSERT 新按钮模板行。 */
+  def insert(connection: Connection, row: ButtonTemplateRow): ButtonTemplateRow = {
+    val statement = connection.prepareStatement(
+      """
+        INSERT INTO ui_button_templates (id, name, source_data_url, category, scaling_mode, slice, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      """
+    )
+    try {
+      ButtonTemplateTableCodec.bindRow(statement, row)
+      statement.executeUpdate()
       row
-    } else {
-      ButtonTemplateTableJdbc.insert(connection, row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 更新已有按钮模板；不存在时返回 None。 */
-  def update(connection: Connection, row: ButtonTemplateRow): Option[ButtonTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.buttonTemplates.indexWhere(_.id == row.id) match {
-        case -1 => None
-        case index =>
-          InMemoryStore.buttonTemplates = InMemoryStore.buttonTemplates.updated(index, row)
-          Some(row)
-      }
-    } else {
-      ButtonTemplateTableJdbc.update(connection, row)
+  /** UPDATE 已有行。 */
+  def update(connection: Connection, row: ButtonTemplateRow): Option[ButtonTemplateRow] = {
+    val statement = connection.prepareStatement(
+      """
+        UPDATE ui_button_templates
+        SET name = ?, source_data_url = ?, category = ?, scaling_mode = ?, slice = ?, created_at = ?, updated_at = ?
+        WHERE id = ?
+      """
+    )
+    try {
+      statement.setString(1, row.name)
+      statement.setString(2, row.sourceDataUrl)
+      statement.setString(3, row.category)
+      statement.setString(4, row.scalingMode.value)
+      statement.setString(5, ButtonTemplateTableCodec.sliceToDb(row.slice))
+      statement.setString(6, row.createdAt)
+      statement.setString(7, row.updatedAt)
+      statement.setString(8, row.id)
+      if (statement.executeUpdate() == 0) None else Some(row)
+    } finally {
+      statement.close()
     }
+  }
 
-  /** 按 templateId 删除按钮模板并返回被删行。 */
+  /** DELETE 并返回被删行。 */
   def deleteById(connection: Connection, templateId: String): Option[ButtonTemplateRow] =
-    if (TableConnection.isInMemory(connection)) {
-      InMemoryStore.buttonTemplates.indexWhere(_.id == templateId) match {
-        case -1 => None
-        case index =>
-          val deleted = InMemoryStore.buttonTemplates(index)
-          InMemoryStore.buttonTemplates = InMemoryStore.buttonTemplates.patch(index, Nil, 1)
-          Some(deleted)
+    ButtonTemplateTable.findById(connection, templateId).flatMap { row =>
+      val statement = connection.prepareStatement("DELETE FROM ui_button_templates WHERE id = ?")
+      try {
+        statement.setString(1, templateId)
+        if (statement.executeUpdate() == 0) None else Some(row)
+      } finally {
+        statement.close()
       }
-    } else {
-      ButtonTemplateTableJdbc.deleteById(connection, templateId)
     }
 }

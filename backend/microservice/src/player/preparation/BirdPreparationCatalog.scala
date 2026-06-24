@@ -16,7 +16,7 @@ final case class BirdCatalogEntry(
 )
 
 /** 玩家备战页鸟属性计算与阶位常量（player 模块内游戏逻辑）。 */
-object BirdPreparationCatalog {
+private[player] object BirdPreparationCatalog {
   val maxTier: Int = 3
 
   def statsFor(level: Int, base: BirdBaseStats): BirdBaseStats = {
