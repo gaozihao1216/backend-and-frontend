@@ -1,7 +1,7 @@
 import { BindBackendUserRequestBodySchema, BindBackendUserResponseDataSchema, type BindBackendUserRequestBody, type BoundBackendUser } from "../api-contracts.js";
 import { request } from "../client.js";
 
-export const BindBackendUserApiPath = "/auth/bind" as const;
+export const BindBackendUserApiPath = "/api/bindbackenduserapi" as const;
 
 export class BindBackendUserApi {
   static readonly path = BindBackendUserApiPath;

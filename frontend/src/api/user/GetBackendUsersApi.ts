@@ -1,7 +1,7 @@
 import { GetBackendUsersRequestQuerySchema, GetBackendUsersResponseDataSchema, type BoundBackendUser } from "../api-contracts.js";
 import { request } from "../client.js";
 
-export const GetBackendUsersApiPath = "/auth/backend-users" as const;
+export const GetBackendUsersApiPath = "/api/getbackendusersapi" as const;
 
 export class GetBackendUsersApi {
   static readonly path = GetBackendUsersApiPath;

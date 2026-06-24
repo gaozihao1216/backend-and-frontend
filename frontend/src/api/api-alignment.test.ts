@@ -10,10 +10,7 @@ const backendSrc = path.join(projectRoot, "backend/microservice/src");
 const frontendApi = apiDir;
 
 /** 后端 *Api.scala 相对 src 的路径 → 前端 *Api.ts 相对 api/ 的路径（默认去掉 api/ 段）。 */
-const frontendPathOverrides: Record<string, string> = {
-  "user/api/GetBackendUsersApi.scala": "auth/GetBackendUsersApi.ts",
-  "user/api/BindBackendUserApi.scala": "auth/BindBackendUserApi.ts",
-};
+const frontendPathOverrides: Record<string, string> = {};
 
 const frontendOnlyHelpers = new Set([
   "player/social/PlayerSocialSchemas.ts",
@@ -30,7 +27,6 @@ const barrelAndSupport = new Set([
   "designer-api.ts",
   "player-api.ts",
   "ui-api.ts",
-  "auth-api.ts",
   "user-api.ts",
   "system-api.ts",
   "player-social-api.ts",

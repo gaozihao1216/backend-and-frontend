@@ -88,7 +88,7 @@ test("frontend API request paths are covered by the Vite dev proxy", async () =>
   ]);
 
   assert.ok(apiPaths.length > 0, "expected to discover frontend API request paths");
-  assert.ok(apiPaths.includes("/auth/bind"), "expected auth bind API path to be covered by this test");
+  assert.ok(apiPaths.includes("/api/bindbackenduserapi"), "expected user bind RPC path to be covered by this test");
 
   const uncoveredPaths = apiPaths.filter((apiPath) =>
     !proxyPrefixes.some((proxyPrefix) => isCoveredByProxy(apiPath, proxyPrefix)),

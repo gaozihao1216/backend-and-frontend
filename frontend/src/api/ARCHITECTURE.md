@@ -12,12 +12,8 @@
 | `player/api/social/ListFriendsApi.scala` | `api/player/social/ListFriendsApi.ts` |
 | `ui/api/buttontemplates/ListButtonTemplatesApi.scala` | `api/ui/buttontemplates/ListButtonTemplatesApi.ts` |
 
-**例外（历史路由前缀，非模块路径）：**
-
-| 后端 | 前端 |
-| --- | --- |
-| `user/api/GetBackendUsersApi.scala` | `api/auth/GetBackendUsersApi.ts`（挂载 `/auth/backend-users`） |
-| `user/api/BindBackendUserApi.scala` | `api/auth/BindBackendUserApi.ts`（挂载 `/auth/bind`） |
+所有业务 API 通过后端统一 RPC 入口调用：`POST /api/{apiName}`。`apiName` 由后端 `XxxAPIMessage`
+推导为小写 `xxxapi`，例如 `BindBackendUserAPIMessage` → `/api/bindbackenduserapi`。
 
 ## 目录树（与后端模块对齐）
 
@@ -48,7 +44,6 @@ api/
 │   ├── buttontemplates/
 │   ├── stretchtemplates/
 │   └── panelworkflows/
-├── auth/          # user 模块中挂载在 /auth 的 API
 ├── user/
 └── system/
 ```
@@ -61,7 +56,7 @@ api/
 | `designer-api.ts` | 设计师关卡 + 鸟类 |
 | `player-api.ts` | 玩家关卡读写 + social + preparation + ui runtime |
 | `ui-api.ts` | 总监 UI 定制 |
-| `auth-api.ts` / `user-api.ts` / `system-api.ts` | 认证、资料、健康检查 |
+| `user-api.ts` / `system-api.ts` | 用户绑定/资料、健康检查 |
 | `index.ts` | 全量 re-export + `createDefaultLevelInput` |
 
 旧路径 `player-social-api.ts`、`player-preparation-api.ts`、`player-ui-api.ts` 保留为 **兼容 re-export**，新代码请直接 import 子目录下的 `*Api.ts`。
@@ -70,7 +65,7 @@ api/
 
 `npm test` 会运行 `api-alignment.test.ts`：
 
-- 扫描后端全部 `*Api.scala`，断言前端存在同布局的 `*Api.ts`（含上述 auth 例外）
+- 扫描后端全部公开 `*Api.scala`，断言前端存在同布局的 `*Api.ts`
 - 扫描后端 `<module>/body/**/*.scala`（文件名 `*Body.scala`），断言前端存在对应 `body/*Body.ts`
 - 路径变换：`<module>/body/<area>/XxxBody.scala` → `<module>/<area>/body/XxxBody.ts`；例外见下
 

@@ -1,7 +1,6 @@
 import { type CreateLevelInput, CreateLevelInputSchema } from "../objects/level/level/create-level-input.js";
 import { LevelDataSchema, type LevelData } from "../objects/level/level/level-data.js";
 
-export * from "./auth-api.js";
 export * from "./user-api.js";
 export * from "./designer-api.js";
 export * from "./admin-api.js";

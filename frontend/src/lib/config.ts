@@ -13,6 +13,8 @@ export const API_USERS = {
   },
 } as const;
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim() ?? "";
+const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+
+export const API_BASE_URL = viteEnv?.VITE_API_BASE_URL?.trim() ?? "";
 
 export type FrontendRole = keyof typeof API_USERS;
