@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.bird.AdminBirdSkillConfig
 import microservice.admin.support.mapping.BirdHandoffMapping
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.bird.api.internal.director.SaveDirectorBirdSkillInternalAPIMessage
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError

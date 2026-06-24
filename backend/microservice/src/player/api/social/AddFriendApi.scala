@@ -10,7 +10,7 @@ import microservice.player.support.social.PlayerSocialAccess
 import microservice.player.tables.social.PlayerFriendTable
 import microservice.system.objects.UserRole
 import microservice.user.api.internal.player.ListUserDisplaySummariesInternalAPIMessage
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** POST /player/social/friends 添加好友 APIMessage。 */
 final case class AddFriendAPIMessage(userId: String, friendUserId: String) extends APIWithTokenMessage[Json] {

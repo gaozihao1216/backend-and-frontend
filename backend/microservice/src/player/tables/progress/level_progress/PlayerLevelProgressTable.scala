@@ -2,7 +2,24 @@ package microservice.player.tables.progress.level_progress
 
 import java.sql.Connection
 import java.time.Instant
-import microservice.player.tables.progress.PlayerLevelProgressRow
+
+final case class PlayerLevelProgressRow(
+  userId: String,
+  levelSuffix: String,
+  clearedAt: String
+)
+
+private[tables] object PlayerLevelProgressTableCodec {
+  val baseSelect: String =
+    "SELECT user_id, level_suffix, cleared_at FROM player_level_progress"
+
+  def rowFromResultSet(resultSet: java.sql.ResultSet): PlayerLevelProgressRow =
+    PlayerLevelProgressRow(
+      userId = resultSet.getString("user_id"),
+      levelSuffix = resultSet.getString("level_suffix"),
+      clearedAt = resultSet.getString("cleared_at")
+    )
+}
 
 /** 玩家关卡进度表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
 private[player] object PlayerLevelProgressTable {
@@ -41,9 +58,6 @@ private[player] object PlayerLevelProgressTable {
     )
   }
 }
-
-import java.sql.Connection
-import microservice.player.tables.progress._
 
 private[tables] object PlayerLevelProgressTableSql {
 

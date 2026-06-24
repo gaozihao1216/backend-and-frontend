@@ -11,7 +11,7 @@ import microservice.admin.body.submissions.ReviewSubmissionBody
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.ReviewLevelSubmissionInternalAPIMessage
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** 审核关卡投稿 APIMessage：通过或拒绝，并同步更新关联 Level 状态。 */
 final case class ReviewSubmissionAPIMessage(

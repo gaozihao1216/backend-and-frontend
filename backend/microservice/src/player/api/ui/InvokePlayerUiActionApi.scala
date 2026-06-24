@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.runtime.PlayerUiRuntimeSupport
 import microservice.system.objects.UserRole
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** POST /player/ui/actions/:apiKey 动态 UI 动作 APIMessage。 */
 final case class InvokePlayerUiActionAPIMessage(

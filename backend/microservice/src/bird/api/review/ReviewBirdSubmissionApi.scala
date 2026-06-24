@@ -3,7 +3,7 @@ package microservice.bird.api.review
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.admin.api.internal.RecordReviewAuditInternalAPIMessage
 import microservice.bird.objects.submission.ReviewedBirdSubmission
 import microservice.bird.support.review.BirdSubmissionReviewSupport

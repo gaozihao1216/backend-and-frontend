@@ -1,9 +1,33 @@
 package microservice.player.tables.wallet
 
+import java.sql.ResultSet
 import java.sql.Connection
 import java.time.Instant
 import microservice.player.objects.PlayerWallet
 import microservice.player.runtime.PlayerRuntimeDefaults
+import microservice.player.tables.wallet._
+
+final case class PlayerWalletRow(
+  userId: String,
+  coins: Int,
+  gems: Int,
+  fragments: Int,
+  updatedAt: String
+)
+
+private[player] object PlayerWalletTableCodec {
+  val baseSelect: String =
+    "SELECT user_id, coins, gems, fragments, updated_at FROM player_wallets"
+
+  def rowFromResultSet(resultSet: ResultSet): PlayerWalletRow =
+    PlayerWalletRow(
+      userId = resultSet.getString("user_id"),
+      coins = resultSet.getInt("coins"),
+      gems = resultSet.getInt("gems"),
+      fragments = resultSet.getInt("fragments"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+}
 
 private[player] object PlayerWalletTable {
 
@@ -40,8 +64,6 @@ private[player] object PlayerWalletTable {
     PlayerWallet(coins = row.coins, gems = row.gems, fragments = row.fragments)
 }
 
-import java.sql.Connection
-import microservice.player.tables.wallet._
 
 private[tables] object PlayerWalletTableSql {
 

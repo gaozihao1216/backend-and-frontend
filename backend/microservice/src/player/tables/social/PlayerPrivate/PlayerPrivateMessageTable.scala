@@ -1,7 +1,36 @@
 package microservice.player.tables.social
 
 import java.sql.Connection
-import microservice.player.tables.social.{PlayerPrivateMessageRow, PlayerPrivateMessageTableCodec}
+
+final case class PlayerPrivateMessageRow(
+  id: String,
+  senderId: String,
+  receiverId: String,
+  content: String,
+  createdAt: String
+)
+
+private[tables] object PlayerPrivateMessageTableCodec {
+  val baseSelect: String =
+    "SELECT id, sender_id, receiver_id, content, created_at FROM player_private_messages"
+
+  def rowFromResultSet(resultSet: java.sql.ResultSet): PlayerPrivateMessageRow =
+    PlayerPrivateMessageRow(
+      id = resultSet.getString("id"),
+      senderId = resultSet.getString("sender_id"),
+      receiverId = resultSet.getString("receiver_id"),
+      content = resultSet.getString("content"),
+      createdAt = resultSet.getString("created_at")
+    )
+
+  def bindRow(statement: java.sql.PreparedStatement, row: PlayerPrivateMessageRow): Unit = {
+    statement.setString(1, row.id)
+    statement.setString(2, row.senderId)
+    statement.setString(3, row.receiverId)
+    statement.setString(4, row.content)
+    statement.setString(5, row.createdAt)
+  }
+}
 
 object PlayerPrivateMessageTable {
 

@@ -1,8 +1,41 @@
 package microservice.player.tables.weekly_check_in
 
+import java.sql.ResultSet
 import java.sql.Connection
 import java.time.Instant
 import microservice.player.objects.WeeklyCheckInProgress
+import microservice.player.tables.weekly_check_in._
+
+final case class PlayerWeeklyCheckInRow(
+  userId: String,
+  weekKey: String,
+  signedSlots: String,
+  signedToday: Boolean,
+  updatedAt: String
+)
+
+private[player] object PlayerWeeklyCheckInSlotsCodec {
+  def encode(slots: Set[Int]): String =
+    slots.toVector.sorted.mkString(",")
+
+  def decode(raw: String): Set[Int] =
+    if (raw.trim.isEmpty) Set.empty
+    else raw.split(",").flatMap(value => scala.util.Try(value.trim.toInt).toOption).toSet
+}
+
+private[player] object PlayerWeeklyCheckInTableCodec {
+  val baseSelect: String =
+    "SELECT user_id, week_key, signed_slots, signed_today, updated_at FROM player_weekly_check_ins"
+
+  def rowFromResultSet(resultSet: ResultSet): PlayerWeeklyCheckInRow =
+    PlayerWeeklyCheckInRow(
+      userId = resultSet.getString("user_id"),
+      weekKey = resultSet.getString("week_key"),
+      signedSlots = resultSet.getString("signed_slots"),
+      signedToday = resultSet.getBoolean("signed_today"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+}
 
 private[player] object PlayerWeeklyCheckInTable {
 
@@ -31,8 +64,6 @@ private[player] object PlayerWeeklyCheckInTable {
   }
 }
 
-import java.sql.Connection
-import microservice.player.tables.weekly_check_in._
 
 private[tables] object PlayerWeeklyCheckInTableSql {
 

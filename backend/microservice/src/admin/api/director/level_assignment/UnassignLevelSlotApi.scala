@@ -5,7 +5,7 @@ import java.sql.Connection
 import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignment
 import microservice.admin.support.director.level_assignment.DirectorLevelAssignmentSupport
 import microservice.admin.support.mapping.LevelHandoffMapping
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.UnassignSlotInternalAPIMessage

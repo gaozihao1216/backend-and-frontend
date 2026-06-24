@@ -10,7 +10,7 @@ import microservice.player.api.internal.ui.RegisterCheckInPanelRewardsInternalAP
 import microservice.system.objects.AdminLevel
 import microservice.ui.objects.panelworkflows.UiCheckInSlotReward
 import microservice.ui.support.mapping.PlayerHandoffMapping
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** 总监注册签到面板 7 格奖励 APIMessage。 */
 final case class RegisterCheckInPanelRewardsAPIMessage(

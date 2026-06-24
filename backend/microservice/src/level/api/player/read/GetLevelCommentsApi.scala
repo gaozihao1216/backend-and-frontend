@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.social.LevelComment
 import microservice.level.tables.comment.CommentTable

@@ -1,4 +1,4 @@
-package microservice.player.preparation
+package microservice.player.support.preparation
 
 import microservice.player.objects.catalog.{PreparationPublishedBirdSnapshot, PreparationSystemBirdSnapshot}
 

@@ -6,7 +6,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.objects.UserProfile
 import microservice.user.support.UserProfileAccess
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** GET /users/:profileUserId/profile 的 APIMessage。 */
 final case class GetUserProfileAPIMessage(

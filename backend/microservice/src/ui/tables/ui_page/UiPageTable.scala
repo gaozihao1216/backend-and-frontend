@@ -1,10 +1,120 @@
 package microservice.ui.tables.ui_page
 
+import microservice.ui.objects.component.PageComponent
+import microservice.ui.objects.page.PageLayout
+import microservice.ui.objects.UiEndpoint
+import microservice.ui.objects.page.PageConfig
+import io.circe.parser.decode
+import io.circe.syntax._
+import java.sql.{PreparedStatement, ResultSet, SQLException}
 import java.sql.Connection
 import java.sql.{Connection, ResultSet}
-import microservice.ui.objects.component.PageComponent
-import microservice.ui.objects.UiEndpoint
 import microservice.ui.tables.ui_page._
+
+/** UI 页面持久化行（layout/components 以 JSON 嵌入）。
+  *
+  * 定义：ui_pages 表一行；layout 与 components 列存 JSON。
+  * 关联：UiPageRowMapper.toPageConfig 转为 API 领域对象。
+  */
+final case class UiPageRow(
+  /** 页面唯一 id，主键。 */
+  id: String,
+  /** 页面显示名称。 */
+  name: String,
+  /** 前端路由 path。 */
+  path: String,
+  /** 所属角色端点（player/designer/admin/director）。 */
+  roleScope: UiEndpoint,
+  /** 页面布局 JSON 对象。 */
+  layout: PageLayout,
+  /** 页面组件列表 JSON 数组。 */
+  components: List[PageComponent],
+  /** 创建时间 ISO-8601 字符串。 */
+  createdAt: String,
+  /** 最后更新时间 ISO-8601 字符串。 */
+  updatedAt: String
+)
+
+object UiPageRowMapper {
+  /** UiPageRow → PageConfig 领域对象。 */
+  def toPageConfig(row: UiPageRow): PageConfig =
+    PageConfig(
+      id = row.id,
+      name = row.name,
+      path = row.path,
+      roleScope = row.roleScope,
+      layout = row.layout,
+      components = row.components
+    )
+
+  /** PageConfig → UiPageRow 持久化行（附带时间戳）。 */
+  def fromPageConfig(config: PageConfig, createdAt: String, updatedAt: String): UiPageRow =
+    UiPageRow(
+      id = config.id,
+      name = config.name,
+      path = config.path,
+      roleScope = config.roleScope,
+      layout = config.layout,
+      components = config.components,
+      createdAt = createdAt,
+      updatedAt = updatedAt
+    )
+}
+
+private[tables] object UiPageTableCodec {
+  val baseSelect: String =
+    """
+      SELECT id, name, path, role_scope, layout, components, created_at, updated_at
+      FROM ui_pages
+    """
+
+  /** PageLayout 序列化为 JSON 字符串写入 layout 列。 */
+  def layoutToDb(layout: PageLayout): String =
+    layout.asJson.noSpaces
+
+  /** PageComponent 列表序列化为 JSON 字符串写入 components 列。 */
+  def componentsToDb(components: List[PageComponent]): String =
+    components.asJson.noSpaces
+
+  /** 将 UiPageRow 绑定到 INSERT/UPDATE PreparedStatement 占位符。 */
+  def bindRow(statement: PreparedStatement, row: UiPageRow): Unit = {
+    statement.setString(1, row.id)
+    statement.setString(2, row.name)
+    statement.setString(3, row.path)
+    statement.setString(4, row.roleScope.value)
+    statement.setString(5, layoutToDb(row.layout))
+    statement.setString(6, componentsToDb(row.components))
+    statement.setString(7, row.createdAt)
+    statement.setString(8, row.updatedAt)
+  }
+
+  /** 从 ResultSet 解析单行 UiPageRow（含 JSON 反序列化 layout/components）。 */
+  def rowFromResultSet(resultSet: ResultSet): UiPageRow =
+    UiPageRow(
+      id = resultSet.getString("id"),
+      name = resultSet.getString("name"),
+      path = resultSet.getString("path"),
+      roleScope = UiEndpoint.fromString(resultSet.getString("role_scope")).getOrElse(
+        throw new SQLException(s"Unknown UI endpoint: ${resultSet.getString("role_scope")}")
+      ),
+      layout = layoutFromDb(resultSet.getString("layout")),
+      components = componentsFromDb(resultSet.getString("components")),
+      createdAt = resultSet.getString("created_at"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+
+  private def layoutFromDb(value: String): PageLayout =
+    decode[PageLayout](value).fold(
+      error => throw new SQLException(s"Invalid UI page layout JSON: ${error.getMessage}", error),
+      identity
+    )
+
+  private def componentsFromDb(value: String): List[PageComponent] =
+    decode[List[PageComponent]](value).fold(
+      error => throw new SQLException(s"Invalid UI page components JSON: ${error.getMessage}", error),
+      identity
+    )
+}
 
 object UiPageTable {
 /** 创建 ui_pages 表及 role_scope 索引。 */

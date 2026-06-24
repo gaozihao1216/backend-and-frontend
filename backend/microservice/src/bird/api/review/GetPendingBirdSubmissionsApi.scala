@@ -2,7 +2,7 @@ package microservice.bird.api.review
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.bird.objects.submission.BirdSubmissionWithDesign
 import microservice.bird.tables.design.BirdDesignTable
 import microservice.bird.tables.design.BirdDesignTable

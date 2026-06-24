@@ -6,7 +6,7 @@ import microservice.admin.objects.submission.ReviewAudit
 import microservice.admin.tables.AdminAuditTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.system.objects.AdminLevel
 
 /** GET /admin/audit-logs — 查询审核审计记录（Standard 管理员）。 */

@@ -2,7 +2,24 @@ package microservice.player.tables.progress.legacy_check_in
 
 import java.sql.Connection
 import java.time.Instant
-import microservice.player.tables.progress.PlayerLegacyCheckInRow
+
+final case class PlayerLegacyCheckInRow(
+  userId: String,
+  status: String,
+  updatedAt: String
+)
+
+private[tables] object PlayerLegacyCheckInTableCodec {
+  val baseSelect: String =
+    "SELECT user_id, status, updated_at FROM player_legacy_check_ins"
+
+  def rowFromResultSet(resultSet: java.sql.ResultSet): PlayerLegacyCheckInRow =
+    PlayerLegacyCheckInRow(
+      userId = resultSet.getString("user_id"),
+      status = resultSet.getString("status"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+}
 
 /** 遗留签到状态表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
 private[player] object PlayerLegacyCheckInTable {
@@ -22,9 +39,6 @@ private[player] object PlayerLegacyCheckInTable {
     status
   }
 }
-
-import java.sql.Connection
-import microservice.player.tables.progress._
 
 private[tables] object PlayerLegacyCheckInTableSql {
 

@@ -5,7 +5,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.HttpError
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** 所有业务 API 的统一执行协议（Command 模式）。
   *

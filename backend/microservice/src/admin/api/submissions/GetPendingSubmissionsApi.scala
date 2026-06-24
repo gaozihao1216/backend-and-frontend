@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.level.AdminSubmissionWithLevel
 import microservice.admin.support.mapping.LevelHandoffMapping
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.ListPendingSubmissionsWithLevelInternalAPIMessage

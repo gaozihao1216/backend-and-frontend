@@ -1,4 +1,4 @@
-package microservice.user.utils
+package microservice.user.support
 
 import cats.data.EitherT
 import cats.effect.IO

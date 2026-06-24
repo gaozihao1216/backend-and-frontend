@@ -1,11 +1,55 @@
 package microservice.level.tables.favorite
 
-import java.sql.Connection
 import microservice.level.objects.social.Favorite
-import microservice.level.tables.favorite._
+import microservice.level.tables.shared.FavoriteRow
 import microservice.level.tables.shared.LevelRow
+import java.sql.ResultSet
+import java.sql.Connection
+import microservice.level.tables.favorite._
 import microservice.system.objects.LevelStatus
 import microservice.level.tables.level.LevelTable
+
+object FavoriteRowMapper {
+  def toFavorite(row: FavoriteRow): Favorite =
+    Favorite(
+      id = row.id,
+      levelId = row.levelId,
+      userId = row.userId,
+      createdAt = row.createdAt
+    )
+
+  def fromFavorite(favorite: Favorite): FavoriteRow =
+    FavoriteRow(
+      id = favorite.id,
+      levelId = favorite.levelId,
+      userId = favorite.userId,
+      createdAt = favorite.createdAt
+    )
+}
+
+/** FavoriteTableCodec 表访问门面。
+  *
+  * 表职责：封装 favoritecodec 数据的 CRUD。
+  * Row↔Object 映射：通过 RowMapper/Codec 与领域对象互转。
+  * JDBC 表字段编解码：负责 ResultSet 映射与 SQL 参数绑定。
+  */
+
+
+private[tables] object FavoriteTableCodec {
+  val baseSelect: String =
+    """
+      SELECT id, level_id, user_id, created_at
+      FROM favorites
+    """
+
+  def rowFromResultSet(resultSet: ResultSet): Favorite =
+    Favorite(
+      id = resultSet.getString("id"),
+      levelId = resultSet.getString("level_id"),
+      userId = resultSet.getString("user_id"),
+      createdAt = resultSet.getString("created_at")
+    )
+}
 
 object FavoriteTable {
 

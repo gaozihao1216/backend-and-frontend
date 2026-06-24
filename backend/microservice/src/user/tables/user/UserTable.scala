@@ -1,9 +1,85 @@
 package microservice.user.tables.user
 
-import java.sql.Connection
 import microservice.system.objects.AdminLevel
 import microservice.system.objects.UserRole
+import microservice.user.objects.BackendUser
+import java.sql.{ResultSet, SQLException}
+import java.sql.Connection
 import microservice.user.tables.user._
+
+/** 用户表存储层行模型（PostgreSQL users 表列对齐）。
+  *
+  * 定义：id/username/displayName/role/adminLevel/时间戳 七字段 case class。
+  * 问题：API 不宜直接暴露 SQL 列布局与 snake_case 命名。
+  * 作用：UserTable CRUD 的边界类型；adminLevel 仅 role=admin 时有值。
+  * 关联：[[UserRowMapper.toBackendUser]] → [[BackendUser]]；[[UserTableCodec]] JDBC 映射。
+  */
+final case class UserRow(
+  id: String,
+  username: String,
+  displayName: String,
+  role: UserRole,
+  adminLevel: Option[AdminLevel], // role!=admin 时应为 None
+  createdAt: String,
+  updatedAt: String
+)
+
+/** UserRow ↔ BackendUser 映射层。
+  *
+  * 定义：toBackendUser 纯函数，字段一一拷贝。
+  * 问题：隔离存储 Row 与 API 对象，避免 Table 层依赖 Circe JSON。
+  * 作用：bind/profile/backend-users 响应统一经此转换。
+  * 关联：[[BackendUser]]、[[UserRow]]；各 user APIMessage PlanSteps.read。
+  */
+object UserRowMapper {
+
+  /** 将数据库/InMemory 行转为 API 层 BackendUser（字段一一对应，无额外业务逻辑）。 */
+  def toBackendUser(row: UserRow): BackendUser =
+    BackendUser(
+      row.id,
+      row.username,
+      row.displayName,
+      row.role,
+      row.adminLevel,
+      row.createdAt,
+      row.updatedAt
+    )
+}
+
+/** JDBC 读路径：SQL 列名 ↔ UserRow 编解码。
+  *
+  * 定义：baseSelect SQL 片段 + rowFromResultSet 解析函数。
+  * 问题：role/adminLevel 存字符串，需 fromString 并非法值抛 SQLException 回滚事务。
+  * 作用：UserTable 所有 SELECT 复用 baseSelect。
+  * 关联：[[UserTable]]。
+  */
+private[tables] object UserTableCodec {
+
+  /** 所有 SELECT 复用的基础语句（ snake_case 列名对应 PostgreSQL 表结构）。 */
+  val baseSelect: String =
+    """
+      SELECT id, username, display_name, role, admin_level, created_at, updated_at
+      FROM users
+    """
+
+  /** 从 ResultSet 当前行构造 UserRow；非法 enum 值抛 SQLException 触发事务 rollback。 */
+  def rowFromResultSet(resultSet: ResultSet): UserRow =
+    UserRow(
+      id = resultSet.getString("id"),
+      username = resultSet.getString("username"),
+      displayName = resultSet.getString("display_name"),
+      role = UserRole.fromString(resultSet.getString("role")).getOrElse(
+        throw new SQLException(s"Unknown user role: ${resultSet.getString("role")}")
+      ),
+      adminLevel = Option(resultSet.getString("admin_level")).map(value =>
+        AdminLevel.fromString(value).getOrElse(
+          throw new SQLException(s"Unknown admin level: $value")
+        )
+      ),
+      createdAt = resultSet.getString("created_at"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+}
 
 object UserTable {
 

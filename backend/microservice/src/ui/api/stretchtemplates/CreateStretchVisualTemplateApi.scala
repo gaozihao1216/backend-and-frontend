@@ -3,7 +3,7 @@ package microservice.ui.api.stretchtemplates
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel

@@ -1,4 +1,4 @@
-package microservice.player.preparation
+package microservice.player.support.preparation
 
 import cats.data.EitherT
 import cats.effect.IO

@@ -6,7 +6,7 @@ import microservice.admin.objects.level.AdminLevelComment
 import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.level.api.internal.admin.ListAllCommentsInternalAPIMessage
 import microservice.system.objects.AdminLevel
 

@@ -3,6 +3,38 @@ package microservice.player.tables.preparation
 import java.sql.Connection
 import java.time.Instant
 
+/**
+  *
+   * 定义：PlayerPreparationRows case class，与 DB 表列一一对应的存储层行模型。
+ * 问题：API 对象不宜直接暴露 SQL 列布局，需 Row 作为持久化边界。
+ * 作用：Table insert/find 的入参/出参；经 Mapper/Codec 与 objects 层转换。
+ * 关联：同包 [[PlayerPreparationTables]] 读写。
+ */
+final case class PlayerBirdUpgradeRow(
+  userId: String,
+  birdType: String,
+  level: Int,
+  tier: Int,
+  updatedAt: String
+)
+
+final case class PlayerSlingshotUpgradeRow(
+  userId: String,
+  level: Int,
+  updatedAt: String
+)
+
+private[tables] object PlayerPreparationTableCodec {
+  def birdRowFromResultSet(userId: String, resultSet: java.sql.ResultSet): PlayerBirdUpgradeRow =
+    PlayerBirdUpgradeRow(
+      userId = userId,
+      birdType = resultSet.getString("bird_type"),
+      level = resultSet.getInt("level"),
+      tier = resultSet.getInt("tier"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+}
+
 /** 玩家备战表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
 private[player] object PlayerPreparationTable {
   val maxLevel: Int = 5
@@ -84,8 +116,6 @@ private[player] object PlayerPreparationTable {
   private def nowString(): String = Instant.now().toString
 }
 
-import java.sql.Connection
-import microservice.player.tables.preparation.{PlayerBirdUpgradeRow, PlayerPreparationTableCodec}
 
 private[tables] object PlayerPreparationTableSql {
 

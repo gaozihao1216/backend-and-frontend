@@ -5,12 +5,12 @@ import io.circe.Json
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
+import microservice.player.support.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
 import microservice.player.objects.PlayerPreparationJson
 import microservice.player.tables.preparation.PlayerPreparationTable
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** POST .../birds/:birdType/upgrade 鸟升级 APIMessage。 */
 final case class UpgradePreparationBirdAPIMessage(userId: String, birdType: String) extends APIWithTokenMessage[Json] {

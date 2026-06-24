@@ -10,7 +10,7 @@ import microservice.admin.body.director.level_assignment.AbolishDirectorSubmissi
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.AbolishApprovedSubmissionInternalAPIMessage
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** POST /admin/director/submissions/:submissionId/abolish — 总监废止已批准投稿。 */
 final case class AbolishDirectorSubmissionAPIMessage(

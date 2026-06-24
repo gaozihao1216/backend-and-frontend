@@ -4,7 +4,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.http.HttpError
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** [[APIMessage.plan]] 内部的步骤组合工具（基于 [[PlanStep.Step]]）。
   *
@@ -35,7 +35,7 @@ import microservice.user.utils.AccessControl
   *
   * == 关联 ==
   * - [[microservice.infrastructure.http.HttpError]]：所有步骤的错误载体
-  * - [[microservice.user.utils.AccessControl]]：角色与身份绑定校验
+  * - [[microservice.user.support.AccessControl]]：角色与身份绑定校验
   */
 object PlanSteps {
   type Step[A] = PlanStep.Step[A]

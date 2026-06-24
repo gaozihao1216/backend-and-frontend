@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.director.level_assignment.board.DirectorLevelAssignmentBoard
 import microservice.admin.support.director.level_assignment.DirectorLevelAssignmentSupport
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.AdminLevel

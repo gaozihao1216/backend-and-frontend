@@ -1,4 +1,4 @@
-package microservice.player.preparation
+package microservice.player.support.preparation
 
 final case class BirdBaseStats(attack: Int, impact: Int, speed: Int)
 

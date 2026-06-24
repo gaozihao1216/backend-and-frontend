@@ -10,7 +10,7 @@ import microservice.player.objects.{PlayerMessageListResponse, PlayerPrivateMess
 import microservice.player.support.social.PlayerSocialAccess
 import microservice.player.tables.social.{PlayerPrivateMessageRow, PlayerPrivateMessageTable}
 import microservice.system.objects.UserRole
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** 发送私信 APIMessage。
   *

@@ -1,7 +1,31 @@
 package microservice.player.tables.check_in_panel_reward
 
+import java.sql.ResultSet
 import java.sql.Connection
 import microservice.player.objects.CheckInSlotReward
+import microservice.player.tables.check_in_panel_reward._
+
+final case class CheckInPanelRewardRow(
+  panelId: String,
+  slotIndex: Int,
+  coins: Int,
+  gems: Int,
+  fragments: Int
+)
+
+private[player] object CheckInPanelRewardTableCodec {
+  val baseSelect: String =
+    "SELECT panel_id, slot_index, coins, gems, fragments FROM check_in_panel_rewards"
+
+  def rowFromResultSet(resultSet: ResultSet): CheckInPanelRewardRow =
+    CheckInPanelRewardRow(
+      panelId = resultSet.getString("panel_id"),
+      slotIndex = resultSet.getInt("slot_index"),
+      coins = resultSet.getInt("coins"),
+      gems = resultSet.getInt("gems"),
+      fragments = resultSet.getInt("fragments")
+    )
+}
 
 private[player] object CheckInPanelRewardTable {
 
@@ -25,9 +49,6 @@ private[player] object CheckInPanelRewardTable {
   }
 }
 
-import java.sql.Connection
-import microservice.player.objects.CheckInSlotReward
-import microservice.player.tables.check_in_panel_reward._
 
 private[tables] object CheckInPanelRewardTableSql {
 

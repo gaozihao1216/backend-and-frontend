@@ -9,7 +9,7 @@ import microservice.player.objects.{PlayerFriendListResponse, PlayerFriendSummar
 import microservice.player.tables.social.PlayerFriendTable
 import microservice.system.objects.UserRole
 import microservice.user.api.internal.player.ListUserDisplaySummariesInternalAPIMessage
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** GET /player/social/friends 好友列表 APIMessage。 */
 final case class ListFriendsAPIMessage(userId: String) extends APIWithTokenMessage[Json] {

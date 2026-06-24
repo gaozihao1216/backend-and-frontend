@@ -7,7 +7,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.runtime.PlayerUiRuntimeSupport
 import microservice.system.objects.UserRole
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** GET /player/ui/data/:apiKey 动态 UI 数据 APIMessage。 */
 final case class GetPlayerUiDataAPIMessage(

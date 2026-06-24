@@ -8,7 +8,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.api.internal.admin.ListShopItemsInternalAPIMessage
 import microservice.system.objects.AdminLevel
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** GET /admin/shop/items — 列出全部商店商品（含下架）。 */
 final case class ListAdminShopItemsAPIMessage(userId: String) extends APIWithTokenMessage[List[AdminShopItem]] {

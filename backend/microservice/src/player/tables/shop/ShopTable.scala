@@ -1,7 +1,109 @@
 package microservice.player.tables.shop
 
+import microservice.player.objects.shop.ShopItem
+import java.sql.ResultSet
 import java.sql.Connection
 import java.time.Instant
+import microservice.player.tables.shop._
+
+private[player] object ShopItemRowMapper {
+  def toShopItem(row: ShopItemRow): ShopItem =
+    ShopItem(
+      id = row.id,
+      name = row.name,
+      description = row.description,
+      price = row.price,
+      currency = row.currency,
+      catalogIndex = row.catalogIndex,
+      active = row.active,
+      sortOrder = row.sortOrder,
+      createdAt = row.createdAt,
+      updatedAt = row.updatedAt
+    )
+
+  def fromShopItem(item: ShopItem): ShopItemRow =
+    ShopItemRow(
+      id = item.id,
+      name = item.name,
+      description = item.description,
+      price = item.price,
+      currency = item.currency,
+      catalogIndex = item.catalogIndex,
+      active = item.active,
+      sortOrder = item.sortOrder,
+      createdAt = item.createdAt,
+      updatedAt = item.updatedAt
+    )
+}
+
+final case class ShopItemRow(
+  id: String,
+  name: String,
+  description: String,
+  price: Int,
+  currency: String,
+  catalogIndex: Int,
+  active: Boolean,
+  sortOrder: Int,
+  createdAt: String,
+  updatedAt: String
+)
+
+final case class ShopPurchaseRow(
+  id: String,
+  userId: String,
+  itemId: String,
+  price: Int,
+  currency: String,
+  purchasedAt: String
+)
+
+private[player] object ShopItemTableCodec {
+  val baseSelect: String =
+    "SELECT id, name, description, price, currency, catalog_index, active, sort_order, created_at, updated_at FROM shop_items"
+
+  def rowFromResultSet(resultSet: ResultSet): ShopItemRow =
+    ShopItemRow(
+      id = resultSet.getString("id"),
+      name = resultSet.getString("name"),
+      description = resultSet.getString("description"),
+      price = resultSet.getInt("price"),
+      currency = resultSet.getString("currency"),
+      catalogIndex = resultSet.getInt("catalog_index"),
+      active = resultSet.getBoolean("active"),
+      sortOrder = resultSet.getInt("sort_order"),
+      createdAt = resultSet.getString("created_at"),
+      updatedAt = resultSet.getString("updated_at")
+    )
+
+  def bindRow(statement: java.sql.PreparedStatement, row: ShopItemRow): Unit = {
+    statement.setString(1, row.id)
+    statement.setString(2, row.name)
+    statement.setString(3, row.description)
+    statement.setInt(4, row.price)
+    statement.setString(5, row.currency)
+    statement.setInt(6, row.catalogIndex)
+    statement.setBoolean(7, row.active)
+    statement.setInt(8, row.sortOrder)
+    statement.setString(9, row.createdAt)
+    statement.setString(10, row.updatedAt)
+  }
+}
+
+private[player] object ShopPurchaseTableCodec {
+  val baseSelect: String =
+    "SELECT id, user_id, item_id, price, currency, purchased_at FROM shop_purchases"
+
+  def rowFromResultSet(resultSet: ResultSet): ShopPurchaseRow =
+    ShopPurchaseRow(
+      id = resultSet.getString("id"),
+      userId = resultSet.getString("user_id"),
+      itemId = resultSet.getString("item_id"),
+      price = resultSet.getInt("price"),
+      currency = resultSet.getString("currency"),
+      purchasedAt = resultSet.getString("purchased_at")
+    )
+}
 
 /** 玩家商店表访问入口：只使用 JDBC 连接，事务由 APIMessage/DatabaseSession 统一管理。 */
 private[player] object ShopTable {
@@ -44,8 +146,6 @@ private[player] object ShopTable {
     )
 }
 
-import java.sql.Connection
-import microservice.player.tables.shop._
 
 private[tables] object ShopTableSql {
 

@@ -6,10 +6,10 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.{CheckInSlotReward, PlayerPreparationJson}
-import microservice.player.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
+import microservice.player.support.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.UserRole
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** 备战状态 APIMessage。
   *

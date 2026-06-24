@@ -1,9 +1,203 @@
-package microservice.level.tables.level
+package microservice.level.tables.shared {
 
-import java.sql.Connection
-import microservice.level.tables.level.LevelTableCodec
+import microservice.level.objects.inventory.{BirdPool}
+import microservice.level.objects.core.{LevelData}
+import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
+import microservice.level.objects.core.{Level}
+import microservice.level.objects.social.{LevelComment, Rating}
+import microservice.level.objects.submission.{Submission}
+
+final case class LevelRow(
+  id: String,
+  title: String,
+  description: String,
+  tags: List[LevelTag],
+  data: LevelData,
+  authorId: String,
+  status: LevelStatus,
+  rejectionReason: Option[String],
+  averageRating: Double,
+  ratingCount: Int,
+  createdAt: String,
+  updatedAt: String,
+  publishedAt: Option[String]
+)
+
+final case class RatingRow(
+  id: String,
+  levelId: String,
+  playerId: String,
+  score: Int,
+  createdAt: String,
+  updatedAt: String
+)
+
+final case class CommentRow(
+  id: String,
+  levelId: String,
+  userId: String,
+  content: String,
+  createdAt: String
+)
+
+final case class SubmissionRow(
+  id: String,
+  levelId: String,
+  submitterId: String,
+  status: SubmissionStatus,
+  reviewerId: Option[String],
+  reviewNote: Option[String],
+  submittedAt: String,
+  reviewedAt: Option[String]
+)
+
+final case class LevelSlotAssignmentRow(
+  id: String,
+  levelSuffix: String,
+  submissionId: String,
+  sourceLevelId: String,
+  assignedById: String,
+  assignedAt: String,
+  note: Option[String],
+  birdPool: Option[BirdPool] = None
+)
+
+final case class FavoriteRow(
+  id: String,
+  levelId: String,
+  userId: String,
+  createdAt: String
+)
+
+/** 持久化 Row 与领域对象之间的映射器。
+  *
+  * 实现：纯字段拷贝，不含业务逻辑；Table 层返回 Row，API 层通过此对象转为对外 DTO。
+  * 关联：所有 level 模块 APIMessage 在返回前均经此转换。
+  */
+object LevelRowMapper {
+  /** LevelRow → Level 领域对象。 */
+  def toLevel(row: LevelRow): Level =
+    Level(
+      row.id,
+      row.title,
+      row.description,
+      row.tags,
+      row.data,
+      row.authorId,
+      row.status,
+      row.rejectionReason,
+      row.averageRating,
+      row.ratingCount,
+      row.createdAt,
+      row.updatedAt,
+      row.publishedAt
+    )
+
+  /** RatingRow → Rating 领域对象。 */
+  def toRating(row: RatingRow): Rating =
+    Rating(row.id, row.levelId, row.playerId, row.score, row.createdAt, row.updatedAt)
+
+  /** CommentRow → LevelComment 领域对象。 */
+  def toComment(row: CommentRow): LevelComment =
+    LevelComment(row.id, row.levelId, row.userId, row.content, row.createdAt)
+
+  /** SubmissionRow → Submission 领域对象。 */
+  def toSubmission(row: SubmissionRow): Submission =
+    Submission(
+      row.id,
+      row.levelId,
+      row.submitterId,
+      row.status,
+      row.reviewerId,
+      row.reviewNote,
+      row.submittedAt,
+      row.reviewedAt
+    )
+}
+}
+
+package microservice.level.tables.level {
+
 import microservice.level.tables.shared.LevelRow
+import io.circe.parser.decode
+import io.circe.syntax._
+import microservice.level.objects.core.LevelData
 import microservice.system.objects.{LevelStatus, LevelTag}
+import java.sql.{PreparedStatement, ResultSet, SQLException, Types}
+import java.sql.Connection
+
+/** LevelTableCodec 表访问门面。
+  *
+  * 表职责：封装 levelcodec 数据的 CRUD。
+  * Row↔Object 映射：通过 RowMapper/Codec 与领域对象互转。
+  * JDBC 表字段编解码：负责 ResultSet 映射与 SQL 参数绑定。
+  */
+
+
+private[tables] object LevelTableCodec {
+  val baseSelect: String =
+    """
+      SELECT id, title, description, tags, data, author_id, status, rejection_reason,
+             average_rating, rating_count, created_at, updated_at, published_at
+      FROM levels
+    """
+
+  def tagsToDb(tags: List[LevelTag]): String =
+    tags.map(_.value).mkString(",")
+
+  def levelDataToDb(data: LevelData): String =
+    data.asJson.noSpaces
+
+  def setNullableString(statement: PreparedStatement, index: Int, value: Option[String]): Unit =
+    value match {
+      case Some(text) => statement.setString(index, text)
+      case None => statement.setNull(index, Types.VARCHAR)
+    }
+
+  def rowFromResultSet(resultSet: ResultSet): LevelRow =
+    LevelRow(
+      id = resultSet.getString("id"),
+      title = resultSet.getString("title"),
+      description = resultSet.getString("description"),
+      tags = tagsFromDb(resultSet.getString("tags")),
+      data = levelDataFromDb(resultSet.getString("data")),
+      authorId = resultSet.getString("author_id"),
+      status = LevelStatus.fromString(resultSet.getString("status")).getOrElse(
+        throw new SQLException(s"Unknown level status: ${resultSet.getString("status")}")
+      ),
+      rejectionReason = nullableString(resultSet, "rejection_reason"),
+      averageRating = resultSet.getDouble("average_rating"),
+      ratingCount = resultSet.getInt("rating_count"),
+      createdAt = resultSet.getString("created_at"),
+      updatedAt = resultSet.getString("updated_at"),
+      publishedAt = nullableString(resultSet, "published_at")
+    )
+
+  private def tagsFromDb(value: String): List[LevelTag] =
+    if (value.trim.isEmpty) {
+      List.empty
+    } else {
+      value
+        .split(",")
+        .toList
+        .map(_.trim)
+        .filter(_.nonEmpty)
+        .map(tagValue =>
+          LevelTag.fromString(tagValue).getOrElse(
+            throw new SQLException(s"Unknown level tag: $tagValue")
+          )
+        )
+    }
+
+  private def levelDataFromDb(value: String): LevelData =
+    decode[LevelData](value).fold(
+      error => throw new SQLException(s"Invalid level data JSON: ${error.getMessage}", error),
+      levelData => levelData
+    )
+
+  private def nullableString(resultSet: ResultSet, column: String): Option[String] =
+    Option(resultSet.getString(column))
+}
 
 /** levels 表的 JDBC 实现：DDL、查询与写入均在此对象内完成，不再经 Write/Insert/Update 中转。 */
 object LevelTable {
@@ -198,4 +392,5 @@ object LevelTable {
     } finally {
       resultSet.close()
     }
+}
 }

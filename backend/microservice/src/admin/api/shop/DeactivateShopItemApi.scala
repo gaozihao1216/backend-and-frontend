@@ -8,7 +8,7 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.api.internal.admin.DeactivateShopItemInternalAPIMessage
 import microservice.system.objects.AdminLevel
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 
 /** DELETE /admin/shop/items/:itemId — 下架商店商品（active=false）。 */
 final case class DeactivateShopItemAPIMessage(userId: String, itemId: String) extends APIWithTokenMessage[AdminShopItem] {

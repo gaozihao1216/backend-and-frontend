@@ -5,7 +5,7 @@ import java.sql.Connection
 import java.time.Instant
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.social.Rating
 import microservice.level.tables.rating.{RatingTable}

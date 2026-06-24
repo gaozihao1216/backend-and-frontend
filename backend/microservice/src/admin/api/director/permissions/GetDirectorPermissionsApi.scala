@@ -5,7 +5,7 @@ import java.sql.Connection
 import microservice.admin.objects.director.permissions.DirectorPermissionSummary
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
-import microservice.user.utils.AccessControl
+import microservice.user.support.AccessControl
 import microservice.system.objects.AdminLevel
 
 /** 查询当前总监权限摘要 APIMessage（含 UI 定制能力标志）。 */
