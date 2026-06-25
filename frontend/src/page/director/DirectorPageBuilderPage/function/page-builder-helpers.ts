@@ -2,6 +2,12 @@ import type { WheelEvent } from "react";
 import type { PageComponent, PageConfig, PanelComponent } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import type { ResizeHandle } from "../objects/page-builder-types.js";
 
+/**
+ * 页面构建器的组件树辅助函数。
+ *
+ * PageConfig 是扁平 components 列表，panel.childComponentIds 表示层级；
+ * 这里提供父子关系、受按钮控制的弹层、命中检测和拖拽目标解析。
+ */
 export const isPanelComponent = (component: PageComponent): component is PanelComponent =>
   component.type === "panel";
 
@@ -92,6 +98,7 @@ export const createControlledPanelIds = (components: PageComponent[]) => {
   return controlledPanelIds;
 };
 
+/** 返回工作面板中应直接编辑的子组件，排除由按钮打开的受控弹层。 */
 export const getLogicalPanelChildren = (
   panel: PanelComponent,
   componentMap: Map<string, PageComponent>,
@@ -186,6 +193,7 @@ export const escapeSelectorValue = (value: string) =>
     ? CSS.escape(value)
     : value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 
+/** 在当前工作面板中根据鼠标位置找出最上层可选组件。 */
 export const hitTestOutlinedComponent = (
   root: HTMLElement,
   point: { x: number; y: number },

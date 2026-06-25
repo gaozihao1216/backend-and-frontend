@@ -36,6 +36,12 @@ type UseDesignerKeyboardActionsParams = {
   handleDeleteSelected: () => void;
 };
 
+/**
+ * 设计器快捷键动作集合。
+ *
+ * 这里只处理快捷键对应的业务动作，不负责注册 DOM listener；
+ * listener 由 useDesignerLevelEditorViewModel 统一挂载，便于屏蔽输入框场景。
+ */
 export const useDesignerKeyboardActions = ({
   undoHistoryLength,
   redoHistoryLength,
@@ -60,6 +66,7 @@ export const useDesignerKeyboardActions = ({
   setSelectedGroundPointIndex,
   handleDeleteSelected,
 }: UseDesignerKeyboardActionsParams) => {
+  // undo/redo 依赖历史长度判断，避免没有历史时拦截浏览器或系统默认快捷键。
   const handleUndoShortcut = (event: KeyboardEvent): boolean => {
     const modifierPressed = event.ctrlKey || event.metaKey;
     if (!modifierPressed || event.shiftKey || event.key.toLowerCase() !== "z") {
@@ -130,6 +137,7 @@ export const useDesignerKeyboardActions = ({
     }
 
     event.preventDefault();
+    // 粘贴位置使用最近一次画布指针位置，让复制实体出现在用户视线附近。
     const pasted = pasteClipboardSelection(levelData, clipboardSelection, canvasPointer);
     if (!pasted) {
       return true;

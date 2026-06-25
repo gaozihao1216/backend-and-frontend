@@ -1,7 +1,6 @@
 package microservice.ui.validation.stretchtemplates
 
-import microservice.infrastructure.api.PlanStep
-import microservice.infrastructure.api.PlanStep.Step
+import cats.effect.IO
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.category.PanelTemplateCategory
 import microservice.ui.objects.category.PatternTemplateCategory
@@ -11,20 +10,32 @@ import microservice.ui.objects.errors.UiCustomizationErrors
 
 /** 拉伸视觉模板的字段校验与规范化。 */
 private[ui] object StretchVisualTemplateValidation {
-  def validate(template: StretchVisualTemplate): Step[Unit] =
+  def validate(template: StretchVisualTemplate): IO[Either[HttpError, Unit]] =
+    IO.pure(check(template))
+
+  private def check(template: StretchVisualTemplate): Either[HttpError, Unit] =
     if (template.id.trim.isEmpty || template.name.trim.isEmpty || template.sourceDataUrl.trim.isEmpty) {
-      PlanStep.fail(UiCustomizationErrors.InvalidStretchVisualTemplate("id, name and sourceDataUrl are required").toHttpError)
+      Left(UiCustomizationErrors.InvalidStretchVisualTemplate("id, name and sourceDataUrl are required").toHttpError)
     } else if (!isValidCategory(template)) {
-      PlanStep.fail(UiCustomizationErrors.InvalidStretchVisualTemplate(s"Invalid stretch visual template category: ${template.category}").toHttpError)
+      Left(UiCustomizationErrors.InvalidStretchVisualTemplate(s"Invalid stretch visual template category: ${template.category}").toHttpError)
     } else {
-      PlanStep.succeed(())
+      Right(())
     }
 
-  def ensureKind(template: StretchVisualTemplate, expectedKind: StretchVisualTemplateKind): Step[StretchVisualTemplate] =
+  def ensureKind(
+    template: StretchVisualTemplate,
+    expectedKind: StretchVisualTemplateKind
+  ): IO[Either[HttpError, StretchVisualTemplate]] =
+    IO.pure(checkKind(template, expectedKind))
+
+  private def checkKind(
+    template: StretchVisualTemplate,
+    expectedKind: StretchVisualTemplateKind
+  ): Either[HttpError, StretchVisualTemplate] =
     if (template.kind == expectedKind) {
-      PlanStep.succeed(template)
+      Right(template)
     } else {
-      PlanStep.fail(UiCustomizationErrors.StretchVisualTemplateKindMismatch(expectedKind.value, template.kind.value).toHttpError)
+      Left(UiCustomizationErrors.StretchVisualTemplateKindMismatch(expectedKind.value, template.kind.value).toHttpError)
     }
 
   def sanitize(template: StretchVisualTemplate): StretchVisualTemplate =

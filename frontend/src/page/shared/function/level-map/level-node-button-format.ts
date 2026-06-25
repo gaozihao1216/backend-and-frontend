@@ -42,6 +42,12 @@ export {
   type LevelNodeProgressStateId,
 } from "./level-node-progress.js";
 
+/**
+ * 关卡节点按钮的状态化外观配置。
+ *
+ * 一个节点按钮会根据 runtime 进度在 locked/notCleared/cleared 三种状态间切换；
+ * 本文件负责生成、应用、提取和规范化这些状态样式。
+ */
 export const LEVEL_NODE_BUTTON_MAX_FONT_SIZE = 14;
 
 export type LevelNodeStateButtonDesign = {
@@ -292,6 +298,7 @@ const createLevelNodeButtonPatch = (
   };
 };
 
+/** 将一套状态样式批量应用到所有关卡节点按钮。 */
 export const applyLevelNodeButtonFormat = (
   pageConfig: PageConfig,
   settings: LevelNodeButtonFormatSettings,
@@ -393,6 +400,7 @@ const clampLevelNodeButtonStyle = (style?: ComponentStyle): ComponentStyle | und
   };
 };
 
+/** 清理旧配置中超出限制的字号和废弃字段，避免节点按钮在移动端溢出。 */
 export const sanitizeLevelNodeButtonComponent = (component: PageComponent): PageComponent => {
   if (!isLevelNodeButtonComponent(component)) {
     return component;
@@ -468,6 +476,7 @@ const extractSettingsFromButton = (button: ButtonComponent): LevelNodeButtonForm
   };
 };
 
+/** 从现有 PageConfig 反推出 director 编辑器可显示的按钮格式设置。 */
 export const extractLevelNodeButtonFormatSettings = (pageConfig: PageConfig): LevelNodeButtonFormatSettings => {
   for (const level of LEVEL_NODE_DEFINITIONS) {
     const button = findLevelNodeButton(pageConfig, level.suffix);

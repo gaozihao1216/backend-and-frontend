@@ -4,6 +4,12 @@ import { PageConfigSchema } from "../../../../objects/ui-customization/ui-custom
 import { sanitizePageConfigLevelNodeButtons } from "../level-map/level-node-button-format.js";
 import { getPageConfig } from "./ui-customization.js";
 
+/**
+ * 已发布 PageConfig 的前端运行时缓存。
+ *
+ * 玩家访问页面时优先读取后端发布配置；如果某页还未从后端 hydrate，
+ * 则回退到本地/默认合并配置，避免页面空白。
+ */
 let publishedRevision = 0;
 const publishedPageConfigs = new Map<string, PageConfig>();
 const publishedListeners = new Set<() => void>();
@@ -25,6 +31,7 @@ export const subscribePublishedPageConfigs = (listener: () => void) => {
 
 export const getPublishedPageConfigRevision = () => publishedRevision;
 
+/** 写入单页发布配置，并触发动态页面重新渲染。 */
 export const setPublishedPageConfig = (pageId: string, config: PageConfig) => {
   publishedPageConfigs.set(pageId, parsePublishedPage(config));
   notifyPublishedListeners();

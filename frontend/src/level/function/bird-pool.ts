@@ -1,6 +1,12 @@
 import type { BirdInventory } from "../../objects/level/inventory/bird-inventory.js";
 import { DEFAULT_BIRD_POOL, type BirdPool } from "../../objects/level/inventory/bird-pool.js";
 
+/**
+ * 关卡鸟池配置归一化。
+ *
+ * 旧关卡可能只有 birdInventory，新关卡使用 birdPool；
+ * 游戏会话创建前统一经过这里，保证发射池始终有完整配置。
+ */
 type BirdPoolSource = {
   birdInventory: BirdInventory;
   birdPool?: BirdPool | undefined;
@@ -31,6 +37,7 @@ export const normalizeBirdPool = (source: BirdPoolSource): BirdPool => {
   };
 };
 
+/** 将新 birdPool 写回旧 birdInventory 字段，兼容仍读取旧字段的页面。 */
 export const syncLegacyBirdInventory = (pool: BirdPool): BirdInventory => ({
   basic: pool.totalBirds,
 });

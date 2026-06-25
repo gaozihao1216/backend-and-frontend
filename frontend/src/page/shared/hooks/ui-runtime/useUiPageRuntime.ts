@@ -4,10 +4,17 @@ import { invokePlayerUiAction } from "../../../../api/player/ui/InvokePlayerUiAc
 import { collectPageUiDataKeys } from "../../function/ui-runtime/ui-data-keys.js";
 import type { PageConfig } from "../../../../objects/ui-customization/ui-customization-objects.js";
 
+/**
+ * 动态 UI 页面运行时数据 hook。
+ *
+ * PageConfig 只描述组件结构；真正的玩家数据和按钮动作通过后端 UI runtime API 获取。
+ * 该 hook 统一管理数据刷新和 action 调用，供 DynamicPageRenderer 注入到各组件上下文。
+ */
 export const useUiPageRuntime = (page: PageConfig, userId?: string) => {
   const [uiData, setUiData] = useState<Record<string, unknown>>({});
   const dataKeys = useMemo(() => collectPageUiDataKeys(page), [page]);
 
+  // targetKeys 为空时刷新整页声明的数据；面板展开时可只刷新局部 key。
   const refreshUiData = useCallback(async (targetKeys?: string[]) => {
     if (!userId) {
       return;

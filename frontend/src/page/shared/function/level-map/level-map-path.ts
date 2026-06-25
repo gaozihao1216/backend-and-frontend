@@ -26,6 +26,12 @@ import type {
   PanelContentSize,
 } from "../../../../objects/ui-customization/ui-customization-objects.js";
 
+/**
+ * 关卡地图路径编辑与渲染辅助。
+ *
+ * 节点按钮的位置来自 PageConfig，路径边存储在 stage panel 的 pathDesign 中；
+ * 本文件负责把两者转换成可绘制的折线、木板桥排布和进度态样式。
+ */
 export type LevelMapCanvasSize = {
   widthPercent: number;
   heightPercent: number;
@@ -41,6 +47,7 @@ export const LEVEL_MAP_CANVAS_WIDTH = DEFAULT_LEVEL_MAP_CANVAS_SIZE.widthPercent
 /** @deprecated Use resolveLevelMapCanvasSize(contentSize) for viewBox dimensions */
 export const LEVEL_MAP_CANVAS_HEIGHT = DEFAULT_LEVEL_MAP_CANVAS_SIZE.heightPercent;
 
+/** 根据 stage panel 内容尺寸解析 SVG viewBox 尺寸。 */
 export const resolveLevelMapCanvasSize = (
   contentSize?: PanelContentSize,
 ): LevelMapCanvasSize =>
@@ -214,6 +221,7 @@ export const buildEdgePolyline = (
 const distanceBetween = (left: LevelMapPathPoint, right: LevelMapPathPoint) =>
   Math.hypot(right.x - left.x, right.y - left.y);
 
+/** 将一条路径边拆成多排木板，用于 SVG/HTML 渲染木桥样式。 */
 export const buildPlankBridgePlacements = (
   from: LevelMapPathPoint,
   to: LevelMapPathPoint,
@@ -274,6 +282,7 @@ export const buildPlankBridgePlacements = (
 /** @deprecated Use buildPlankBridgePlacements */
 export const buildPlankSegmentTransforms = buildPlankBridgePlacements;
 
+/** 根据起点/终点关卡进度决定路径边显示为未激活、待解锁、可走或已通关。 */
 export const resolveEdgeVisualState = (
   edge: LevelMapPathEdge,
   uiData: Record<string, unknown>,
@@ -309,6 +318,7 @@ export const readClearedLevelSuffixes = (uiData: Record<string, unknown>): Set<s
   );
 };
 
+/** 创建新的有向路径边；不允许自连接和重复边。 */
 export const createLevelMapPathEdge = (
   fromSuffix: string,
   toSuffix: string,

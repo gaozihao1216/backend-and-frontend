@@ -5,6 +5,11 @@ import {
   maxImageFramePercent,
 } from "../objects/button-design-types.js";
 
+/**
+ * 按钮图片设计辅助函数。
+ *
+ * 支持从图片中扫描轮廓、生成多边形裁剪图，并根据按钮父面板比例计算预览尺寸。
+ */
 export const getImageAspectRatio = async (dataUrl: string): Promise<number> => {
   const image = new Image();
   image.src = dataUrl;
@@ -114,6 +119,7 @@ const loadImage = (sourceDataUrl: string) =>
     image.src = sourceDataUrl;
   });
 
+/** 按多边形点裁剪图片，输出可直接写入按钮模板的 dataUrl。 */
 export const renderPolygonImage = async (
   sourceDataUrl: string,
   polygonPoints: ImagePolygonPoint[],
@@ -189,6 +195,7 @@ const isNonWhitePixel = (
   return !(red >= 255 - whiteTolerance && green >= 255 - whiteTolerance && blue >= 255 - whiteTolerance);
 };
 
+/** 横向扫描非白色像素，生成贴合按钮主体边缘的多边形。 */
 export const generateRowBoundaryPolygon = async (
   sourceDataUrl: string,
   whiteTolerance: number,

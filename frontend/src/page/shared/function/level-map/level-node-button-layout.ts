@@ -10,8 +10,15 @@ import type {
   PageConfig,
 } from "../../../../objects/ui-customization/ui-customization-objects.js";
 
+/**
+ * 关卡节点按钮布局同步。
+ *
+ * director 在地图编辑器里拖动节点时，只更新每个 levelSuffix 对应的 position，
+ * 再写回共享关卡地图 PageConfig。
+ */
 export type LevelNodeButtonLayoutMap = Record<string, ComponentPosition>;
 
+/** 从 PageConfig 中抽取所有关卡节点按钮的位置。 */
 export const extractLevelNodeButtonLayouts = (pageConfig: PageConfig): LevelNodeButtonLayoutMap => {
   const layouts: LevelNodeButtonLayoutMap = {};
 
@@ -60,6 +67,7 @@ export const updateLevelNodeButtonPositionInPage = (
   [levelSuffix]: position,
 });
 
+/** 保存节点布局到共享关卡地图页面。 */
 export const syncLevelNodeButtonLayout = (layouts: LevelNodeButtonLayoutMap): PageConfig[] => {
   const pageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);
   if (!pageConfig) {

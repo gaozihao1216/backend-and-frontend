@@ -25,6 +25,12 @@ type DynamicPageHostProps = {
   staticContext?: StaticPageRenderContext | undefined;
 };
 
+/**
+ * 动态 PageConfig 的宿主组件。
+ *
+ * 它只负责“取到正确的 PageConfig 并交给 DynamicPageRenderer”，
+ * 具体 Panel/Text/Button/Widget 的递归渲染逻辑在 ui-renderer 目录中。
+ */
 export const DynamicPageHost = ({
   pageId,
   useDefaultConfig = false,
@@ -86,6 +92,7 @@ export const DynamicPageHost = ({
     || (pageConfig.components.length === 0 && staticContext && isStaticPageSupported(pageId));
 
   if (shouldRenderStaticEmbed) {
+    // staticEmbed 用于让动态页面配置复用真实 React 页面，而不是再造一套空的动态组件树。
     if (!staticContext || !isStaticPageSupported(pageId)) {
       return (
         <section className={`panel dynamic-page-host ${embedded ? "embedded" : ""}`.trim()}>

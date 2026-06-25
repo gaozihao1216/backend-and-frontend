@@ -32,7 +32,7 @@ final case class GetUiPageAPIMessage(
         // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 步骤 2：按 pageId 读取 PageConfig（含 layout 与 components）
-        page <- UiPageAccess.requirePage(connection, pageId)
+        page <- PlanSteps.fromEither(UiPageAccess.requirePage(connection, pageId))
       } yield page
     }
 }

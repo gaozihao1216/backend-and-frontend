@@ -1,5 +1,6 @@
 package microservice.player.api.internal.admin
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
@@ -21,9 +22,9 @@ final case class UpdateShopItemInternalAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, ShopItem]] =
     PlanSteps.finish {
       for {
-        existing <- ShopCatalogSupport.requireItemRow(connection, itemId)
+        existing <- EitherT(ShopCatalogSupport.requireItemRow(connection, itemId))
         timestamp = java.time.Instant.now().toString
-        item <- ShopCatalogSupport.requireUpdateItem(
+        item <- EitherT(ShopCatalogSupport.requireUpdateItem(
           connection,
           existing.copy(
               name = name.trim,
@@ -36,6 +37,7 @@ final case class UpdateShopItemInternalAPIMessage(
               updatedAt = timestamp
             )
           )
+        )
       } yield item
     }
 }

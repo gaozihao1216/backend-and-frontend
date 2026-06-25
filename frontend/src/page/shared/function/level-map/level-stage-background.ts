@@ -8,6 +8,12 @@ import { DEFAULT_PANEL_TEMPLATE_CATEGORY } from "../../../../objects/ui/category
 
 export { LEVEL_MAP_PAGE_ID as LEVEL_STAGE_BACKGROUND_PAGE_IDS };
 
+/**
+ * 关卡地图 stage 面板背景配置。
+ *
+ * 支持预设风格和自定义图片两种模式；自定义图片会通过 ui-visual-asset-store
+ * 存到 IndexedDB，PageConfig 中只保留引用和裁剪信息。
+ */
 export const LEVEL_STAGE_CUSTOM_STYLE_ID_PREFIX = "levelStageBg-";
 
 export const LEVEL_STAGE_BACKGROUND_PRESET_IDS = [
@@ -164,6 +170,7 @@ const stripBackgroundDesignForStorage = (
   ...(backgroundDesign.frame ? { frame: backgroundDesign.frame } : {}),
 });
 
+/** 保存前剥离大图 dataUrl，并写入 IndexedDB。 */
 export const prepareLevelStageDecorationForStorage = async (
   decoration: PanelDecoration,
 ): Promise<PanelDecoration> => {
@@ -182,6 +189,7 @@ export const prepareLevelStageDecorationForStorage = async (
   };
 };
 
+/** 读取时根据 templateId 把 IndexedDB 中的大图重新补回 decoration。 */
 export const hydrateLevelStageDecoration = async (
   decoration: PanelDecoration,
 ): Promise<PanelDecoration> => {
@@ -231,6 +239,7 @@ export const applyLevelStageDecoration = (
   ),
 });
 
+/** 将 stage 背景写回共享关卡地图 PageConfig。 */
 export const syncLevelStageBackground = async (decoration: PanelDecoration): Promise<PageConfig[]> => {
   const storageDecoration = await prepareLevelStageDecorationForStorage(decoration);
   const pageConfig = getPageConfig(LEVEL_MAP_PAGE_ID);

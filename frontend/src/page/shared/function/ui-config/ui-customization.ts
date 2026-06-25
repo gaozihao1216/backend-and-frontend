@@ -11,6 +11,12 @@ import { ROLE_LEVEL_MAP_SYNC_PAGE_IDS } from "../level-map/level-map-sync.js";
 import { sanitizePageConfigLevelNodeButtons } from "../level-map/level-node-button-format.js";
 import { saveVisualAsset } from "./ui-visual-asset-store.js";
 
+/**
+ * 本地 PageConfig 覆盖配置仓库。
+ *
+ * 代码默认配置来自 getDefaultPageConfigs；总监在前端编辑后的覆盖配置存到 localStorage。
+ * 运行时通过 listPageConfigs 合并两者，保证未编辑页面仍使用代码默认值。
+ */
 const UI_PAGE_CONFIG_STORAGE_KEY = "ugc-level-platform.ui-page-configs.v1";
 
 let pageConfigRevision = 0;
@@ -63,6 +69,7 @@ const persistStoredPageConfigs = (configs: PageConfig[]) => {
   window.localStorage.setItem(UI_PAGE_CONFIG_STORAGE_KEY, JSON.stringify(parsePageConfigs(configs)));
 };
 
+// 大图 dataUrl 不直接塞进 localStorage，而是写入 IndexedDB 后只保留 templateId 引用。
 const compactStagePanelDecoration = async (decoration: PanelDecoration | undefined): Promise<PanelDecoration | undefined> => {
   if (!decoration?.backgroundDesign?.sourceDataUrl) {
     return decoration;
@@ -98,6 +105,7 @@ const compactPageConfigStageBackgrounds = async (config: PageConfig): Promise<Pa
   return changed ? { ...config, components } : config;
 };
 
+/** 迁移旧配置中的大图资源，降低 localStorage 爆容量的风险。 */
 export const compactStoredPageConfigVisualAssets = async (): Promise<boolean> => {
   const pageIds = getStoredPageConfigs().map((config) => config.id);
   if (pageIds.length === 0) {
@@ -124,6 +132,7 @@ export const compactStoredPageConfigVisualAssets = async (): Promise<boolean> =>
   return changed;
 };
 
+/** 对关卡地图和角色首页配置做一次规范化，修复旧结构中的按钮状态字段。 */
 export const compactStoredRoleHomePageConfigs = (): boolean => {
   if (!canUseStorage()) {
     return false;
@@ -176,6 +185,7 @@ export const compactStoredRoleHomePageConfigs = (): boolean => {
   return true;
 };
 
+// localStorage 中的同 id 配置覆盖代码默认配置，这是总监编辑器的预览基础。
 const mergePageConfigs = (baseConfigs: PageConfig[], overrideConfigs: PageConfig[]) => {
   const mergedById = new Map(baseConfigs.map((config) => [config.id, config]));
 
@@ -204,6 +214,7 @@ export const hasStoredPageConfig = (pageId: string): boolean =>
 export const getDefaultPageConfig = (pageId: string): PageConfig | null =>
   getDefaultPageConfigs().find((config) => config.id === pageId) ?? null;
 
+/** 保存一个页面覆盖配置，并通知所有 useSyncExternalStore 订阅者刷新。 */
 export const savePageConfig = (config: PageConfig): PageConfig => {
   const parsedConfig = PageConfigSchema.parse(normalizePageConfig(config));
   const storedConfigs = getStoredPageConfigs();

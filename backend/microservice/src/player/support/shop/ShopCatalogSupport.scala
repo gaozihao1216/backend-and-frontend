@@ -1,11 +1,8 @@
 package microservice.player.support.shop
 
-import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.api.PlanStep
-import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.shop.ShopItem
 import microservice.player.tables.shop.{ShopItemRow, ShopItemRowMapper, ShopTable}
@@ -41,27 +38,21 @@ private[player] object ShopCatalogSupport {
     ShopItemRowMapper.toShopItem(ShopTable.insertItem(connection, row))
   }
 
-  def requireItemRow(connection: Connection, itemId: String): Step[ShopItemRow] =
-    EitherT.liftF(IO(ShopTable.findItemById(connection, itemId))).flatMap {
-      case None =>
-        EitherT.leftT(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: $itemId"))
-      case Some(row) =>
-        EitherT.rightT(row)
+  def requireItemRow(connection: Connection, itemId: String): IO[Either[HttpError, ShopItemRow]] =
+    IO(ShopTable.findItemById(connection, itemId)).map {
+      case None      => Left(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: $itemId"))
+      case Some(row) => Right(row)
     }
 
-  def requireUpdateItem(connection: Connection, row: ShopItemRow): Step[ShopItem] =
-    EitherT.liftF(IO(ShopTable.updateItem(connection, row))).flatMap {
-      case None =>
-        EitherT.leftT(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: ${row.id}"))
-      case Some(updated) =>
-        EitherT.rightT(ShopItemRowMapper.toShopItem(updated))
+  def requireUpdateItem(connection: Connection, row: ShopItemRow): IO[Either[HttpError, ShopItem]] =
+    IO(ShopTable.updateItem(connection, row)).map {
+      case None          => Left(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: ${row.id}"))
+      case Some(updated) => Right(ShopItemRowMapper.toShopItem(updated))
     }
 
-  def requireDeactivateItem(connection: Connection, itemId: String): Step[ShopItem] =
-    EitherT.liftF(IO(ShopTable.deactivateItem(connection, itemId))).flatMap {
-      case None =>
-        EitherT.leftT(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: $itemId"))
-      case Some(row) =>
-        EitherT.rightT(ShopItemRowMapper.toShopItem(row))
+  def requireDeactivateItem(connection: Connection, itemId: String): IO[Either[HttpError, ShopItem]] =
+    IO(ShopTable.deactivateItem(connection, itemId)).map {
+      case None      => Left(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: $itemId"))
+      case Some(row) => Right(ShopItemRowMapper.toShopItem(row))
     }
 }

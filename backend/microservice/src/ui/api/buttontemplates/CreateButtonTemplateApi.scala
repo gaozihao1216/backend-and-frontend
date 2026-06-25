@@ -39,9 +39,9 @@ final case class CreateButtonTemplateAPIMessage(
         // 规范化字符串字段
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template))
         // id 不可重复
-        _ <- ButtonTemplateAccess.requireUniqueId(connection, template.id)
+        _ <- PlanSteps.fromEither(ButtonTemplateAccess.requireUniqueId(connection, template.id))
         // 校验 id/name/sourceDataUrl/category/slice
-        _ <- ButtonTemplateValidation.validate(template)
+        _ <- PlanSteps.fromEither(ButtonTemplateValidation.validate(template))
         // 插入 ButtonTemplateRow 并转为领域对象
         result <- PlanSteps.read {
           val timestamp = Instant.now().toString

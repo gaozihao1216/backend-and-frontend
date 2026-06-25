@@ -8,6 +8,12 @@ import type { BirdPoolLaunchConfig } from "../../../../game/engine/bird/bird-poo
 import type { BirdSkillSet } from "../../../../game/engine/skills/skill-spec.js";
 import type { DirectorBirdSkillEntry } from "../../../../objects/bird/skill/director/director-bird-skill-entry.js";
 
+/**
+ * 鸟技能测试场启动配置。
+ *
+ * director 编辑中的技能还没有发布到系统鸟定义里，因此测试场需要临时拼出
+ * BirdDefinition 和单鸟鸟池，让游戏引擎按当前草稿技能运行。
+ */
 export const buildDirectorTestBirdDefinition = (
   entry: DirectorBirdSkillEntry,
   skillSet: BirdSkillSet,

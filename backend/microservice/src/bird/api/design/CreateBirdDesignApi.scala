@@ -1,5 +1,6 @@
 package microservice.bird.api.design
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
@@ -30,7 +31,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
         // 步骤 1：校验 Designer 角色
         _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
         // 步骤 2：校验 name/summary/stats/tierSkills 等字段
-        input <- BirdDesignValidation.validate(toInput(body))
+        input <- EitherT(BirdDesignValidation.validate(toInput(body)))
         // 步骤 3：校验通过后 insert BirdDesignRow
         design <- PlanSteps.read {
           val timestamp = Instant.now().toString

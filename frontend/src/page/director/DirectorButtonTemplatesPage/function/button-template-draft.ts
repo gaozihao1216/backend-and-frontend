@@ -5,6 +5,12 @@ import {
 } from "../../../../objects/ui/category/template-category.js";
 import type { ImageBounds, ImageSize, TemplateDraft } from "../objects/button-template-types.js";
 
+/**
+ * 模板编辑器草稿转换函数。
+ *
+ * 后端存储 UiButtonTemplate，编辑器使用 TemplateDraft；
+ * 这里负责二者互转，以及从图片中检测可见边界用于九宫格切片。
+ */
 const defaultTemplateDataUrl = (() => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="360" height="144" viewBox="0 0 360 144">
@@ -91,6 +97,7 @@ const isTemplateBackgroundPixel = (red: number, green: number, blue: number, alp
     && blue >= 255 - templateBackgroundTolerance
   );
 
+/** 扫描图片像素，找出非背景内容的最小包围框。 */
 export const detectVisibleImageBounds = async (dataUrl: string): Promise<{ imageSize: ImageSize; bounds: ImageBounds }> => {
   const image = new Image();
   image.src = dataUrl;

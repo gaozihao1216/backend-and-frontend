@@ -35,7 +35,7 @@ final case class CreateUiPageAPIMessage(
         // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 步骤 2：校验 page id 唯一及 id/name/path 必填字段
-        _ <- UiPageAccess.requireCreatePage(connection, body.page)
+        _ <- PlanSteps.fromEither(UiPageAccess.requireCreatePage(connection, body.page))
         // 步骤 3：trim 字段后插入 UiPageRow 并映射为 PageConfig
         page <- PlanSteps.read {
           val timestamp = Instant.now().toString

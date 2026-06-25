@@ -8,6 +8,11 @@ import {
 } from "./published-page-configs.js";
 import { savePageConfig } from "./ui-customization.js";
 
+/**
+ * PageConfig 发布/回滚 API 适配层。
+ *
+ * director 编辑的是本地覆盖配置；发布后玩家侧通过 published-page-configs 缓存读取后端版本。
+ */
 export const hydratePublishedPageFromApi = async (
   userId: string,
   pageId: string,
@@ -27,6 +32,7 @@ export const hydratePublishedPageFromApi = async (
   }
 };
 
+/** 将当前本地 PageConfig 发布到后端，成功后同步写入前端 published 缓存。 */
 export const publishUiPageConfig = async (
   userId: string,
   page: PageConfig,
@@ -37,6 +43,7 @@ export const publishUiPageConfig = async (
   return publishedPage;
 };
 
+/** 回滚后把后端恢复出的配置同步写回本地编辑态和 published 缓存。 */
 export const rollbackUiPageConfig = async (
   userId: string,
   pageId: string,

@@ -32,7 +32,7 @@ final case class DeleteButtonTemplateAPIMessage(
         // 校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 删除并返回被删 ButtonTemplate
-        template <- ButtonTemplateAccess.requireDeleted(connection, templateId)
+        template <- PlanSteps.fromEither(ButtonTemplateAccess.requireDeleted(connection, templateId))
       } yield template
     }
 }

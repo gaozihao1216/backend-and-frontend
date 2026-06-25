@@ -1,5 +1,6 @@
 package microservice.admin.api.shop
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.shop.AdminShopItem
@@ -20,7 +21,7 @@ final case class CreateShopItemAPIMessage(userId: String, body: CreateShopItemRe
     PlanSteps.finish {
       for {
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
-        input <- AdminShopItemValidation.validateCreate(body)
+        input <- EitherT(AdminShopItemValidation.validateCreate(body))
         item <- PlanSteps.runApi(
           CreateShopItemInternalAPIMessage(
             name = input.name,

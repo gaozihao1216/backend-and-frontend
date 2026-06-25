@@ -32,7 +32,7 @@ final case class DeleteUiPageAPIMessage(
         // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 步骤 2：删除页面及其全部组件，返回被删 PageConfig
-        page <- UiPageAccess.requireDeletePage(connection, pageId)
+        page <- PlanSteps.fromEither(UiPageAccess.requireDeletePage(connection, pageId))
       } yield page
     }
 }

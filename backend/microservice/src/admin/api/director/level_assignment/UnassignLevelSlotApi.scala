@@ -1,5 +1,6 @@
 package microservice.admin.api.director.level_assignment
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignment
@@ -22,7 +23,7 @@ final case class UnassignLevelSlotAPIMessage(
     PlanSteps.finish {
       for {
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
-        _ <- DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix)
+        _ <- EitherT(DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix))
         slot <- PlanSteps.runApi(UnassignSlotInternalAPIMessage(levelSuffix), connection)
       } yield LevelHandoffMapping.toSlotAssignment(slot)
     }

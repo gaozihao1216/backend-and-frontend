@@ -1,5 +1,11 @@
 import { LEVEL_NODE_DEFINITIONS } from "../../../../objects/ui-customization/level-map-structure.js";
 
+/**
+ * 关卡节点进度状态计算。
+ *
+ * 后端只需要告诉前端哪些关卡已通关；这里按 LEVEL_NODE_SUFFIX_ORDER 推导锁定、
+ * 已解锁未通关、已通关三种 UI 状态。
+ */
 export const LEVEL_NODE_PROGRESS_API_KEY = "player.levelProgress";
 
 export const LEVEL_NODE_PROGRESS_STATE_IDS = ["locked", "notCleared", "cleared"] as const;
@@ -38,6 +44,7 @@ export const resolveLevelNodeProgressState = (
   return "locked";
 };
 
+/** 根据已通关集合生成动态 UI runtime 可消费的进度 payload。 */
 export const buildLevelProgressPayload = (
   clearedLevels: Iterable<string>,
 ): LevelNodeProgressPayload => {
@@ -110,6 +117,7 @@ export const buildPreviewClearedLevels = (
   return clearedLevels;
 };
 
+/** director 预览用：构造指定节点处于某个状态时的模拟 uiData。 */
 export const createPreviewLevelProgressUiData = (
   previewState: LevelNodeProgressStateId,
   previewLevelSuffix = LEVEL_NODE_SUFFIX_ORDER[0] ?? "level01",

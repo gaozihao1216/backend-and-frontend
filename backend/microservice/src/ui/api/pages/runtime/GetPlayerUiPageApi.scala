@@ -31,7 +31,7 @@ final case class GetPlayerUiPageAPIMessage(
         // 步骤 1：确认 userId 为已知用户
         _ <- AccessControl.requireKnownUser(connection, userId).map(_ => ())
         // 步骤 2：读取已发布的 PageConfig 供玩家端渲染
-        page <- UiPagePublishSupport.requirePublishedPage(connection, pageId)
+        page <- PlanSteps.fromEither(UiPagePublishSupport.requirePublishedPage(connection, pageId))
       } yield page
     }
 }

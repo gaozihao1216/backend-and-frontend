@@ -40,6 +40,12 @@ const resolveInitialSkillSet = (entry: DirectorBirdSkillEntry): BirdSkillSet => 
   );
 };
 
+/**
+ * 总监鸟类技能实验室状态。
+ *
+ * 负责加载鸟目录、把后端保存的技能 JSON 解析成编辑器状态，
+ * 并在保存后刷新看板，保证测试场和准备页读取到同一套技能配置。
+ */
 export const useDirectorBirdSkillLabPage = (userId: string) => {
   const [birds, setBirds] = useState<DirectorBirdSkillEntry[]>([]);
   const [selectedBirdType, setSelectedBirdType] = useState<string>("");

@@ -23,6 +23,12 @@ type UseDirectorPageBuilderOptions = {
   userId?: string | null;
 };
 
+/**
+ * director 页面构建器 view model。
+ *
+ * 负责编辑 PageConfig 的组件树：选择工作面板、增删子组件、拖拽移动/缩放、
+ * 文本编辑、发布/回滚，以及静态/动态/对比预览模式。
+ */
 export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate, userId = null }: UseDirectorPageBuilderOptions) => {
   const [pageConfig, setPageConfig] = useState<PageConfig | null>(() => pageId ? getPageConfig(pageId) : null);
   const [panelPickerOpen, setPanelPickerOpen] = useState(false);
@@ -89,6 +95,7 @@ export const useDirectorPageBuilder = ({ pageId, targetPath, onNavigate, userId 
     : null;
   const activeComponent = selectedComponent
     ?? (normalizedPendingComponentId ? componentMap.get(normalizedPendingComponentId) ?? null : null);
+  // 所有本地草稿变更都走这一层，统一清空旧反馈并保持 React 状态不可变。
   const updatePageConfig = (updater: (current: PageConfig) => PageConfig) => {
     setPageConfig((current) => current ? updater(current) : current);
     setFeedback("");

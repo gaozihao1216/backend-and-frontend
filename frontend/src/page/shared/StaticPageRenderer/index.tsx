@@ -60,6 +60,7 @@ const unsupportedStaticPage = (pageId: string) => (
   </section>
 );
 
+// 设计器编辑页由多个 URL 进入，最终都映射到同一个组件的不同 mode。
 const resolveDesignerLevelEditorMode = (pathname: string) => {
   const isArchiveJsonCheckPath =
     pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
@@ -93,6 +94,7 @@ const resolveDesignerLevelEditorMode = (pathname: string) => {
   return { mode: "design" as const, archiveBackupId: undefined };
 };
 
+// 维护“哪些 pageId 有真实 React 页面可渲染”的白名单。
 const staticPageIds = new Set([
   "shared.profile",
   LEVEL_MAP_PAGE_ID,
@@ -126,6 +128,7 @@ const staticPageIds = new Set([
   ...LEVEL_NODE_DEFINITIONS.map((node) => getLevelScreenPageId(node.suffix)),
 ]);
 
+// 首页和关卡地图本身也是 PageConfig 驱动，所以静态页入口会反向嵌入 DynamicPageHost。
 const renderConfigDrivenPage = (pageId: string, context: StaticPageRenderContext) => (
   <DynamicPageHost
     pageId={pageId}
@@ -136,6 +139,7 @@ const renderConfigDrivenPage = (pageId: string, context: StaticPageRenderContext
   />
 );
 
+/** 判断一个 pageId 是否已经接入真实 React 页面或可静态预览的关卡页。 */
 export const isStaticPageSupported = (pageId: string) => {
   if (staticPageIds.has(pageId)) {
     return true;
@@ -144,6 +148,12 @@ export const isStaticPageSupported = (pageId: string) => {
   return /^shared\.level\.level\d{2}$/.test(pageId);
 };
 
+/**
+ * 根据 pageId 渲染真实 React 页面。
+ *
+ * 该函数是静态页面体系的路由表：它不解析浏览器路径，只消费已解析好的 pageId
+ * 和 StaticPageRenderContext 中的用户、导航、回调信息。
+ */
 export const renderStaticPage = (pageId: string, context: StaticPageRenderContext): ReactNode => {
   const { user, pathname, search, onNavigate } = context;
   const apiUserId = user.apiUserId;
@@ -206,6 +216,7 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
     case "designer.archive":
     case "designer.archiveJsonCheck": {
       const { mode, archiveBackupId } = resolveDesignerLevelEditorMode(pathname);
+      // 普通设计页可通过 query 中的 levelId 继续编辑草稿；其他模式不读取该参数。
       const resumeLevelId = pathname === DESIGNER_DESIGN_PATH
         ? new URLSearchParams(search).get("levelId") ?? undefined
         : undefined;

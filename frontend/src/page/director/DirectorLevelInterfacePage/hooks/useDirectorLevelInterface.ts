@@ -39,6 +39,12 @@ import type { ComponentPosition, PageConfig, PanelDecoration } from "../../../..
 import { getUiPreviewUser } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import type { LevelInterfaceEditor } from "../objects/level-interface-types.js";
 
+/**
+ * 总监关卡地图界面编辑器状态。
+ *
+ * 它把 stage 背景、节点按钮格式、节点布局和路径边设计四类草稿合并成预览 PageConfig，
+ * 保存时再分别同步回共享关卡地图页面。
+ */
 export const useDirectorLevelInterface = (userId: string) => {
   const pageConfigRevision = useSyncExternalStore(
     subscribePageConfigStore,
@@ -97,6 +103,7 @@ export const useDirectorLevelInterface = (userId: string) => {
     });
   }, [activeEditor, pageConfigRevision]);
 
+  // 预览不是直接保存的配置，而是把四类草稿实时叠加到当前 PageConfig 上。
   const previewPageConfig = useMemo(() => {
     if (!pageConfig) {
       return null;

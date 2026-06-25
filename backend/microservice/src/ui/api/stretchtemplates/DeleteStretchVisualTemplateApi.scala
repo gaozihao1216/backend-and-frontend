@@ -34,7 +34,7 @@ final case class DeleteStretchVisualTemplateAPIMessage(
         // 校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找并校验 kind 与路由一致
-        template <- StretchVisualTemplateAccess.requireDeleted(connection, templateId, expectedKind)
+        template <- PlanSteps.fromEither(StretchVisualTemplateAccess.requireDeleted(connection, templateId, expectedKind))
       } yield template
     }
 }

@@ -1,5 +1,6 @@
 package microservice.admin.api.shop
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.shop.AdminShopItem
@@ -21,7 +22,7 @@ final case class UpdateShopItemAPIMessage(userId: String, itemId: String, body: 
     PlanSteps.finish {
       for {
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
-        input <- AdminShopItemValidation.validateUpdate(body)
+        input <- EitherT(AdminShopItemValidation.validateUpdate(body))
         item <- PlanSteps.runApi(
           UpdateShopItemInternalAPIMessage(
             itemId = itemId,

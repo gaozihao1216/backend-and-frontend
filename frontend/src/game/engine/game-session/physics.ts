@@ -79,6 +79,7 @@ import {
 
 const { Body, Sleeping, Vector } = Matter;
 
+// Matter.js 的睡眠机制会降低计算量，但关键物体必须被唤醒才能继续结算。
 const shouldKeepBodyAwake = (
   body: GameBody,
   bird: GameBody,
@@ -100,6 +101,7 @@ const shouldKeepBodyAwake = (
   return body.speed > BODY_SLEEP_LINEAR_THRESHOLD || Math.abs(body.angularVelocity) > BODY_SLEEP_ANGULAR_THRESHOLD;
 };
 
+/** 唤醒仍需要参与结算的睡眠体，避免发射/坍塌过程中物体停在错误状态。 */
 export const manageBodySleep = (
   bodies: GameBody[],
   bird: GameBody,
@@ -116,6 +118,7 @@ export const manageBodySleep = (
   }
 };
 
+/** 初始落稳阶段不允许动态结构睡眠，否则还没形成稳定支撑就会停止下落。 */
 export const keepBodiesAwakeDuringPriming = (bodies: GameBody[]) => {
   for (const body of bodies) {
     if (body.isStatic || body.destroyed || !body.isSleeping) {
@@ -126,6 +129,7 @@ export const keepBodiesAwakeDuringPriming = (bodies: GameBody[]) => {
   }
 };
 
+/** 判断动态体是否处于自由下落状态，用于初始落稳阶段切换碰撞过滤。 */
 export const isInFreeFall = (body: GameBody) => {
   if (body.isStatic || body.destroyed || body.renderKind === "bird") {
     return false;
@@ -142,6 +146,7 @@ export const isInFreeFall = (body: GameBody) => {
   return body.velocity.y >= FREE_FALL_MIN_DOWNWARD || body.speed >= FREE_FALL_MAX_REST_SPEED;
 };
 
+// 初始落稳阶段的支撑标记只服务 worldPrimed 前的结构初始化。
 const markBodySupported = (body: GameBody) => {
   if (body.isStatic || body.destroyed || body.renderKind === "bird" || body.renderKind === "ground") {
     return;
@@ -191,6 +196,7 @@ const isSupportCandidate = (body: GameBody) =>
   && (body.renderKind === "ground" || body.renderKind === "block" || body.renderKind === "pig" || body.renderKind === "bird")
   && !isCrackingBlock(body);
 
+// 穿入地面时不算“受到支撑”，需要先抬回地表再进入静止稳定化。
 const isPenetratingGround = (body: GameBody, bodies: GameBody[]) => {
   const footY = body.bounds.max.y;
 
@@ -556,6 +562,7 @@ const applyDynamicCollisionFilter = (body: GameBody, freeFall: boolean) => {
   });
 };
 
+/** 鸟始终使用完整动态碰撞掩码，保证发射后能撞击地形、结构和敌人。 */
 export const applyBirdCollisionFilter = (body: GameBody) => {
   Body.set(body, {
     collisionFilter: {
@@ -566,6 +573,10 @@ export const applyBirdCollisionFilter = (body: GameBody) => {
   });
 };
 
+/**
+ * 初始落稳时，自由下落物体暂时使用独立碰撞组，减少堆叠互相卡死。
+ * 世界启动后恢复完整动态碰撞，让正式游玩阶段符合直觉。
+ */
 export const updateDynamicCollisionFilters = (
   bodies: GameBody[],
   options: { worldPrimed: boolean; birdLaunched: boolean },
@@ -594,6 +605,7 @@ export const updateDynamicCollisionFilters = (
   }
 };
 
+/** 限制异常线速度和角速度，防止高冲量碰撞把物体送出稳定求解范围。 */
 export const clampBodyVelocity = (body: GameBody) => {
   if (body.isStatic || body.destroyed) {
     return;

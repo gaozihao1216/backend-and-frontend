@@ -1,23 +1,24 @@
 package microservice.ui.support.pages
 
-import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.api.PlanStep
-import microservice.infrastructure.api.PlanStep.Step
-import microservice.ui.objects.page.PageConfig
+import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.errors.UiCustomizationErrors
+import microservice.ui.objects.page.PageConfig
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbackTable}
 
 /** 页面发布与回滚的共享存储逻辑。 */
 private[ui] object UiPagePublishSupport {
-  def requireNormalizePageConfig(pageId: String, page: PageConfig): Step[PageConfig] =
+  def requireNormalizePageConfig(pageId: String, page: PageConfig): IO[Either[HttpError, PageConfig]] =
+    IO.pure(normalizePageConfig(pageId, page))
+
+  private def normalizePageConfig(pageId: String, page: PageConfig): Either[HttpError, PageConfig] =
     if (page.name.trim.isEmpty || page.path.trim.isEmpty) {
-      PlanStep.fail(UiCustomizationErrors.InvalidPageConfig("name and path are required").toHttpError)
+      Left(UiCustomizationErrors.InvalidPageConfig("name and path are required").toHttpError)
     } else {
-      PlanStep.succeed(
+      Right(
         page.copy(
           id = pageId,
           name = page.name.trim,
@@ -26,72 +27,72 @@ private[ui] object UiPagePublishSupport {
       )
     }
 
-  def requirePublish(connection: Connection, pageId: String, page: PageConfig): Step[PageConfig] =
-    for {
-      normalized <- requireNormalizePageConfig(pageId, page)
-      published <- UiPageTable.findById(connection, pageId) match {
-        case None =>
-          PlanStep.succeed {
+  def requirePublish(connection: Connection, pageId: String, page: PageConfig): IO[Either[HttpError, PageConfig]] =
+    IO {
+      normalizePageConfig(pageId, page).flatMap { normalized =>
+        UiPageTable.findById(connection, pageId) match {
+          case None =>
             val timestamp = Instant.now().toString
-            UiPageRowMapper.toPageConfig(
-              UiPageTable.insert(
-                connection,
-                UiPageRowMapper.fromPageConfig(normalized, createdAt = timestamp, updatedAt = timestamp)
+            Right(
+              UiPageRowMapper.toPageConfig(
+                UiPageTable.insert(
+                  connection,
+                  UiPageRowMapper.fromPageConfig(normalized, createdAt = timestamp, updatedAt = timestamp)
+                )
               )
             )
-          }
-        case Some(existing) =>
-          UiPageRollbackTable.upsert(
-            connection,
-            UiPageRollbackRow(
-              pageId = pageId,
-              page = UiPageRowMapper.toPageConfig(existing),
-              createdAt = Instant.now().toString
+          case Some(existing) =>
+            UiPageRollbackTable.upsert(
+              connection,
+              UiPageRollbackRow(
+                pageId = pageId,
+                page = UiPageRowMapper.toPageConfig(existing),
+                createdAt = Instant.now().toString
+              )
             )
-          )
-          UiPageTable.update(
+            UiPageTable.update(
+              connection,
+              UiPageRowMapper.fromPageConfig(
+                normalized,
+                createdAt = existing.createdAt,
+                updatedAt = Instant.now().toString
+              )
+            ) match {
+              case None      => Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
+              case Some(row) => Right(UiPageRowMapper.toPageConfig(row))
+            }
+        }
+      }
+    }
+
+  def requireRollback(connection: Connection, pageId: String): IO[Either[HttpError, PageConfig]] =
+    IO {
+      for {
+        rollbackRow <- UiPageRollbackTable.findById(connection, pageId).toRight(
+          UiCustomizationErrors.PageRollbackUnavailable(pageId).toHttpError
+        )
+        existing <- UiPageTable.findById(connection, pageId).toRight(
+          UiCustomizationErrors.PageNotFound(pageId).toHttpError
+        )
+        restored <- UiPageTable
+          .update(
             connection,
             UiPageRowMapper.fromPageConfig(
-              normalized,
+              rollbackRow.page.copy(id = pageId),
               createdAt = existing.createdAt,
               updatedAt = Instant.now().toString
             )
-          ) match {
-            case None =>
-              PlanStep.fail(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-            case Some(row) =>
-              PlanStep.succeed(UiPageRowMapper.toPageConfig(row))
-          }
+          )
+          .toRight(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
+      } yield {
+        UiPageRollbackTable.deleteById(connection, pageId)
+        UiPageRowMapper.toPageConfig(restored)
       }
-    } yield published
+    }
 
-  def requireRollback(connection: Connection, pageId: String): Step[PageConfig] =
-    for {
-      rollbackRow <- UiPageRollbackTable.findById(connection, pageId) match {
-        case None      => PlanStep.fail(UiCustomizationErrors.PageRollbackUnavailable(pageId).toHttpError)
-        case Some(row) => PlanStep.succeed(row)
-      }
-      existing <- UiPageTable.findById(connection, pageId) match {
-        case None      => PlanStep.fail(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-        case Some(row) => PlanStep.succeed(row)
-      }
-      restored <- UiPageTable.update(
-        connection,
-        UiPageRowMapper.fromPageConfig(
-          rollbackRow.page.copy(id = pageId),
-          createdAt = existing.createdAt,
-          updatedAt = Instant.now().toString
-        )
-      ) match {
-        case None      => PlanStep.fail(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-        case Some(row) => PlanStep.succeed(UiPageRowMapper.toPageConfig(row))
-      }
-      _ = UiPageRollbackTable.deleteById(connection, pageId)
-    } yield restored
-
-  def requirePublishedPage(connection: Connection, pageId: String): Step[PageConfig] =
-    UiPageTable.findById(connection, pageId) match {
-      case None      => PlanStep.fail(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
-      case Some(row) => PlanStep.succeed(UiPageRowMapper.toPageConfig(row))
+  def requirePublishedPage(connection: Connection, pageId: String): IO[Either[HttpError, PageConfig]] =
+    IO(UiPageTable.findById(connection, pageId)).map {
+      case None      => Left(UiCustomizationErrors.PageNotFound(pageId).toHttpError)
+      case Some(row) => Right(UiPageRowMapper.toPageConfig(row))
     }
 }

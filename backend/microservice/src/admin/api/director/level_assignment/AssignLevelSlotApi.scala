@@ -1,5 +1,6 @@
 package microservice.admin.api.director.level_assignment
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.director.level_assignment.assignment.LevelSlotAssignmentDetail
@@ -22,11 +23,16 @@ final case class AssignLevelSlotAPIMessage(
 ) extends APIWithTokenMessage[LevelSlotAssignmentDetail] {
   override def token: String = userId
 
+  /** 总监分配关卡槽位的主流程。
+    *
+    * 这里不直接操作 level 表，而是通过 level 模块 internal API 完成槽位写入，
+    * admin 模块只负责总监权限、请求校验和跨模块响应对象组装。
+    */
   override def plan(connection: Connection): IO[Either[HttpError, LevelSlotAssignmentDetail]] =
     PlanSteps.finish {
       for {
         user <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
-        _ <- DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix)
+        _ <- EitherT(DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix))
         slot <- PlanSteps.runApi(
           AssignSlotInternalAPIMessage(
             levelSuffix = levelSuffix,

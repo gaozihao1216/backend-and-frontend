@@ -35,7 +35,7 @@ final case class BindBackendUserAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验 localUserId/nickname/role 等绑定请求字段
-        validated <- BindBackendUserValidation.validate(request)
+        validated <- PlanSteps.fromEither(BindBackendUserValidation.validate(request))
         // 步骤 2：按确定性 username 查或建 UserRow，映射为 BackendUser
         user <- PlanSteps.read {
           val normalizedNickname = validated.nickname.trim

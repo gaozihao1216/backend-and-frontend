@@ -27,6 +27,12 @@ type UseDesignerGroundActionsParams = {
   setSelectedVoidSpanId: (id: string | null) => void;
 };
 
+/**
+ * 地形编辑操作集合。
+ *
+ * 这里把 UI 事件转换成 level/function/ground 中的纯数据变换，
+ * 让组件不直接理解 LevelData 的地形结构细节。
+ */
 export const useDesignerGroundActions = ({
   activeBoundaryKind,
   applyLevelDataUpdate,
@@ -39,6 +45,7 @@ export const useDesignerGroundActions = ({
   setSelectedGroundPointIndex,
   setSelectedVoidSpanId,
 }: UseDesignerGroundActionsParams) => {
+  // 切换地形模式或开关地形编辑器时，旧的点/空洞选择都不再可靠。
   const resetGroundSelection = () => {
     setSelectedGroundPointIndex(null);
     setSelectedVoidSpanId(null);
@@ -72,6 +79,7 @@ export const useDesignerGroundActions = ({
     updateCeilingBoundary(clearTerrainCeilingBoundary);
   };
 
+  // 根据天花板轮廓和厚度参数生成底部边界，用于快速制作上下闭合地形。
   const handleGenerateGroundFromCeiling = () => {
     applyLevelDataUpdate((current) => {
       const currentTerrain = getLevelTerrain(current);

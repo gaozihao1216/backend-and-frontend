@@ -38,18 +38,20 @@ final case class UpdateButtonTemplateAPIMessage(
         // 校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找现有模板行
-        existing <- ButtonTemplateAccess.requireExisting(connection, templateId)
+        existing <- PlanSteps.fromEither(ButtonTemplateAccess.requireExisting(connection, templateId))
         // 规范化并强制 id 为路径 templateId
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template.copy(id = templateId)))
         // 校验字段合法性
-        _ <- ButtonTemplateValidation.validate(template)
+        _ <- PlanSteps.fromEither(ButtonTemplateValidation.validate(template))
         // 更新 ButtonTemplateRow
-        result <- ButtonTemplateAccess.requireUpdated(
-          connection,
-          ButtonTemplateRowMapper.fromButtonTemplate(
-            template,
-            createdAt = existing.createdAt,
-            updatedAt = Instant.now().toString
+        result <- PlanSteps.fromEither(
+          ButtonTemplateAccess.requireUpdated(
+            connection,
+            ButtonTemplateRowMapper.fromButtonTemplate(
+              template,
+              createdAt = existing.createdAt,
+              updatedAt = Instant.now().toString
+            )
           )
         )
       } yield result

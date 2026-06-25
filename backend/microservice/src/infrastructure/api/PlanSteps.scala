@@ -52,6 +52,10 @@ object PlanSteps {
   def runApi[A](api: APIMessage[A], connection: Connection): Step[A] =
     EitherT(api.plan(connection))
 
+  /** 接入 support/validation 暴露的 IO[Either] 结果，保持 API plan 内部仍可线性编排。 */
+  def fromEither[A](run: IO[Either[HttpError, A]]): Step[A] =
+    EitherT(run)
+
   /** 将完整的 `Step` 链还原为 `IO[Either[HttpError, A]]`，供 [[APIMessage.plan]] 返回。
     *
     * 每个 plan 实现应以 `PlanSteps.finish { for { ... } yield ... }` 结尾。

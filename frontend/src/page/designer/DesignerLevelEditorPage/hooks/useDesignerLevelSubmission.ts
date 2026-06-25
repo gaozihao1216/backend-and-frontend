@@ -15,6 +15,12 @@ type UseDesignerLevelSubmissionParams = {
   setError: (error: string) => void;
 };
 
+/**
+ * 设计器创建/提交关卡的后端交互 hook。
+ *
+ * createLevel 保存草稿关卡，submitLevel 才进入审核流程；
+ * 因此本 hook 同时维护“已创建列表”和“已提交 id 列表”供页面展示状态。
+ */
 export const useDesignerLevelSubmission = ({
   userId,
   title,

@@ -41,11 +41,11 @@ final case class CreateStretchVisualTemplateAPIMessage(
         // 规范化并按路由强制 kind
         template <- PlanSteps.read(StretchVisualTemplateValidation.sanitize(body.template.copy(kind = expectedKind)))
         // 二次校验 kind 与路由一致
-        validated <- StretchVisualTemplateValidation.ensureKind(template, expectedKind)
+        validated <- PlanSteps.fromEither(StretchVisualTemplateValidation.ensureKind(template, expectedKind))
         // 校验 id/name/sourceDataUrl/category
-        _ <- StretchVisualTemplateValidation.validate(validated)
+        _ <- PlanSteps.fromEither(StretchVisualTemplateValidation.validate(validated))
         // id 不可重复
-        _ <- StretchVisualTemplateAccess.requireUniqueId(connection, template.id)
+        _ <- PlanSteps.fromEither(StretchVisualTemplateAccess.requireUniqueId(connection, template.id))
         // 插入 StretchVisualTemplateRow
         result <- PlanSteps.read {
           val timestamp = Instant.now().toString

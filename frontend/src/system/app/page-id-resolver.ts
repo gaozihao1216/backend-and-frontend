@@ -35,6 +35,12 @@ const BUTTON_DESIGN_SUFFIX = "/button_design";
 const BUTTON_CONFIG_SUFFIX = "/button_config";
 const PANEL_CREATE_SUFFIX = "/panel_create";
 
+/**
+ * 根据当前登录身份解析默认首页 pageId。
+ *
+ * 这里返回的是 PageConfig/静态页共用的逻辑 ID，不是浏览器路径；
+ * App 会先解析 path，再把 pageId 交给 PageDualModeHost 渲染。
+ */
 export const resolveHomePageId = (user: AuthUser): string => {
   if (user.role === "player") {
     return "player.home";
@@ -51,12 +57,19 @@ export const resolveHomePageId = (user: AuthUser): string => {
   return "admin.home";
 };
 
+// PageBuilder 的子页面路径不是独立业务页，而是 director 配置流中的编辑入口。
 export const isPageBuilderPath = (pathname: string) =>
   pathname.endsWith(PAGE_BUILDER_UPDATE_SUFFIX)
   || pathname.endsWith(BUTTON_DESIGN_SUFFIX)
   || pathname.endsWith(BUTTON_CONFIG_SUFFIX)
   || pathname.endsWith(PANEL_CREATE_SUFFIX);
 
+/**
+ * 将浏览器 pathname 映射为页面系统使用的 pageId。
+ *
+ * 返回 null 表示该路径由 App 中的专用逻辑处理，例如登录页、重提交流程，
+ * 或者当前未登录时无法确定角色首页。
+ */
 export const resolvePageId = (
   pathname: string,
   user: AuthUser | null,
@@ -158,6 +171,7 @@ export const resolvePageId = (
     || pathname === DESIGNER_JSON_CHECK_PATH
     || pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
   ) {
+    // 设计器多个子路径共用 DesignerLevelEditorPage，通过 pageId/mode 区分具体视图。
     const isArchiveJsonCheckPath =
       pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
       && pathname.endsWith(DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX);

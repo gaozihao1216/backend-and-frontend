@@ -24,6 +24,12 @@ const initialDesignerLevelData = createDefaultLevelInput().data;
 
 export type DesignerLevelEditorViewModel = ReturnType<typeof useDesignerLevelEditorViewModel>;
 
+/**
+ * 设计器页面的总 view model。
+ *
+ * 页面组件只负责布局和渲染；草稿表单、关卡数据、画布选择、地形编辑、
+ * 备份、提交流程、快捷键等状态都在这里组合，避免 index.tsx 直接堆业务逻辑。
+ */
 export const useDesignerLevelEditorViewModel = ({
   userId,
   mode = "design",
@@ -48,6 +54,7 @@ export const useDesignerLevelEditorViewModel = ({
   } = useDesignerDraft();
   const { message, setMessage, error, setError } = useDesignerFeedback();
 
+  // undo/redo、JSON 导入、恢复备份都会整体替换关卡数据，因此需要统一清空画布选择。
   const resetEditorSelectionRef = useRef<() => void>(() => {});
 
   const {
@@ -99,12 +106,14 @@ export const useDesignerLevelEditorViewModel = ({
 
   const background = useLevelBackgroundTemplateResolution(levelData.backgroundTemplateId, userId);
 
+  // 普通实体选择和地形点选择属于两套编辑模式，切换/恢复时必须一起清理。
   const resetEditorSelection = () => {
     editor.resetEditorSelection();
     groundEditor.resetGroundSelection();
   };
   resetEditorSelectionRef.current = resetEditorSelection;
 
+  // 设计阶段切换会重置工具和选择，避免在地形模式下残留实体旋转/多选状态。
   const switchDesignerPhase = (nextPhase: DesignerPhase) => {
     groundEditor.setDesignerPhase(nextPhase);
     editor.setSelectedEntityIds([]);
@@ -114,6 +123,7 @@ export const useDesignerLevelEditorViewModel = ({
     editor.setActiveTool("select");
   };
 
+  // 恢复草稿只替换页面内容，不负责清空历史；是否清空由上层场景决定。
   const restoreDraft = (draft: {
     title: string;
     description: string;
@@ -139,6 +149,7 @@ export const useDesignerLevelEditorViewModel = ({
 
   const resumedPortfolioLevelIdRef = useRef<string | null>(null);
   useEffect(() => {
+    // 从作品集继续编辑只在首次进入该 levelId 时执行，避免后续输入被 effect 覆盖。
     if (!resumeLevelId || mode !== "design" || resumedPortfolioLevelIdRef.current === resumeLevelId) {
       return;
     }
@@ -206,6 +217,7 @@ export const useDesignerLevelEditorViewModel = ({
     setGroupRotationAngle: editor.setGroupRotationAngle,
   });
 
+  // 删除当前实体选择；地形点/空洞删除由 keyboard action 中的 ground editor 分支处理。
   const handleDeleteSelected = () => {
     if (editor.selectedEntityIds.length === 0) {
       return;
@@ -251,6 +263,7 @@ export const useDesignerLevelEditorViewModel = ({
   });
 
   useDesignerKeyboardShortcuts(() => {
+    // 快捷键只在非输入控件上生效，防止编辑标题/JSON 时触发画布操作。
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) {
         return;
@@ -303,6 +316,7 @@ export const useDesignerLevelEditorViewModel = ({
     });
   };
 
+  // JSON 校验页应用成功后回到设计页，失败时保留在当前页面显示错误。
   const handleConfirmJsonChange = () => {
     if (tryApplyJsonText()) {
       onExitJsonCheck?.();

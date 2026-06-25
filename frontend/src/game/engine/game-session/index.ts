@@ -78,6 +78,7 @@ export type CreateGameSessionInput = {
   birdPoolConfig?: BirdPoolLaunchConfig;
 };
 
+// 兼容旧调用方式：既可以直接传 LevelData，也可以传带鸟池配置的完整输入。
 const normalizeSessionInput = (input?: CreateGameSessionInput | LevelData): CreateGameSessionInput => {
   if (input && "world" in input) {
     return { levelData: input };
@@ -86,7 +87,12 @@ const normalizeSessionInput = (input?: CreateGameSessionInput | LevelData): Crea
   return input ?? {};
 };
 
-// Game session
+/**
+ * 创建一次可运行的游戏会话。
+ *
+ * 这里负责把关卡数据转换成 Matter.js 世界：地形边界、障碍物、敌人、弹弓鸟、
+ * 战斗结算器和技能引擎都会在同一个闭包中维护状态。
+ */
 export const createGameSession = (input?: CreateGameSessionInput | LevelData): GameSession => {
   const sessionInput = normalizeSessionInput(input);
   const engine = Engine.create();
@@ -121,6 +127,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
       y: scaleY(point.y, levelData),
     }))
   );
+  // 将设计器中的折线路径切成多个静态矩形碰撞体，供 Matter.js 参与碰撞求解。
   const buildBoundaryBodies = (
     pathPoints: Array<{ x: number; y: number }>,
     surfaceRole: "ground" | "ceiling",
@@ -186,6 +193,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
   let activeBirdDefinition: BirdDefinition = DEFAULT_BIRD_DEFINITION;
   let shotBirdBodies: GameBody[] = [bird];
 
+  // 某些技能会生成替身/分裂鸟；这里统一追踪本次发射产生的鸟体。
   const registerShotBird = (body: GameBody) => {
     if (!shotBirdBodies.includes(body)) {
       shotBirdBodies.push(body);
@@ -194,6 +202,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
 
   const getActiveShotBirds = () => shotBirdBodies.filter((body) => !body.destroyed);
 
+  // 技能优先作用在弹弓主鸟；主鸟被移除后使用仍存活的分裂鸟。
   const getSkillBird = () => {
     if (!bird.destroyed) {
       return bird;
@@ -202,6 +211,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     return getActiveShotBirds()[0] ?? null;
   };
 
+  // 将玩家选择的鸟定义写入 Matter body，并同步战斗属性与碰撞过滤。
   const equipBird = (definition: BirdDefinition) => {
     activeBirdDefinition = definition;
     Body.setPosition(bird, { x: SLINGSHOT_X, y: SLINGSHOT_Y });
@@ -247,6 +257,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     y: SLINGSHOT_Y,
   };
 
+  // 已经发射但尚未结算的鸟也要计入消耗，避免 UI 多显示一次可发射次数。
   const getShotsRemaining = () => poolTracker.getShotsRemaining() - (birdLaunched ? 1 : 0);
 
   const getActiveBirdPresentation = () => {
@@ -264,6 +275,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     };
   };
 
+  // 当前一发结束：释放鸟支撑、消费鸟池次数，并决定是否等待下一只鸟选择。
   const finishCurrentShot = () => {
     const entity = bird.plugin.gameEntity;
     const birdType = entity?.kind === "bird" ? entity.birdType : DEFAULT_BIRD_DEFINITION.birdType;
@@ -304,6 +316,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     return false;
   };
 
+  // 多鸟池模式下，玩家需要先选择下一只鸟，才能重新放到弹弓上。
   const selectBird = (birdType: string) => {
     if (!worldPrimed || birdLaunched || !awaitingBirdSelection || !poolTracker.canSelect(birdType)) {
       return false;
@@ -342,6 +355,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     };
   };
 
+  // 移除物体时同步处理支撑关系；否则上方结构可能因为睡眠状态悬空。
   const removeBody = (body: GameBody) => {
     if (body.destroyed) {
       return;
@@ -367,6 +381,7 @@ export const createGameSession = (input?: CreateGameSessionInput | LevelData): G
     }
   };
 
+  // 技能生成的新物体需要进入 Matter 世界；非投射物会纳入本次发射追踪。
   const addBody = (body: GameBody) => {
     if (body.destroyed) {
       return;

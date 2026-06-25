@@ -29,6 +29,11 @@ import type {
   TemplateTab,
 } from "../objects/button-template-types.js";
 
+/**
+ * 总监按钮/面板/图案模板库状态。
+ *
+ * 负责模板 CRUD、图片粘贴/上传、可见区域检测、九宫格切片拖拽和分类过滤。
+ */
 export const useDirectorButtonTemplates = (userId: string) => {
   const [activeTab, setActiveTab] = useState<TemplateTab>("button");
   const [templates, setTemplates] = useState<UiButtonTemplate[]>([]);
@@ -79,6 +84,7 @@ export const useDirectorButtonTemplates = (userId: string) => {
   }, [loadTemplates]);
 
   useEffect(() => {
+    // 每次源图变化后重新识别非背景区域，并把九宫格切片限制在可见图片范围内。
     let cancelled = false;
 
     detectVisibleImageBounds(draft.sourceDataUrl)

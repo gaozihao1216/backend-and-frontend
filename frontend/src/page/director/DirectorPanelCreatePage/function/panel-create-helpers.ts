@@ -27,6 +27,12 @@ import type {
 } from "../objects/panel-create-types.js";
 import { pagePreviewAspectRatio } from "../objects/panel-create-types.js";
 
+/**
+ * 面板创建向导的草稿到 PageConfig 转换函数。
+ *
+ * 这里负责按钮状态、模板装饰、奖励数据和子组件布局的组装，
+ * hook 层只维护草稿状态和交互。
+ */
 export const createDefaultPanelChildDrafts = (): PanelChildDraft[] => createDefaultWeeklyCheckInChildDrafts() as PanelChildDraft[];
 
 
@@ -215,6 +221,7 @@ export const resizePatternFrame = (
   return { x: nextX, y: nextY, width: nextWidth, height: nextHeight };
 };
 
+/** 根据面板草稿生成实际写入 PageConfig 的子按钮组件。 */
 export const createPanelChildren = (
   panelId: string,
   childDrafts: PanelChildDraft[],

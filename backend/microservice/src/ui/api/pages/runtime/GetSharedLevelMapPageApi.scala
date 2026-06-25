@@ -31,7 +31,7 @@ final case class GetSharedLevelMapPageAPIMessage(
         // 步骤 1：确认 userId 为已知用户
         _ <- AccessControl.requireKnownUser(connection, userId).map(_ => ())
         // 步骤 2：读取共享关卡地图页（固定 SharedLevelMapPageId）配置
-        page <- UiPagePublishSupport.requirePublishedPage(connection, SharedLevelMapPageId.value)
+        page <- PlanSteps.fromEither(UiPagePublishSupport.requirePublishedPage(connection, SharedLevelMapPageId.value))
       } yield page
     }
 }

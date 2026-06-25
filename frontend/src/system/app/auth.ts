@@ -155,6 +155,7 @@ const DEPRECATED_SEED_ACCOUNTS = [
 const createTenDigitId = () =>
   `${Math.floor(Math.random() * 1_000_000_0000)}`.padStart(10, "0");
 
+// 本地用户 ID 只服务前端登录体系，后端真实用户 ID 由 apiUserId 单独绑定。
 const createUniqueUserId = (existingIds: Set<string>) => {
   let nextId = createTenDigitId();
 
@@ -165,6 +166,12 @@ const createUniqueUserId = (existingIds: Set<string>) => {
   return nextId;
 };
 
+/**
+ * 创建内置测试账号。
+ *
+ * 当前只保留总监管理员种子账号，其余角色走注册/绑定流程，
+ * 这样可以避免本地旧测试账号与后端用户表长期漂移。
+ */
 const createSeedUsers = (): AuthUserRecord[] => {
   const existingIds = new Set<string>();
   const timestamp = new Date().toISOString();
@@ -193,6 +200,11 @@ const createSeedUsers = (): AuthUserRecord[] => {
   ];
 };
 
+/**
+ * 修复旧版本 localStorage 中可能存在的非法 ID、缺失创建时间和错误 adminLevel。
+ *
+ * 该函数只清理本地认证库，不直接触碰后端用户表。
+ */
 const migrateUsers = (users: AuthUserRecord[]): AuthUserRecord[] => {
   const usedIds = new Set<string>();
 
@@ -257,6 +269,7 @@ const removeDeprecatedSeedUsers = (users: AuthUserRecord[]) =>
     !DEPRECATED_SEED_ACCOUNTS.some((deprecated) => deprecated.role === user.role && deprecated.nickname === user.nickname)
   );
 
+// 合并种子账号时按 apiUserId 或角色+昵称去重，保证测试账号密码可被新版本覆盖。
 const mergeSeedUsers = (users: AuthUserRecord[]) => {
   let merged = removeDeprecatedSeedUsers(users);
 
@@ -287,6 +300,7 @@ const mergeSeedUsers = (users: AuthUserRecord[]) => {
   return merged;
 };
 
+/** 从 localStorage 恢复本地用户库，并兼容旧版存储 key 与结构。 */
 const restoreAuthUsers = () => {
   if (!canUseStorage()) {
     return;
@@ -339,6 +353,7 @@ export const getSeedAccountHint = (role: FrontendRole) => {
   }
 };
 
+/** 从后端用户表同步管理员级别，解决总监权限转移后本地会话仍显示旧权限的问题。 */
 export const syncLocalAdminLevelsFromBackend = async (): Promise<AuthUser | null> => {
   const backendUsers = await getBackendUsers();
   let sessionUser = readPersistedAuthUser();
@@ -379,6 +394,7 @@ export const syncLocalAdminLevelsFromBackend = async (): Promise<AuthUser | null
   return sessionUser;
 };
 
+/** 返回当前后端总监账号提示，用于前端登录页展示可用测试账号。 */
 export const getCurrentDirectorAccountHint = async (): Promise<string> => {
   const backendUsers = await getBackendUsers();
   const currentDirector = backendUsers.find(
@@ -409,6 +425,7 @@ export const getBoundApiUserId = (user: AuthUser): string | null => {
   return apiUserId && apiUserId.length > 0 ? apiUserId : null;
 };
 
+/** 读取当前会话，并回到本地用户库二次确认，避免已删除账号继续登录。 */
 export const readPersistedAuthUser = (): AuthUser | null => {
   if (!canUseStorage()) {
     return null;
@@ -512,6 +529,12 @@ export const attachApiUserIdToAuthUser = (
   return updatedUser;
 };
 
+/**
+ * 确保前端本地账号已经绑定后端用户。
+ *
+ * 如果本地已有 apiUserId，会先向后端确认该用户仍存在且角色一致；
+ * 否则调用 BindBackendUserApi 创建/绑定后端身份。
+ */
 export const ensureBackendBoundAuthUser = async (user: AuthUser): Promise<AuthUser> => {
   const boundApiUserId = getBoundApiUserId(user);
   if (boundApiUserId) {
@@ -537,6 +560,7 @@ export const ensureBackendBoundAuthUser = async (user: AuthUser): Promise<AuthUs
   return updatedUser;
 };
 
+/** 导入本地用户库备份；导入后仍会合并当前版本的种子账号。 */
 export const importAuthDatabase = (raw: string): ValidationResult<{ importedCount: number }> => {
   let payload: unknown;
   try {
@@ -567,6 +591,7 @@ export const importAuthDatabase = (raw: string): ValidationResult<{ importedCoun
   };
 };
 
+/** 本地登录只校验前端用户库；真正调用业务 API 时仍依赖 apiUserId。 */
 export const loginWithLocalAuth = (input: LoginInput): ValidationResult<AuthUser> => {
   const validated = validateLoginInput(input);
   if (!validated.success) {
@@ -598,6 +623,12 @@ export const loginWithLocalAuth = (input: LoginInput): ValidationResult<AuthUser
   };
 };
 
+/**
+ * 注册本地账号。
+ *
+ * 设计师和管理员注册后会立即绑定后端账号；绑定失败时回滚本地账号，
+ * 避免出现“前端能登录但后端没有身份”的半完成状态。
+ */
 export const registerWithLocalAuth = async (input: RegisterInput): Promise<ValidationResult<AuthUser>> => {
   const validated = validateRegisterInput(input);
   if (!validated.success) {

@@ -1,5 +1,11 @@
 import type { LevelData, LevelEnemy, LevelObstacle } from "../../objects/level/level/level-data.js";
 
+/**
+ * 关卡设计器的纯数据编辑函数。
+ *
+ * React hook 只维护状态；实体命中、选择框、复制粘贴、碰撞检测、添加/移动/缩放/旋转
+ * 都集中在这里，保证画布交互和快捷键操作复用同一套 LevelData 变换规则。
+ */
 export type EditorTool = "select" | "rotate" | "add-wood" | "add-stone" | "add-glass" | "add-pig";
 export type EditorClipboardEntity =
   | { kind: "obstacle"; entity: LevelObstacle }
@@ -104,6 +110,7 @@ const getObstacleCorners = (obstacle: Pick<LevelObstacle, "position" | "size" | 
   }));
 };
 
+// 将旋转实体投影到局部坐标轴，用于计算旋转选择框和最小包围框。
 const getProjectedSelectionBounds = (
   entities: EditorEntity[],
   rotation: number,
@@ -216,6 +223,7 @@ export const getEntityById = (levelData: LevelData, entityId: string): EditorEnt
   return null;
 };
 
+/** 返回实体在世界坐标中的轴对齐包围盒；用于选择、碰撞和边界校验。 */
 export const getEntityBounds = (entity: EditorEntity): EditorEntityBounds => {
   if (entity.kind === "obstacle") {
     const corners = getObstacleCorners(entity.entity);
@@ -336,6 +344,7 @@ const getSelectionFrameFromEntities = (
   };
 };
 
+// 多选旋转时，先尝试用候选旋转角求最小投影面积，避免旋转后的长条结构被大框包住。
 const getMinimumAreaSelectionFrameFromEntities = (
   entities: EditorEntity[],
 ): EditorSelectionFrame | null => {
@@ -481,6 +490,7 @@ export const getSelectionFrameFromHandle = (
   };
 };
 
+/** 根据拖拽框找出完全落入框内的障碍物和敌人。 */
 export const getEntitiesInSelectionBox = (
   levelData: LevelData,
   selectionBox: EditorSelectionBox,
@@ -605,6 +615,7 @@ const hasOverlapWithExisting = (
   return [...obstacles, ...enemies].some((entity) => entitiesOverlap(candidate, entity));
 };
 
+/** 校验单个实体是否仍在世界内且不与现有实体重叠。 */
 export const canPlaceEntity = (
   levelData: LevelData,
   candidate: EditorEntity,
@@ -640,6 +651,7 @@ export const canPlaceEntities = (
   return true;
 };
 
+/** 创建画布预览用障碍物，id 固定为 preview，真正落库时再分配唯一 id。 */
 export const createObstacleEntity = (
   material: LevelObstacle["material"],
   x: number,
@@ -733,6 +745,7 @@ export const createPigFromCorners = (
   };
 };
 
+/** 从当前关卡复制实体快照，供复制/剪切/粘贴保存原始尺寸、材质和角度。 */
 export const getEntitySnapshot = (
   levelData: LevelData,
   entityId: string,
@@ -797,6 +810,7 @@ export const getGroupTransformSnapshot = (
   };
 };
 
+/** 所有新增/移动实体都通过这里限制到 world 范围内。 */
 export const clampPositionToWorld = (levelData: LevelData, x: number, y: number) => ({
   x: clamp(x, 0, levelData.world.width),
   y: clamp(y, 0, levelData.world.height),

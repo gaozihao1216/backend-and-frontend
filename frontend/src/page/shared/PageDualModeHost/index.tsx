@@ -46,6 +46,12 @@ const resolveInitialMode = (search: string): PageDisplayMode => {
   return readStoredPageDisplayMode();
 };
 
+/**
+ * 页面双模式宿主。
+ *
+ * 同一个 pageId 可以用真实 React 页面渲染，也可以用后端/本地 PageConfig 动态渲染；
+ * 该组件负责选择配置来源、同步已发布配置，并在 static/dynamic/compare 三种模式之间切换。
+ */
 export const PageDualModeHost = ({
   pageId,
   user,
@@ -60,6 +66,7 @@ export const PageDualModeHost = ({
   onOpenDesignerDesign,
   onOpenDesignerPortfolio,
 }: PageDualModeHostProps) => {
+  // 玩家侧优先读取后端已发布配置；设计师/总监侧读取本地可编辑配置。
   const preferPublishedConfig = user.role === "player" && Boolean(user.apiUserId);
   const pageConfigRevision = useSyncExternalStore(
     subscribePageConfigStore,
@@ -102,6 +109,7 @@ export const PageDualModeHost = ({
   }, [search]);
 
   useEffect(() => {
+    // 当前 pageId 不支持某种渲染模式时，自动降级到可用模式，避免空白页面。
     if (mode === "static" && !staticAvailable && dynamicAvailable) {
       setMode("dynamic");
       return;

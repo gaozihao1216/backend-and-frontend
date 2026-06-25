@@ -1,5 +1,6 @@
 package microservice.player.api.internal.admin
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
@@ -11,6 +12,6 @@ import microservice.player.support.shop.ShopCatalogSupport
 final case class DeactivateShopItemInternalAPIMessage(itemId: String) extends APIMessage[ShopItem] {
   override def plan(connection: Connection): IO[Either[HttpError, ShopItem]] =
     PlanSteps.finish {
-      ShopCatalogSupport.requireDeactivateItem(connection, itemId)
+      EitherT(ShopCatalogSupport.requireDeactivateItem(connection, itemId))
     }
 }

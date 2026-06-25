@@ -39,13 +39,16 @@ const DIRECTOR_CONSOLE_PATHS = [
   DIRECTOR_BUTTON_TEMPLATES_PATH,
 ] as const;
 
+// 总监页面包含固定入口和动态 PageBuilder 页面，统一在这里做前端可见性校验。
 export const isDirectorConsolePath = (pathname: string): boolean =>
   DIRECTOR_CONSOLE_PATHS.includes(pathname as (typeof DIRECTOR_CONSOLE_PATHS)[number])
   || isPageBuilderPath(pathname);
 
+// 普通管理员页面与总监控制台互斥，避免同一个 admin 角色误入两套后台。
 export const isStandardAdminPath = (pathname: string): boolean =>
   STANDARD_ADMIN_PATHS.includes(pathname as (typeof STANDARD_ADMIN_PATHS)[number]);
 
+/** 校验总监控制台访问资格：必须是 admin 角色且 adminLevel 为 director。 */
 export const checkDirectorConsoleAccess = (user: AuthUser): RouteAccessDenial | null => {
   if (user.role !== "admin") {
     return {
@@ -64,6 +67,7 @@ export const checkDirectorConsoleAccess = (user: AuthUser): RouteAccessDenial | 
   return null;
 };
 
+/** 校验普通管理员功能访问资格：必须是 admin 角色且 adminLevel 为 standard。 */
 export const checkStandardAdminAccess = (
   user: AuthUser,
   featureTitle: string,
@@ -95,6 +99,7 @@ export const checkStandardAdminAccess = (
 export const checkStandardAdminProposalsAccess = (user: AuthUser): RouteAccessDenial | null =>
   checkStandardAdminAccess(user, "提案处理");
 
+/** 页面渲染前的统一权限入口；返回 null 表示允许访问。 */
 export const checkRouteAccess = (pathname: string, user: AuthUser): RouteAccessDenial | null => {
   if (isDirectorConsolePath(pathname)) {
     return checkDirectorConsoleAccess(user);

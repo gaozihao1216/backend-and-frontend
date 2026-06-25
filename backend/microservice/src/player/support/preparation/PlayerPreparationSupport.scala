@@ -11,8 +11,13 @@ import microservice.player.objects.wallet.PlayerWallet
 import microservice.player.tables.preparation.PlayerPreparationTable
 import java.sql.Connection
 
-/** 备战页响应组装支持（纯读表 + 映射）。 */
+/** 备战页响应组装支持（纯读表 + 映射）。
+  *
+  * API 层负责鉴权与跨模块读取；本对象只把钱包、鸟目录、技能配置和玩家升级表
+  * 组合成前端需要的 PlayerPreparationResponse，避免 API plan 中出现大段映射代码。
+  */
 private[player] object PlayerPreparationSupport {
+  /** 构建准备页完整响应，并补齐玩家尚未拥有记录的系统鸟默认等级。 */
   def buildResponse(
     connection: Connection,
     userId: String,

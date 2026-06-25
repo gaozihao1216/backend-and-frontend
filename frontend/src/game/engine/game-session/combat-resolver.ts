@@ -34,9 +34,16 @@ export type CombatResolver = {
   handleCollisionStart: (event: IEventCollision<Engine>, nowMs: number) => void;
 };
 
+/**
+ * 创建碰撞伤害结算器。
+ *
+ * Matter.js 只负责物理碰撞，这里把碰撞冲量转换为猪/结构的生命值变化，
+ * 并处理木块碎裂、速度衰减和支撑失效等游戏规则。
+ */
 export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver => {
   const recentPairImpacts = new Map<string, number>();
 
+  // 所有伤害最终都从这里写入 body，保证死亡移除和视觉刷新路径一致。
   const applyDamage = (body: GameBody, amount: number) => {
     const snapshot = getDamageableSnapshot(body);
     const blockEntity = getBlockEntity(body);
@@ -52,9 +59,11 @@ export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver =
     }
   };
 
+  // 同一对物体短时间内可能产生多次 collisionStart，需要用稳定 key 做冷却。
   const getPairKey = (bodyA: GameBody, bodyB: GameBody) =>
     (bodyA.id < bodyB.id ? `${bodyA.id}:${bodyB.id}` : `${bodyB.id}:${bodyA.id}`);
 
+  // 鸟撞碎结构后保留一部分速度，避免“穿透式碎裂”让鸟的动量完全不合理。
   const applyImpulseDampingToBird = (
     birdBody: GameBody,
     normal: MatterVector,
@@ -80,6 +89,7 @@ export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver =
   const shouldUseFractureModel = (targetBody: GameBody, otherBody: GameBody) =>
     targetBody.renderKind === "block" && otherBody.renderKind === "bird";
 
+  // 结构达到断裂条件时进入 cracking 动画期，真正移除交给 game-session 的帧循环。
   const triggerFracture = (
     targetBody: GameBody,
     otherBody: GameBody,
@@ -115,6 +125,7 @@ export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver =
     return true;
   };
 
+  // 结构伤害会综合材料、攻击者类型和鸟类战斗属性。
   const resolveStructureImpact = (
     targetBody: GameBody,
     otherBody: GameBody,
@@ -149,6 +160,7 @@ export const createCombatResolver = (deps: CombatResolverDeps): CombatResolver =
     entity.collisionCooldownUntil = nowMs + 45;
   };
 
+  // 猪的伤害模型更简单，只按碰撞冲量和攻击者倍率结算。
   const resolvePigImpact = (targetBody: GameBody, otherBody: GameBody, impactImpulse: number) => {
     const attackerKind = otherBody.renderKind ?? "block";
     const multiplier = getPigDamageMultiplier(

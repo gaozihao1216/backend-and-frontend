@@ -27,7 +27,7 @@ final case class InvokePlayerUiActionAPIMessage(
         // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player).map(_ => ())
         // 步骤 2：按 apiKey 与 params 执行动态 UI 动作并返回结果
-        payload <- PlayerUiRuntimeSupport.requireAction(connection, userId, apiKey, params)
+        payload <- PlanSteps.fromEither(PlayerUiRuntimeSupport.requireAction(connection, userId, apiKey, params))
       } yield payload
     }
 }

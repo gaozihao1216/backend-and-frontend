@@ -2,6 +2,12 @@ const DB_NAME = "ugc-level-platform-visual-assets";
 const DB_VERSION = 1;
 const STORE_NAME = "assets";
 
+/**
+ * UI 视觉资源本地缓存。
+ *
+ * 大尺寸模板图不适合放 localStorage，因此用 IndexedDB 存 sourceDataUrl，
+ * PageConfig 中只保存 templateId 和裁剪 frame。
+ */
 type VisualAssetRecord = {
   id: string;
   sourceDataUrl: string;
@@ -51,6 +57,7 @@ const runTransaction = async <T>(
 export const getCachedVisualAsset = (assetId: string): string | null =>
   memoryCache.get(assetId) ?? null;
 
+/** 写入内存缓存和 IndexedDB；IndexedDB 不可用时至少保留本轮会话缓存。 */
 export const saveVisualAsset = async (assetId: string, sourceDataUrl: string): Promise<void> => {
   if (!assetId || !sourceDataUrl) {
     return;
@@ -71,6 +78,7 @@ export const saveVisualAsset = async (assetId: string, sourceDataUrl: string): P
   await runTransaction("readwrite", (store) => store.put(record));
 };
 
+/** 先查内存缓存，再查 IndexedDB，避免同一页面重复解码大图。 */
 export const loadVisualAsset = async (assetId: string): Promise<string | null> => {
   if (!assetId) {
     return null;

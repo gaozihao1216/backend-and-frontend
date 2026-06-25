@@ -40,22 +40,26 @@ final case class UpdateStretchVisualTemplateAPIMessage(
         // 校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找现有行并校验 kind
-        existing <- StretchVisualTemplateAccess.requireExistingForKind(connection, templateId, expectedKind)
+        existing <- PlanSteps.fromEither(
+          StretchVisualTemplateAccess.requireExistingForKind(connection, templateId, expectedKind)
+        )
         // 规范化模板字段
         template <- PlanSteps.read(
           StretchVisualTemplateValidation.sanitize(body.template.copy(id = templateId, kind = expectedKind))
         )
         // 校验 kind 一致
-        validated <- StretchVisualTemplateValidation.ensureKind(template, expectedKind)
+        validated <- PlanSteps.fromEither(StretchVisualTemplateValidation.ensureKind(template, expectedKind))
         // 校验字段合法性
-        _ <- StretchVisualTemplateValidation.validate(validated)
+        _ <- PlanSteps.fromEither(StretchVisualTemplateValidation.validate(validated))
         // 更新 StretchVisualTemplateRow
-        result <- StretchVisualTemplateAccess.requireUpdated(
-          connection,
-          StretchVisualTemplateRowMapper.fromStretchVisualTemplate(
-            validated,
-            createdAt = existing.createdAt,
-            updatedAt = Instant.now().toString
+        result <- PlanSteps.fromEither(
+          StretchVisualTemplateAccess.requireUpdated(
+            connection,
+            StretchVisualTemplateRowMapper.fromStretchVisualTemplate(
+              validated,
+              createdAt = existing.createdAt,
+              updatedAt = Instant.now().toString
+            )
           )
         )
       } yield result

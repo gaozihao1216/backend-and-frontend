@@ -5,8 +5,6 @@ import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
 import java.time.{DayOfWeek, LocalDate, ZoneOffset}
-import microservice.infrastructure.api.PlanStep
-import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.checkin.{CheckInSlotReward, WeeklyCheckInProgress}
 import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
@@ -37,10 +35,15 @@ private[player] object PlayerUiRuntimeSupport {
   )
 
   /** 分派 UI data 请求并返回 JSON 载荷。 */
-  def requireData(connection: Connection, userId: String, apiKey: String, params: Map[String, String]): Step[Json] =
+  def requireData(
+    connection: Connection,
+    userId: String,
+    apiKey: String,
+    params: Map[String, String]
+  ): IO[Either[HttpError, Json]] =
     apiKey match {
       case WeeklyCheckInDataKey =>
-        PlanStep.succeed(buildWeeklyCheckInPayload(connection, userId, panelId = None))
+        succeed(buildWeeklyCheckInPayload(connection, userId, panelId = None))
       case LevelProgressDataKey =>
         requireLevelProgressData(connection, userId)
       case WalletDataKey =>
@@ -48,13 +51,18 @@ private[player] object PlayerUiRuntimeSupport {
       case ShopDataKey =>
         requireShopData(connection, userId, params)
       case LegacyCheckInDataKey =>
-        PlanStep.succeed(Json.obj("status" -> Json.fromString(PlayerLegacyCheckInTable.getStatus(connection, userId))))
+        succeed(Json.obj("status" -> Json.fromString(PlayerLegacyCheckInTable.getStatus(connection, userId))))
       case other =>
-        PlanStep.fail(HttpError.notFound("UNKNOWN_UI_DATA_KEY", s"Unknown ui data key: $other"))
+        fail(HttpError.notFound("UNKNOWN_UI_DATA_KEY", s"Unknown ui data key: $other"))
     }
 
   /** 分派 UI action 请求并返回 JSON 结果。 */
-  def requireAction(connection: Connection, userId: String, apiKey: String, params: Map[String, String]): Step[Json] =
+  def requireAction(
+    connection: Connection,
+    userId: String,
+    apiKey: String,
+    params: Map[String, String]
+  ): IO[Either[HttpError, Json]] =
     apiKey match {
       case WeeklyCheckInClaimActionKey =>
         requireWeeklyCheckInClaim(connection, userId, params)
@@ -63,20 +71,20 @@ private[player] object PlayerUiRuntimeSupport {
       case LegacyCheckInClaimActionKey =>
         PlayerLegacyCheckInTable.getStatus(connection, userId) match {
           case "ready" =>
-            PlanStep.succeed(
+            succeed(
               Json.obj(
                 "status" -> Json.fromString(PlayerLegacyCheckInTable.setStatus(connection, userId, "claimed"))
               )
             )
           case status =>
-            PlanStep.fail(HttpError.conflict("CHECK_IN_NOT_READY", s"Cannot claim check-in reward while status is $status"))
+            fail(HttpError.conflict("CHECK_IN_NOT_READY", s"Cannot claim check-in reward while status is $status"))
         }
       case other =>
-        PlanStep.fail(HttpError.notFound("UNKNOWN_UI_ACTION_KEY", s"Unknown ui action key: $other"))
+        fail(HttpError.notFound("UNKNOWN_UI_ACTION_KEY", s"Unknown ui action key: $other"))
     }
 
-  private def requireLevelProgressData(connection: Connection, userId: String): Step[Json] =
-    PlanStep.liftF(IO {
+  private def requireLevelProgressData(connection: Connection, userId: String): IO[Either[HttpError, Json]] =
+    IO {
       val clearedLevels = PlayerLevelProgressTable.listClearedSuffixes(connection, userId)
       val levelStatuses = LevelSuffixes.map { suffix =>
         suffix -> Json.fromString(resolveLevelStatus(clearedLevels, suffix))
@@ -86,33 +94,41 @@ private[player] object PlayerUiRuntimeSupport {
         "levels" -> Json.obj(levelStatuses.toSeq: _*),
         "clearedCount" -> Json.fromInt(clearedLevels.size)
       )
-    })
+    }.map(Right(_))
 
-  private def requireWalletData(connection: Connection, userId: String): Step[Json] =
-    PlanStep.liftF(IO {
+  private def requireWalletData(connection: Connection, userId: String): IO[Either[HttpError, Json]] =
+    IO {
       val wallet = PlayerWalletTable.getOrCreate(connection, userId)
       Json.obj(
         "coins" -> Json.fromInt(wallet.coins),
         "gems" -> Json.fromInt(wallet.gems),
         "fragments" -> Json.fromInt(wallet.fragments)
       )
-    })
+    }.map(Right(_))
 
-  private def requireShopData(connection: Connection, userId: String, params: Map[String, String]): Step[Json] = {
+  private def requireShopData(
+    connection: Connection,
+    userId: String,
+    params: Map[String, String]
+  ): IO[Either[HttpError, Json]] = {
     val catalogIndex = params.get("catalogIndex").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
-    PlanStep.liftF(IO(buildShopPayload(connection, userId, catalogIndex)))
+    IO(buildShopPayload(connection, userId, catalogIndex)).map(Right(_))
   }
 
-  private def requireShopPurchase(connection: Connection, userId: String, params: Map[String, String]): Step[Json] = {
+  private def requireShopPurchase(
+    connection: Connection,
+    userId: String,
+    params: Map[String, String]
+  ): IO[Either[HttpError, Json]] = IO {
     val itemId = params.getOrElse("itemId", "").trim
     val catalogIndex = params.get("catalogIndex").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
 
     if (itemId.isEmpty) {
-      PlanStep.fail(HttpError.badRequest("INVALID_SHOP_ITEM", "itemId is required"))
+      Left(HttpError.badRequest("INVALID_SHOP_ITEM", "itemId is required"))
     } else {
       ShopTable.findItemById(connection, itemId).filter(_.active) match {
         case None =>
-          PlanStep.fail(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: $itemId"))
+          Left(HttpError.notFound("SHOP_ITEM_NOT_FOUND", s"Shop item not found: $itemId"))
         case Some(item) =>
           val wallet = PlayerWalletTable.getOrCreate(connection, userId)
           val hasBalance =
@@ -123,7 +139,7 @@ private[player] object PlayerUiRuntimeSupport {
             }
 
           if (!hasBalance) {
-            PlanStep.fail(HttpError.conflict("INSUFFICIENT_BALANCE", s"Not enough ${item.currency} to buy ${item.name}"))
+            Left(HttpError.conflict("INSUFFICIENT_BALANCE", s"Not enough ${item.currency} to buy ${item.name}"))
           } else {
             val updatedWallet =
               item.currency match {
@@ -134,7 +150,7 @@ private[player] object PlayerUiRuntimeSupport {
 
             PlayerWalletTable.save(connection, userId, updatedWallet)
             ShopTable.recordPurchase(connection, userId, item)
-            PlanStep.succeed(buildShopPayload(connection, userId, catalogIndex))
+            Right(buildShopPayload(connection, userId, catalogIndex))
           }
       }
     }
@@ -172,12 +188,12 @@ private[player] object PlayerUiRuntimeSupport {
     connection: Connection,
     userId: String,
     params: Map[String, String]
-  ): Step[Json] = {
+  ): IO[Either[HttpError, Json]] = IO {
     val panelId = params.getOrElse("panelId", PlayerCheckInDefaults.roleHomeCheckInPanelId)
     val slot = params.get("slot").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
 
     if (panelId.isEmpty || slot < 1 || slot > 7) {
-      PlanStep.fail(HttpError.badRequest("INVALID_CHECK_IN_PARAMS", "panelId and slot (1-7) are required"))
+      Left(HttpError.badRequest("INVALID_CHECK_IN_PARAMS", "panelId and slot (1-7) are required"))
     } else {
       val weekKey = currentWeekKey()
       val progress = currentProgress(connection, userId, weekKey)
@@ -187,7 +203,7 @@ private[player] object PlayerUiRuntimeSupport {
         else -1
 
       if (slot != activeSlot) {
-        PlanStep.fail(HttpError.conflict("CHECK_IN_SLOT_NOT_READY", s"Slot $slot is not claimable right now"))
+        Left(HttpError.conflict("CHECK_IN_SLOT_NOT_READY", s"Slot $slot is not claimable right now"))
       } else {
         val rewards = CheckInPanelRewardTable
           .listByPanelId(connection, panelId)
@@ -214,7 +230,7 @@ private[player] object PlayerUiRuntimeSupport {
           )
         )
 
-        PlanStep.succeed(buildWeeklyCheckInPayload(connection, userId, Some(panelId)))
+        Right(buildWeeklyCheckInPayload(connection, userId, Some(panelId)))
       }
     }
   }
@@ -275,4 +291,10 @@ private[player] object PlayerUiRuntimeSupport {
       clearedLevels.contains(LevelSuffixes(index - 1))
     }
   }
+
+  private def succeed(payload: Json): IO[Either[HttpError, Json]] =
+    IO.pure(Right(payload))
+
+  private def fail(error: HttpError): IO[Either[HttpError, Json]] =
+    IO.pure(Left(error))
 }

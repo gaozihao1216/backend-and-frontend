@@ -40,9 +40,16 @@ type ShotSkillState = {
   visuals: SkillVisualEffect[];
 };
 
+/**
+ * 创建鸟类技能引擎。
+ *
+ * 技能引擎只管理“当前这一发”的技能状态：点击触发次数、冷却、延迟炸弹、
+ * 气球推力、加速状态和临时视觉效果。发射结算后由 clearShotState 重置。
+ */
 export const createSkillEngine = (deps: SkillEngineDeps): SkillEngine => {
   let shotState: ShotSkillState = createEmptyShotState();
 
+  // 每次执行技能前重新取鸟、鸟定义和世界物体，避免闭包引用到已移除的 body。
   const createExecutionContext = () => {
     const bird = deps.getBird();
     const birdDefinition = deps.getBirdDefinition();
@@ -64,6 +71,7 @@ export const createSkillEngine = (deps: SkillEngineDeps): SkillEngine => {
     };
   };
 
+  // 鸟的技能阶段由配置和战斗阶级共同决定。
   const resolveStage = (): BirdSkillStage | null => {
     const birdDefinition = deps.getBirdDefinition();
     if (!birdDefinition) {
@@ -94,6 +102,7 @@ export const createSkillEngine = (deps: SkillEngineDeps): SkillEngine => {
       return false;
     }
 
+    // 一个技能阶段可以包含多个 spec，例如加速、投弹和视觉效果可以组合触发。
     let removeBird = false;
     for (const spec of stage.specs) {
       const result = executeSkillSpec(spec, ctx);
@@ -121,6 +130,7 @@ export const createSkillEngine = (deps: SkillEngineDeps): SkillEngine => {
     return true;
   };
 
+  // 帧循环驱动持续性技能与状态效果，所有过期视觉也在这里清理。
   const tick = (deltaMs: number) => {
     const ctx = createExecutionContext();
     const nowMs = deps.getNowMs();

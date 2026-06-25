@@ -69,6 +69,12 @@ import {
 
 export type DirectorPanelCreateViewModel = ReturnType<typeof useDirectorPanelCreate>;
 
+/**
+ * director 面板创建向导状态。
+ *
+ * 负责多步骤表单、模板选择、签到奖励配置、子按钮拖拽/缩放，
+ * 最终把新 panel 和子组件写入目标 PageConfig。
+ */
 export const useDirectorPanelCreate = ({
   userId,
   pageId,

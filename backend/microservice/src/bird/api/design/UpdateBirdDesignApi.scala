@@ -37,7 +37,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
         // 步骤 2：执行业务步骤
         existing <- requireEditable(connection)
         // 步骤 3：执行业务步骤
-        input <- BirdDesignValidation.validate(
+        input <- EitherT(BirdDesignValidation.validate(
           BirdDesignInput(
             name = body.name,
             summary = body.summary,
@@ -49,7 +49,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
             previewImageUrl = body.previewImageUrl,
             mechanismTags = body.mechanismTags
           )
-        )
+        ))
         // 步骤 4：执行业务步骤
         design <- requireUpdateResult(connection, toUpdatedRow(existing, input))
       } yield design

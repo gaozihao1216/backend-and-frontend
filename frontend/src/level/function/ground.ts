@@ -3,6 +3,12 @@ import type { LevelGround } from "../../objects/level/terrain/level-ground.js";
 import type { LevelTerrain, TerrainVoidSpan } from "../../objects/level/terrain/level-terrain.js";
 import type { Position } from "../../objects/level/terrain/position.js";
 
+/**
+ * 地形编辑与采样的纯函数层。
+ *
+ * 设计器使用控制点编辑地面/天花板/空洞；游戏引擎和渲染层需要采样后的折线。
+ * 本文件负责在这两种表示之间转换，并保证边界点、断点和世界范围约束一致。
+ */
 const DEFAULT_GROUND_OFFSET = 48;
 const MIN_CONTROL_POINT_GAP = 24;
 const MAX_DRAWN_GROUND_POINTS = 24;
@@ -241,6 +247,7 @@ const getTurningAngle = (points: Position[], index: number) => {
   return Math.acos(cosine);
 };
 
+// 手绘地形只保留关键控制点：跨度、折线偏差和转角共同决定哪些点值得保留。
 const getAdaptiveCandidateScore = (
   points: Position[],
   leftIndex: number,
@@ -355,6 +362,7 @@ const normalizeDrawnPoints = (
   );
 };
 
+// 单调三次 Hermite 插值，避免贝塞尔地形在控制点之间产生反向回折。
 const computeMonotoneSlopes = (points: Position[]) => {
   if (points.length <= 1) {
     return points.map(() => 0);
@@ -503,6 +511,7 @@ const buildPerimeterPath = (
   return [...points, clonePoint(end)];
 };
 
+/** 创建默认地面边界，供旧 LevelData 或新建关卡补齐 terrain 字段。 */
 export const createDefaultLineGround = (levelData: Pick<LevelData, "world">): LevelGround => {
   const baseY = levelData.world.height - DEFAULT_GROUND_OFFSET;
   return {
@@ -546,6 +555,7 @@ export const getGroundEditorPoints = (ground: LevelGround) =>
 
 export const getBoundaryEditorPoints = getGroundEditorPoints;
 
+/** 将 line/bezier 控制点采样为渲染和碰撞都能消费的折线路径。 */
 export const sampleGroundPath = (
   ground: LevelGround,
   sampleCount?: number,
@@ -590,6 +600,11 @@ export const sampleGroundPath = (
 
 export const sampleBoundaryPath = sampleGroundPath;
 
+/**
+ * 将包含边界断点的地形拆成多个可碰撞段。
+ *
+ * 断点通常贴近世界顶部/底部，用来让同一条边界形成多段独立地形。
+ */
 export const getBoundaryGroundSegments = (
   levelData: Pick<LevelData, "world">,
   ground: LevelGround | null | undefined,
@@ -662,6 +677,7 @@ export const createDefaultTerrain = (
   };
 };
 
+/** 兼容旧字段 ground：读取时统一返回新的 terrain 结构。 */
 export const getLevelTerrain = (levelData: LevelData): LevelTerrain => createDefaultTerrain(levelData);
 
 export const getTerrainBoundary = (
@@ -736,6 +752,7 @@ export const getGroundSurfaceYAtX = (points: GroundSamplePoint[], x: number) => 
   return points.at(-1)!.y;
 };
 
+// 更新控制点时限制端点贴合世界边界，内部点保持 x 单调并留出最小间距。
 const clampGroundPoint = (
   levelData: LevelData,
   _boundary: TerrainBoundaryKind,
@@ -968,6 +985,7 @@ export const createTerrainBoundaryFromStroke = (
   return nextBoundary ? updateTerrainBoundary(levelData, boundary, nextBoundary) : levelData;
 };
 
+/** 在指定控制点前后插入新点，并返回新选中的点下标。 */
 export const insertGroundPoint = (
   levelData: LevelData,
   anchorIndex: number,

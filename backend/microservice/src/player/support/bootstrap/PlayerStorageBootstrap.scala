@@ -10,8 +10,12 @@ import microservice.player.tables.social.{PlayerFriendTableInitializer, PlayerPr
 import microservice.player.tables.wallet.PlayerWalletTableInitializer
 import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTableInitializer
 
-/** player 模块存储初始化入口（供 system 启动编排调用）。 */
+/** player 模块存储初始化入口（供 system 启动编排调用）。
+  *
+  * 建表顺序在这里集中维护，避免 system 初始化逻辑直接依赖 player 的每张表。
+  */
 private[player] object PlayerStorageBootstrap {
+  /** 初始化玩家域的所有表；备战表需要系统鸟类型来创建默认行约束。 */
   def initialize(connection: Connection, systemBirdTypes: Vector[String]): Unit = {
     PlayerWalletTableInitializer.initialize(connection)
     PlayerWeeklyCheckInTableInitializer.initialize(connection)

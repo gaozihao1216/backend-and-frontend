@@ -2,6 +2,12 @@ import type { GameBody, GameSnapshot } from "../core/types.js";
 import type { StatusEffectInstance } from "../skills/status-effects.js";
 import { getGroundSurfaceYAtX } from "../../../level/function/ground.js";
 
+/**
+ * Canvas 游戏画面渲染层。
+ *
+ * Matter.js 只给出物理 body 和关卡快照；本文件负责把地形材质、结构血量、
+ * 弹弓、鸟、猪、技能特效和 HUD 绘制到 2D canvas。
+ */
 const GROUND_STRIPE_WIDTH = 8;
 const GROUND_STRIPE_HEIGHT = 8;
 const GROUND_SLOPE_SAMPLE_RADIUS = 12;
@@ -171,6 +177,7 @@ const evaluateGroundMaterialField = (
   alphaLocal: number,
   config: GroundMaterialRenderConfig = groundMaterialRenderConfig,
 ) => {
+  // 深度、坡度和噪声共同决定草/土/岩石分布，陡坡会更偏向岩石。
   const cliffFactor = smoothstep(config.cliffStart, config.cliffEnd, slopeAbs);
   const slopeFactor =
     getSlopeSignal(slopeAbs, config)
@@ -193,6 +200,7 @@ const evaluateGroundMaterialField = (
   };
 };
 
+// 沿世界矩形边界计算一维坐标，用于闭合天花板/地面与屏幕边缘之间的区域。
 const getPerimeterCoordinate = (snapshot: GameSnapshot, point: { x: number; y: number }) => {
   if (Math.abs(point.y) <= 1e-6) {
     return point.x;
@@ -359,6 +367,7 @@ const smoothBoundaryPoints = (
   return smoothedPoints;
 };
 
+// 根据坡度和深度采样材质边界，让地表从草逐渐过渡到土和岩石。
 const sampleMaterialBoundaryPoints = (
   groundPoints: Array<{ x: number; y: number }>,
   startX: number,
@@ -527,6 +536,7 @@ const drawMaterialBoundaryLine = (
   ctx.stroke();
 };
 
+/** 绘制地面主体：先填充材质带，再描绘表层边缘线。 */
 const drawGroundPath = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) => {
   for (const groundPath of snapshot.groundPaths) {
     const [firstPoint, ...restPoints] = groundPath.points;
@@ -615,6 +625,7 @@ const drawGroundPath = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) =
   }
 };
 
+/** 绘制天花板边界，逻辑与地面类似但闭合方向相反。 */
 const drawCeilingPath = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) => {
   for (const ceilingPath of snapshot.ceilingPaths) {
     const [firstPoint, ...restPoints] = ceilingPath.points;
@@ -708,6 +719,7 @@ const drawSlingshot = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot) =>
   ctx.restore();
 };
 
+/** 根据 GameBody 的 renderKind 绘制鸟、猪、方块和地形碰撞体。 */
 const drawBody = (ctx: CanvasRenderingContext2D, body: GameBody) => {
   ctx.save();
   ctx.translate(body.position.x, body.position.y);
@@ -890,6 +902,7 @@ const drawSkillVisuals = (ctx: CanvasRenderingContext2D, snapshot: GameSnapshot)
   }
 };
 
+/** 最终渲染入口：清屏后按背景、地形、物体、特效、HUD 的顺序绘制。 */
 export const drawScene = (
   ctx: CanvasRenderingContext2D,
   snapshot: GameSnapshot,

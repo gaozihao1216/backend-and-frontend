@@ -33,9 +33,9 @@ final case class DeletePageComponentAPIMessage(
         // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 步骤 2：确认页面与目标组件均存在
-        _ <- UiPageComponentAccess.requirePageWithComponent(connection, pageId, componentId)
+        _ <- PlanSteps.fromEither(UiPageComponentAccess.requirePageWithComponent(connection, pageId, componentId))
         // 步骤 3：删除组件并返回更新后的 PageConfig
-        page <- UiPageComponentAccess.requireDeleteComponent(connection, pageId, componentId)
+        page <- PlanSteps.fromEither(UiPageComponentAccess.requireDeleteComponent(connection, pageId, componentId))
       } yield page
     }
 }

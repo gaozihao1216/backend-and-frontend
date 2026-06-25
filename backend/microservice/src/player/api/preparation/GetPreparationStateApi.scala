@@ -44,6 +44,7 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
       } yield PlayerPreparationJson.toJson(response)
     }
 
+  /** 合并系统鸟与已发布玩家鸟，形成准备页可展示的完整鸟目录。 */
   private def requireCatalog(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Vector[BirdCatalogEntry]] =
     for {
       system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
@@ -53,6 +54,7 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
       published.map(PreparationCatalogMapping.toPublishedSnapshot)
     )
 
+  /** 读取鸟技能配置，并转换成准备页响应中使用的轻量视图。 */
   private def requireSkillConfigMap(
     connection: Connection
   ): microservice.infrastructure.api.PlanStep.Step[Map[String, BirdSkillConfigView]] =

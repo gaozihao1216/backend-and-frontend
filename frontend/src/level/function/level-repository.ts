@@ -3,6 +3,12 @@ import type { Level } from "../../objects/level/level/level.js";
 import type { LevelData } from "../../objects/level/level/level-data.js";
 import type { LevelTag } from "../../objects/system/system-objects.js";
 
+/**
+ * 前端关卡来源组装函数。
+ *
+ * 当前用于把内置关卡、已发布关卡、审核投稿和本地草稿统一包装成 LevelSource，
+ * 方便预览页面用同一套展示逻辑读取关卡。
+ */
 export type LevelSourceKind = "builtin" | "published" | "submission" | "draft";
 
 export type LevelSource = {

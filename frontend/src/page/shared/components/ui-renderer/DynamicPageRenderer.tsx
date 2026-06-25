@@ -5,6 +5,12 @@ import { DynamicComponentRenderer } from "./DynamicComponentRenderer.js";
 import type { DynamicPageRendererProps } from "./ui-renderer-types.js";
 import { createComponentMap, getControlledPanelIds, getRootComponents } from "./ui-renderer-utils.js";
 
+/**
+ * PageConfig 组件树渲染入口。
+ *
+ * 这里会先把扁平 components 建成索引，再找出根节点递归渲染；
+ * 同时维护面板展开状态和 UI runtime 数据，供按钮、面板、组件联动使用。
+ */
 export const DynamicPageRenderer = ({
   page,
   previewUser,
@@ -28,6 +34,7 @@ export const DynamicPageRenderer = ({
   );
 
   useEffect(() => {
+    // 某些数据只有面板展开后才需要刷新，避免页面初次渲染就请求所有 runtime 数据。
     const refreshKeys = collectPanelOpenRefreshKeys(page, openPanelIds);
     if (refreshKeys.length === 0) {
       return;

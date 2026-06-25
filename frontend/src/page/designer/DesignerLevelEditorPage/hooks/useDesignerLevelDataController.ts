@@ -11,6 +11,12 @@ type UseDesignerLevelDataControllerParams = {
   onLevelDataReplaced: () => void;
 };
 
+/**
+ * 关卡数据控制器。
+ *
+ * 负责维护 levelData、JSON 文本、JSON 错误、undo/redo 历史。
+ * 所有会改变关卡结构的操作都应通过 applyLevelDataUpdate 进入，保证画布和 JSON 面板同步。
+ */
 export const useDesignerLevelDataController = ({
   initialLevelData,
   onLevelDataReplaced,
@@ -26,6 +32,7 @@ export const useDesignerLevelDataController = ({
     setRedoHistory([]);
   };
 
+  // 直接替换完整关卡数据，常用于恢复备份、撤销/重做、从 JSON 应用修改。
   const setLevelDataAndSyncJson = (
     nextLevelData: LevelData,
   ) => {
@@ -78,6 +85,7 @@ export const useDesignerLevelDataController = ({
     });
   };
 
+  // 将 JSON 面板的文本应用到关卡数据；解析失败只更新错误，不破坏当前画布。
   const tryApplyJsonText = (): boolean => {
     try {
       const parsedLevelData = JSON.parse(jsonText) as LevelData;

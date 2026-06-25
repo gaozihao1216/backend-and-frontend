@@ -32,7 +32,7 @@ final case class GetButtonTemplateAPIMessage(
         // 校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 查找并转为 ButtonTemplate
-        template <- ButtonTemplateAccess.requireTemplate(connection, templateId)
+        template <- PlanSteps.fromEither(ButtonTemplateAccess.requireTemplate(connection, templateId))
       } yield template
     }
 }

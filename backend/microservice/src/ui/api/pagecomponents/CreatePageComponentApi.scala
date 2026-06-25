@@ -34,9 +34,9 @@ final case class CreatePageComponentAPIMessage(
         // 步骤 1：校验总监权限
         _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
         // 步骤 2：确认页面存在且 component.id 不重复
-        _ <- UiPageComponentAccess.requirePageForNewComponent(connection, pageId, body.component.id)
+        _ <- PlanSteps.fromEither(UiPageComponentAccess.requirePageForNewComponent(connection, pageId, body.component.id))
         // 步骤 3：追加组件并返回更新后的 PageConfig
-        page <- UiPageComponentAccess.requireAddComponent(connection, pageId, body.component)
+        page <- PlanSteps.fromEither(UiPageComponentAccess.requireAddComponent(connection, pageId, body.component))
       } yield page
     }
 }
