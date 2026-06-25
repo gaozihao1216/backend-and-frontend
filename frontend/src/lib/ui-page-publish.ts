@@ -1,6 +1,6 @@
-import { getPlayerUiPage } from "../api/ui/pages/GetPlayerUiPageApi.js";
-import { publishUiPage } from "../api/ui/pages/PublishUiPageApi.js";
-import { rollbackUiPage } from "../api/ui/pages/RollbackUiPageApi.js";
+import { getPlayerUiPage } from "../api/ui/pages/runtime/GetPlayerUiPageApi.js";
+import { publishUiPage } from "../api/ui/pages/publishing/PublishUiPageApi.js";
+import { rollbackUiPage } from "../api/ui/pages/publishing/RollbackUiPageApi.js";
 import type { PageConfig } from "../objects/ui-customization/ui-customization-objects.js";
 import {
   getPublishedPageConfigRevision,

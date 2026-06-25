@@ -3,7 +3,7 @@ import { addPlayerFriend } from "../../api/player/social/AddFriendApi.js";
 import { listPlayerFriends } from "../../api/player/social/ListFriendsApi.js";
 import { listPlayerMessages } from "../../api/player/social/ListMessagesApi.js";
 import { sendPlayerMessage } from "../../api/player/social/SendMessageApi.js";
-import type { PlayerFriend, PlayerPrivateMessage } from "../../api/player/social/PlayerSocialSchemas.js";
+import type { PlayerFriend, PlayerPrivateMessage } from "../../objects/player/social/player-social.js";
 
 export const usePlayerSocial = (userId: string) => {
   const [friends, setFriends] = useState<PlayerFriend[]>([]);

@@ -3,7 +3,7 @@ import { ascendPlayerBird } from "../../api/player/preparation/AscendPreparation
 import { getPlayerPreparation } from "../../api/player/preparation/GetPreparationStateApi.js";
 import { upgradePlayerBird } from "../../api/player/preparation/UpgradePreparationBirdApi.js";
 import { upgradePlayerSlingshot } from "../../api/player/preparation/UpgradePreparationSlingshotApi.js";
-import type { BirdUpgradeState, PlayerPreparationState } from "../../api/player/preparation/PlayerPreparationSchemas.js";
+import type { BirdUpgradeState, PlayerPreparationState } from "../../objects/player/preparation/player-preparation.js";
 import { readSelectedBirdType, writeSelectedBirdType } from "../../lib/player-bird-selection.js";
 
 export const usePlayerPreparation = (userId: string) => {

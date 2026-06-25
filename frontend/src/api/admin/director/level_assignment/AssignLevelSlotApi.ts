@@ -1,7 +1,7 @@
 import {
   AssignLevelSlotRequestBodySchema,
   type AssignLevelSlotRequestBody,
-} from "./body/AssignLevelSlotBody.js";
+} from "../../../../objects/admin/director/level_assignment/request/AssignLevelSlotRequest.js";
 import {
   LevelSlotAssignmentDetailSchema,
   type LevelSlotAssignmentDetail,

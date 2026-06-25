@@ -8,7 +8,7 @@ import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.api.internal.admin.UnassignSlotInternalAPIMessage
+import microservice.level.api.internal.admin.assignment.UnassignSlotInternalAPIMessage
 import microservice.system.objects.enums.AdminLevel
 
 /** DELETE /admin/director/level-assignments/:levelSuffix — 解除槽位关卡分配。 */

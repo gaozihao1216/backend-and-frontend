@@ -1,4 +1,4 @@
-import { FriendListSchema, type PlayerFriend } from "./PlayerSocialSchemas.js";
+import { FriendListSchema, type PlayerFriend } from "../../../objects/player/social/player-social.js";
 import { APIWithTokenMessage } from "../../../system/api/APIWithTokenMessage.js";
 import { sendAPI } from "../../../system/api/sendAPI.js";
 

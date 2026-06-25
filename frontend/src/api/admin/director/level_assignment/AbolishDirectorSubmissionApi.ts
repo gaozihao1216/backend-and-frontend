@@ -1,7 +1,7 @@
 import {
   AbolishDirectorSubmissionRequestBodySchema,
   type AbolishDirectorSubmissionRequestBody,
-} from "./body/AbolishDirectorSubmissionBody.js";
+} from "../../../../objects/admin/director/level_assignment/request/AbolishDirectorSubmissionRequest.js";
 import { SubmissionWithLevelSchema, type SubmissionWithLevel } from "../../../../objects/level/submission/submission-with-level.js";
 import { request } from "../../../../system/api/legacyRequest.js";
 

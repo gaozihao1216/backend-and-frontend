@@ -12,11 +12,7 @@ const frontendApi = path.join(projectRoot, "frontend/src/api");
 /** 后端 *Api.scala 相对 src 的路径 → 前端 *Api.ts 相对 api/ 的路径（默认去掉 api/ 段）。 */
 const frontendPathOverrides: Record<string, string> = {};
 
-const frontendOnlyHelpers = new Set([
-  "player/social/PlayerSocialSchemas.ts",
-  "player/preparation/PlayerPreparationSchemas.ts",
-  "ui/stretchtemplates/stretchTemplatePaths.ts",
-]);
+const frontendOnlyHelpers = new Set<string>();
 
 const defaultFrontendRel = (backendRel: string): string =>
   backendRel
@@ -26,47 +22,14 @@ const defaultFrontendRel = (backendRel: string): string =>
 const expectedFrontendRel = (backendRel: string): string =>
   frontendPathOverrides[backendRel] ?? defaultFrontendRel(backendRel);
 
-const backendRequestPathOverrides: Record<string, string> = {
-  "admin/objects/submission/request/ReviewSubmissionRequest.scala": "admin/submissions/body/ReviewSubmissionBody.ts",
-  "bird/objects/submission/request/ReviewBirdSubmissionRequest.scala": "bird/review/body/ReviewBirdSubmissionBody.ts",
-  "level/objects/player/request/CreateLevelCommentRequest.scala": "level/player/action/body/CreateCommentBody.ts",
-};
-
-const requestFileToFrontendBodyFile = (file: string): string =>
-  file.replace(/Request\.scala$/, "Body.ts");
-
-/** 后端 <module>/objects/<area>/request/XxxRequest.scala → 前端 <module>/<area>/body/XxxBody.ts */
-const expectedFrontendBodyRel = (backendRel: string): string => {
-  const override = backendRequestPathOverrides[backendRel];
-  if (override) {
-    return override;
-  }
-
-  const levelPlayer = backendRel.match(/^level\/objects\/player\/request\/(.+Request\.scala)$/);
-  if (levelPlayer) {
-    return `level/player/action/body/${requestFileToFrontendBodyFile(levelPlayer[1]!)}`;
-  }
-
-  const uiMappings: Array<[RegExp, string]> = [
-    [/^ui\/objects\/button_template\/request\/(.+Request\.scala)$/, "ui/buttontemplates/body"],
-    [/^ui\/objects\/component\/request\/(.+Request\.scala)$/, "ui/pagecomponents/body"],
-    [/^ui\/objects\/page\/request\/(.+Request\.scala)$/, "ui/pages/body"],
-    [/^ui\/objects\/stretch_template\/request\/(.+Request\.scala)$/, "ui/stretchtemplates/body"],
-    [/^ui\/objects\/panelworkflows\/request\/(.+Request\.scala)$/, "ui/panelworkflows/body"],
-  ];
-  for (const [pattern, frontendDir] of uiMappings) {
-    const match = backendRel.match(pattern);
-    if (match) {
-      return `${frontendDir}/${requestFileToFrontendBodyFile(match[1]!)}`;
-    }
-  }
-
+/** 后端 <module>/objects/<area>/request/XxxRequest.scala → 前端 objects/<module>/<area>/request/XxxRequest.ts */
+const expectedFrontendRequestRel = (backendRel: string): string => {
   const match = backendRel.match(/^([^/]+)\/objects\/(.+)\/request\/([^/]+Request\.scala)$/);
   if (match) {
     const [, module, areaPath, file] = match;
-    return `${module}/${areaPath}/body/${requestFileToFrontendBodyFile(file!)}`;
+    return `objects/${module}/${areaPath}/request/${file!.replace(/\.scala$/, ".ts")}`;
   }
-  return backendRel.replace(/Request\.scala$/, "Body.ts");
+  return `objects/${backendRel.replace(/\.scala$/, ".ts")}`;
 };
 
 const collectBackendApiFiles = async (directory: string, prefix = ""): Promise<string[]> => {
@@ -82,7 +45,6 @@ const collectBackendApiFiles = async (directory: string, prefix = ""): Promise<s
         entry.isFile()
         && entry.name.endsWith("Api.scala")
         && !entry.name.endsWith("Request.scala")
-        && !rel.includes("/api/internal/")
       ) {
         return [rel];
       }
@@ -191,24 +153,45 @@ const collectFrontendBodyFiles = async (directory: string, prefix = ""): Promise
   return files.flat();
 };
 
-test("frontend body files mirror backend request objects layout", async () => {
-  const backendBodies = await collectBackendRequestFiles(backendSrc);
-  const frontendBodies = new Set(await collectFrontendBodyFiles(frontendApi));
+const collectFrontendObjectRequestFiles = async (directory: string, prefix = "objects"): Promise<string[]> => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const rel = `${prefix}/${entry.name}`;
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        return collectFrontendObjectRequestFiles(full, rel);
+      }
+      if (entry.isFile() && entry.name.endsWith("Request.ts") && rel.includes("/request/")) {
+        return [rel];
+      }
+      return [];
+    }),
+  );
+  return files.flat();
+};
 
-  assert.ok(backendBodies.length > 0, "expected backend Request.scala files");
-  assert.ok(frontendBodies.size > 0, "expected frontend Body.ts files");
+test("frontend request object files mirror backend request objects layout", async () => {
+  const backendRequests = await collectBackendRequestFiles(backendSrc);
+  const frontendRequests = new Set([
+    ...await collectFrontendBodyFiles(frontendApi),
+    ...await collectFrontendObjectRequestFiles(path.join(projectRoot, "frontend/src/objects")),
+  ]);
+
+  assert.ok(backendRequests.length > 0, "expected backend Request.scala files");
+  assert.ok(frontendRequests.size > 0, "expected frontend request schema files");
 
   const missingOnFrontend: string[] = [];
-  for (const backendRel of backendBodies) {
-    const frontendRel = expectedFrontendBodyRel(backendRel);
-    if (!frontendBodies.has(frontendRel)) {
+  for (const backendRel of backendRequests) {
+    const frontendRel = expectedFrontendRequestRel(backendRel);
+    if (!frontendRequests.has(frontendRel)) {
       missingOnFrontend.push(`${backendRel} → ${frontendRel}`);
     }
   }
 
   const extraOnFrontend: string[] = [];
-  for (const frontendRel of frontendBodies) {
-    const hasBackend = backendBodies.some((backendRel) => expectedFrontendBodyRel(backendRel) === frontendRel);
+  for (const frontendRel of frontendRequests) {
+    const hasBackend = backendRequests.some((backendRel) => expectedFrontendRequestRel(backendRel) === frontendRel);
     if (!hasBackend) {
       extraOnFrontend.push(frontendRel);
     }
@@ -217,12 +200,12 @@ test("frontend body files mirror backend request objects layout", async () => {
   assert.deepEqual(
     missingOnFrontend,
     [],
-    `Backend body files missing matching frontend files:\n${missingOnFrontend.join("\n")}`,
+    `Backend request files missing matching frontend files:\n${missingOnFrontend.join("\n")}`,
   );
   assert.deepEqual(
     extraOnFrontend,
     [],
-    `Frontend Body.ts files without backend counterpart:\n${extraOnFrontend.join("\n")}`,
+    `Frontend request schema files without backend counterpart:\n${extraOnFrontend.join("\n")}`,
   );
 });
 

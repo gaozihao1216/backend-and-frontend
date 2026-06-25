@@ -9,7 +9,8 @@ import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.api.internal.admin.{AssignSlotInternalAPIMessage, GetSubmissionWithLevelInternalAPIMessage}
+import microservice.level.api.internal.admin.assignment.AssignSlotInternalAPIMessage
+import microservice.level.api.internal.admin.submissions.GetSubmissionWithLevelInternalAPIMessage
 import microservice.system.objects.enums.AdminLevel
 import microservice.admin.objects.director.level_assignment.request.AssignLevelSlotRequest
 

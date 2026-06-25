@@ -16,81 +16,81 @@ import type { CreateLevelInput } from "../level/level/create-level-input.js";
 import {
   CreateLevelRequestBodySchema as CreateLevelRequestBodyInputSchema,
   type CreateLevelRequestBody as CreateLevelRequestBodyObject,
-} from "../../api/level/design/body/CreateLevelBody.js";
+} from "../level/design/request/CreateLevelRequest.js";
 import {
   SubmitLevelRequestBodySchema as SubmitLevelRequestBodyInputSchema,
-} from "../../api/level/design/body/SubmitLevelBody.js";
+} from "../level/design/request/SubmitLevelRequest.js";
 import {
   RateLevelRequestBodySchema as RateLevelRequestBodyInputSchema,
   type RateLevelRequestBody as RateLevelRequestBodyObject,
-} from "../../api/level/player/action/body/RateLevelBody.js";
+} from "../level/player/request/RateLevelRequest.js";
 import {
   CreateCommentRequestBodySchema as CreateCommentRequestBodyInputSchema,
   type CreateCommentRequestBody as CreateCommentRequestBodyObject,
-} from "../../api/level/player/action/body/CreateCommentBody.js";
+} from "../level/player/request/CreateLevelCommentRequest.js";
 import {
   ReviewSubmissionRequestBodySchema as ReviewSubmissionRequestBodyInputSchema,
   type ReviewSubmissionRequestBody as ReviewSubmissionRequestBodyObject,
-} from "../../api/admin/submissions/body/ReviewSubmissionBody.js";
+} from "../admin/submission/request/ReviewSubmissionRequest.js";
 import {
   CreateBirdDesignRequestBodySchema as CreateBirdDesignRequestBodyInputSchema,
   type CreateBirdDesignRequestBody as CreateBirdDesignRequestBodyObject,
-} from "../../api/bird/design/body/CreateBirdDesignBody.js";
+} from "../bird/design/request/CreateBirdDesignRequest.js";
 import {
   UpdateBirdDesignRequestBodySchema as UpdateBirdDesignRequestBodyInputSchema,
   type UpdateBirdDesignRequestBody as UpdateBirdDesignRequestBodyObject,
-} from "../../api/bird/design/body/UpdateBirdDesignBody.js";
+} from "../bird/design/request/UpdateBirdDesignRequest.js";
 import {
   ReviewBirdSubmissionRequestBodySchema as ReviewBirdSubmissionRequestBodyInputSchema,
   type ReviewBirdSubmissionRequestBody as ReviewBirdSubmissionRequestBodyObject,
-} from "../../api/bird/review/body/ReviewBirdSubmissionBody.js";
+} from "../bird/submission/request/ReviewBirdSubmissionRequest.js";
 import {
   TransferDirectorPermissionRequestBodySchema as TransferDirectorPermissionRequestBodyInputSchema,
   type TransferDirectorPermissionRequestBody as TransferDirectorPermissionRequestBodyObject,
-} from "../../api/admin/director/permissions/body/TransferDirectorPermissionBody.js";
+} from "../admin/director/permissions/request/TransferDirectorPermissionRequest.js";
 import {
   CreateUiPageRequestBodySchema as CreateUiPageRequestBodyInputSchema,
   type CreateUiPageRequestBody as CreateUiPageRequestBodyObject,
-} from "../../api/ui/pages/body/CreateUiPageBody.js";
+} from "../ui/page/request/CreateUiPageRequest.js";
 import {
   UpdateUiPageRequestBodySchema as UpdateUiPageRequestBodyInputSchema,
   type UpdateUiPageRequestBody as UpdateUiPageRequestBodyObject,
-} from "../../api/ui/pages/body/UpdateUiPageBody.js";
+} from "../ui/page/request/UpdateUiPageRequest.js";
 import {
   CreatePageComponentRequestBodySchema as CreatePageComponentRequestBodyInputSchema,
   type CreatePageComponentRequestBody as CreatePageComponentRequestBodyObject,
-} from "../../api/ui/pagecomponents/body/CreatePageComponentBody.js";
+} from "../ui/component/request/CreatePageComponentRequest.js";
 import {
   UpdatePageComponentRequestBodySchema as UpdatePageComponentRequestBodyInputSchema,
   type UpdatePageComponentRequestBody as UpdatePageComponentRequestBodyObject,
-} from "../../api/ui/pagecomponents/body/UpdatePageComponentBody.js";
+} from "../ui/component/request/UpdatePageComponentRequest.js";
 import {
   CreateButtonTemplateRequestBodySchema as CreateButtonTemplateRequestBodyInputSchema,
   type CreateButtonTemplateRequestBody as CreateButtonTemplateRequestBodyObject,
-} from "../../api/ui/buttontemplates/body/CreateButtonTemplateBody.js";
+} from "../ui/button_template/request/CreateButtonTemplateRequest.js";
 import {
   UpdateButtonTemplateRequestBodySchema as UpdateButtonTemplateRequestBodyInputSchema,
   type UpdateButtonTemplateRequestBody as UpdateButtonTemplateRequestBodyObject,
-} from "../../api/ui/buttontemplates/body/UpdateButtonTemplateBody.js";
+} from "../ui/button_template/request/UpdateButtonTemplateRequest.js";
 import {
   CreateStretchVisualTemplateRequestBodySchema as CreateStretchVisualTemplateRequestBodyInputSchema,
   type CreateStretchVisualTemplateRequestBody as CreateStretchVisualTemplateRequestBodyObject,
-} from "../../api/ui/stretchtemplates/body/CreateStretchVisualTemplateBody.js";
+} from "../ui/stretch_template/request/CreateStretchVisualTemplateRequest.js";
 import {
   UpdateStretchVisualTemplateRequestBodySchema as UpdateStretchVisualTemplateRequestBodyInputSchema,
   type UpdateStretchVisualTemplateRequestBody as UpdateStretchVisualTemplateRequestBodyObject,
-} from "../../api/ui/stretchtemplates/body/UpdateStretchVisualTemplateBody.js";
+} from "../ui/stretch_template/request/UpdateStretchVisualTemplateRequest.js";
 import { BackendUserSchema, type BackendUser } from "../auth/backend-user.js";
 import { DirectorPermissionSummarySchema, type DirectorPermissionSummary as DirectorPermissionSummaryObject } from "../admin/director/permissions/director-permission-summary.js";
 import { DirectorTransferResultSchema, type DirectorTransferResult as DirectorTransferResultObject } from "../admin/director/permissions/director-transfer-result.js";
 import {
   AssignLevelSlotRequestBodySchema as AssignLevelSlotRequestBodyInputSchema,
   type AssignLevelSlotRequestBody as AssignLevelSlotRequestBodyObject,
-} from "../../api/admin/director/level_assignment/body/AssignLevelSlotBody.js";
+} from "../admin/director/level_assignment/request/AssignLevelSlotRequest.js";
 import {
   AbolishDirectorSubmissionRequestBodySchema as AbolishDirectorSubmissionRequestBodyInputSchema,
   type AbolishDirectorSubmissionRequestBody as AbolishDirectorSubmissionRequestBodyObject,
-} from "../../api/admin/director/level_assignment/body/AbolishDirectorSubmissionBody.js";
+} from "../admin/director/level_assignment/request/AbolishDirectorSubmissionRequest.js";
 import {
   LevelSlotAssignmentDetailSchema,
   LevelSlotAssignmentSchema,
@@ -114,11 +114,11 @@ import {
 import {
   CreateShopItemRequestBodySchema as CreateShopItemRequestBodyInputSchema,
   type CreateShopItemRequestBody as CreateShopItemRequestBodyObject,
-} from "../../api/admin/shop/body/CreateShopItemBody.js";
+} from "../admin/shop/request/CreateShopItemRequest.js";
 import {
   UpdateShopItemRequestBodySchema as UpdateShopItemRequestBodyInputSchema,
   type UpdateShopItemRequestBody as UpdateShopItemRequestBodyObject,
-} from "../../api/admin/shop/body/UpdateShopItemBody.js";
+} from "../admin/shop/request/UpdateShopItemRequest.js";
 import {
   BirdDesignSchema,
   BirdDesignInputSchema,
@@ -436,4 +436,3 @@ export const UpdateStretchVisualTemplateResponseDataSchema = StretchVisualTempla
 
 export const DeleteStretchVisualTemplateRequestParamsSchema = GetButtonTemplateRequestParamsSchema;
 export const DeleteStretchVisualTemplateResponseDataSchema = StretchVisualTemplateSchema;
-

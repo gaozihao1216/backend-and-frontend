@@ -1,4 +1,4 @@
-import { PreparationStateSchema, type PlayerPreparationState } from "./PlayerPreparationSchemas.js";
+import { PreparationStateSchema, type PlayerPreparationState } from "../../../objects/player/preparation/player-preparation.js";
 import { APIWithTokenMessage } from "../../../system/api/APIWithTokenMessage.js";
 import { sendAPI } from "../../../system/api/sendAPI.js";
 

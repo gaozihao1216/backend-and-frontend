@@ -7,7 +7,7 @@ import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.support.AccessControl
-import microservice.level.api.internal.admin.DeleteCommentInternalAPIMessage
+import microservice.level.api.internal.admin.comments.DeleteCommentInternalAPIMessage
 import microservice.system.objects.enums.AdminLevel
 
 /** 按 ID 删除单条关卡评论 APIMessage。 */

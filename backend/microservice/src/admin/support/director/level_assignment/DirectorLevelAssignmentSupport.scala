@@ -12,10 +12,10 @@ import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.api.PlanSteps
 import microservice.infrastructure.http.HttpError
-import microservice.level.api.internal.admin.{
+import microservice.level.api.internal.admin.assignment.ListSlotAssignmentsInternalAPIMessage
+import microservice.level.api.internal.admin.submissions.{
   GetSubmissionWithLevelInternalAPIMessage,
-  ListApprovedSubmissionsWithLevelInternalAPIMessage,
-  ListSlotAssignmentsInternalAPIMessage
+  ListApprovedSubmissionsWithLevelInternalAPIMessage
 }
 
 /** 总监关卡槽位分配辅助逻辑（admin 模块内编排）。 */

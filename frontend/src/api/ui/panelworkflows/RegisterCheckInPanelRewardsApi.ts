@@ -1,9 +1,9 @@
-import { RegisterCheckInPanelRewardsBodySchema } from "./body/RegisterCheckInPanelRewardsBody.js";
+import { RegisterCheckInPanelRewardsBodySchema } from "../../../objects/ui/panelworkflows/request/RegisterCheckInPanelRewardsRequest.js";
 import { PlayerCurrencyRewardSchema } from "../../../objects/ui-customization/ui-customization-objects.js";
 import { request } from "../../../system/api/legacyRequest.js";
 import { z } from "zod";
 
-export { RegisterCheckInPanelRewardsBodySchema } from "./body/RegisterCheckInPanelRewardsBody.js";
+export { RegisterCheckInPanelRewardsBodySchema } from "../../../objects/ui/panelworkflows/request/RegisterCheckInPanelRewardsRequest.js";
 
 export class RegisterCheckInPanelRewardsApi {
   static path(panelId: string) {

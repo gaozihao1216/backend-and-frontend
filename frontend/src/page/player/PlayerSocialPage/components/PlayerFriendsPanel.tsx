@@ -1,4 +1,4 @@
-import type { PlayerFriend } from "../../../../api/player/social/PlayerSocialSchemas.js";
+import type { PlayerFriend } from "../../../../objects/player/social/player-social.js";
 
 type PlayerSocialHeaderProps = {
   friendInput: string;

@@ -1,7 +1,7 @@
 import {
   UpdateLevelSlotBirdPoolRequestBodySchema,
   type UpdateLevelSlotBirdPoolRequestBody,
-} from "./body/UpdateLevelSlotBirdPoolBody.js";
+} from "../../../../objects/admin/director/level_assignment/request/UpdateLevelSlotBirdPoolRequest.js";
 import {
   LevelSlotAssignmentDetailSchema,
   type LevelSlotAssignmentDetail,

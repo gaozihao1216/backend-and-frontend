@@ -16,17 +16,15 @@ import microservice.ui.api.pagecomponents.{
   DeletePageComponentAPIMessage,
   UpdatePageComponentAPIMessage
 }
-import microservice.ui.api.pages.{
+import microservice.ui.api.pages.management.{
   CreateUiPageAPIMessage,
   DeleteUiPageAPIMessage,
-  GetPlayerUiPageAPIMessage,
-  GetSharedLevelMapPageAPIMessage,
   GetUiPageAPIMessage,
   ListUiPagesAPIMessage,
-  PublishUiPageAPIMessage,
-  RollbackUiPageAPIMessage,
   UpdateUiPageAPIMessage
 }
+import microservice.ui.api.pages.publishing.{PublishUiPageAPIMessage, RollbackUiPageAPIMessage}
+import microservice.ui.api.pages.runtime.{GetPlayerUiPageAPIMessage, GetSharedLevelMapPageAPIMessage}
 import microservice.ui.api.panelworkflows.RegisterCheckInPanelRewardsAPIMessage
 import microservice.ui.api.stretchtemplates.{
   CreateStretchVisualTemplateAPIMessage,

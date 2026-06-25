@@ -9,7 +9,7 @@ import microservice.system.objects.enums.{AdminLevel, AuditTargetType, Submissio
 import microservice.admin.objects.director.level_assignment.request.AbolishDirectorSubmissionRequest
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.api.internal.admin.AbolishApprovedSubmissionInternalAPIMessage
+import microservice.level.api.internal.admin.submissions.AbolishApprovedSubmissionInternalAPIMessage
 import microservice.user.support.AccessControl
 
 /** POST /admin/director/submissions/:submissionId/abolish — 总监废止已批准投稿。 */

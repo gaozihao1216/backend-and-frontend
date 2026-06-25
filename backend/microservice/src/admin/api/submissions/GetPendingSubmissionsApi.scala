@@ -7,7 +7,7 @@ import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.level.api.internal.admin.ListPendingSubmissionsWithLevelInternalAPIMessage
+import microservice.level.api.internal.admin.submissions.ListPendingSubmissionsWithLevelInternalAPIMessage
 import microservice.system.objects.enums.AdminLevel
 
 /** 列出所有待审核关卡投稿 APIMessage，附带关联关卡快照。 */

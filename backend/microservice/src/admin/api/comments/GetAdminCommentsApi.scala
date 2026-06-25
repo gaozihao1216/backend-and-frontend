@@ -7,7 +7,7 @@ import microservice.admin.support.mapping.LevelHandoffMapping
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.support.AccessControl
-import microservice.level.api.internal.admin.ListAllCommentsInternalAPIMessage
+import microservice.level.api.internal.admin.comments.ListAllCommentsInternalAPIMessage
 import microservice.system.objects.enums.AdminLevel
 
 /** 获取全部关卡评论列表 APIMessage，供 Standard 管理员在后台浏览与删除。 */

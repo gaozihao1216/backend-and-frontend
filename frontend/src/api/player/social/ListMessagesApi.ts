@@ -1,4 +1,4 @@
-import { MessageListSchema, type PlayerPrivateMessage } from "./PlayerSocialSchemas.js";
+import { MessageListSchema, type PlayerPrivateMessage } from "../../../objects/player/social/player-social.js";
 import { APIWithTokenMessage } from "../../../system/api/APIWithTokenMessage.js";
 import { sendAPI } from "../../../system/api/sendAPI.js";
 
