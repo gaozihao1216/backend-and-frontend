@@ -16,8 +16,7 @@ frontend/src/
 ├── api/              # HTTP 调用，按后端模块拆分；一 API 一文件
 ├── objects/          # Zod/TS 类型（后端对齐 + objects/<domain>-page/ 页面类型）
 ├── page/             # 页面入口（按域：shared/ player/ admin/ designer/ director/ profile/）
-├── component/        # 可复用 UI；复杂页子组件在 *-page/ 子目录
-├── hook/             # React hooks（designer-page/ director-page/ player-page/）
+│   └── shared/       # 跨页面组件与 hook（components/、hooks/）
 ├── lib/              # 纯逻辑；页面辅助在 lib/<domain>-page/
 ├── store/            # 轻量前端状态
 ├── shared/           # 关卡种子数据等共享静态资源
@@ -65,7 +64,7 @@ frontend/src/
 ### 1. 认证与后端绑定
 
 - `lib/auth.ts`：本地注册/登录（演示用），角色为 player / designer / admin
-- `component/BackendBindingPanel.tsx`：将本地身份绑定到后端演示账号（`player-1`、`designer-1`、`admin-1` 等）
+- `components/auth/BackendBindingPanel.tsx`：将本地身份绑定到后端演示账号（`player-1`、`designer-1`、`admin-1` 等）
 - API 请求通过 `x-user-id` 请求头传递后端用户 ID
 
 ### 2. 页面组织
@@ -80,15 +79,22 @@ page/
 ├── designer/   # 作品集、关卡编辑、鸟类实验室
 ├── director/   # UI 定制、页面构建、模板与面板编辑器
 └── profile/    # 用户资料
+
+components/
+├── app/         # App 级设置入口
+├── auth/        # 登录、绑定等跨页面认证 UI
+├── level/       # 关卡预览、游玩画布
+├── page/        # 页面模式切换等通用页面控件
+└── ui-renderer/ # 动态 UI 渲染器
 ```
 
-**复杂页面四层拆分**（入口薄、逻辑进 hook）：
+**复杂页面四层拆分**（入口薄、逻辑进同页 hook）：
 
 | 层 | 路径示例 |
 | --- | --- |
 | 入口 | `page/director/DirectorPageBuilderPage/index.tsx` |
-| Hook | `hook/director-page/useDirectorPageBuilder.ts` |
-| 组件 | `component/director-page/page-builder/*` |
+| Hook | `page/director/DirectorPageBuilderPage/hooks/useDirectorPageBuilder.ts` |
+| 组件 | `page/director/DirectorPageBuilderPage/components/*` |
 | 工具/类型 | `lib/director-page/*`、`objects/director-page/*` |
 
 已拆分页面清单（Designer / Player 社交·备战 / Director 构建工具五页 + 面板创建）见 `page/ARCHITECTURE.md` 的「已完成拆分」表。
@@ -107,7 +113,7 @@ page/
 
 ### 4. 玩家与总监复杂页
 
-与 DesignerPage 同一模式，state 在 `hook/*-page/`，JSX 在 `component/*-page/`：
+与 DesignerPage 同一模式，state 在页面 `hooks/`，JSX 在页面 `components/`：
 
 - **玩家**：`PlayerSocialPage/`、`PlayerPreparationPage/` → `usePlayerSocial`、`usePlayerPreparation`
 - **总监**：`DirectorLevelInterfacePage/`、`DirectorPageBuilderPage/`、`DirectorButtonTemplatesPage/`、`DirectorButtonDesignPage/`、`DirectorPanelCreatePage/` → 对应 `useDirector*` hook 与 workspace 组件
@@ -128,7 +134,7 @@ page/
 
 - `objects/ui/`：`PageConfig`、组件 schema、按钮/拉伸模板（镜像后端 `ui/objects/`）
 - `objects/ui-customization/`：默认页面配置、normalizer、关卡地图结构等前端专用逻辑
-- `component/ui-renderer/`：`DynamicPageRenderer`、`SharedLevelMapRenderer` 等
+- `components/ui-renderer/`：`DynamicPageRenderer`、`SharedLevelMapRenderer` 等
 - `lib/ui-customization.ts`、`lib/shared-level-map-persistence.ts`：本地缓存与 API  hydration
 
 玩家侧 UI 运行时数据通过 `/player/ui/*` 接口拉取（商店、签到、进度等）。
@@ -144,7 +150,7 @@ Page → *Api.ts → client.request → Scala 后端
                 ↓ Zod parse
               objects/*.ts 类型
                 ↓
-         component 渲染 / lib 纯逻辑
+       page components 渲染 / lib 纯逻辑
 ```
 
 ## 测试与质量

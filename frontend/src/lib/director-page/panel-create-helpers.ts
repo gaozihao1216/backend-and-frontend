@@ -4,7 +4,7 @@ import {
   normalizeButtonStatePatternLayerDrafts,
   serializePatternLayersForStateOption,
 } from "../../lib/button-pattern-layers.js";
-import { getStretchVisualDesignStyle } from "../../component/ui-renderer/ui-renderer-utils.js";
+import { getStretchVisualDesignStyle } from "../../components/ui-renderer/ui-renderer-utils.js";
 import { isArtTextPreset, resolveTextArtDesign } from "../../lib/art-text-styles.js";
 import {
   createDefaultWeeklyCheckInChildDrafts,

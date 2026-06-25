@@ -1,5 +1,5 @@
 import { LevelMapLayoutPreview } from "./LevelMapLayoutPreview.js";
-import type { LevelMapPathEditContext } from "../../../../component/ui-renderer/ui-renderer-types.js";
+import type { LevelMapPathEditContext } from "../../../../components/ui-renderer/ui-renderer-types.js";
 import {
   LEVEL_NODE_PROGRESS_STATE_META,
   type LevelNodeProgressStateId,

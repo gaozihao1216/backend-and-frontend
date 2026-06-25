@@ -1,5 +1,5 @@
-import { EditorToolbar } from "../../../../../component/designer/EditorToolbar.js";
-import { RotationKnob } from "../../../../../component/designer/RotationKnob.js";
+import { EditorToolbar } from "../editor/EditorToolbar.js";
+import { RotationKnob } from "../editor/RotationKnob.js";
 import type { EditorTool } from "../../../../../lib/designer-level.js";
 
 type DesignerEntityControlsProps = {

@@ -14,8 +14,8 @@ import {
   getComponentStyle,
   getPositionStyle,
   getRootComponents,
-} from "../../../../component/ui-renderer/ui-renderer-utils.js";
-import { useDragScroll } from "../../../../hook/director-page/useDragScroll.js";
+} from "../../../../components/ui-renderer/ui-renderer-utils.js";
+import { useDragScroll } from "../hooks/useDragScroll.js";
 import {
   createComponentMap,
   getButtonControlledPanelId,

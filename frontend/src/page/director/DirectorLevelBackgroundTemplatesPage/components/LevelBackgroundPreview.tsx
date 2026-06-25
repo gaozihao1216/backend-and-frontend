@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
-import { getStretchVisualDesignStyle } from "../../../../component/ui-renderer/ui-renderer-utils.js";
-import { useVisualAsset } from "../../../../hook/useVisualAsset.js";
+import { getStretchVisualDesignStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
+import { useVisualAsset } from "../../../shared/hooks/useVisualAsset.js";
 import {
   createLevelBackgroundCloudSprites,
   getLevelBackgroundGradientStyle,

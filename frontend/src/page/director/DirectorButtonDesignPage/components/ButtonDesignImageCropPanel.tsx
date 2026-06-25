@@ -1,4 +1,4 @@
-import type { ButtonDesignViewModel } from "../../../../hook/director-page/useDirectorButtonDesign.js";
+import type { ButtonDesignViewModel } from ".././hooks/useDirectorButtonDesign.js";
 
 type ButtonDesignImageCropPanelProps = {
   design: ButtonDesignViewModel;

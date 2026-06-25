@@ -1,4 +1,4 @@
-import type { DirectorPanelCreateViewModel } from "../../../../../hook/director-page/useDirectorPanelCreate.js";
+import type { DirectorPanelCreateViewModel } from "../.././hooks/useDirectorPanelCreate.js";
 import { PanelCreateChildOutline, renderButtonPreviewContent, renderButtonPreviewLayers, renderPanelBackgroundLayer } from "./panel-create-preview.js";
 import { resolvePanelDecoration } from "../../../../../lib/director-template-select.js";
 import {

@@ -1,4 +1,4 @@
-import type { DirectorPanelCreateViewModel } from "../../../../../hook/director-page/useDirectorPanelCreate.js";
+import type { DirectorPanelCreateViewModel } from "../.././hooks/useDirectorPanelCreate.js";
 import {
   createDefaultArtTextLayerDraft,
   createEmptyPatternLayerDraft,

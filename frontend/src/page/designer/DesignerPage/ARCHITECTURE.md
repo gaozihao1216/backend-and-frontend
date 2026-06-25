@@ -8,8 +8,9 @@
 
 - `index.tsx`：入口；调用 `useDesignerPageViewModel` 并交给 `DesignerPageRouter`。
 - `DesignerPageRouter.tsx`：按 `mode` 分发 archive / json / settings / design_book / design。
-- `hook/designer-page/useDesignerPageViewModel.ts`：组合各领域 hook，返回分组 view model；内含协调逻辑（restore、键盘、portfolio 恢复）。
+- `hooks/useDesignerPageViewModel.ts`：组合各领域 hook，返回分组 view model；内含协调逻辑（restore、键盘、portfolio 恢复）。
 - `components/design/`：主设计工作区（`DesignerDesignWorkspace`、`DesignerGroundControlsSection` 及表单/画布等）。
+- `components/editor/`：设计器画布、工具条、旋转控制等编辑器私有组件。
 - `components/archive/`、`json-check/`、`settings/`、`design-book/`：各子模式 UI。
 - `objects/designer-page/`、`lib/designer-page/`：类型与纯函数。
 
@@ -23,13 +24,12 @@ page/designer/DesignerPage/
 ├── DesignerPageRouter.tsx
 ├── components/
 │   ├── design/              # 主编辑流 + DesignerDesignWorkspace
+│   ├── editor/              # 画布与编辑器控件
 │   ├── archive/
 │   ├── json-check/
 │   ├── settings/
 │   └── design-book/
-└── (hooks 在 hook/designer-page/)
-
-hook/designer-page/
+└── hooks/
   ├─ useDesignerPageViewModel   # 组合 hook + 协调逻辑
   ├─ useDesignerDraft
   ...

@@ -1,9 +1,9 @@
-import type { ButtonDesignViewModel } from "../../../../hook/director-page/useDirectorButtonDesign.js";
+import type { ButtonDesignViewModel } from ".././hooks/useDirectorButtonDesign.js";
 import {
   getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
   getButtonTextScaleStyle,
-} from "../../../../component/ui-renderer/ui-renderer-utils.js";
+} from "../../../../components/ui-renderer/ui-renderer-utils.js";
 import {
   buttonDesignPreviewHeightPx,
   defaultRenderWhiteTolerance,

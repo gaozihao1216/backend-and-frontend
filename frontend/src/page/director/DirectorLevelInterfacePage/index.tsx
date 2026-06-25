@@ -3,7 +3,7 @@ import { LevelNodeButtonFormatEditor } from "./components/LevelNodeButtonFormatE
 import { LevelStageBackgroundEditor } from "./components/LevelStageBackgroundEditor.js";
 import { DirectorLevelInterfacePreviewPanel } from "./components/DirectorLevelInterfacePreviewPanel.js";
 import { DirectorLevelInterfaceToolbar } from "./components/DirectorLevelInterfaceToolbar.js";
-import { useDirectorLevelInterface } from "../../../hook/director-page/useDirectorLevelInterface.js";
+import { useDirectorLevelInterface } from "./hooks/useDirectorLevelInterface.js";
 import { countLevelNodes, LEVEL_MAP_PAGE_ID } from "../../../lib/level-stage-structure.js";
 
 type DirectorLevelInterfacePageProps = {

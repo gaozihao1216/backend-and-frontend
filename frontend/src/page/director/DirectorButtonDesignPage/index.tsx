@@ -1,5 +1,5 @@
 import { ButtonDesignWorkspace } from "./components/ButtonDesignWorkspace.js";
-import { useDirectorButtonDesign } from "../../../hook/director-page/useDirectorButtonDesign.js";
+import { useDirectorButtonDesign } from "./hooks/useDirectorButtonDesign.js";
 import type { DirectorButtonDesignPageProps } from "../../../objects/director-page/button-design-types.js";
 
 export const DirectorButtonDesignPage = ({

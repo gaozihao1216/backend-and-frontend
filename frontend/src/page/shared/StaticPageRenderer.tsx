@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { AuthUser } from "../../lib/auth.js";
 import { LEVEL_MAP_PAGE_ID, LEVEL_NODE_DEFINITIONS, getLevelScreenPageId } from "../../objects/ui-customization/level-map-structure.js";
 import { DynamicPageHost } from "./DynamicPageHost.js";
-import { StaticLevelScreenPreview } from "../../component/static-level-previews.js";
+import { StaticLevelScreenPreview } from "../../components/level/static-level-previews.js";
 import { AdminAuditLogsPage } from "../admin/AdminAuditLogsPage.js";
 import { AdminCommunityPage } from "../admin/AdminCommunityPage.js";
 import { AdminPage } from "../admin/AdminPage/index.js";

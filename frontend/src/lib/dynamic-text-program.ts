@@ -12,7 +12,7 @@ import {
   type UiTextRuntimeContext,
 } from "./ui-text-runtime-context.js";
 import { normalizeDynamicTextProgram } from "./dynamic-text-program-normalize.js";
-import { interpolatePreviewText } from "../component/ui-renderer/ui-renderer-utils.js";
+import { interpolatePreviewText } from "../components/ui-renderer/ui-renderer-utils.js";
 
 const resolveDynamicTextValue = (
   value: DynamicTextValue,

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { LevelBackgroundPreview } from "../../../../director/DirectorLevelBackgroundTemplatesPage/components/LevelBackgroundPreview.js";
-import { useLevelBackgroundTemplateResolution } from "../../../../../hook/useLevelBackgroundTemplateResolution.js";
+import { useLevelBackgroundTemplateResolution } from "../../../../shared/hooks/useLevelBackgroundTemplateResolution.js";
 import {
   listLevelBackgroundTemplates,
 } from "../../../../../lib/level-background-template-store.js";
@@ -8,7 +8,7 @@ import {
   resolveLevelBackgroundCloudDesigns,
   resolveLevelBackgroundPanelDesign,
 } from "../../../../../lib/level-background-template-render.js";
-import { useDirectorTemplateLibrary } from "../../../../../hook/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../../../shared/hooks/useDirectorTemplateLibrary.js";
 import { LEVEL_BACKGROUND_WEATHER_META } from "../../../../../objects/level/level-background-template.js";
 
 type DesignerLevelBackgroundPanelProps = {

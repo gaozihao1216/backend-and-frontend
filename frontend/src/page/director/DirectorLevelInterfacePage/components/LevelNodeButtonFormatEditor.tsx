@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useDirectorTemplateLibrary } from "../../../../hook/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../../shared/hooks/useDirectorTemplateLibrary.js";
 import { processButtonBaseDesign, processStretchVisualDesign } from "../../../../lib/template-image-utils.js";
 import {
   createLibraryTemplateSelectOptions,

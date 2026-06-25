@@ -1,5 +1,5 @@
-import { LevelEditorCanvas } from "../../../../../component/designer/LevelEditorCanvas.js";
-import { SelectedEntityPanel } from "../../../../../component/designer/SelectedEntityPanel.js";
+import { LevelEditorCanvas } from "../editor/LevelEditorCanvas.js";
+import { SelectedEntityPanel } from "../editor/SelectedEntityPanel.js";
 import type { EditorTool } from "../../../../../lib/designer-level.js";
 import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../../../lib/ground.js";
 import type { LevelData } from "../../../../../objects/level/level/level-data.js";

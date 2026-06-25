@@ -1,5 +1,5 @@
 import type { DesignerPageProps } from "../../../objects/designer-page/designer-page-types.js";
-import type { DesignerPageViewModel } from "../../../hook/designer-page/useDesignerPageViewModel.js";
+import type { DesignerPageViewModel } from "./hooks/useDesignerPageViewModel.js";
 import { ArchivePanel } from "./components/archive/ArchivePanel.js";
 import { DesignBookPage } from "./components/design-book/DesignBookPage/index.js";
 import { DesignerDesignWorkspace } from "./components/design/DesignerDesignWorkspace.js";

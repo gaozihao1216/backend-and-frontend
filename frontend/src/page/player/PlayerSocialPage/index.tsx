@@ -1,4 +1,4 @@
-import { usePlayerSocial } from "../../../hook/player-page/usePlayerSocial.js";
+import { usePlayerSocial } from "./hooks/usePlayerSocial.js";
 import { PageFeedback } from "../shared/PageFeedback.js";
 import { PlayerChatPanel } from "./components/PlayerChatPanel.js";
 import { PlayerFriendsList, PlayerSocialHeader } from "./components/PlayerFriendsPanel.js";

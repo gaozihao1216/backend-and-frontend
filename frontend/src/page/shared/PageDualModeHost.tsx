@@ -18,7 +18,7 @@ import {
   persistPageDisplayMode,
   type PageDisplayMode,
 } from "../../lib/page-render-mode.js";
-import { PageDisplayModeBar } from "../../component/PageDisplayModeBar.js";
+import { PageDisplayModeBar } from "../../components/page/PageDisplayModeBar.js";
 import { DynamicPageHost } from "./DynamicPageHost.js";
 import { isStaticPageSupported, renderStaticPage, type StaticPageRenderContext } from "./StaticPageRenderer.js";
 

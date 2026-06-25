@@ -1,6 +1,6 @@
 import { API_USERS } from "../../../lib/config.js";
 import type { DesignerPageProps } from "../../../objects/designer-page/designer-page-types.js";
-import { useDesignerPageViewModel } from "../../../hook/designer-page/useDesignerPageViewModel.js";
+import { useDesignerPageViewModel } from "./hooks/useDesignerPageViewModel.js";
 import { DesignerPageRouter } from "./DesignerPageRouter.js";
 
 export const DesignerPage = (props: DesignerPageProps) => {

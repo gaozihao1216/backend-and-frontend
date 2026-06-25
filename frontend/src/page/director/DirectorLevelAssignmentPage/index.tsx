@@ -7,7 +7,7 @@ import {
   updateLevelSlotBirdPool,
 } from "../../../system/api/exports/index.js";
 import { BirdPoolConfigPanel } from "./components/BirdPoolConfigPanel.js";
-import { LevelPreviewCard } from "../../../component/level/LevelPreviewCard.js";
+import { LevelPreviewCard } from "../../../components/level/LevelPreviewCard.js";
 import { createSubmissionLevelSource } from "../../../lib/level-repository.js";
 import type { DirectorLevelAssignmentBoard } from "../../../objects/admin/director/level_assignment/board/director-level-assignment-board.js";
 import type { LevelSlotAssignmentDetail } from "../../../objects/admin/director/level_assignment/assignment/level-slot-assignment.js";

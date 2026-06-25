@@ -1,4 +1,4 @@
-import { LevelEditorCanvas } from "../../../../../component/designer/LevelEditorCanvas.js";
+import { LevelEditorCanvas } from "../editor/LevelEditorCanvas.js";
 import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../../../lib/ground.js";
 import type { DesignerBackup } from "../../../../../objects/designer-page/designer-page-types.js";
 

@@ -1,4 +1,4 @@
-import { usePlayerPreparation } from "../../../hook/player-page/usePlayerPreparation.js";
+import { usePlayerPreparation } from "./hooks/usePlayerPreparation.js";
 import { PageFeedback } from "../shared/PageFeedback.js";
 import { PlayerBirdDetail, PlayerBirdPicker } from "./components/PlayerBirdPanels.js";
 import { PlayerSlingshotPanel } from "./components/PlayerSlingshotPanel.js";

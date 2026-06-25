@@ -12,7 +12,7 @@ import {
 import {
   getButtonBaseDesignStyle,
   getStretchVisualDesignStyle,
-} from "../../../../../component/ui-renderer/ui-renderer-utils.js";
+} from "../../../../../components/ui-renderer/ui-renderer-utils.js";
 import type { PanelDecoration } from "../../../../../objects/ui-customization/ui-customization-objects.js";
 import type { ButtonStateDraft, ResizeHandle } from "../../../../../objects/director-page/panel-create-types.js";
 import { getButtonStateContentType } from "../../../../../lib/director-page/panel-create-helpers.js";

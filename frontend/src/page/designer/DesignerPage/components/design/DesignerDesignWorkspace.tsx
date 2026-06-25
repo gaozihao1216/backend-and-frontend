@@ -1,5 +1,5 @@
 import type { DesignerPageProps } from "../../../../../objects/designer-page/designer-page-types.js";
-import type { DesignerPageViewModel } from "../../../../../hook/designer-page/useDesignerPageViewModel.js";
+import type { DesignerPageViewModel } from "../../hooks/useDesignerPageViewModel.js";
 import { DesignerHeader } from "./DesignerHeader.js";
 import { LevelFormPanel } from "./LevelFormPanel.js";
 import { DesignerLevelBackgroundPanel } from "./DesignerLevelBackgroundPanel.js";

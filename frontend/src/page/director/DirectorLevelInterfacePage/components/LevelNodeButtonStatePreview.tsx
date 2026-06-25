@@ -17,8 +17,8 @@ import {
   type PatternLayerResizeHandle,
 } from "../../../../lib/pattern-frame-adjust.js";
 import { LEVEL_NODE_BUTTON_MAX_FONT_SIZE } from "../../../../lib/level-node-button-format.js";
-import { getTemplateButtonShellStyle } from "../../../../component/ui-renderer/ui-renderer-utils.js";
-import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../../component/ui-renderer/ProcessedTemplateImage.js";
+import { getTemplateButtonShellStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
+import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../../components/ui-renderer/ProcessedTemplateImage.js";
 import type { ButtonStateTemplatePreviewState } from "./button-state-template-preview.js";
 
 type LevelNodeButtonStatePreviewProps = {

@@ -11,8 +11,8 @@ import {
   usesPatternLayerImage,
   type ButtonPatternLayerDraft,
 } from "../../../../lib/button-pattern-layers.js";
-import { getTemplateButtonShellStyle } from "../../../../component/ui-renderer/ui-renderer-utils.js";
-import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../../component/ui-renderer/ProcessedTemplateImage.js";
+import { getTemplateButtonShellStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
+import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../../components/ui-renderer/ProcessedTemplateImage.js";
 import {
   LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
   type LevelNodeSharedButtonDesign,

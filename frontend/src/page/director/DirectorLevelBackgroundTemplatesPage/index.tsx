@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { LevelBackgroundPreview } from "./components/LevelBackgroundPreview.js";
 import { LevelBackgroundTemplateEditor } from "./components/LevelBackgroundTemplateEditor.js";
-import { useDirectorTemplateLibrary } from "../../../hook/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../shared/hooks/useDirectorTemplateLibrary.js";
 import {
   createLevelBackgroundTemplateDraft,
   deleteLevelBackgroundTemplate,

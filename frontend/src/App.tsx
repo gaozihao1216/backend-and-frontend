@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { AuthLandingPage } from "./component/auth/AuthLandingPage.js";
-import { BackendBindingPanel } from "./component/BackendBindingPanel.js";
-import { SettingsPanel } from "./component/SettingsPanel.js";
+import { AuthLandingPage } from "./components/auth/AuthLandingPage.js";
+import { BackendBindingPanel } from "./components/auth/BackendBindingPanel.js";
+import { SettingsPanel } from "./components/app/SettingsPanel.js";
 import { DesignerResubmitPage } from "./page/designer/DesignerResubmitPage.js";
 import { DirectorButtonDesignPage } from "./page/director/DirectorButtonDesignPage/index.js";
 import { DirectorButtonConfigPage } from "./page/director/DirectorButtonConfigPage.js";

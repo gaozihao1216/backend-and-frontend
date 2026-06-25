@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { GameCanvas } from "../../../../component/level/GameCanvas.js";
+import { GameCanvas } from "../../../../components/level/GameCanvas.js";
 import { buildSkillTestLaunchConfig } from "../../../../lib/build-skill-test-launch-config.js";
 import type { BirdSkillSet } from "../../../../lib/game-engine/skills/skill-spec.js";
 import { SKILL_TEST_LEVEL_DATA } from "../../../../shared/levels/skill-test-level.js";

@@ -2,7 +2,7 @@ import { CeilingControls } from "./CeilingControls.js";
 import { GroundEditorToggleControls } from "./GroundEditorToggleControls.js";
 import { GroundPointControls } from "./GroundPointControls.js";
 import { VoidSpanControls } from "./VoidSpanControls.js";
-import type { DesignerPageViewModel } from "../../../../../hook/designer-page/useDesignerPageViewModel.js";
+import type { DesignerPageViewModel } from "../../hooks/useDesignerPageViewModel.js";
 
 type DesignerGroundControlsSectionProps = {
   groundEditor: DesignerPageViewModel["groundEditor"];

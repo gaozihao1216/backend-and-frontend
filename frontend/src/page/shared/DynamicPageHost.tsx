@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { DynamicPageRenderer } from "../../component/ui-renderer/index.js";
+import { DynamicPageRenderer } from "../../components/ui-renderer/index.js";
 import {
   getDefaultPageConfig,
   getPageConfig,

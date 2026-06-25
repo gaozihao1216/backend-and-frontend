@@ -1,4 +1,4 @@
-import type { DirectorPanelCreateViewModel } from "../../../../hook/director-page/useDirectorPanelCreate.js";
+import type { DirectorPanelCreateViewModel } from ".././hooks/useDirectorPanelCreate.js";
 import { PanelCreateBasicStep } from "./panel-create/PanelCreateBasicStep.js";
 import { PanelCreateBeautyStep } from "./panel-create/PanelCreateBeautyStep.js";
 import { PanelCreateRewardConfigStep } from "./panel-create/PanelCreateRewardConfigStep.js";
