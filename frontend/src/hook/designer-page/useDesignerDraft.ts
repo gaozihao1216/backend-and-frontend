@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createDefaultLevelInput } from "../../api/index.js";
+import { createDefaultLevelInput } from "../../system/api/exports/index.js";
 import type { LevelTag } from "../../objects/system/system-objects.js";
 
 const initialForm = createDefaultLevelInput();

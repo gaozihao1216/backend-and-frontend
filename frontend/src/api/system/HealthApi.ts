@@ -1,5 +1,5 @@
 import { HealthResponseSchema, type HealthResponse } from "../../objects/system/system-objects.js";
-import { request } from "../client.js";
+import { request } from "../../system/api/legacyRequest.js";
 
 export const HealthApiPath = "/health" as const;
 

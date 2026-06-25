@@ -1,4 +1,4 @@
-package microservice.player.runtime
+package microservice.player.support.checkin
 
 import io.circe.Json
 import io.circe.syntax._
@@ -24,7 +24,7 @@ private[player] object PlayerWeeklyCheckInService {
     PlanStep.succeed(buildPayload(connection, userId, panelId = None))
 
   def requireExecuteClaim(connection: Connection, userId: String, params: Map[String, String]): Step[Json] = {
-    val panelId = params.getOrElse("panelId", PlayerRuntimeDefaults.roleHomeCheckInPanelId)
+    val panelId = params.getOrElse("panelId", PlayerCheckInDefaults.roleHomeCheckInPanelId)
     val slot = params.get("slot").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
 
     if (panelId.isEmpty || slot < 1 || slot > 7) {

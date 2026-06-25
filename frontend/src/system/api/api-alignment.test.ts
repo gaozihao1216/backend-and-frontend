@@ -4,10 +4,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const apiDir = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(apiDir, "../../..");
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(testDir, "../../../..");
 const backendSrc = path.join(projectRoot, "backend/microservice/src");
-const frontendApi = apiDir;
+const frontendApi = path.join(projectRoot, "frontend/src/api");
 
 /** 后端 *Api.scala 相对 src 的路径 → 前端 *Api.ts 相对 api/ 的路径（默认去掉 api/ 段）。 */
 const frontendPathOverrides: Record<string, string> = {};
@@ -16,22 +16,6 @@ const frontendOnlyHelpers = new Set([
   "player/social/PlayerSocialSchemas.ts",
   "player/preparation/PlayerPreparationSchemas.ts",
   "ui/stretchtemplates/stretchTemplatePaths.ts",
-]);
-
-const barrelAndSupport = new Set([
-  "index.ts",
-  "client.ts",
-  "contracts.ts",
-  "api-contracts.ts",
-  "admin-api.ts",
-  "designer-api.ts",
-  "player-api.ts",
-  "ui-api.ts",
-  "user-api.ts",
-  "system-api.ts",
-  "player-social-api.ts",
-  "player-preparation-api.ts",
-  "player-ui-api.ts",
 ]);
 
 const defaultFrontendRel = (backendRel: string): string =>
@@ -207,30 +191,26 @@ test("frontend body files mirror backend *Body.scala layout", async () => {
 });
 
 test("frontend barrel modules re-export aligned API paths", async () => {
-  const adminApi = await readFile(path.join(frontendApi, "admin-api.ts"), "utf8");
+  const exportsDir = path.join(projectRoot, "frontend/src/system/api/exports");
+
+  const adminApi = await readFile(path.join(exportsDir, "admin-api.ts"), "utf8");
   assert.match(adminApi, /admin\/comments\/GetAdminCommentsApi/);
   assert.match(adminApi, /bird\/review\/GetPendingBirdSubmissionsApi/);
   assert.match(adminApi, /admin\/audit\/ListAdminAuditLogsApi/);
   assert.match(adminApi, /admin\/director\/level_assignment\/GetDirectorLevelAssignmentBoardApi/);
 
-  const designerApi = await readFile(path.join(frontendApi, "designer-api.ts"), "utf8");
+  const designerApi = await readFile(path.join(exportsDir, "designer-api.ts"), "utf8");
   assert.match(designerApi, /level\/design\/CreateLevelApi/);
   assert.match(designerApi, /bird\/design\/CreateBirdDesignApi/);
 
-  const playerApi = await readFile(path.join(frontendApi, "player-api.ts"), "utf8");
+  const playerApi = await readFile(path.join(exportsDir, "player-api.ts"), "utf8");
   assert.match(playerApi, /level\/player\/read\/GetPublishedLevelsApi/);
   assert.match(playerApi, /player\/social\/ListFriendsApi/);
   assert.match(playerApi, /player\/ui\/GetPlayerUiDataApi/);
 
-  const uiApi = await readFile(path.join(frontendApi, "ui-api.ts"), "utf8");
+  const uiApi = await readFile(path.join(exportsDir, "ui-api.ts"), "utf8");
   assert.match(uiApi, /ui\/pagecomponents\//);
   assert.match(uiApi, /ui\/buttontemplates\//);
   assert.match(uiApi, /ui\/stretchtemplates\/ListStretchVisualTemplatesApi/);
   assert.match(uiApi, /ui\/panelworkflows\/RegisterCheckInPanelRewardsApi/);
-});
-
-test("barrel and support files are excluded from one-to-one Api naming", () => {
-  for (const file of barrelAndSupport) {
-    assert.ok(!file.endsWith("Api.ts") || file.includes("-api"), `${file} should not look like domain Api`);
-  }
 });

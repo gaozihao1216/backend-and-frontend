@@ -1,4 +1,4 @@
-import type { BirdUpgradeState, PlayerPreparationState } from "../../../../api/player-preparation-api.js";
+import type { BirdUpgradeState, PlayerPreparationState } from "../../../../api/player/preparation/PlayerPreparationSchemas.js";
 
 type PlayerBirdPickerProps = {
   birds: PlayerPreparationState["birds"];

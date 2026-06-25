@@ -1,5 +1,5 @@
-import { DeleteCommentRequestParamsSchema, DeleteCommentResponseDataSchema, type AdminComment } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { DeleteCommentRequestParamsSchema, DeleteCommentResponseDataSchema, type AdminComment } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const deleteCommentApiPath = (commentId: string) => `/admin/comments/${commentId}` as const;
 

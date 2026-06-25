@@ -5,8 +5,8 @@ import {
   listBirdDesigns,
   submitBirdDesign,
   updateBirdDesign,
-} from "../../api/designer-api.js";
-import type { BirdDesign, BirdDesignInput } from "../../api/api-contracts.js";
+} from "../../system/api/exports/designer-api.js";
+import type { BirdDesign, BirdDesignInput } from "../../objects/api/api-contracts.js";
 import type { LevelStatus } from "../../objects/system/level-status.js";
 
 type DesignerBirdLabPageProps = {

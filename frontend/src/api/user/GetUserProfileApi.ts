@@ -1,21 +1,21 @@
-import { GetUserProfileRequestParamsSchema, GetUserProfileRequestQuerySchema, GetUserProfileResponseDataSchema, type ApiUserProfile } from "../api-contracts.js";
-import { request } from "../client.js";
+import { GetUserProfileRequestParamsSchema, GetUserProfileRequestQuerySchema, GetUserProfileResponseDataSchema, type ApiUserProfile } from "../../objects/api/api-contracts.js";
+import { APIWithTokenMessage } from "../../system/api/APIWithTokenMessage.js";
+import { sendAPI } from "../../system/api/sendAPI.js";
 
-export const getUserProfileApiPath = (userId: string) => `/users/${userId}/profile` as const;
+export class GetUserProfileAPI extends APIWithTokenMessage<ApiUserProfile> {
+  readonly profileUserId: string;
 
-export class GetUserProfileApi {
-  path(userId: string): string {
-    return getUserProfileApiPath(userId);
-  }
-
-  async execute(viewerUserId: string, profileUserId: string): Promise<ApiUserProfile> {
+  constructor(viewerUserId: string, profileUserId: string) {
+    super(viewerUserId);
     GetUserProfileRequestQuerySchema.parse({});
     const params = GetUserProfileRequestParamsSchema.parse({ userId: profileUserId });
-    return request(this.path(params.userId), { method: "GET", headers: { "x-user-id": viewerUserId } }, GetUserProfileResponseDataSchema);
+    this.profileUserId = params.userId;
+  }
+
+  override get responseSchema() {
+    return GetUserProfileResponseDataSchema;
   }
 }
 
-export const getUserProfileApi = new GetUserProfileApi();
-
 export const getUserProfile = async (viewerUserId: string, profileUserId: string): Promise<ApiUserProfile> =>
-  getUserProfileApi.execute(viewerUserId, profileUserId);
+  sendAPI(new GetUserProfileAPI(viewerUserId, profileUserId));

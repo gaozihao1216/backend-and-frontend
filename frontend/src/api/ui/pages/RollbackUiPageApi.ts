@@ -1,5 +1,5 @@
-import { UpdateUiPageRequestParamsSchema, UpdateUiPageResponseDataSchema, type UiPageConfig } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { UpdateUiPageRequestParamsSchema, UpdateUiPageResponseDataSchema, type UiPageConfig } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 import { normalizePageComponentIds } from "../../../objects/ui-customization/page-config-normalizer.js";
 
 export const RollbackUiPageApiPath = "/admin/director/ui/pages" as const;

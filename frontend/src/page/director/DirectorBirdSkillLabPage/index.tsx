@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getDirectorBirdSkillBoard, saveDirectorBirdSkill } from "../../../api/index.js";
+import { getDirectorBirdSkillBoard, saveDirectorBirdSkill } from "../../../system/api/exports/index.js";
 import { BirdSkillScratchEditor, cloneEditorSkillSet } from "./components/BirdSkillScratchEditor.js";
 import {
   BASIC_SKILLS,

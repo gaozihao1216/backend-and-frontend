@@ -1,4 +1,4 @@
-import type { PlayerPreparationState } from "../../../../api/player-preparation-api.js";
+import type { PlayerPreparationState } from "../../../../api/player/preparation/PlayerPreparationSchemas.js";
 
 type PlayerSlingshotPanelProps = {
   slingshot: PlayerPreparationState["slingshot"];

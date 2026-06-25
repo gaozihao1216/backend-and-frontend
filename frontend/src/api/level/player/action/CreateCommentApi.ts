@@ -1,5 +1,5 @@
-import { CreateCommentRequestBodySchema, CreateCommentRequestParamsSchema, CreateCommentResponseDataSchema, type CreateCommentRequestBody, type LevelComment } from "../../../api-contracts.js";
-import { request } from "../../../client.js";
+import { CreateCommentRequestBodySchema, CreateCommentRequestParamsSchema, CreateCommentResponseDataSchema, type CreateCommentRequestBody, type LevelComment } from "../../../../objects/api/api-contracts.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const createCommentApiPath = (levelId: string) => `/player/levels/${levelId}/comments` as const;
 

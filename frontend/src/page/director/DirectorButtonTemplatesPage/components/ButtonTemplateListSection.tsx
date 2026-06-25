@@ -1,4 +1,4 @@
-import type { UiButtonTemplate } from "../../../../api/api-contracts.js";
+import type { UiButtonTemplate } from "../../../../objects/api/api-contracts.js";
 import { TemplateCategoryFilter } from "../../shared/TemplateCategoryFilter.js";
 import { PageFeedback } from "../../../player/shared/PageFeedback.js";
 import {

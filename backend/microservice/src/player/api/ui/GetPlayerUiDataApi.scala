@@ -5,7 +5,7 @@ import io.circe.Json
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.runtime.PlayerUiRuntimeSupport
+import microservice.player.support.ui.PlayerUiRuntimeSupport
 import microservice.system.objects.UserRole
 import microservice.user.support.AccessControl
 

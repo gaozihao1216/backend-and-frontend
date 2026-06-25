@@ -3,7 +3,7 @@ import {
   type DirectorLevelAssignmentBoard,
 } from "../../../../objects/admin/director/level_assignment/board/director-level-assignment-board.js"
 // board schemas;
-import { request } from "../../../client.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const GetDirectorLevelAssignmentBoardApiPath = "/admin/director/level-assignments/board" as const;
 

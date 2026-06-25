@@ -3,7 +3,7 @@ import {
   type SaveDirectorBirdSkillRequest,
 } from "./body/SaveDirectorBirdSkillBody.js";
 import { BirdSkillSetSchema, type BirdSkillSet } from "../../../../lib/game-engine/skills/skill-spec.js";
-import { request } from "../../../client.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 import { z } from "zod";
 
 const BirdSkillConfigResponseSchema = z.object({

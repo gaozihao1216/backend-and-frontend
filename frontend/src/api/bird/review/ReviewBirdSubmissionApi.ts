@@ -3,8 +3,8 @@ import {
   ReviewBirdSubmissionResponseDataSchema,
   type ReviewBirdSubmissionRequestBody,
   type ReviewedBirdSubmission,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export class ReviewBirdSubmissionApi {
   static path(submissionId: string) {

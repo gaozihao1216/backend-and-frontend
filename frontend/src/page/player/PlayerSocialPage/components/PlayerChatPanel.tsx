@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { PlayerFriend, PlayerPrivateMessage } from "../../../../api/player-social-api.js";
+import type { PlayerFriend, PlayerPrivateMessage } from "../../../../api/player/social/PlayerSocialSchemas.js";
 
 type PlayerChatPanelProps = {
   selectedFriend: PlayerFriend | null;

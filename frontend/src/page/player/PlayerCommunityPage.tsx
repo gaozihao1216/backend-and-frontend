@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Comment, Level } from "../../api/api-contracts.js";
-import { createComment, getLevelComments, getPublishedLevels } from "../../api/index.js";
+import type { Comment, Level } from "../../objects/api/api-contracts.js";
+import { createComment, getLevelComments, getPublishedLevels } from "../../system/api/exports/index.js";
 
 type PlayerCommunityPageProps = {
   nickname: string;

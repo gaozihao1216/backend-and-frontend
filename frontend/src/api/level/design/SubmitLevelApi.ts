@@ -1,5 +1,5 @@
-import { SubmitLevelRequestBodySchema, SubmitLevelResponseDataSchema, type DesignerSubmission } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { SubmitLevelRequestBodySchema, SubmitLevelResponseDataSchema, type DesignerSubmission } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const SubmitLevelApiPath = "/designer/submissions" as const;
 

@@ -1,15 +1,15 @@
 package microservice.player.support.seed
 
 import java.sql.Connection
-import microservice.player.runtime.PlayerRuntimeDefaults
+import microservice.player.support.checkin.PlayerCheckInDefaults
 import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
 
-/** 玩家运行时种子（player 模块内）。 */
-private[player] object PlayerRuntimeSeedSupport {
+/** 玩家签到种子数据（player 模块内）。 */
+private[player] object PlayerCheckInSeedSupport {
   def seedCheckInPanelIfEmpty(connection: Connection): Unit =
     CheckInPanelRewardTable.replacePanelRewards(
       connection,
-      PlayerRuntimeDefaults.roleHomeCheckInPanelId,
+      PlayerCheckInDefaults.roleHomeCheckInPanelId,
       DemoCheckInRewardsFactory.roleHomePanelRewards
     )
 }

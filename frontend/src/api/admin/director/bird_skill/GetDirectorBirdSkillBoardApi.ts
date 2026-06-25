@@ -2,7 +2,7 @@ import {
   DirectorBirdSkillBoardSchema,
   type DirectorBirdSkillBoard,
 } from "../../../../objects/bird/skill/director/director-bird-skill-entry.js";
-import { request } from "../../../client.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const GetDirectorBirdSkillBoardApiPath = "/admin/director/bird-skills/board" as const;
 

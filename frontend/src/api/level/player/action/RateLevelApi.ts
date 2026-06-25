@@ -1,5 +1,5 @@
-import { RateLevelRequestBodySchema, RateLevelRequestParamsSchema, RateLevelResponseDataSchema, type LevelRating, type RateLevelRequestBody } from "../../../api-contracts.js";
-import { request } from "../../../client.js";
+import { RateLevelRequestBodySchema, RateLevelRequestParamsSchema, RateLevelResponseDataSchema, type LevelRating, type RateLevelRequestBody } from "../../../../objects/api/api-contracts.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const rateLevelApiPath = (levelId: string) => `/player/levels/${levelId}/ratings` as const;
 

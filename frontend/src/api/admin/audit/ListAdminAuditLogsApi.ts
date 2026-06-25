@@ -3,8 +3,8 @@ import {
   ListAdminAuditLogsResponseDataSchema,
   type ListAdminAuditLogsRequestQuery,
   type ReviewAudit,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const ListAdminAuditLogsApiPath = "/admin/audit-logs" as const;
 

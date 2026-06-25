@@ -1,5 +1,5 @@
-import { GetFavoriteLevelsRequestQuerySchema, GetFavoriteLevelsResponseDataSchema, type PlayerFavoriteWithLevel } from "../../../api-contracts.js";
-import { request } from "../../../client.js";
+import { GetFavoriteLevelsRequestQuerySchema, GetFavoriteLevelsResponseDataSchema, type PlayerFavoriteWithLevel } from "../../../../objects/api/api-contracts.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const GetFavoriteLevelsApiPath = "/player/favorites" as const;
 

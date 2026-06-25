@@ -1,6 +1,6 @@
 import { LevelPreviewCard } from "../../../../../component/level/LevelPreviewCard.js";
 import { createPublishedLevelSource } from "../../../../../lib/level-repository.js";
-import type { Level } from "../../../../../api/api-contracts.js";
+import type { Level } from "../../../../../objects/api/api-contracts.js";
 
 type CreatedLevelsPanelProps = {
   createdLevels: Level[];

@@ -3,8 +3,8 @@ import {
   ListBirdDesignsResponseDataSchema,
   type BirdDesign,
   type ListBirdDesignsRequestQuery,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const ListBirdDesignsApiPath = "/designer/bird-designs" as const;
 

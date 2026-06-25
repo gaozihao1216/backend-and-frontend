@@ -1,18 +1,17 @@
-import { GetBackendUsersRequestQuerySchema, GetBackendUsersResponseDataSchema, type BoundBackendUser } from "../api-contracts.js";
-import { request } from "../client.js";
+import { GetBackendUsersRequestQuerySchema, GetBackendUsersResponseDataSchema, type BoundBackendUser } from "../../objects/api/api-contracts.js";
+import { APIMessage } from "../../system/api/APIMessage.js";
+import { sendAPI } from "../../system/api/sendAPI.js";
 
-export const GetBackendUsersApiPath = "/api/getbackendusersapi" as const;
-
-export class GetBackendUsersApi {
-  static readonly path = GetBackendUsersApiPath;
-
-  async execute(): Promise<BoundBackendUser[]> {
+export class GetBackendUsersAPI extends APIMessage<BoundBackendUser[]> {
+  constructor() {
+    super();
     GetBackendUsersRequestQuerySchema.parse({});
-    return request(GetBackendUsersApi.path, { method: "GET" }, GetBackendUsersResponseDataSchema);
+  }
+
+  override get responseSchema() {
+    return GetBackendUsersResponseDataSchema;
   }
 }
 
-export const getBackendUsersApi = new GetBackendUsersApi();
-
 export const getBackendUsers = async (): Promise<BoundBackendUser[]> =>
-  getBackendUsersApi.execute();
+  sendAPI(new GetBackendUsersAPI());

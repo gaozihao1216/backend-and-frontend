@@ -1,4 +1,4 @@
-package microservice.player.runtime
+package microservice.player.support.progress
 
 import cats.effect.IO
 import io.circe.Json
@@ -13,7 +13,7 @@ import microservice.player.tables.progress.level_progress.PlayerLevelProgressTab
   * 定义：返回已通关 suffix 列表等进度 JSON。
   * 问题：关卡地图 UI 需高亮玩家 cleared 槽位。
   * 作用：listClearedSuffixes → Json 数组。
-  * 关联：[[PlayerProgressTable]]；[[GetPlayerUiDataAPIMessage]]。
+  * 关联：[[PlayerLevelProgressTable]]；[[GetPlayerUiDataAPIMessage]]。
   */
 private[player] object PlayerLevelProgressService {
   private val LevelProgressDataKey = "player.levelProgress"

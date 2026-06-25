@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bindBackendUser, getBackendUsers } from "../api/index.js";
+import { bindBackendUser, getBackendUsers } from "../system/api/exports/index.js";
 import { AdminLevelSchema, type AdminLevel } from "../objects/system/system-objects.js";
 import type { FrontendRole } from "./config.js";
 

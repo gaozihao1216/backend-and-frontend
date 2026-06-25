@@ -1,29 +1,21 @@
-import { request } from "../../client.js";
 import { MessageListSchema, type PlayerPrivateMessage } from "./PlayerSocialSchemas.js";
+import { APIWithTokenMessage } from "../../../system/api/APIWithTokenMessage.js";
+import { sendAPI } from "../../../system/api/sendAPI.js";
 
-export const SendMessageApiPath = "/player/social/messages" as const;
+export class SendMessageAPI extends APIWithTokenMessage<{ messages: PlayerPrivateMessage[] }> {
+  readonly receiverId: string;
+  readonly content: string;
 
-export class SendMessageApi {
-  static readonly path = SendMessageApiPath;
+  constructor(userId: string, receiverId: string, content: string) {
+    super(userId);
+    this.receiverId = receiverId;
+    this.content = content;
+  }
 
-  async execute(
-    userId: string,
-    receiverId: string,
-    content: string,
-  ): Promise<PlayerPrivateMessage[]> {
-    const data = await request(
-      SendMessageApi.path,
-      {
-        method: "POST",
-        headers: { "x-user-id": userId },
-        body: JSON.stringify({ receiverId, content }),
-      },
-      MessageListSchema,
-    );
-    return data.messages;
+  override get responseSchema() {
+    return MessageListSchema;
   }
 }
 
-export const sendMessageApi = new SendMessageApi();
-export const sendPlayerMessage = (userId: string, receiverId: string, content: string) =>
-  sendMessageApi.execute(userId, receiverId, content);
+export const sendPlayerMessage = async (userId: string, receiverId: string, content: string) =>
+  (await sendAPI(new SendMessageAPI(userId, receiverId, content))).messages;

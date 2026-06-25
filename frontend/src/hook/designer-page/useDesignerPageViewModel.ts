@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { createDefaultLevelInput } from "../../api/index.js";
+import { createDefaultLevelInput } from "../../system/api/exports/index.js";
 import { getDesignerPortfolioItemById } from "../../lib/designer-portfolio-mock.js";
 import { removeEntity } from "../../lib/designer-level.js";
 import { createDraftLevelSource } from "../../lib/level-repository.js";

@@ -1,5 +1,5 @@
-import { CreateLevelRequestBodySchema, CreateLevelResponseDataSchema, type CreateLevelRequestBody, type DesignerLevel } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { CreateLevelRequestBodySchema, CreateLevelResponseDataSchema, type CreateLevelRequestBody, type DesignerLevel } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const CreateLevelApiPath = "/designer/levels" as const;
 

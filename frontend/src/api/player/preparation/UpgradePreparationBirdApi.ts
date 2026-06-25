@@ -1,23 +1,19 @@
-import { request } from "../../client.js";
 import { PreparationStateSchema, type PlayerPreparationState } from "./PlayerPreparationSchemas.js";
+import { APIWithTokenMessage } from "../../../system/api/APIWithTokenMessage.js";
+import { sendAPI } from "../../../system/api/sendAPI.js";
 
-export const upgradePreparationBirdApiPath = (birdType: string) =>
-  `/player/preparation/birds/${encodeURIComponent(birdType)}/upgrade` as const;
+export class UpgradePreparationBirdAPI extends APIWithTokenMessage<PlayerPreparationState> {
+  readonly birdType: string;
 
-export class UpgradePreparationBirdApi {
-  path(birdType: string): string {
-    return upgradePreparationBirdApiPath(birdType);
+  constructor(userId: string, birdType: string) {
+    super(userId);
+    this.birdType = birdType;
   }
 
-  async execute(userId: string, birdType: string): Promise<PlayerPreparationState> {
-    return request(
-      this.path(birdType),
-      { method: "POST", headers: { "x-user-id": userId } },
-      PreparationStateSchema,
-    );
+  override get responseSchema() {
+    return PreparationStateSchema;
   }
 }
 
-export const upgradePreparationBirdApi = new UpgradePreparationBirdApi();
 export const upgradePlayerBird = (userId: string, birdType: string) =>
-  upgradePreparationBirdApi.execute(userId, birdType);
+  sendAPI(new UpgradePreparationBirdAPI(userId, birdType));

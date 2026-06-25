@@ -1,5 +1,5 @@
-import { UnfavoriteLevelRequestParamsSchema, UnfavoriteLevelResponseDataSchema, type PlayerFavorite } from "../../../api-contracts.js";
-import { request } from "../../../client.js";
+import { UnfavoriteLevelRequestParamsSchema, UnfavoriteLevelResponseDataSchema, type PlayerFavorite } from "../../../../objects/api/api-contracts.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const unfavoriteLevelApiPath = (levelId: string) => `/player/levels/${levelId}/favorite` as const;
 

@@ -5,7 +5,7 @@ import {
   getDirectorLevelAssignmentBoard,
   unassignLevelSlot,
   updateLevelSlotBirdPool,
-} from "../../../api/index.js";
+} from "../../../system/api/exports/index.js";
 import { BirdPoolConfigPanel } from "./components/BirdPoolConfigPanel.js";
 import { LevelPreviewCard } from "../../../component/level/LevelPreviewCard.js";
 import { createSubmissionLevelSource } from "../../../lib/level-repository.js";

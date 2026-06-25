@@ -3,7 +3,7 @@ import {
   type AbolishDirectorSubmissionRequestBody,
 } from "./body/AbolishDirectorSubmissionBody.js";
 import { SubmissionWithLevelSchema, type SubmissionWithLevel } from "../../../../objects/level/submission/submission-with-level.js";
-import { request } from "../../../client.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export class AbolishDirectorSubmissionApi {
   static pathFor(submissionId: string) {

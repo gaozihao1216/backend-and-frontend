@@ -4,8 +4,8 @@ import {
   UpdateShopItemResponseDataSchema,
   type ShopItem,
   type UpdateShopItemRequestBody,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 import { ListAdminShopItemsApiPath } from "./ListAdminShopItemsApi.js";
 
 export class UpdateShopItemApi {

@@ -1,4 +1,4 @@
-package microservice.player.runtime
+package microservice.player.support.wallet
 
 import cats.effect.IO
 import io.circe.Json

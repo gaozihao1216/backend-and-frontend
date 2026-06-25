@@ -1,4 +1,4 @@
-import type { UiButtonTemplate } from "../api/api-contracts.js";
+import type { UiButtonTemplate } from "../objects/api/api-contracts.js";
 import type {
   ButtonBaseDesign,
   ButtonStateOption,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Comment } from "../../api/api-contracts.js";
-import { deleteComment, getAdminComments } from "../../api/index.js";
+import type { Comment } from "../../objects/api/api-contracts.js";
+import { deleteComment, getAdminComments } from "../../system/api/exports/index.js";
 
 type AdminCommunityPageProps = {
   nickname: string;

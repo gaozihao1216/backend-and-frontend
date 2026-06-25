@@ -4,7 +4,7 @@ import java.sql.ResultSet
 import java.sql.Connection
 import java.time.Instant
 import microservice.player.objects.PlayerWallet
-import microservice.player.runtime.PlayerRuntimeDefaults
+import microservice.player.support.wallet.PlayerWalletDefaults
 import microservice.player.tables.wallet._
 
 final case class PlayerWalletRow(
@@ -54,9 +54,9 @@ private[player] object PlayerWalletTable {
   private def defaultWalletRow(userId: String, updatedAt: String): PlayerWalletRow =
     PlayerWalletRow(
       userId = userId,
-      coins = PlayerRuntimeDefaults.defaultCoins,
-      gems = PlayerRuntimeDefaults.defaultGems,
-      fragments = PlayerRuntimeDefaults.defaultFragments,
+      coins = PlayerWalletDefaults.defaultCoins,
+      gems = PlayerWalletDefaults.defaultGems,
+      fragments = PlayerWalletDefaults.defaultFragments,
       updatedAt = updatedAt
     )
 

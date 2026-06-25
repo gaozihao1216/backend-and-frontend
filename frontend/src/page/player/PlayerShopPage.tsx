@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { getPlayerUiData, invokePlayerUiAction } from "../../api/player-ui-api.js";
+import { getPlayerUiData } from "../../api/player/ui/GetPlayerUiDataApi.js";
+import { invokePlayerUiAction } from "../../api/player/ui/InvokePlayerUiActionApi.js";
 
 type CurrencyType = "coins" | "gems";
 

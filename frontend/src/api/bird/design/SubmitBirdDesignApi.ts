@@ -1,5 +1,5 @@
-import { SubmitBirdDesignResponseDataSchema, type BirdSubmission } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { SubmitBirdDesignResponseDataSchema, type BirdSubmission } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export class SubmitBirdDesignApi {
   static path(designId: string) {

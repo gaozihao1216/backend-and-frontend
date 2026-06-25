@@ -1,19 +1,11 @@
-import { request } from "../../client.js";
 import { PreparationStateSchema, type PlayerPreparationState } from "./PlayerPreparationSchemas.js";
+import { APIWithTokenMessage } from "../../../system/api/APIWithTokenMessage.js";
+import { sendAPI } from "../../../system/api/sendAPI.js";
 
-export const GetPreparationStateApiPath = "/player/preparation" as const;
-
-export class GetPreparationStateApi {
-  static readonly path = GetPreparationStateApiPath;
-
-  async execute(userId: string): Promise<PlayerPreparationState> {
-    return request(
-      GetPreparationStateApi.path,
-      { method: "GET", headers: { "x-user-id": userId } },
-      PreparationStateSchema,
-    );
+export class GetPreparationStateAPI extends APIWithTokenMessage<PlayerPreparationState> {
+  override get responseSchema() {
+    return PreparationStateSchema;
   }
 }
 
-export const getPreparationStateApi = new GetPreparationStateApi();
-export const getPlayerPreparation = (userId: string) => getPreparationStateApi.execute(userId);
+export const getPlayerPreparation = (userId: string) => sendAPI(new GetPreparationStateAPI(userId));

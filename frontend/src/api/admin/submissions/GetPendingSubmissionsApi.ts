@@ -1,5 +1,5 @@
-import { GetPendingSubmissionsRequestQuerySchema, GetPendingSubmissionsResponseDataSchema, type PendingSubmission } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { GetPendingSubmissionsRequestQuerySchema, GetPendingSubmissionsResponseDataSchema, type PendingSubmission } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const GetPendingSubmissionsApiPath = "/admin/submissions/pending" as const;
 

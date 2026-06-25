@@ -1,5 +1,5 @@
-import { ReviewSubmissionRequestBodySchema, ReviewSubmissionRequestParamsSchema, ReviewSubmissionResponseDataSchema, type ReviewSubmissionRequestBody, type ReviewedSubmission } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { ReviewSubmissionRequestBodySchema, ReviewSubmissionRequestParamsSchema, ReviewSubmissionResponseDataSchema, type ReviewSubmissionRequestBody, type ReviewedSubmission } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const reviewSubmissionApiPath = (submissionId: string) => `/admin/submissions/${submissionId}/review` as const;
 

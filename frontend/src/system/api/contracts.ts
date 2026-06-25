@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ErrorBodySchema, createApiSuccessSchema } from "../objects/system/system-objects.js";
+import { ErrorBodySchema, createApiSuccessSchema } from "../../objects/system/system-objects.js";
 
 export const ApiErrorSchema = ErrorBodySchema;
 

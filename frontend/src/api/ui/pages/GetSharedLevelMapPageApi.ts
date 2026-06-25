@@ -1,5 +1,5 @@
-import { GetUiPageResponseDataSchema, type UiPageConfig } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { GetUiPageResponseDataSchema, type UiPageConfig } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const GetSharedLevelMapPageApiPath = "/player/ui/level-map" as const;
 

@@ -2,8 +2,8 @@ import {
   ListAdminShopItemsRequestQuerySchema,
   ListAdminShopItemsResponseDataSchema,
   type ShopItem,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const ListAdminShopItemsApiPath = "/admin/shop/items" as const;
 

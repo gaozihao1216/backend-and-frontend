@@ -3,13 +3,13 @@ import type {
   CreateShopItemRequestBody,
   ShopItem,
   UpdateShopItemRequestBody,
-} from "../../api/api-contracts.js";
+} from "../../objects/api/api-contracts.js";
 import {
   createShopItem,
   deactivateShopItem,
   listAdminShopItems,
   updateShopItem,
-} from "../../api/index.js";
+} from "../../system/api/exports/index.js";
 
 type AdminShopPageProps = {
   userId: string;

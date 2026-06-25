@@ -1,21 +1,19 @@
-import { BindBackendUserRequestBodySchema, BindBackendUserResponseDataSchema, type BindBackendUserRequestBody, type BoundBackendUser } from "../api-contracts.js";
-import { request } from "../client.js";
+import { BindBackendUserRequestBodySchema, BindBackendUserResponseDataSchema, type BindBackendUserRequestBody, type BoundBackendUser } from "../../objects/api/api-contracts.js";
+import { APIMessage } from "../../system/api/APIMessage.js";
+import { sendAPI } from "../../system/api/sendAPI.js";
 
-export const BindBackendUserApiPath = "/api/bindbackenduserapi" as const;
+export class BindBackendUserAPI extends APIMessage<BoundBackendUser> {
+  readonly request: BindBackendUserRequestBody;
 
-export class BindBackendUserApi {
-  static readonly path = BindBackendUserApiPath;
+  constructor(input: BindBackendUserRequestBody) {
+    super();
+    this.request = BindBackendUserRequestBodySchema.parse(input);
+  }
 
-  async execute(input: BindBackendUserRequestBody): Promise<BoundBackendUser> {
-    return request(
-      BindBackendUserApi.path,
-      { method: "POST", body: JSON.stringify(BindBackendUserRequestBodySchema.parse(input)) },
-      BindBackendUserResponseDataSchema,
-    );
+  override get responseSchema() {
+    return BindBackendUserResponseDataSchema;
   }
 }
 
-export const bindBackendUserApi = new BindBackendUserApi();
-
 export const bindBackendUser = async (input: BindBackendUserRequestBody): Promise<BoundBackendUser> =>
-  bindBackendUserApi.execute(input);
+  sendAPI(new BindBackendUserAPI(input));

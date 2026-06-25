@@ -3,8 +3,8 @@ import {
   CreateBirdDesignResponseDataSchema,
   type BirdDesign,
   type CreateBirdDesignRequestBody,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const CreateBirdDesignApiPath = "/designer/bird-designs" as const;
 

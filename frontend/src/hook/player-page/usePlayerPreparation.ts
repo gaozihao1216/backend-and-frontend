@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ascendPlayerBird,
-  getPlayerPreparation,
-  upgradePlayerBird,
-  upgradePlayerSlingshot,
-  type BirdUpgradeState,
-  type PlayerPreparationState,
-} from "../../api/player-preparation-api.js";
+import { ascendPlayerBird } from "../../api/player/preparation/AscendPreparationBirdApi.js";
+import { getPlayerPreparation } from "../../api/player/preparation/GetPreparationStateApi.js";
+import { upgradePlayerBird } from "../../api/player/preparation/UpgradePreparationBirdApi.js";
+import { upgradePlayerSlingshot } from "../../api/player/preparation/UpgradePreparationSlingshotApi.js";
+import type { BirdUpgradeState, PlayerPreparationState } from "../../api/player/preparation/PlayerPreparationSchemas.js";
 import { readSelectedBirdType, writeSelectedBirdType } from "../../lib/player-bird-selection.js";
 
 export const usePlayerPreparation = (userId: string) => {

@@ -1,5 +1,5 @@
-import { CreatePageComponentRequestBodySchema, CreatePageComponentRequestParamsSchema, CreatePageComponentResponseDataSchema, type UiPageComponent, type UiPageConfig } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { CreatePageComponentRequestBodySchema, CreatePageComponentRequestParamsSchema, CreatePageComponentResponseDataSchema, type UiPageComponent, type UiPageConfig } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 import { normalizePageComponentIds } from "../../../objects/ui-customization/page-config-normalizer.js";
 
 export const CreatePageComponentApiPath = "/admin/director/ui/pages" as const;

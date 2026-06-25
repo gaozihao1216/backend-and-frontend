@@ -1,5 +1,5 @@
 import { DirectorBirdSkillBoardSchema } from "../../../../objects/bird/skill/director/director-bird-skill-entry.js";
-import { request } from "../../../client.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export class GetDirectorBirdSkillApi {
   static pathFor(birdType: string) {

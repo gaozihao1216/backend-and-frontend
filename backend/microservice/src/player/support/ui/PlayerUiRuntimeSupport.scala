@@ -1,4 +1,4 @@
-package microservice.player.runtime
+package microservice.player.support.ui
 
 import io.circe.Json
 import io.circe.syntax._
@@ -7,6 +7,10 @@ import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTable
+import microservice.player.support.checkin.PlayerWeeklyCheckInService
+import microservice.player.support.progress.PlayerLevelProgressService
+import microservice.player.support.shop.PlayerShopService
+import microservice.player.support.wallet.PlayerWalletService
 
 /** 动态 UI data/action 分派与 legacy 签到辅助。
   *

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createLevel, submitLevel } from "../../api/index.js";
-import type { Level, Submission } from "../../api/api-contracts.js";
+import { createLevel, submitLevel } from "../../system/api/exports/index.js";
+import type { Level, Submission } from "../../objects/api/api-contracts.js";
 import type { LevelData } from "../../objects/level/level/level-data.js";
 import type { LevelTag } from "../../objects/system/system-objects.js";
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getPlayerUiData, invokePlayerUiAction } from "../api/player-ui-api.js";
+import { getPlayerUiData } from "../api/player/ui/GetPlayerUiDataApi.js";
+import { invokePlayerUiAction } from "../api/player/ui/InvokePlayerUiActionApi.js";
 import { collectPageUiDataKeys } from "../lib/ui-runtime/ui-data-keys.js";
 import type { PageConfig } from "../objects/ui-customization/ui-customization-objects.js";
 

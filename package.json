@@ -14,7 +14,7 @@
     "start": "sbt run",
     "build": "vite build",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test frontend/src/**/*.test.ts",
+    "test": "node --import tsx --test $(find frontend/src -name '*.test.ts' -print)",
     "test:backend": "sbt test",
     "test:backend:jdbc": "UGC_DATABASE_USERNAME=postgres UGC_DATABASE_PASSWORD=postgres sbt \"testOnly *JdbcSmokeSuite\"",
     "demo:fracture": "node --import tsx frontend/src/lib/game-engine/fracture-demo.ts"

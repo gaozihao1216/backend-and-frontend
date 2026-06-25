@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ListAdminAuditLogsRequestQuery, ReviewAudit } from "../../api/api-contracts.js";
-import { listAdminAuditLogs } from "../../api/index.js";
+import type { ListAdminAuditLogsRequestQuery, ReviewAudit } from "../../objects/api/api-contracts.js";
+import { listAdminAuditLogs } from "../../system/api/exports/index.js";
 
 type AdminAuditLogsPageProps = {
   userId: string;

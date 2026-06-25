@@ -1,6 +1,6 @@
 import { RegisterCheckInPanelRewardsBodySchema } from "./body/RegisterCheckInPanelRewardsBody.js";
 import { PlayerCurrencyRewardSchema } from "../../../objects/ui-customization/ui-customization-objects.js";
-import { request } from "../../client.js";
+import { request } from "../../../system/api/legacyRequest.js";
 import { z } from "zod";
 
 export { RegisterCheckInPanelRewardsBodySchema } from "./body/RegisterCheckInPanelRewardsBody.js";

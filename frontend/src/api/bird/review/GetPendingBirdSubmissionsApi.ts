@@ -2,8 +2,8 @@ import {
   GetPendingBirdSubmissionsRequestQuerySchema,
   GetPendingBirdSubmissionsResponseDataSchema,
   type BirdSubmissionWithDesign,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const GetPendingBirdSubmissionsApiPath = "/admin/bird-submissions/pending" as const;
 

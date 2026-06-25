@@ -1,5 +1,5 @@
-import { GetPublishedLevelsRequestQuerySchema, GetPublishedLevelsResponseDataSchema, type GetPublishedLevelsRequestQuery, type PublishedLevel } from "../../../api-contracts.js";
-import { request } from "../../../client.js";
+import { GetPublishedLevelsRequestQuerySchema, GetPublishedLevelsResponseDataSchema, type GetPublishedLevelsRequestQuery, type PublishedLevel } from "../../../../objects/api/api-contracts.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const GetPublishedLevelsApiPath = "/player/levels" as const;
 

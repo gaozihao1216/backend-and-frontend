@@ -1,5 +1,5 @@
-import { GetLevelCommentsRequestParamsSchema, GetLevelCommentsResponseDataSchema, type LevelComment } from "../../../api-contracts.js";
-import { request } from "../../../client.js";
+import { GetLevelCommentsRequestParamsSchema, GetLevelCommentsResponseDataSchema, type LevelComment } from "../../../../objects/api/api-contracts.js";
+import { request } from "../../../../system/api/legacyRequest.js";
 
 export const getLevelCommentsApiPath = (levelId: string) => `/player/levels/${levelId}/comments` as const;
 

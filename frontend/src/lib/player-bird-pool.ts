@@ -1,4 +1,4 @@
-import { getPlayerPreparation } from "../api/player-preparation-api.js";
+import { getPlayerPreparation } from "../api/player/preparation/GetPreparationStateApi.js";
 import type { LevelData } from "../objects/level/level/level-data.js";
 import type { BirdPool } from "../objects/level/inventory/bird-pool.js";
 import { normalizeBirdPool } from "./bird-pool.js";

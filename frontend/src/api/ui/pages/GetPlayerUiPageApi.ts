@@ -1,5 +1,5 @@
-import { GetUiPageResponseDataSchema, UpdateUiPageRequestBodySchema, type UiPageConfig } from "../../api-contracts.js";
-import { request } from "../../client.js";
+import { GetUiPageResponseDataSchema, UpdateUiPageRequestBodySchema, type UiPageConfig } from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export const GetPlayerUiPageApiPath = "/player/ui/pages" as const;
 

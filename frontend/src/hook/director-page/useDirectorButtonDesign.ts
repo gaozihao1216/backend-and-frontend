@@ -7,8 +7,8 @@ import {
   type MouseEvent,
   type PointerEvent,
 } from "react";
-import { listButtonTemplates } from "../../api/index.js";
-import type { UiButtonTemplate } from "../../api/api-contracts.js";
+import { listButtonTemplates } from "../../system/api/exports/index.js";
+import type { UiButtonTemplate } from "../../objects/api/api-contracts.js";
 import { getPageConfig, savePageConfig } from "../../lib/ui-customization.js";
 import type { ButtonImageDesign, ImagePolygonPoint } from "../../objects/ui-customization/ui-customization-objects.js";
 import {

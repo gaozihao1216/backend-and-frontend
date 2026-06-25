@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ApiErrorSchema, createSuccessResponseSchema } from "./contracts.js";
-import { API_BASE_URL } from "../lib/config.js";
+import { API_BASE_URL } from "../../lib/config.js";
 
 const JsonHeadersSchema = z.record(z.string(), z.string());
 const REQUEST_TIMEOUT_MS = 10_000;

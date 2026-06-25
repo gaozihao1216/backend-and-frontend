@@ -2,8 +2,8 @@ import {
   CreateStretchVisualTemplateRequestBodySchema,
   CreateStretchVisualTemplateResponseDataSchema,
   type UiStretchVisualTemplate,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 import { stretchTemplateApiPath } from "./stretchTemplatePaths.js";
 
 export class CreateStretchVisualTemplateApi {

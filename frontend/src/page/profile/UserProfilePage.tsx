@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { UserProfile } from "../../api/api-contracts.js";
-import { getUserProfile } from "../../api/index.js";
+import type { UserProfile } from "../../objects/api/api-contracts.js";
+import { getUserProfile } from "../../system/api/exports/index.js";
 import type { AdminLevel } from "../../objects/system/system-objects.js";
 
 type UserProfilePageProps = {

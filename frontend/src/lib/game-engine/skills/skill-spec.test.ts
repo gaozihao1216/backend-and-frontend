@@ -14,7 +14,7 @@ test("resolveSkillStage picks tier stage", () => {
 test("system birds expose on_tap skill templates", () => {
   assert.equal(SPLIT_SKILLS.stages[0]?.specs[0]?.type, "split");
   assert.equal(BOMB_SKILLS.stages[0]?.specs[0]?.type, "vertical_bomb_drop");
-  assert.equal(BASIC_SKILLS.stages[0]?.specs[0]?.type, "balloon_push");
+  assert.equal(BASIC_SKILLS.stages[0]?.specs[0]?.type, "forward_shockwave");
 });
 
 test("radial falloff decreases toward edge", () => {

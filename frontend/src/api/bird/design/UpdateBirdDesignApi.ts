@@ -3,8 +3,8 @@ import {
   UpdateBirdDesignResponseDataSchema,
   type BirdDesign,
   type UpdateBirdDesignRequestBody,
-} from "../../api-contracts.js";
-import { request } from "../../client.js";
+} from "../../../objects/api/api-contracts.js";
+import { request } from "../../../system/api/legacyRequest.js";
 
 export class UpdateBirdDesignApi {
   static path(designId: string) {

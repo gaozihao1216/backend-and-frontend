@@ -4,8 +4,8 @@ import {
   deleteButtonTemplate,
   listButtonTemplates,
   updateButtonTemplate,
-} from "../../api/index.js";
-import type { UiButtonTemplate } from "../../api/api-contracts.js";
+} from "../../system/api/exports/index.js";
+import type { UiButtonTemplate } from "../../objects/api/api-contracts.js";
 import { processTemplateImage, readFileAsDataUrl } from "../../lib/template-image-utils.js";
 import {
   createDefaultDraft,

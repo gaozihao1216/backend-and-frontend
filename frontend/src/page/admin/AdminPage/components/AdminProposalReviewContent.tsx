@@ -4,11 +4,11 @@ import {
   getPendingSubmissions,
   reviewBirdSubmission,
   reviewSubmission,
-} from "../../../../api/index.js";
+} from "../../../../system/api/exports/index.js";
 import { LevelPreviewCard } from "../../../../component/level/LevelPreviewCard.js";
 import { createSubmissionLevelSource } from "../../../../lib/level-repository.js";
 import { STARTER_LEVEL_ID } from "../../../../shared/levels/starter-level.js";
-import type { BirdSubmissionWithDesign, SubmissionWithLevel } from "../../../../api/api-contracts.js";
+import type { BirdSubmissionWithDesign, SubmissionWithLevel } from "../../../../objects/api/api-contracts.js";
 
 type ReviewTab = "levels" | "birds";
 
