@@ -71,27 +71,27 @@ api/
 `npm test` 会运行 `api-alignment.test.ts`：
 
 - 扫描后端全部公开 `*Api.scala`，断言前端存在同布局的 `*Api.ts`
-- 扫描后端 `<module>/body/**/*.scala`（文件名 `*Body.scala`），断言前端存在对应 `body/*Body.ts`
-- 路径变换：`<module>/body/<area>/XxxBody.scala` → `<module>/<area>/body/XxxBody.ts`；例外见下
+- 扫描后端 `<module>/objects/**/*.scala` 中的 `*Request.scala`，断言前端存在对应 `body/*Body.ts`
+- 路径变换：`<module>/objects/<area>/XxxRequest.scala` → `<module>/<area>/body/XxxBody.ts`；例外见下
 
 ## HTTP 请求体（body/）
 
-后端请求 DTO 在 **`<module>/body/<子域>/`**（与 `api/` 同级），不在 `api/.../body/` 下。前端仍把 body 放在 **紧邻 `*Api.ts` 的 `body/` 子目录**，便于同域 import。
+后端请求对象在 **`<module>/objects/<子域>/`**，不再单独使用 `body/` 目录。前端暂时仍把请求 schema 放在 **紧邻 `*Api.ts` 的 `body/` 子目录**，便于同域 import。
 
 | 后端 | 前端 |
 | --- | --- |
-| `level/body/design/CreateLevelBody.scala` | `api/level/design/body/CreateLevelBody.ts` |
-| `level/body/player/RateLevelBody.scala` | `api/level/player/action/body/RateLevelBody.ts` |
-| `admin/body/shop/CreateShopItemBody.scala` | `api/admin/shop/body/CreateShopItemBody.ts` |
-| `ui/body/pages/CreateUiPageBody.scala` | `api/ui/pages/body/CreateUiPageBody.ts` |
+| `level/objects/design/request/CreateLevelRequest.scala` | `api/level/design/body/CreateLevelRequest.ts` |
+| `level/objects/player/RateLevelRequest.scala` | `api/level/player/action/body/RateLevelRequest.ts` |
+| `admin/objects/shop/CreateShopItemRequest.scala` | `api/admin/shop/body/CreateShopItemRequest.ts` |
+| `ui/objects/pages/CreateUiPageRequest.scala` | `api/ui/pages/body/CreateUiPageBody.ts` |
 
-通用规则：`backend/.../<module>/body/<path>/XxxBody.scala` → `frontend/src/api/<module>/<path>/body/XxxBody.ts`。  
-**例外**：`level/body/player/` 对应前端的 `level/player/action/body/`（与 `level/api/player/action/` 对齐）。
+通用规则：`backend/.../<module>/objects/<path>/XxxRequest.scala` → `frontend/src/api/<module>/<path>/body/XxxBody.ts`。  
+**例外**：`level/objects/player/request/` 对应前端的 `level/player/action/body/`（与 `level/api/player/action/` 对齐）。
 
 每个 body 文件导出 Zod schema 与类型。为减少调用方改动，`*Api.ts` 与
 `objects/api/api-contracts.ts` 仍可使用既有名称（如 `CreateShopItemRequestBodySchema`），
 可在 body 文件内作为 export alias 保留。
 
-领域/响应模型仍在 `objects/`；body 文件可 import `objects/` 中的嵌套 schema（如 `ButtonTemplateSchema`）。
+领域/响应模型在 `objects/`；前端 body 文件可 import `objects/` 中的嵌套 schema（如 `ButtonTemplateSchema`）。
 
 后端模块目录全文见 [`backend/microservice/MODULE-LAYOUT.md`](../../../backend/microservice/MODULE-LAYOUT.md)。

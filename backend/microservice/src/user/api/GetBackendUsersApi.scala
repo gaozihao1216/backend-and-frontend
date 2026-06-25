@@ -2,7 +2,7 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.user.objects.BackendUser
+import microservice.user.objects.identity.BackendUser
 import microservice.user.tables.user.UserTable
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}

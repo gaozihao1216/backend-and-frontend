@@ -11,13 +11,13 @@ import microservice.level.objects.social.LevelComment
 import microservice.level.tables.comment.CommentTable
 import microservice.level.tables.shared.CommentRow
 import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.UserRole
-import microservice.level.body.player.CreateCommentBody
+import microservice.system.objects.enums.UserRole
+import microservice.level.objects.player.request.CreateLevelCommentRequest
 
 final case class CreateCommentAPIMessage(
   playerId: String,
   levelId: String,
-  body: CreateCommentBody
+  body: CreateLevelCommentRequest
 ) extends APIWithTokenMessage[LevelComment] {
   override def token: String = playerId
   /** plan 定义了什么业务流程：CreateComment 对应的业务流程。

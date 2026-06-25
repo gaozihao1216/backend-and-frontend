@@ -5,8 +5,8 @@ import java.sql.Connection
 import microservice.admin.api.internal.RecordReviewAuditInternalAPIMessage
 import microservice.admin.objects.level.AdminSubmissionWithLevel
 import microservice.admin.support.mapping.LevelHandoffMapping
-import microservice.system.objects.{AdminLevel, AuditTargetType, SubmissionStatus}
-import microservice.admin.body.director.level_assignment.AbolishDirectorSubmissionBody
+import microservice.system.objects.enums.{AdminLevel, AuditTargetType, SubmissionStatus}
+import microservice.admin.objects.director.level_assignment.request.AbolishDirectorSubmissionRequest
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.AbolishApprovedSubmissionInternalAPIMessage
@@ -16,7 +16,7 @@ import microservice.user.support.AccessControl
 final case class AbolishDirectorSubmissionAPIMessage(
   userId: String,
   submissionId: String,
-  body: AbolishDirectorSubmissionBody
+  body: AbolishDirectorSubmissionRequest
 ) extends APIWithTokenMessage[AdminSubmissionWithLevel] {
   override def token: String = userId
 

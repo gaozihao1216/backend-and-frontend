@@ -7,7 +7,7 @@ import java.time.Instant
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 import microservice.ui.tables.ui_page_rollback.{UiPageRollbackRow, UiPageRollbackTable}
 

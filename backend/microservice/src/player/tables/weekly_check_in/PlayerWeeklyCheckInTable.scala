@@ -3,7 +3,7 @@ package microservice.player.tables.weekly_check_in
 import java.sql.ResultSet
 import java.sql.Connection
 import java.time.Instant
-import microservice.player.objects.WeeklyCheckInProgress
+import microservice.player.objects.checkin.WeeklyCheckInProgress
 import microservice.player.tables.weekly_check_in._
 
 final case class PlayerWeeklyCheckInRow(

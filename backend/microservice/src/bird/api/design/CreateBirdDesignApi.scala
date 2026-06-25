@@ -10,11 +10,11 @@ import microservice.bird.tables.design.{BirdDesignRow, BirdDesignTable}
 import microservice.bird.validation.design.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{LevelStatus, UserRole}
-import microservice.bird.body.design.CreateBirdDesignBody
+import microservice.system.objects.enums.{LevelStatus, UserRole}
+import microservice.bird.objects.design.request.CreateBirdDesignRequest
 
 /** 设计师创建新鸟类设计 APIMessage，初始状态为 Draft。 */
-final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBirdDesignBody)
+final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBirdDesignRequest)
     extends APIWithTokenMessage[BirdDesign] {
   override def token: String = designerId
 
@@ -61,7 +61,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
     }
 
   /** 将 HTTP 请求体映射为校验层使用的 BirdDesignInput（字段一一对应，无业务变换）。 */
-  private def toInput(body: CreateBirdDesignBody): BirdDesignInput =
+  private def toInput(body: CreateBirdDesignRequest): BirdDesignInput =
     BirdDesignInput(
       name = body.name,
       summary = body.summary,

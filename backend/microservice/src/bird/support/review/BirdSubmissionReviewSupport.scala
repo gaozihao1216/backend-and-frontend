@@ -9,8 +9,8 @@ import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{LevelStatus, SubmissionStatus}
-import microservice.bird.body.review.ReviewBirdSubmissionBody
+import microservice.system.objects.enums.{LevelStatus, SubmissionStatus}
+import microservice.bird.objects.submission.request.ReviewBirdSubmissionRequest
 
 /** 鸟类投稿审核流程中的查表、决策与双写校验。
   *
@@ -23,7 +23,7 @@ private[bird] object BirdSubmissionReviewSupport {
       case Some(row) => EitherT.rightT(row)
     }
 
-  def requireReviewDecision(submission: BirdSubmissionRow, body: ReviewBirdSubmissionBody): Step[Unit] =
+  def requireReviewDecision(submission: BirdSubmissionRow, body: ReviewBirdSubmissionRequest): Step[Unit] =
     if (submission.status != SubmissionStatus.PendingReview) {
       PlanStep.fail(HttpError.conflict("SUBMISSION_ALREADY_REVIEWED", s"Submission already reviewed: ${submission.id}"))
     } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
@@ -35,7 +35,7 @@ private[bird] object BirdSubmissionReviewSupport {
   def requireUpdatedSubmission(
     connection: Connection,
     submissionId: String,
-    body: ReviewBirdSubmissionBody,
+    body: ReviewBirdSubmissionRequest,
     reviewerId: String,
     reviewedAt: String
   ): Step[BirdSubmissionRow] =
@@ -60,7 +60,7 @@ private[bird] object BirdSubmissionReviewSupport {
   def requireSyncedDesign(
     connection: Connection,
     submission: BirdSubmissionRow,
-    body: ReviewBirdSubmissionBody,
+    body: ReviewBirdSubmissionRequest,
     updatedAt: String
   ): Step[Unit] = {
     val targetStatus =

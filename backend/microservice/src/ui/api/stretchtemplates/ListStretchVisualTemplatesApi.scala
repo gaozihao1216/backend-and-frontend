@@ -5,7 +5,7 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.stretch_template.StretchVisualTemplate
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}

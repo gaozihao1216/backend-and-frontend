@@ -8,7 +8,7 @@ import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.core.Level
 import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 
 final case class GetPublishedLevelAPIMessage(
   playerId: String,

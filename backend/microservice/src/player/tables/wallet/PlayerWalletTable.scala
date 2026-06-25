@@ -3,7 +3,7 @@ package microservice.player.tables.wallet
 import java.sql.ResultSet
 import java.sql.Connection
 import java.time.Instant
-import microservice.player.objects.PlayerWallet
+import microservice.player.objects.wallet.PlayerWallet
 import microservice.player.support.wallet.PlayerWalletDefaults
 import microservice.player.tables.wallet._
 

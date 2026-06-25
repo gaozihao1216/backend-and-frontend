@@ -3,7 +3,7 @@ package microservice.bird.objects.submission
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.bird.objects.design.BirdDesign
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 /** 待审核鸟类投稿的聚合视图：Submission 字段 + 嵌套完整 BirdDesign。
   *

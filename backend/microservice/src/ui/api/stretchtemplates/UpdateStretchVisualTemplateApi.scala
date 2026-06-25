@@ -6,12 +6,12 @@ import java.time.Instant
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.stretch_template.StretchVisualTemplate
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
-import microservice.ui.body.stretchtemplates.UpdateStretchVisualTemplateBody
+import microservice.ui.objects.stretch_template.request.UpdateStretchVisualTemplateRequest
 import microservice.ui.support.stretchtemplates.StretchVisualTemplateAccess
 import microservice.ui.validation.stretchtemplates.StretchVisualTemplateValidation
 
@@ -19,13 +19,13 @@ import microservice.ui.validation.stretchtemplates.StretchVisualTemplateValidati
   *
   * 定义：PUT /panel-templates/:id 或 /pattern-templates/:id。
   * 作用：校验 kind 匹配后 update StretchVisualTemplateTable。
-  * 关联：UpdateStretchVisualTemplateBody.template。
+  * 关联：UpdateStretchVisualTemplateRequest.template。
   */
 final case class UpdateStretchVisualTemplateAPIMessage(
   userId: String,
   templateId: String,
   expectedKind: StretchVisualTemplateKind,
-  body: UpdateStretchVisualTemplateBody
+  body: UpdateStretchVisualTemplateRequest
 ) extends APIWithTokenMessage[StretchVisualTemplate] {
   override def token: String = userId
 

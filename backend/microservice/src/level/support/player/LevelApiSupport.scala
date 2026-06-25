@@ -10,7 +10,7 @@ import microservice.level.objects.social.{Favorite, RateLevelErrors}
 import microservice.level.tables.favorite.FavoriteTable
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.LevelRow
-import microservice.system.objects.LevelStatus
+import microservice.system.objects.enums.LevelStatus
 
 /** 玩家侧关卡 API 公共辅助：已发布关卡、评分与收藏删除的前置校验。
   *

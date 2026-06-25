@@ -13,14 +13,14 @@ import microservice.level.api.internal.admin.{
   GetSubmissionWithLevelInternalAPIMessage,
   UpdateSlotBirdPoolInternalAPIMessage
 }
-import microservice.system.objects.AdminLevel
-import microservice.admin.body.director.level_assignment.UpdateLevelSlotBirdPoolBody
+import microservice.system.objects.enums.AdminLevel
+import microservice.admin.objects.director.level_assignment.request.UpdateLevelSlotBirdPoolRequest
 
 /** PUT /admin/director/level-assignments/:levelSuffix/bird-pool — 更新槽位 bird pool。 */
 final case class UpdateLevelSlotBirdPoolAPIMessage(
   userId: String,
   levelSuffix: String,
-  body: UpdateLevelSlotBirdPoolBody
+  body: UpdateLevelSlotBirdPoolRequest
 ) extends APIWithTokenMessage[LevelSlotAssignmentDetail] {
   override def token: String = userId
 

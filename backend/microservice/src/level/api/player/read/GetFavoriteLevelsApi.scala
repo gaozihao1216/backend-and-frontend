@@ -8,7 +8,7 @@ import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.social.FavoriteWithLevel
 import microservice.level.tables.favorite.FavoriteTable
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 
 final case class GetFavoriteLevelsAPIMessage(
   playerId: String

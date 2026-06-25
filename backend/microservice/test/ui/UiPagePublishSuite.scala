@@ -4,9 +4,9 @@ import microservice.testsupport.TestSupport
 import microservice.ui.objects.page.PageConfig
 import microservice.ui.objects.page.PageLayout
 import microservice.ui.objects.page.PageLayoutType
-import microservice.ui.objects.UiEndpoint
+import microservice.ui.objects.endpoint.UiEndpoint
 import munit.CatsEffectSuite
-import microservice.ui.body.pages.UpdateUiPageBody
+import microservice.ui.objects.page.request.UpdateUiPageRequest
 
 class UiPagePublishSuite extends CatsEffectSuite {
   private val directorId = "admin-director-1"
@@ -27,8 +27,8 @@ class UiPagePublishSuite extends CatsEffectSuite {
     TestSupport.seed()
 
     for {
-      first <- PublishUiPageAPIMessage(directorId, pageId, UpdateUiPageBody(samplePage)).run(TestSupport.session)
-      second <- PublishUiPageAPIMessage(directorId, pageId, UpdateUiPageBody(updatedPage)).run(TestSupport.session)
+      first <- PublishUiPageAPIMessage(directorId, pageId, UpdateUiPageRequest(samplePage)).run(TestSupport.session)
+      second <- PublishUiPageAPIMessage(directorId, pageId, UpdateUiPageRequest(updatedPage)).run(TestSupport.session)
       playerView <- GetPlayerUiPageAPIMessage("player-1", pageId).run(TestSupport.session)
       rolledBack <- RollbackUiPageAPIMessage(directorId, pageId).run(TestSupport.session)
       playerAfterRollback <- GetPlayerUiPageAPIMessage("player-1", pageId).run(TestSupport.session)
@@ -44,7 +44,7 @@ class UiPagePublishSuite extends CatsEffectSuite {
   test("rollback fails when no snapshot exists") {
     TestSupport.seed()
 
-    PublishUiPageAPIMessage(directorId, "player.social.demo", UpdateUiPageBody(samplePage.copy(id = "player.social.demo")))
+    PublishUiPageAPIMessage(directorId, "player.social.demo", UpdateUiPageRequest(samplePage.copy(id = "player.social.demo")))
       .run(TestSupport.session)
       .flatMap { firstPublish =>
         assertEquals(firstPublish.map(_.id), Right("player.social.demo"))

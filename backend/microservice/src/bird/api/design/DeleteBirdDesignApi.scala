@@ -7,7 +7,7 @@ import microservice.bird.objects.design.BirdDesign
 import microservice.bird.support.design.BirdDesignAccess
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 
 /** DELETE /designer/bird-designs/:designId — 删除草稿状态的鸟类设计（仅作者、仅 Draft）。 */
 final case class DeleteBirdDesignAPIMessage(designerId: String, designId: String)

@@ -2,7 +2,7 @@ package microservice.player.tables.check_in_panel_reward
 
 import java.sql.ResultSet
 import java.sql.Connection
-import microservice.player.objects.CheckInSlotReward
+import microservice.player.objects.checkin.CheckInSlotReward
 import microservice.player.tables.check_in_panel_reward._
 
 final case class CheckInPanelRewardRow(

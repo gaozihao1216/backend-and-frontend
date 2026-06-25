@@ -13,7 +13,7 @@ import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.preparation.BirdSkillConfigView
 import microservice.player.support.catalog.PreparationCatalogMapping
-import microservice.player.objects.PlayerWallet
+import microservice.player.objects.wallet.PlayerWallet
 import microservice.player.tables.preparation.PlayerPreparationTable
 
 /** 备战页升级/升阶与鸟种 catalog 查表的前置校验。 */

@@ -7,7 +7,7 @@ import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.button_template.ButtonTemplate
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.button_template.{ButtonTemplateRow, ButtonTemplateRowMapper, ButtonTemplateTable}
 
 /** 按钮模板查重、查存在与写结果校验。 */

@@ -5,22 +5,22 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.body.pagecomponents.UpdatePageComponentBody
+import microservice.ui.objects.component.request.UpdatePageComponentRequest
 import microservice.ui.support.pagecomponents.UiPageComponentAccess
 
 /** 总监更新页面内组件 APIMessage。
   *
   * 定义：PUT /admin/director/ui/pages/:pageId/components/:componentId。
   * 作用：按 ADT 类型 copy id 后 updateComponent。
-  * 关联：UpdatePageComponentBody.component；路径 componentId 覆盖 body id。
+  * 关联：UpdatePageComponentRequest.component；路径 componentId 覆盖 body id。
   */
 final case class UpdatePageComponentAPIMessage(
   userId: String,
   pageId: String,
   componentId: String,
-  body: UpdatePageComponentBody
+  body: UpdatePageComponentRequest
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 

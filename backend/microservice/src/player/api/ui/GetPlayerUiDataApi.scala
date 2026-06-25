@@ -6,7 +6,7 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.support.ui.PlayerUiRuntimeSupport
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 import microservice.user.support.AccessControl
 
 /** GET /player/ui/data/:apiKey 动态 UI 数据 APIMessage。 */

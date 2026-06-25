@@ -8,8 +8,8 @@ import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.core.Level
 import microservice.level.tables.level.LevelTable
-import microservice.system.objects.LevelTag
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.LevelTag
+import microservice.system.objects.enums.UserRole
 
 final case class GetPublishedLevelsAPIMessage(
   playerId: String,

@@ -6,8 +6,8 @@ import java.sql.Connection
 import microservice.admin.api.internal.RecordReviewAuditInternalAPIMessage
 import microservice.admin.objects.submission.ReviewedSubmission
 import microservice.admin.support.mapping.LevelHandoffMapping
-import microservice.system.objects.{AdminLevel, AuditTargetType}
-import microservice.admin.body.submissions.ReviewSubmissionBody
+import microservice.system.objects.enums.{AdminLevel, AuditTargetType}
+import microservice.admin.objects.submission.request.ReviewSubmissionRequest
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.ReviewLevelSubmissionInternalAPIMessage
@@ -17,7 +17,7 @@ import microservice.user.support.AccessControl
 final case class ReviewSubmissionAPIMessage(
   userId: String,
   submissionId: String,
-  body: ReviewSubmissionBody
+  body: ReviewSubmissionRequest
 ) extends APIWithTokenMessage[ReviewedSubmission] {
   override def token: String = userId
 

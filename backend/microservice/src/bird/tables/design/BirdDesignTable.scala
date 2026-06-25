@@ -4,7 +4,7 @@ import java.sql.Connection
 import io.circe.parser._
 import io.circe.syntax._
 import microservice.bird.objects.design.BirdDesign
-import microservice.system.objects.LevelStatus
+import microservice.system.objects.enums.LevelStatus
 
 final case class BirdDesignRow(
   id: String,
@@ -125,7 +125,7 @@ object BirdDesignTable {
 }
 
 import java.sql.Connection
-import microservice.system.objects.LevelStatus
+import microservice.system.objects.enums.LevelStatus
 
 private[tables] object BirdDesignTableSql {
   private val baseSelect: String =

@@ -5,10 +5,10 @@ import io.circe.Json
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.objects.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
+import microservice.player.objects.social.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
 import microservice.player.support.social.PlayerSocialAccess
 import microservice.player.tables.social.PlayerPrivateMessageTable
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 import microservice.user.support.AccessControl
 
 /** 私信列表 APIMessage。

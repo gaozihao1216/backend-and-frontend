@@ -7,7 +7,7 @@ import microservice.infrastructure.http.HttpError
 import microservice.user.support.AccessControl
 import microservice.level.objects.social.Favorite
 import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 
 final case class UnfavoriteLevelAPIMessage(
   playerId: String,

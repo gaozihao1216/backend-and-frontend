@@ -36,34 +36,32 @@ backend/microservice/src/
 | 目录 | 职责 |
 | --- | --- |
 | `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` 编排（鉴权 → 校验 → support → 表读写） |
-| `body/` | 请求 DTO（Circe 编解码）；由 `api` 层的 APIMessage 引用 |
 | `validation/` | 字段/结构校验：`validate*` → `PlanStep.Step`，`check*` 供单元测试 |
 | `objects/` | 领域对象（case class + Circe codec）；JSON 辅助如 `PlayerSocialJson` |
 | `support/` | 可复用业务规则（查表、状态机）：`require*` / `check*` |
 | `routes/` | 模块 APIMessage 注册表；业务 HTTP 入口统一走 `POST /api/{apiName}` |
 | `tables/` | 数据访问；`*Row` + `*Table.scala` 读写入口 + `*TableInitializer.scala` DDL/seed |
-| `runtime/` / `preparation/` | player 模块专属运行时/备战逻辑（**不是** domain 类型） |
+| `support/*` / `preparation/` | player 模块专属商店、签到、进度、钱包、备战逻辑 |
 
 **类型分层（目录规范）** — 完整说明、依赖图与新增 API 清单见 [`backend/microservice/MODULE-LAYOUT.md`](../backend/microservice/MODULE-LAYOUT.md)；领域对象子包见 [`OBJECTS.md`](../backend/microservice/OBJECTS.md)。
 
 | 层 | 路径 | 做什么 | 不做什么 |
 | --- | --- | --- | --- |
-| `objects/` | `<module>/objects/` | 领域模型、枚举、错误码、API 返回类型 | SQL、路由、`EntityDecoder` |
-| `body/` | `<module>/body/<子域>/` | 入站 JSON 形状；`req.as[XxxBody]` | 权限、写表、业务流程 |
-| `validation/` | `<module>/validation/<子域>/` | 基于 body/objects 的字段校验 | 访问 `Connection` / Table |
+| `objects/` | `<module>/objects/` | 领域模型、枚举、错误码、API 返回类型、请求对象 | SQL、路由 |
+| `validation/` | `<module>/validation/<子域>/` | 基于 objects 的字段校验 | 访问 `Connection` / Table |
 | `support/` | `<module>/support/<子域>/` | 跨步骤可复用的查表与状态规则 | 定义 APIMessage |
-| `api/` | `<module>/api/<子域>/` | 仅 `*Api.scala`，`plan` 串联上述层 | body/validation 子目录、`object` 伴生 |
+| `api/` | `<module>/api/<子域>/` | 仅 `*Api.scala`，`plan` 串联上述层 | validation/support 子目录、`object` 伴生 |
 | `tables/` | `<module>/tables/` | `*Row` 与持久化；`Row ↔ objects` | HTTP 类型 |
 
 **一次请求的数据流：**
 
 ```text
-routes  ──解析 JSON──►  body/
+routes  ──解析 JSON──►  objects/
    │
    └──► api/*Api.plan ──► AccessControl → validation → support → tables → objects（返回）
 ```
 
-示例路径：`CreateLevelBody` → `level/body/design/`；`CreateLevelValidation` → `level/validation/design/`；`LevelDesignAccess` → `level/support/design/`；`UiPageAccess` → `ui/support/pages/`；`PlayerSocialAccess` → `player/support/social/`；`PlayerPreparationAccess` → `player/preparation/`。
+示例路径：`CreateLevelRequest` → `level/objects/design/`；`CreateLevelValidation` → `level/validation/design/`；`LevelDesignAccess` → `level/support/design/`；`UiPageAccess` → `ui/support/pages/`；`PlayerSocialAccess` → `player/support/social/`；`PlayerPreparationAccess` → `player/support/preparation/`。
 
 ## APIMessage 模式
 
@@ -134,7 +132,7 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
   - **Standard**：关卡/鸟类投稿审核、评论管理
   - **Director**：UI 定制、关卡槽位分配、鸟类技能配置等
 
-`AdminLevel` 定义在 `system/objects/AdminLevel.scala`，用户表字段 `admin_level` 仅对 `role = admin` 有效。
+`AdminLevel` 定义在 `system/objects/enums/AdminLevel.scala`，用户表字段 `admin_level` 仅对 `role = admin` 有效。
 
 ## 存储层
 
@@ -204,8 +202,8 @@ level/
 │       ├── read/              # 已发布关卡、评论、收藏列表
 │       └── action/            # 评分、收藏、评论写入
 ├── body/
-│   ├── design/                # CreateLevelBody、SubmitLevelBody
-│   └── player/                # RateLevelBody、CreateCommentBody
+│   ├── design/                # CreateLevelRequest、SubmitLevelRequest
+│   └── player/                # RateLevelRequest、CreateLevelCommentRequest
 ├── validation/
 │   └── design/                # CreateLevelValidation
 ├── objects/
@@ -248,8 +246,8 @@ admin/
 │       ├── level_assignment/
 │       └── bird_skill/
 ├── body/
-│   ├── shop/                  # CreateShopItemBody、UpdateShopItemBody
-│   ├── submissions/           # ReviewSubmissionBody
+│   ├── shop/                  # CreateShopItemRequest、UpdateShopItemRequest
+│   ├── submissions/           # ReviewSubmissionRequest
 │   └── director/
 │       ├── permissions/
 │       ├── level_assignment/
@@ -292,8 +290,8 @@ bird/
 │   ├── design/                # CRUD + Submit（仅 *Api.scala）
 │   └── review/
 ├── body/
-│   ├── design/                # CreateBirdDesignBody、UpdateBirdDesignBody
-│   └── review/                # ReviewBirdSubmissionBody
+│   ├── design/                # CreateBirdDesignRequest、UpdateBirdDesignRequest
+│   └── review/                # ReviewBirdSubmissionRequest
 ├── validation/
 │   └── design/                # BirdDesignValidation
 ├── objects/

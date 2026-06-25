@@ -6,7 +6,7 @@ import microservice.level.tables.level.LevelTable
 import microservice.level.tables.rating.RatingTable
 import microservice.level.tables.submission.SubmissionTable
 import microservice.level.tables.shared.{CommentRow, LevelRow, RatingRow, SubmissionRow}
-import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
+import microservice.system.objects.enums.{LevelStatus, LevelTag, SubmissionStatus}
 
 /** 演示关卡/投稿/评分/评论种子（level 模块内）。 */
 private[level] object DemoLevelSeedSupport {

@@ -5,7 +5,7 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.button_template.ButtonTemplate
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
 

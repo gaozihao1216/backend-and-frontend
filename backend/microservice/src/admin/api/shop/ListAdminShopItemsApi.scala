@@ -7,7 +7,7 @@ import microservice.admin.support.mapping.PlayerHandoffMapping
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.api.internal.admin.ListShopItemsInternalAPIMessage
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.user.support.AccessControl
 
 /** GET /admin/shop/items — 列出全部商店商品（含下架）。 */

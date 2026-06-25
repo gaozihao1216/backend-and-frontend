@@ -7,7 +7,7 @@ import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.api.internal.ui.RegisterCheckInPanelRewardsInternalAPIMessage
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.panelworkflows.UiCheckInSlotReward
 import microservice.ui.support.mapping.PlayerHandoffMapping
 import microservice.user.support.AccessControl

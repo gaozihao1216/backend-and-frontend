@@ -2,7 +2,7 @@ package microservice.ui.objects.page
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.ui.objects.UiEndpoint
+import microservice.ui.objects.endpoint.UiEndpoint
 import microservice.ui.objects.component.PageComponent
 
 /** 动态页面完整配置领域对象。 */

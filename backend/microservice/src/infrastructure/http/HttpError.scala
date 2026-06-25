@@ -1,7 +1,7 @@
 package microservice.infrastructure.http
 
 import cats.effect.IO
-import microservice.system.objects.{ApiFailure, ErrorBody}
+import microservice.system.objects.api.{ApiFailure, ErrorBody}
 import io.circe.Encoder
 import org.http4s.Response
 import org.http4s.Status

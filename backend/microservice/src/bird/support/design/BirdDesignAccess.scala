@@ -12,7 +12,7 @@ import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{LevelStatus, SubmissionStatus}
+import microservice.system.objects.enums.{LevelStatus, SubmissionStatus}
 
 /** 设计师鸟类设计的所有权、状态与写操作结果校验。 */
 private[bird] object BirdDesignAccess {

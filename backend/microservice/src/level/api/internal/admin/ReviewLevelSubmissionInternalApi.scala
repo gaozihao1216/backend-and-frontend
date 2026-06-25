@@ -6,7 +6,7 @@ import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.objects.submission.Submission
 import microservice.level.support.admin.SubmissionReviewSupport
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 /** 模块间 API：审核关卡投稿；由 admin HTTP API 调用，不挂路由。 */
 final case class ReviewLevelSubmissionInternalAPIMessage(

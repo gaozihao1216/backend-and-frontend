@@ -4,7 +4,7 @@ import java.sql.Connection
 import microservice.infrastructure.api.{PlanStep, PlanSteps}
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.level.api.internal.user.GetUserLevelProfileDataInternalAPIMessage
-import microservice.user.objects.{GetUserProfileErrors, UserProfile, UserProfileStats}
+import microservice.user.objects.profile.{GetUserProfileErrors, UserProfile, UserProfileStats}
 import microservice.user.tables.user.{UserRowMapper, UserTable}
 
 /** 用户资料只读聚合查询校验。 */

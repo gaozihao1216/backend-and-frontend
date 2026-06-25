@@ -2,7 +2,7 @@ package microservice.level.objects.submission
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 /** 关卡投稿记录，设计师提交审核后生成。
   *

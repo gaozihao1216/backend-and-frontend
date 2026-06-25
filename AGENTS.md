@@ -59,9 +59,8 @@ backend/microservice/src/     # Scala/http4s backend (sole runtime backend)
 ├── user/                     # Identity, bind, profile, AccessControl, UserTable
 ├── level/                    # Level CRUD, submissions, player actions
 │   ├── api/design + api/player/{read,action}   # only *Api.scala
-│   ├── body/design + body/player               # HTTP request DTOs
 │   ├── validation/design
-│   ├── objects/{level,terrain,submission,social,inventory,errors}
+│   ├── objects/{level,terrain,submission,social,inventory,errors,design,player}
 │   └── support/{design,player}/
 ├── admin/                    # Review, comments, director features
 │   ├── api/comments|submissions|director/{permissions,level_assignment,bird_skill}
@@ -97,7 +96,7 @@ scripts/dev.mjs               # Concurrent sbt + vite launcher
 
 - **Frontend**: `frontend/src/api/<module>/<subpath>/*Api.ts` mirrors backend `api/` layout — see `frontend/src/api/ARCHITECTURE.md`
 - **Backend**: `backend/microservice/src/<module>/api/*Api.scala` defines `XxxAPIMessage` with `plan(connection): IO[Either[HttpError, A]]`
-- **Module layout**: `body/` (request DTOs), `validation/`, `support/`, `objects/`, `tables/` sit beside `api/` — see `backend/microservice/MODULE-LAYOUT.md` and `docs/backend-architecture.md`
+- **Module layout**: request objects live in `objects/`; `validation/`, `support/`, `objects/`, `tables/` sit beside `api/` — see `backend/microservice/MODULE-LAYOUT.md` and `docs/backend-architecture.md`
 - **Naming**: Frontend and backend API filenames match one-to-one (e.g. `CreateLevelApi`)
 - **Response shape**: `{ success: true, data }` / `{ success: false, error: { code, message } }`
 

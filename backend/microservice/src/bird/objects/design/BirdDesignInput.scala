@@ -10,7 +10,7 @@ package microservice.bird.objects.design
   *   - previewImageUrl：可选预览图 URL
   *   - mechanismTags：机制标签列表，可为空
   *
-  * 关联：CreateBirdDesignBody / UpdateBirdDesignBody 映射为本类型后校验；持久化为 [[BirdDesign]]。
+  * 关联：CreateBirdDesignRequest / UpdateBirdDesignRequest 映射为本类型后校验；持久化为 [[BirdDesign]]。
   */
 final case class BirdDesignInput(
   name: String,

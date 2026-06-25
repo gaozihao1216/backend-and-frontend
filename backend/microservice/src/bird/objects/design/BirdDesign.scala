@@ -2,7 +2,7 @@ package microservice.bird.objects.design
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.LevelStatus
+import microservice.system.objects.enums.LevelStatus
 
 /** 设计师创建的鸟类设计领域对象，复用 LevelStatus 表示生命周期（Draft → PendingReview → Published/Rejected）。
   *

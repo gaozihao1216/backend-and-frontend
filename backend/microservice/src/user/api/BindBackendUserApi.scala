@@ -3,15 +3,15 @@ package microservice.user.api
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
-import microservice.user.objects.BackendUser
+import microservice.user.objects.identity.BackendUser
 import microservice.user.tables.user.{UserRow, UserTable}
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.tables.user.UserRowMapper
 import microservice.user.validation.BindBackendUserValidation
-import microservice.user.body.BindBackendUserRequest
-import microservice.system.objects.AdminLevel
-import microservice.system.objects.UserRole
+import microservice.user.objects.identity.BindBackendUserRequest
+import microservice.system.objects.enums.AdminLevel
+import microservice.system.objects.enums.UserRole
 
 /** 绑定（或创建）后端用户的 APIMessage。
   *

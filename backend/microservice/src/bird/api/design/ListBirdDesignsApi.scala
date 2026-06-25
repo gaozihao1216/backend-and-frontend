@@ -9,7 +9,7 @@ import microservice.bird.tables.design.BirdDesignTable
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{LevelStatus, UserRole}
+import microservice.system.objects.enums.{LevelStatus, UserRole}
 
 /** 列出当前设计师的鸟类设计，可按 LevelStatus 筛选。
   *

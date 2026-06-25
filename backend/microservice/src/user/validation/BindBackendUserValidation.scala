@@ -3,8 +3,8 @@ package microservice.user.validation
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.user.body.BindBackendUserRequest
-import microservice.user.objects.BindBackendUserErrors
+import microservice.user.objects.identity.BindBackendUserRequest
+import microservice.user.objects.identity.BindBackendUserErrors
 
 /** BindBackendUser 请求体字段校验。 */
 private[user] object BindBackendUserValidation {

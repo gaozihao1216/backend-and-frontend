@@ -7,7 +7,7 @@ import java.time.{DayOfWeek, LocalDate, ZoneOffset}
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.player.objects.{CheckInSlotReward, WeeklyCheckInProgress}
+import microservice.player.objects.checkin.{CheckInSlotReward, WeeklyCheckInProgress}
 import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTable

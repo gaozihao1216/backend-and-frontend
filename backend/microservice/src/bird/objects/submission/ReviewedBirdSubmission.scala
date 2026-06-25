@@ -2,7 +2,7 @@ package microservice.bird.objects.submission
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 /** 审核完成后的鸟类投稿快照 DTO，供 POST review 成功响应。
   *

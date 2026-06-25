@@ -11,14 +11,14 @@ import microservice.bird.tables.design.BirdDesignTable
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{AdminLevel, AuditTargetType}
-import microservice.bird.body.review.ReviewBirdSubmissionBody
+import microservice.system.objects.enums.{AdminLevel, AuditTargetType}
+import microservice.bird.objects.submission.request.ReviewBirdSubmissionRequest
 
 /** 审核鸟类设计投稿 APIMessage：通过或拒绝，并同步更新关联 BirdDesign 状态。 */
 final case class ReviewBirdSubmissionAPIMessage(
   userId: String,
   submissionId: String,
-  body: ReviewBirdSubmissionBody
+  body: ReviewBirdSubmissionRequest
 ) extends APIWithTokenMessage[ReviewedBirdSubmission] {
   override def token: String = userId
 

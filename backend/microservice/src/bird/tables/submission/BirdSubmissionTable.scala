@@ -2,7 +2,7 @@ package microservice.bird.tables.submission
 
 import java.sql.Connection
 import microservice.bird.objects.submission.BirdSubmission
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 final case class BirdSubmissionRow(
   id: String,
@@ -67,7 +67,7 @@ object BirdSubmissionTable {
 }
 
 import java.sql.Connection
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 private[tables] object BirdSubmissionTableSql {
   private val baseSelect: String =

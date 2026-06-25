@@ -6,12 +6,12 @@ import java.time.Instant
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.stretch_template.StretchVisualTemplate
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.stretch_visual_template.{StretchVisualTemplateRowMapper, StretchVisualTemplateTable}
-import microservice.ui.body.stretchtemplates.CreateStretchVisualTemplateBody
+import microservice.ui.objects.stretch_template.request.CreateStretchVisualTemplateRequest
 import microservice.ui.support.stretchtemplates.StretchVisualTemplateAccess
 import microservice.ui.validation.stretchtemplates.StretchVisualTemplateValidation
 
@@ -24,7 +24,7 @@ import microservice.ui.validation.stretchtemplates.StretchVisualTemplateValidati
 final case class CreateStretchVisualTemplateAPIMessage(
   userId: String,
   expectedKind: StretchVisualTemplateKind,
-  body: CreateStretchVisualTemplateBody
+  body: CreateStretchVisualTemplateRequest
 ) extends APIWithTokenMessage[StretchVisualTemplate] {
   override def token: String = userId
 

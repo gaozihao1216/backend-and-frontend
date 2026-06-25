@@ -4,7 +4,7 @@ import cats.effect.IO
 import io.circe.Json
 import microservice.infrastructure.database.DatabaseSession
 import microservice.infrastructure.http.{AuthMiddleware, HttpError}
-import microservice.system.objects.ApiSuccess
+import microservice.system.objects.api.ApiSuccess
 import org.http4s.{HttpRoutes, InvalidMessageBodyFailure}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._

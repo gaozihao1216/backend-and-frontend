@@ -5,7 +5,7 @@ import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.button_template.ButtonTemplate
 import microservice.ui.objects.category.ButtonTemplateCategory
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 
 /** 按钮模板的字段校验与 trim 规范化。 */
 private[ui] object ButtonTemplateValidation {

@@ -2,7 +2,7 @@ package microservice.admin.objects.level
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 /** 投稿与关卡快照（admin 模块自有 DTO，JSON 与 level.SubmissionWithLevel 对齐）。 */
 final case class AdminSubmissionWithLevel(

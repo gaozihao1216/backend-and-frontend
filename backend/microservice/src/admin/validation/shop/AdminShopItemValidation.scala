@@ -1,6 +1,6 @@
 package microservice.admin.validation.shop
 
-import microservice.admin.body.shop.{CreateShopItemBody, UpdateShopItemBody}
+import microservice.admin.objects.shop.request.{CreateShopItemRequest, UpdateShopItemRequest}
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
@@ -10,11 +10,11 @@ private[admin] object AdminShopItemValidation {
   private val allowedCurrencies: Set[String] = Set("coins", "gems")
 
   /** 校验创建商品请求体字段。 */
-  def validateCreate(body: CreateShopItemBody): Step[CreateShopItemBody] =
+  def validateCreate(body: CreateShopItemRequest): Step[CreateShopItemRequest] =
     validateFields(body.name, body.description, body.price, body.currency).map(_ => body)
 
   /** 校验更新商品请求体字段。 */
-  def validateUpdate(body: UpdateShopItemBody): Step[UpdateShopItemBody] =
+  def validateUpdate(body: UpdateShopItemRequest): Step[UpdateShopItemRequest] =
     validateFields(body.name, body.description, body.price, body.currency).map(_ => body)
 
   private def validateFields(
@@ -36,11 +36,11 @@ private[admin] object AdminShopItemValidation {
     }
 
   /** 同步校验创建请求体。 */
-  def checkCreate(body: CreateShopItemBody): Either[HttpError, CreateShopItemBody] =
+  def checkCreate(body: CreateShopItemRequest): Either[HttpError, CreateShopItemRequest] =
     checkFields(body.name, body.description, body.price, body.currency).map(_ => body)
 
   /** 同步校验更新请求体。 */
-  def checkUpdate(body: UpdateShopItemBody): Either[HttpError, UpdateShopItemBody] =
+  def checkUpdate(body: UpdateShopItemRequest): Either[HttpError, UpdateShopItemRequest] =
     checkFields(body.name, body.description, body.price, body.currency).map(_ => body)
 
   /** 校验 name/description 长度、price 下限与 currency 白名单。 */

@@ -5,10 +5,10 @@ import io.circe.Json
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.objects.{CheckInSlotReward, PlayerPreparationJson}
+import microservice.player.objects.preparation.PlayerPreparationJson
 import microservice.player.support.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
 import microservice.player.tables.wallet.PlayerWalletTable
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 import microservice.user.support.AccessControl
 
 /** 备战状态 APIMessage。

@@ -6,11 +6,11 @@ import java.time.Instant
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.button_template.ButtonTemplate
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
-import microservice.ui.body.buttontemplates.UpdateButtonTemplateBody
+import microservice.ui.objects.button_template.request.UpdateButtonTemplateRequest
 import microservice.ui.support.buttontemplates.ButtonTemplateAccess
 import microservice.ui.validation.buttontemplates.ButtonTemplateValidation
 
@@ -23,7 +23,7 @@ import microservice.ui.validation.buttontemplates.ButtonTemplateValidation
 final case class UpdateButtonTemplateAPIMessage(
   userId: String,
   templateId: String,
-  body: UpdateButtonTemplateBody
+  body: UpdateButtonTemplateRequest
 ) extends APIWithTokenMessage[ButtonTemplate] {
   override def token: String = userId
 

@@ -7,7 +7,7 @@ import microservice.bird.objects.submission.BirdSubmission
 import microservice.bird.support.design.BirdDesignAccess
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 
 /** 将 Draft/Rejected 设计提交审核：设计进入 PendingReview，并创建 BirdSubmission 记录。
   *

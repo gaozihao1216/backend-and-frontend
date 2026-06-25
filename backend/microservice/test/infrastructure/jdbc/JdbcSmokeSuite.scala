@@ -29,7 +29,7 @@ class JdbcSmokeSuite extends CatsEffectSuite {
   test("health check runs through jdbc session") {
     HealthAPIMessage()
       .run(JdbcTestSupport.session)
-      .map(result => assertEquals(result, Right(microservice.system.objects.HealthResponse("ok"))))
+      .map(result => assertEquals(result, Right(microservice.system.objects.health.HealthResponse("ok"))))
   }
 
   test("seeded backend users are readable over jdbc") {

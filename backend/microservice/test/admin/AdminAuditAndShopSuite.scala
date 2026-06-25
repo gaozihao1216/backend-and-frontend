@@ -8,11 +8,11 @@ import microservice.admin.api.shop.{
   UpdateShopItemAPIMessage
 }
 import microservice.admin.tables.AdminAuditTable
-import microservice.system.objects.AuditTargetType
+import microservice.system.objects.enums.AuditTargetType
 import microservice.testsupport.TestSupport
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 import munit.CatsEffectSuite
-import microservice.admin.body.shop.{CreateShopItemBody, UpdateShopItemBody}
+import microservice.admin.objects.shop.request.{CreateShopItemRequest, UpdateShopItemRequest}
 
 /** 审计日志与商店管理 API。 */
 class AdminAuditAndShopSuite extends CatsEffectSuite {
@@ -59,7 +59,7 @@ class AdminAuditAndShopSuite extends CatsEffectSuite {
   test("CreateShopItemAPIMessage inserts and DeactivateShopItemAPIMessage deactivates") {
     CreateShopItemAPIMessage(
       "admin-1",
-      CreateShopItemBody(
+      CreateShopItemRequest(
         name = "Test Item",
         description = "Test description",
         price = 99,
@@ -94,7 +94,7 @@ class AdminAuditAndShopSuite extends CatsEffectSuite {
           UpdateShopItemAPIMessage(
             "admin-1",
             item.id,
-            UpdateShopItemBody(
+            UpdateShopItemRequest(
               name = item.name + " Updated",
               description = item.description,
               price = item.price,

@@ -8,7 +8,7 @@ import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 /** UI 页面 CRUD 的查存在、字段校验与 upsert/delete 写结果校验。 */

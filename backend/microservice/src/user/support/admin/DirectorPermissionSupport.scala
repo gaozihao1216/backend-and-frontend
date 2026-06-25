@@ -7,7 +7,7 @@ import java.time.Instant
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{AdminLevel, UserRole}
+import microservice.system.objects.enums.{AdminLevel, UserRole}
 import microservice.user.objects.handoff.DirectorAdminLevelTransferResult
 import microservice.user.tables.user.UserTable
 

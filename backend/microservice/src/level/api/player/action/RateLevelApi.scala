@@ -12,14 +12,14 @@ import microservice.level.tables.rating.{RatingTable}
 import microservice.level.tables.shared.{RatingRow}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.UserRole
-import microservice.level.body.player.RateLevelBody
+import microservice.system.objects.enums.UserRole
+import microservice.level.objects.player.request.RateLevelRequest
 
 /** 玩家对已发布关卡评分 APIMessage。 */
 final case class RateLevelAPIMessage(
   playerId: String,
   levelId: String,
-  body: RateLevelBody
+  body: RateLevelRequest
 ) extends APIWithTokenMessage[Rating] {
   override def token: String = playerId
 

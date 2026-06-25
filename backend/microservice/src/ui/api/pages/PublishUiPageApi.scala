@@ -5,9 +5,9 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.body.pages.UpdateUiPageBody
+import microservice.ui.objects.page.request.UpdateUiPageRequest
 import microservice.ui.support.pages.UiPagePublishSupport
 
 /** 总监发布页面配置 APIMessage；覆盖前保留回滚快照。
@@ -19,7 +19,7 @@ import microservice.ui.support.pages.UiPagePublishSupport
 final case class PublishUiPageAPIMessage(
   userId: String,
   pageId: String,
-  body: UpdateUiPageBody
+  body: UpdateUiPageRequest
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 

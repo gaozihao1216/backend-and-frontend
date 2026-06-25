@@ -1,13 +1,13 @@
 package microservice.player.support.preparation
 
-import microservice.player.objects.{
+import microservice.player.objects.preparation.{
+  BirdSkillConfigView,
   BirdStatsView,
   BirdUpgradeView,
   PlayerPreparationResponse,
-  PlayerWallet,
   SlingshotUpgradeView
 }
-import microservice.player.objects.preparation.BirdSkillConfigView
+import microservice.player.objects.wallet.PlayerWallet
 import microservice.player.tables.preparation.PlayerPreparationTable
 import java.sql.Connection
 

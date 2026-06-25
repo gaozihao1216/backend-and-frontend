@@ -5,21 +5,21 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.body.pagecomponents.CreatePageComponentBody
+import microservice.ui.objects.component.request.CreatePageComponentRequest
 import microservice.ui.support.pagecomponents.UiPageComponentAccess
 
 /** 总监向页面追加组件 APIMessage。
   *
   * 定义：POST /admin/director/ui/pages/:pageId/components。
   * 作用：校验 component.id 唯一后 append 到 PageConfig.components。
-  * 关联：CreatePageComponentBody.component 为 PageComponent ADT。
+  * 关联：CreatePageComponentRequest.component 为 PageComponent ADT。
   */
 final case class CreatePageComponentAPIMessage(
   userId: String,
   pageId: String,
-  body: CreatePageComponentBody
+  body: CreatePageComponentRequest
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 

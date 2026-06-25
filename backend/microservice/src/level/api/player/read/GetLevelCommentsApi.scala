@@ -9,7 +9,7 @@ import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.social.LevelComment
 import microservice.level.tables.comment.CommentTable
 import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.UserRole
 
 final case class GetLevelCommentsAPIMessage(
   playerId: String,

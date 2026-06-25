@@ -5,9 +5,9 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.objects.UiEndpoint
+import microservice.ui.objects.endpoint.UiEndpoint
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 /** 总监列出 UI 页面配置 APIMessage；可选 endpoint 过滤。

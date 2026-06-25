@@ -1,6 +1,6 @@
 package microservice.player.support.wallet
 
-import microservice.player.objects.PlayerWallet
+import microservice.player.objects.wallet.PlayerWallet
 
 /** 玩家钱包默认值。
   *

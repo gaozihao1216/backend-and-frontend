@@ -5,21 +5,21 @@ import java.sql.Connection
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.body.pages.UpdateUiPageBody
+import microservice.ui.objects.page.request.UpdateUiPageRequest
 import microservice.ui.support.pages.UiPageAccess
 
 /** 总监更新或 upsert 页面配置 APIMessage。
   *
-  * 定义：PUT /admin/director/ui/pages/:pageId；body 为 UpdateUiPageBody。
+  * 定义：PUT /admin/director/ui/pages/:pageId；body 为 UpdateUiPageRequest。
   * 作用：存在则 update，不存在则 insert（upsert 语义）。
   * 关联：与 PublishUiPage 不同，不写入回滚快照。
   */
 final case class UpdateUiPageAPIMessage(
   userId: String,
   pageId: String,
-  body: UpdateUiPageBody
+  body: UpdateUiPageRequest
 ) extends APIWithTokenMessage[PageConfig] {
   override def token: String = userId
 

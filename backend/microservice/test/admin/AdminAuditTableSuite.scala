@@ -1,9 +1,9 @@
 package microservice.admin
 
 import microservice.admin.tables.AdminAuditTable
-import microservice.system.objects.AuditTargetType
+import microservice.system.objects.enums.AuditTargetType
 import microservice.testsupport.TestSupport
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 import munit.CatsEffectSuite
 
 /** AdminAuditTable 写入与查询。 */

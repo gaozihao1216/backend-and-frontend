@@ -2,7 +2,7 @@ package microservice.level.tables.shared {
 
 import microservice.level.objects.inventory.{BirdPool}
 import microservice.level.objects.core.{LevelData}
-import microservice.system.objects.{LevelStatus, LevelTag, SubmissionStatus}
+import microservice.system.objects.enums.{LevelStatus, LevelTag, SubmissionStatus}
 import microservice.level.objects.core.{Level}
 import microservice.level.objects.social.{LevelComment, Rating}
 import microservice.level.objects.submission.{Submission}
@@ -122,7 +122,7 @@ import microservice.level.tables.shared.LevelRow
 import io.circe.parser.decode
 import io.circe.syntax._
 import microservice.level.objects.core.LevelData
-import microservice.system.objects.{LevelStatus, LevelTag}
+import microservice.system.objects.enums.{LevelStatus, LevelTag}
 import java.sql.{PreparedStatement, ResultSet, SQLException, Types}
 import java.sql.Connection
 

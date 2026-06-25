@@ -2,9 +2,9 @@
 
 各业务模块在 `src/<module>/objects/` 下定义 **纯数据 case class** 与 Circe 编解码 companion。
 
-- HTTP **请求** DTO → `<module>/body/`（见 [`MODULE-LAYOUT.md`](./MODULE-LAYOUT.md)）
+- HTTP 请求对象也归入 `<module>/objects/`（见 [`MODULE-LAYOUT.md`](./MODULE-LAYOUT.md)）
 - **表行** → `<module>/tables/*Row`
-- 本目录不含 SQL、路由、`EntityDecoder`
+- 本目录不含 SQL、路由；请求对象可提供 `EntityDecoder`
 
 前端镜像：`frontend/src/objects/`（见 `frontend/src/objects/ARCHITECTURE.md`）。
 
@@ -12,21 +12,18 @@
 
 | 层 | 路径 | 职责 |
 | --- | --- | --- |
-| objects | `<module>/objects/` | 领域对象、枚举、错误码、**API 返回类型** |
-| body | `<module>/body/<子域>/` | 入站 HTTP JSON（Circe + `EntityDecoder`） |
-| validation | `<module>/validation/<子域>/` | 对 body/字段的校验（无 DB） |
+| objects | `<module>/objects/` | 领域对象、枚举、错误码、API 返回类型、请求对象 |
+| validation | `<module>/validation/<子域>` | 对请求对象/字段的校验（无 DB） |
 | support | `<module>/support/<子域>/` | 查表与状态规则（可读 `Connection`） |
 | api | `<module>/api/<子域>/` | 仅 `*Api.scala`，编排 plan |
 | tables | `<module>/tables/` | `*Row` + Table 门面 |
 
-**objects 与 body 的边界**
+**请求对象与其他 objects 的边界**
 
-| | objects | body |
-| --- | --- | --- |
-| 方向 | 出站 / 领域内语义 | 入站 HTTP 请求 |
-| 示例 | `Level`、`BirdDesign`、`CreateLevelErrors` | `CreateLevelBody`（含 `LevelData`） |
-| 谁引用 | api、support、tables 映射结果 | routes（`req.as`）、api、validation |
-| http4s | 一般无 `EntityDecoder` | 提供 `EntityDecoder` |
+| 类型 | 职责 |
+| --- | --- |
+| `Level`、`BirdDesign`、`CreateLevelErrors` | 领域内语义、API 返回、错误码 |
+| `CreateLevelRequest` 等请求对象 | 入站 HTTP JSON，可提供 `EntityDecoder`，由 api/validation 引用 |
 
 **objects 与 tables 的边界**
 
@@ -38,11 +35,21 @@
 
 ### system/objects/
 
-`UserRole`、`AdminLevel`、`LevelStatus`、`LevelTag`、`SubmissionStatus`、`ApiSuccess`、`ApiFailure`、`ErrorBody`、`HealthResponse` 等跨模块枚举与 API 包装。
+```text
+system/objects/
+├── enums/          UserRole, AdminLevel, LevelStatus, LevelTag, SubmissionStatus, AuditTargetType
+├── api/            ApiSuccess, ApiFailure, ErrorBody
+└── health/         HealthResponse
+```
 
 ### user/objects/
 
-`BackendUser`、`UserProfile`、`UserProfileStats`；错误对象如 `BindBackendUserErrors`、`GetUserProfileErrors`。
+```text
+user/objects/
+├── identity/       BackendUser, BindBackendUserRequest, BindBackendUserErrors
+├── profile/        UserProfile, UserProfileStats, UserProfilePublishedLevel, GetUserProfileErrors
+└── handoff/        DirectorAdminLevelTransferResult, UserDisplaySummary
+```
 
 ### level/objects/
 
@@ -83,7 +90,15 @@ bird/objects/
 
 ### player/objects/
 
-`ShopItem`、`PlayerWallet`、`PlayerRuntime`、`PlayerPreparation`、`PlayerSocialJson` 等运行时与 JSON 辅助类型。
+```text
+player/objects/
+├── shop/           ShopItem
+├── wallet/         PlayerWallet
+├── checkin/        CheckInSlotReward, WeeklyCheckInProgress
+├── preparation/    PlayerPreparationResponse, BirdUpgradeView, BirdSkillConfigView, PlayerPreparationJson
+├── social/         PlayerFriendSummary, PlayerPrivateMessageView, PlayerSocialJson
+└── catalog/        PreparationPublishedBirdSnapshot, PreparationSystemBirdSnapshot
+```
 
 ### ui/objects/
 
@@ -94,8 +109,8 @@ ui/objects/
 ├── button_template/  ButtonTemplate, ButtonTemplateSlice, ButtonTemplateScalingMode
 ├── category/       ButtonTemplateCategory, PanelTemplateCategory, PatternTemplateCategory
 ├── stretch_template/ StretchVisualTemplate, StretchVisualTemplateKind
-├── UiEndpoint.scala
-└── UiCustomizationErrors.scala
+├── endpoint/       UiEndpoint
+└── errors/         UiCustomizationErrors
 ```
 
 ## 命名与文件
@@ -138,7 +153,7 @@ private[level] object Level {
 | 评论管理 | `admin/api/comments/*`, `support/comments/AdminCommentAccess` | `LevelComment` |
 | 投稿审核列表 | `admin/api/submissions/GetPendingSubmissionsApi` | `SubmissionWithLevel.from(...)` |
 | 总监槽位看板 | `admin/support/director/level_assignment/DirectorLevelAssignmentSupport` | `SubmissionWithLevel.from(...)` |
-| 槽位分配 DTO | `admin/objects/.../LevelSlotAssignment*`、`AssignLevelSlotBody` | 字段类型 `BirdPool`、`SubmissionWithLevel`；Circe 需 `Encoder[BirdPool]` |
+| 槽位分配 DTO | `admin/objects/.../LevelSlotAssignment*`、`AssignLevelSlotRequest` | 字段类型 `BirdPool`、`SubmissionWithLevel`；Circe 需 `Encoder[BirdPool]` |
 | 审核响应 | `admin/objects/submission/ReviewedSubmission` | `Submission` + `fromSubmission`（admin 内部） |
 
 **可选改法**：在 admin 定义自己的 DTO；或 level 暴露只读 API/公开 codec 门面；或抽共享 `contract` 包。
@@ -160,24 +175,24 @@ private[level] object Level {
 
 | 位置 | 说明 |
 | --- | --- |
-| `user/objects/UserProfile.scala` | 字段 `List[Level]`、`List[LevelComment]`；`deriveEncoder` 需要 level 模块的 `Encoder` |
+| `user/objects/profile/UserProfile.scala` | 字段 `List[Level]`、`List[LevelComment]`；`deriveEncoder` 需要 level 模块的 `Encoder` |
 
 #### 5. `ui` → `player`（3 处）
 
 | 位置 | 类型 |
 | --- | --- |
 | `ui/api/panelworkflows/RegisterCheckInPanelRewardsApi` | `CheckInSlotReward` |
-| `ui/body/panelworkflows/RegisterCheckInPanelRewardsBody` | 同上 |
+| `ui/objects/panelworkflows/RegisterCheckInPanelRewardsRequest` | 同上 |
 | `ui/support/panelworkflows/CheckInPanelAccess` | 同上 |
 
-另：`RegisterCheckInPanelRewardsApi` 还调用 `player.runtime.PlayerWeeklyCheckInService`（非 objects，但属跨模块）。
+另：`RegisterCheckInPanelRewardsApi` 还通过 player internal API 调用签到奖励注册。
 
 #### 6. `system` → `level` / `player` / `ui`（种子数据）
 
 | 文件 | 依赖 |
 | --- | --- |
 | `system/utils/SystemDemoData.scala` | 构造 `LevelData`、`GameWorld`、`BirdInventory` 等（需 level 伴生 apply） |
-| `system/utils/SystemJdbcSeedData.scala`、`PlayerRuntimeSeed.scala` | `CheckInSlotReward` |
+| `system/utils/SystemJdbcSeedData.scala` | `CheckInSlotReward` |
 | `system/utils/SystemUiTemplateSeedData.scala` | 多种 `ui.objects.*` 类型 |
 
 `system` 作为启动种子层，通常保留 public 或改为各模块自管 seed。

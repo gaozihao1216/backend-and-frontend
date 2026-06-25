@@ -7,7 +7,7 @@ import microservice.admin.support.mapping.PlayerHandoffMapping
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.api.internal.admin.DeactivateShopItemInternalAPIMessage
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.user.support.AccessControl
 
 /** DELETE /admin/shop/items/:itemId — 下架商店商品（active=false）。 */

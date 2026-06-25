@@ -4,7 +4,7 @@ import java.sql.Connection
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.player.objects.CheckInSlotReward
+import microservice.player.objects.checkin.CheckInSlotReward
 import microservice.player.support.checkin.PlayerWeeklyCheckInService
 
 /** 签到面板奖励注册的 player 模块内实现。 */

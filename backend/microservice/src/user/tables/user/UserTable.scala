@@ -1,8 +1,8 @@
 package microservice.user.tables.user
 
-import microservice.system.objects.AdminLevel
-import microservice.system.objects.UserRole
-import microservice.user.objects.BackendUser
+import microservice.system.objects.enums.AdminLevel
+import microservice.system.objects.enums.UserRole
+import microservice.user.objects.identity.BackendUser
 import java.sql.{ResultSet, SQLException}
 import java.sql.Connection
 import microservice.user.tables.user._

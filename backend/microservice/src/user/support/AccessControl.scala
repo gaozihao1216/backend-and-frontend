@@ -5,7 +5,7 @@ import cats.effect.IO
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{AdminLevel, UserRole}
+import microservice.system.objects.enums.{AdminLevel, UserRole}
 import microservice.user.tables.user.{UserRow, UserTable}
 import org.http4s.Status
 

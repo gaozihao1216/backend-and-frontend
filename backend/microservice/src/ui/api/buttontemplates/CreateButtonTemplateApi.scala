@@ -6,11 +6,11 @@ import java.time.Instant
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.ui.objects.button_template.ButtonTemplate
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.button_template.{ButtonTemplateRowMapper, ButtonTemplateTable}
-import microservice.ui.body.buttontemplates.CreateButtonTemplateBody
+import microservice.ui.objects.button_template.request.CreateButtonTemplateRequest
 import microservice.ui.support.buttontemplates.ButtonTemplateAccess
 import microservice.ui.validation.buttontemplates.ButtonTemplateValidation
 
@@ -22,14 +22,14 @@ import microservice.ui.validation.buttontemplates.ButtonTemplateValidation
   */
 final case class CreateButtonTemplateAPIMessage(
   userId: String,
-  body: CreateButtonTemplateBody
+  body: CreateButtonTemplateRequest
 ) extends APIWithTokenMessage[ButtonTemplate] {
   override def token: String = userId
 
   /** 创建按钮模板。
     *
     * 实现：requireAdminLevel(Director) → sanitize → 查重 → validate → insert → RowMapper。
-    * 关联：CreateButtonTemplateBody.template 为完整 ButtonTemplate。
+    * 关联：CreateButtonTemplateRequest.template 为完整 ButtonTemplate。
     */
   override def plan(connection: Connection): IO[Either[HttpError, ButtonTemplate]] =
     PlanSteps.finish {

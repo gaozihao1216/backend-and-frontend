@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.HealthResponse
+import microservice.system.objects.health.HealthResponse
 
 /** 健康检查 APIMessage。
   *

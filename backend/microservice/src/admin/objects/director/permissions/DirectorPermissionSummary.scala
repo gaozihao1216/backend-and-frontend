@@ -2,7 +2,7 @@ package microservice.admin.objects.director.permissions
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 
 /** 总监权限摘要 DTO。
   *

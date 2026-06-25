@@ -10,14 +10,14 @@ import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.api.internal.admin.{AssignSlotInternalAPIMessage, GetSubmissionWithLevelInternalAPIMessage}
-import microservice.system.objects.AdminLevel
-import microservice.admin.body.director.level_assignment.AssignLevelSlotBody
+import microservice.system.objects.enums.AdminLevel
+import microservice.admin.objects.director.level_assignment.request.AssignLevelSlotRequest
 
 /** POST /admin/director/level-assignments/:levelSuffix — 将已批准投稿分配到槽位。 */
 final case class AssignLevelSlotAPIMessage(
   userId: String,
   levelSuffix: String,
-  body: AssignLevelSlotBody
+  body: AssignLevelSlotRequest
 ) extends APIWithTokenMessage[LevelSlotAssignmentDetail] {
   override def token: String = userId
 

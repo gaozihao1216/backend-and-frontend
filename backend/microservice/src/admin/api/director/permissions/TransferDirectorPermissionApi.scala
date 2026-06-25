@@ -7,13 +7,13 @@ import microservice.admin.support.permissions.DirectorPermissionAccess
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
-import microservice.admin.body.director.permissions.TransferDirectorPermissionBody
+import microservice.system.objects.enums.AdminLevel
+import microservice.admin.objects.director.permissions.request.TransferDirectorPermissionRequest
 
 /** 总监权限移交 APIMessage：当前 Director 降为 Standard，目标 Admin 升为 Director。 */
 final case class TransferDirectorPermissionAPIMessage(
   currentDirectorId: String,
-  body: TransferDirectorPermissionBody
+  body: TransferDirectorPermissionRequest
 ) extends APIWithTokenMessage[DirectorTransferResult] {
   override def token: String = currentDirectorId
 

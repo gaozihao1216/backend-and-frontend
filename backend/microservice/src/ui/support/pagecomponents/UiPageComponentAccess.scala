@@ -9,7 +9,7 @@ import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.component.PageComponent
 import microservice.ui.objects.page.PageConfig
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.ui_page.{UiPageRowMapper, UiPageTable}
 
 /** 页面组件 CRUD 的查存在与写结果校验。 */

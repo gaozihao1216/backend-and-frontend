@@ -2,7 +2,7 @@ package microservice.ui.tables.ui_page
 
 import microservice.ui.objects.component.PageComponent
 import microservice.ui.objects.page.PageLayout
-import microservice.ui.objects.UiEndpoint
+import microservice.ui.objects.endpoint.UiEndpoint
 import microservice.ui.objects.page.PageConfig
 import io.circe.parser.decode
 import io.circe.syntax._

@@ -3,7 +3,7 @@ package microservice.level.objects.submission
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import microservice.level.objects.core.Level
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 
 /** 投稿记录与关卡详情的组合 DTO，供管理员审核看板使用。
   *

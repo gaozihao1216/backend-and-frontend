@@ -10,7 +10,7 @@ import microservice.level.objects.submission.Submission
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.{LevelRowMapper, SubmissionRow}
 import microservice.level.tables.submission.SubmissionTable
-import microservice.system.objects.{LevelStatus, SubmissionStatus}
+import microservice.system.objects.enums.{LevelStatus, SubmissionStatus}
 
 /** 关卡投稿审核写流程（level 模块内）。 */
 private[level] object SubmissionReviewSupport {

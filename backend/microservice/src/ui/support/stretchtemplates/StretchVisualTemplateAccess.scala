@@ -7,7 +7,7 @@ import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
 import microservice.ui.objects.stretch_template.{StretchVisualTemplate, StretchVisualTemplateKind}
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 import microservice.ui.tables.stretch_visual_template.{
   StretchVisualTemplateRow,
   StretchVisualTemplateRowMapper,

@@ -11,15 +11,15 @@ import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.bird.validation.design.BirdDesignValidation
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.{LevelStatus, UserRole}
-import microservice.bird.body.design.UpdateBirdDesignBody
+import microservice.system.objects.enums.{LevelStatus, UserRole}
+import microservice.bird.objects.design.request.UpdateBirdDesignRequest
 
 /** 更新鸟类设计：仅作者可编辑 Draft/Rejected 状态的设计，保存后重置为 Draft。
   *
   * 实现：校验所有权与状态 → validate → BirdDesignTable.updateEditable。
   * 关联：PUT /designer/bird-designs/:designId。
   */
-final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String, body: UpdateBirdDesignBody)
+final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String, body: UpdateBirdDesignRequest)
     extends APIWithTokenMessage[BirdDesign] {
   override def token: String = designerId
   /** plan 定义了什么业务流程：UpdateBirdDesign 对应的业务流程。

@@ -10,7 +10,7 @@ import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 
 /** 列出待审核鸟类设计投稿 APIMessage，附带关联 BirdDesign 快照。 */
 final case class GetPendingBirdSubmissionsAPIMessage(userId: String)

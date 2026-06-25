@@ -1,6 +1,6 @@
 package microservice.player.support.seed
 
-import microservice.player.objects.CheckInSlotReward
+import microservice.player.objects.checkin.CheckInSlotReward
 
 /** 演示用签到奖励槽（player 模块内，供 system seed 调用）。 */
 private[player] object DemoCheckInRewardsFactory {

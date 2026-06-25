@@ -10,15 +10,15 @@ import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.core.{Level}
 import microservice.level.tables.level.{LevelTable}
 import microservice.level.tables.shared.{LevelRow}
-import microservice.level.body.design.CreateLevelBody
+import microservice.level.objects.design.request.CreateLevelRequest
 import microservice.level.validation.design.CreateLevelValidation
-import microservice.system.objects.LevelStatus
-import microservice.system.objects.UserRole
+import microservice.system.objects.enums.LevelStatus
+import microservice.system.objects.enums.UserRole
 
 /** 设计师创建新关卡 APIMessage；authorId 取自 header 而非 body。 */
 final case class CreateLevelAPIMessage(
   designerId: String,
-  body: CreateLevelBody
+  body: CreateLevelRequest
 ) extends APIWithTokenMessage[Level] {
   override def token: String = designerId
 

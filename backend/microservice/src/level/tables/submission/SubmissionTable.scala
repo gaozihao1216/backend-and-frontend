@@ -1,7 +1,7 @@
 package microservice.level.tables.submission
 
 import microservice.level.tables.shared.SubmissionRow
-import microservice.system.objects.SubmissionStatus
+import microservice.system.objects.enums.SubmissionStatus
 import java.sql.{PreparedStatement, ResultSet, SQLException, Types}
 import java.sql.Connection
 import microservice.level.tables.submission._

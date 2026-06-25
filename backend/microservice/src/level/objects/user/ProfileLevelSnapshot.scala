@@ -6,7 +6,7 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 import microservice.level.objects.core.Level
 import microservice.level.objects.social.LevelComment
-import microservice.system.objects.{LevelStatus, LevelTag}
+import microservice.system.objects.enums.{LevelStatus, LevelTag}
 
 /** 用户资料页关卡投影（level 模块 handoff DTO）。 */
 final case class ProfileLevelSnapshot(

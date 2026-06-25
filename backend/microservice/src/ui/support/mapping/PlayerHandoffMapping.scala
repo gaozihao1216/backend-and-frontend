@@ -1,6 +1,6 @@
 package microservice.ui.support.mapping
 
-import microservice.player.objects.CheckInSlotReward
+import microservice.player.objects.checkin.CheckInSlotReward
 import microservice.ui.objects.panelworkflows.UiCheckInSlotReward
 
 /** player 模块 handoff 映射（仅 ui support 层引用 player 类型）。 */

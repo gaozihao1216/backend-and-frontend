@@ -7,7 +7,7 @@ import microservice.ui.objects.category.PanelTemplateCategory
 import microservice.ui.objects.category.PatternTemplateCategory
 import microservice.ui.objects.stretch_template.StretchVisualTemplate
 import microservice.ui.objects.stretch_template.StretchVisualTemplateKind
-import microservice.ui.objects.UiCustomizationErrors
+import microservice.ui.objects.errors.UiCustomizationErrors
 
 /** 拉伸视觉模板的字段校验与规范化。 */
 private[ui] object StretchVisualTemplateValidation {

@@ -6,7 +6,7 @@ import microservice.level.tables.shared.LevelRow
 import java.sql.ResultSet
 import java.sql.Connection
 import microservice.level.tables.favorite._
-import microservice.system.objects.LevelStatus
+import microservice.system.objects.enums.LevelStatus
 import microservice.level.tables.level.LevelTable
 
 object FavoriteRowMapper {

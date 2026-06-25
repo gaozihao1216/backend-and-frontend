@@ -7,13 +7,13 @@ import microservice.admin.support.mapping.PlayerHandoffMapping
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.api.internal.admin.UpdateShopItemInternalAPIMessage
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 import microservice.user.support.AccessControl
-import microservice.admin.body.shop.UpdateShopItemBody
+import microservice.admin.objects.shop.request.UpdateShopItemRequest
 import microservice.admin.validation.shop.AdminShopItemValidation
 
 /** PUT /admin/shop/items/:itemId — 更新商店商品。 */
-final case class UpdateShopItemAPIMessage(userId: String, itemId: String, body: UpdateShopItemBody)
+final case class UpdateShopItemAPIMessage(userId: String, itemId: String, body: UpdateShopItemRequest)
     extends APIWithTokenMessage[AdminShopItem] {
   override def token: String = userId
 

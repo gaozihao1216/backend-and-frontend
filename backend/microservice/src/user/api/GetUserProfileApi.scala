@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
-import microservice.user.objects.UserProfile
+import microservice.user.objects.profile.UserProfile
 import microservice.user.support.UserProfileAccess
 import microservice.user.support.AccessControl
 

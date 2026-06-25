@@ -9,7 +9,7 @@ import microservice.infrastructure.http.HttpError
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.LevelRow
 import microservice.level.tables.submission.SubmissionTable
-import microservice.system.objects.LevelStatus
+import microservice.system.objects.enums.LevelStatus
 
 /** 设计师关卡设计访问控制：查存在、所有权与可提交状态校验。 */
 private[level] object LevelDesignAccess {

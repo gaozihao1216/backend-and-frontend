@@ -8,7 +8,7 @@ import microservice.user.support.AccessControl
 import microservice.bird.api.internal.director.GetDirectorBirdSkillBoardInternalAPIMessage
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 
 /** GET /admin/director/bird-skills/board — 拉取全部鸟种技能配置看板。 */
 final case class GetDirectorBirdSkillBoardAPIMessage(

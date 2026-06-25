@@ -9,9 +9,8 @@
 ```text
 <module>/
 ├── api/              # 仅 *Api.scala：XxxAPIMessage + plan 编排
-├── body/             # HTTP 请求 DTO（Circe + http4s EntityDecoder）
 ├── validation/       # 字段/请求校验 → PlanStep.Step
-├── objects/          # 领域类型（响应体、实体、错误码对象）
+├── objects/          # 领域类型、请求对象、响应体、实体、错误码对象
 ├── support/          # 可复用业务规则（require* / check*）
 ├── routes/           # path/header/body 解析 → 构造 APIMessage
 └── tables/           # *Row + Table + TableInitializer
@@ -22,8 +21,8 @@
 | 目录 | 模块 | 说明 |
 | --- | --- | --- |
 | `support/bootstrap/` | 各业务模块 | `*StorageBootstrap`：DDL/表初始化，供 `system` 启动编排 |
-| `preparation/` | player | 备战升级逻辑（`PlayerPreparationAccess` 等） |
-| `runtime/` | player | UI 运行时 data/action 分派 |
+| `support/preparation/` | player | 备战升级逻辑（`PlayerPreparationAccess` 等） |
+| `support/{shop,checkin,progress,wallet,ui}/` | player | 商店、签到、进度、钱包、动态 UI data/action 分派 |
 | `utils/` | user | `AccessControl`（全项目共用鉴权） |
 
 `infrastructure/api/` 放框架级 `APIMessage`、`PlanStep`、`PlanSteps`，与业务 `*/api/*Api.scala` 不同。
@@ -33,32 +32,20 @@
 ### `api/` — 仅 APIMessage
 
 - **只放** `*Api.scala`（如 `CreateLevelApi.scala` 内定义 `CreateLevelAPIMessage`）。
-- **禁止** 在业务 `api/` 下再放 `body/`、`validation/`、`support/` 子目录或 `object` 伴生块（课程/架构约定：`api` 层只做流程编排）。
+- **禁止** 在业务 `api/` 下再放 `validation/`、`support/`、请求对象子目录或 `object` 伴生块（`api` 层只做流程编排）。
 - `plan(connection)` 用 `PlanSteps.finish { for { ... } yield ... }` 串联步骤，步骤旁用 `// 步骤 N：` 注释。
-
-### `body/` — 入站 HTTP 请求体
-
-- case class + Circe `Encoder`/`Decoder` + `EntityDecoder`（供 `routes` 里 `req.as[CreateLevelBody]`）。
-- 可组合 `objects/` 中的类型（如 `CreateLevelBody` 含 `LevelData`）。
-- **不是**领域实体：无业务方法、不写表、不做权限判断。
-- 包名：`microservice.<module>.body.<子域>`，例如 `microservice.level.body.design`。
-
-**为何独立于 `api/`？**
-
-1. `routes/` 与 `api/` 都要引用同一请求类型；放在模块级 `body/` 避免 `api` 依赖环。
-2. 与 `objects/`（出站/领域）区分：body 是「客户端 POST 进来的形状」，objects 是「业务语义与 API 返回形状」。
-3. 满足「`api/` 目录内只有 `*Api.scala`」的目录规范。
 
 ### `validation/` — 纯校验
 
 - `validate*(...): PlanStep.Step[A]` 供 `plan` 调用；同步 `check*(...): Either[HttpError, A]` 供单元测试。
-- 只依赖 `body`、`objects`、错误码对象，不访问 `Connection`、不调用 Table。
+- 只依赖 `objects`、错误码对象，不访问 `Connection`、不调用 Table。
 - 包名：`microservice.<module>.validation.<子域>`。
 
-### `objects/` — 领域模型
+### `objects/` — 领域模型与请求对象
 
-- 纯数据 case class、枚举、错误码对象；详见 [`OBJECTS.md`](./OBJECTS.md)。
-- APIMessage 的**返回类型**与 plan 内组装的 JSON/实体均来自此处（或 `system/objects`）。
+- 纯数据 case class、枚举、错误码对象、请求对象；详见 [`OBJECTS.md`](./OBJECTS.md)。
+- APIMessage 的入站请求类型、返回类型与 plan 内组装的 JSON/实体均来自此处（或 `system/objects`）。
+- 请求对象可提供 Circe `Encoder`/`Decoder` + http4s `EntityDecoder`，但不写权限、查表或业务流程。
 
 ### `support/` — 可复用业务规则
 
@@ -83,7 +70,7 @@
   HTTP 客户端
        │
        ▼
-  routes/          req.as[CreateLevelBody]  ──import──►  body/
+  routes/          req.as[CreateLevelRequest]  ──import──►  objects/
        │
        ▼
   api/*Api.scala   plan { AccessControl → validation → support → PlanSteps.read(Table) }
@@ -97,28 +84,28 @@
   tables/          Row 读写，映射为 objects
 ```
 
-依赖应**单向**：`routes → body, api`；`api → body, validation, support, objects, tables`；`body → objects`；`validation → body, objects`；`support → tables, objects`。避免 `body` 或 `objects` 引用 `api`。
+依赖应**单向**：`routes → objects, api`；`api → objects, validation, support, tables`；`validation → objects`；`support → tables, objects`。避免 `objects` 引用 `api`。
 
 ## 包名与子路径对照
 
-`body/`、`validation/`、`support/` 的子路径与对应 `api/` 子路径**语义对齐**（不必逐字相同）：
+`objects/`、`validation/`、`support/` 的子路径与对应 `api/` 子路径**语义对齐**（不必逐字相同）：
 
-| api 子路径 | body | validation | support（示例） |
+| api 子路径 | 请求对象/领域对象 | validation | support（示例） |
 | --- | --- | --- | --- |
-| `level/api/design/` | `level/body/design/` | `level/validation/design/` | `level/support/design/` |
-| `level/api/player/action/` | `level/body/player/` | — | `level/support/player/` |
-| `admin/api/shop/` | `admin/body/shop/` | `admin/validation/shop/` | `admin/support/shop/` |
-| `ui/api/pages/` | `ui/body/pages/` | — | `ui/support/pages/` |
-| `bird/api/design/` | `bird/body/design/` | `bird/validation/design/` | `bird/support/design/` |
+| `level/api/design/` | `level/objects/design/` | `level/validation/design/` | `level/support/design/` |
+| `level/api/player/action/` | `level/objects/player/request/` | — | `level/support/player/` |
+| `admin/api/shop/` | `admin/objects/shop/` | `admin/validation/shop/` | `admin/support/shop/` |
+| `ui/api/pages/` | `ui/objects/pages/` | — | `ui/support/pages/` |
+| `bird/api/design/` | `bird/objects/design/` | `bird/validation/design/` | `bird/support/design/` |
 
-玩家关卡写操作：body 在 `level/body/player/`（与 api 的 `player/action` 对应）；前端 body 仍在 `api/level/player/action/body/`（见前端 ARCHITECTURE）。
+玩家关卡写操作：请求对象在 `level/objects/player/request/`（与 api 的 `player/action` 对应）；前端请求 schema 暂时仍在 `api/level/player/action/body/`（见前端 ARCHITECTURE）。
 
 ## 完整示例：`CreateLevel`
 
 | 文件 | 路径 |
 | --- | --- |
-| 路由 | `level/routes/DesignerLevelRouter.scala` — `POST /designer/levels`，`req.as[CreateLevelBody]` |
-| 请求体 | `level/body/design/CreateLevelBody.scala` |
+| 路由 | `level/routes/DesignerLevelRouter.scala` — `POST /designer/levels`，`req.as[CreateLevelRequest]` |
+| 请求对象 | `level/objects/design/request/CreateLevelRequest.scala` |
 | 校验 | `level/validation/design/CreateLevelValidation.scala` |
 | APIMessage | `level/api/design/CreateLevelApi.scala` |
 | 领域类型 | `level/objects/level/Level.scala` |
@@ -127,7 +114,7 @@
 `CreateLevelApi.scala` 典型 import：
 
 ```scala
-import microservice.level.body.design.CreateLevelBody
+import microservice.level.objects.design.request.CreateLevelRequest
 import microservice.level.validation.design.CreateLevelValidation
 import microservice.level.objects.core.Level
 import microservice.level.tables.level.LevelTable
@@ -144,12 +131,9 @@ level/
 │   └── player/
 │       ├── read/          # GetPublishedLevelsApi 等
 │       └── action/        # RateLevelApi、CreateCommentApi 等
-├── body/
-│   ├── design/            # CreateLevelBody, SubmitLevelBody
-│   └── player/            # RateLevelBody, CreateCommentBody
 ├── validation/
 │   └── design/            # CreateLevelValidation
-├── objects/               # level/, terrain/, submission/, social/, …
+├── objects/               # core/, terrain/, submission/, social/, design/, player/, …
 ├── support/
 │   ├── design/            # LevelDesignAccess
 │   └── player/            # LevelApiSupport
@@ -164,13 +148,6 @@ admin/
 ├── api/
 │   ├── comments/
 │   ├── audit/
-│   ├── shop/
-│   ├── submissions/
-│   └── director/
-│       ├── permissions/
-│       ├── level_assignment/
-│       └── bird_skill/
-├── body/
 │   ├── shop/
 │   ├── submissions/
 │   └── director/
@@ -192,10 +169,10 @@ admin/
 ## 与前端目录的对应
 
 - **`*Api.scala` ↔ `*Api.ts`**：去掉后端路径中的 `/api/` 段，例如 `level/api/design/CreateLevelApi.scala` → `frontend/src/api/level/design/CreateLevelApi.ts`。
-- **`*Body.scala` ↔ `*Body.ts`**：后端在 `<module>/body/<area>/`；前端在 `api/<module>/<area>/body/`（`body` 紧挨 `*Api.ts`）。例外：`level/body/player/` → `api/level/player/action/body/`。
+- **`*Request.scala` ↔ `*Body.ts`**：后端请求对象在 `<module>/objects/<area>/request/`；前端请求 schema 暂时在 `api/<module>/<area>/body/`（`body` 紧挨 `*Api.ts`）。例外：`level/objects/player/request/` → `api/level/player/action/body/`。
 - 领域类型：后端 `*/objects/` ↔ 前端 `frontend/src/objects/`。
 
-校验脚本：`frontend/src/api/api-alignment.test.ts`（`npm test`）。
+校验脚本：`frontend/src/system/api/api-alignment.test.ts`（`npm test`）。
 
 ## 模块间调用（`api/internal/`）
 
@@ -240,10 +217,10 @@ levelData <- PlanSteps.runApi(GetUserLevelProfileDataInternalAPIMessage(profileU
 
 ## 新增 API 检查清单
 
-1. 若有 POST/PUT JSON 体：在 `<module>/body/<子域>/XxxBody.scala` 定义 DTO + `EntityDecoder`。
+1. 若有 POST/PUT JSON 体：在 `<module>/objects/<子域>/request/XxxRequest.scala` 定义请求对象 + `EntityDecoder`。
 2. 若有可单测的字段规则：在 `<module>/validation/<子域>/` 增加 `validate*` / `check*`。
 3. 在 `<module>/api/<子域>/XxxApi.scala` 只写 `XxxAPIMessage` 与 `plan`。
 4. 查表/状态机抽到 `<module>/support/`（若多处复用）。
 5. 响应/实体类型放 `<module>/objects/`；新表放 `<module>/tables/`。
 6. 在 `<module>/routes/` 挂载 HTTP，只解析并 `runAuthenticated`。
-7. 前端：同布局增加 `*Api.ts` 与 `body/*Body.ts`（若适用）。
+7. 前端：同布局增加 `*Api.ts` 与请求 schema（当前仍放在对应 API 目录的 `body/*Body.ts`）。

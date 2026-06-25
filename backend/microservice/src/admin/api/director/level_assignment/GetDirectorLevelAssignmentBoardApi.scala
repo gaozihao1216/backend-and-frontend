@@ -7,7 +7,7 @@ import microservice.admin.support.director.level_assignment.DirectorLevelAssignm
 import microservice.user.support.AccessControl
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.system.objects.AdminLevel
+import microservice.system.objects.enums.AdminLevel
 
 /** GET /admin/director/level-assignments/board — 拉取关卡槽位分配看板。 */
 final case class GetDirectorLevelAssignmentBoardAPIMessage(

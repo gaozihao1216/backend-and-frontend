@@ -2,7 +2,7 @@ package microservice.level.objects.core
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.{LevelStatus, LevelTag}
+import microservice.system.objects.enums.{LevelStatus, LevelTag}
 
 /** 关卡领域对象，API 对外返回的核心 DTO。
   *

@@ -12,13 +12,13 @@ import microservice.level.objects.submission.Submission
 import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.SubmissionRow
 import microservice.level.tables.submission.SubmissionTable
-import microservice.system.objects.{LevelStatus, SubmissionStatus, UserRole}
-import microservice.level.body.design.SubmitLevelBody
+import microservice.system.objects.enums.{LevelStatus, SubmissionStatus, UserRole}
+import microservice.level.objects.design.request.SubmitLevelRequest
 
 /** 设计师提交关卡审核 APIMessage。 */
 final case class SubmitLevelAPIMessage(
   designerId: String,
-  body: SubmitLevelBody
+  body: SubmitLevelRequest
 ) extends APIWithTokenMessage[Submission] {
   override def token: String = designerId
 

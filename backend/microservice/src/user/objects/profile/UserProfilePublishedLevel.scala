@@ -3,7 +3,7 @@ package microservice.user.objects.profile
 import io.circe.Json
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import microservice.system.objects.{LevelStatus, LevelTag}
+import microservice.system.objects.enums.{LevelStatus, LevelTag}
 
 /** 用户资料页展示的已发布关卡（user 模块自有 DTO，JSON 形状与 level.Level 对齐）。 */
 final case class UserProfilePublishedLevel(

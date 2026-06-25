@@ -12,7 +12,7 @@ import microservice.level.tables.level.LevelTable
 import microservice.level.tables.shared.{LevelSlotAssignmentRow, SubmissionRow}
 import microservice.level.tables.slot_assignment.LevelSlotAssignmentTable
 import microservice.level.tables.submission.SubmissionTable
-import microservice.system.objects.{LevelStatus, SubmissionStatus}
+import microservice.system.objects.enums.{LevelStatus, SubmissionStatus}
 
 /** 总监槽位分配写操作（level 模块内）；供 internal API 与 HTTP API 复用。 */
 private[level] object SlotAssignmentSupport {
