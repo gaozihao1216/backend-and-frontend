@@ -5,7 +5,7 @@ import { useDirectorButtonTemplates } from "./hooks/useDirectorButtonTemplates.j
 import {
   defaultPanelTemplateDataUrl,
   defaultPatternTemplateDataUrl,
-} from "./lib/button-template-draft.js";
+} from "./function/button-template-draft.js";
 import { templateTabs } from "./objects/button-template-types.js";
 import type { DirectorButtonTemplatesPageProps } from "./objects/director-button-templates-page-types.js";
 

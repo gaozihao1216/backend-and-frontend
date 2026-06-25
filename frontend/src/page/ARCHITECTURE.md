@@ -35,7 +35,7 @@ page/
 | 域内共享组件 | `page/<domain>/shared/` | 同角色多页复用（如 `director/shared/TemplateCategoryFilter`、`player/shared/PageFeedback`） |
 | 跨域共享组件 | `components/` | 动态 UI renderer、关卡预览、App 级绑定/设置等跨页面组件 |
 | 共享 Hook | `page/shared/hooks/` | 动态 UI runtime、素材加载、模板库等跨页面 hook |
-| 页面工具 | `page/<domain>/<Name>/lib/` | 只服务该页的纯函数、DOM 辅助、序列化 |
+| 页面函数 | `page/<domain>/<Name>/function/` | 只服务该页的纯函数、DOM 辅助、序列化 |
 | 全局工具 | `lib/` | 跨页面或跨域复用的纯函数、runtime、引擎逻辑 |
 | 页面对象 | `page/<domain>/<Name>/objects/` | 页面级 props、draft、步骤枚举等 |
 | 全局对象 | `objects/` | 后端镜像 schema、API 合同、跨页共享领域对象 |
@@ -62,13 +62,13 @@ page/
 | `director/DirectorBirdSkillLabPage/` | （页内 state） | `components/` |
 | `director/DirectorLevelBackgroundTemplatesPage/` | `page/shared/hooks/useDirectorTemplateLibrary` | `components/` |
 | `director/DirectorLevelAssignmentPage/` | （页内 state） | `components/BirdPoolConfigPanel` + `components/level/LevelPreviewCard` |
-| `admin/AdminPage/` | — | `components/AdminProposalReviewContent`（动态 UI widget 亦引用此路径） |
+| `admin/AdminProposalReviewPage/` | — | `components/AdminProposalReviewContent`（动态 UI widget 亦引用此路径） |
 | `admin/AdminAuditLogsPage/`、`AdminCommunityPage/`、`AdminShopPage/` | （页内 state） | `components/` + `objects/` |
 | `director/DirectorButtonConfigPage/`、`DirectorUiCustomizationPage/`、`DirectorWorkbenchPage/` | （页内 state） | `components/` + `objects/` |
 | `player/PlayerCommunityPage/`、`PlayerShopPage/` | （页内 state） | `components/` + `objects/` |
 | `profile/UserProfilePage/` | （页内 state） | `components/` + `objects/` |
 
-总监构建工具的页面私有工具与类型跟随页面放入各自 `lib/`、`objects/`；通用渲染在 `components/ui-renderer/`；跨页关卡预览用 `components/level/LevelPreviewCard`。
+总监构建工具的页面私有函数与类型跟随页面放入各自 `function/`、`objects/`；通用渲染在 `components/ui-renderer/`；跨页关卡预览用 `components/level/LevelPreviewCard`。
 
 ## 后续拆分准则
 

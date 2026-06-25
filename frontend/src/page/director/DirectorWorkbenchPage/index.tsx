@@ -1,12 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { getBackendUsers, getDirectorPermissions, transferDirectorPermission } from "../../../system/api/exports/index.js";
-import type { DirectorPermissionSummary, User } from "../../../objects/api/api-contracts.js";
-import { syncLocalAdminLevelsFromBackend } from "../../../lib/auth.js";
 import { DirectorWorkbenchHeader } from "./components/DirectorWorkbenchHeader.js";
+import { useDirectorWorkbenchPage } from "./hooks/useDirectorWorkbenchPage.js";
 import type { DirectorWorkbenchPageProps } from "./objects/director-workbench-page-types.js";
-
-const getTransferCandidateAdmins = (users: User[], currentUserId: string) =>
-  users.filter((user) => user.role === "admin" && user.adminLevel === "standard" && user.id !== currentUserId);
 
 export const DirectorWorkbenchPage = ({
   userId,
@@ -16,111 +10,15 @@ export const DirectorWorkbenchPage = ({
   onOpenBirdSkillLab,
   onOpenLevelBackgroundTemplates,
 }: DirectorWorkbenchPageProps) => {
-  const [permissions, setPermissions] = useState<DirectorPermissionSummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [adminUsers, setAdminUsers] = useState<User[]>([]);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [transferOpen, setTransferOpen] = useState(false);
-  const [selectedAdminId, setSelectedAdminId] = useState("");
-
-  const loadAdminUsers = useCallback(async () => {
-    const users = await getBackendUsers();
-    const admins = getTransferCandidateAdmins(users, userId);
-    setAdminUsers(admins);
-    setSelectedAdminId((current) =>
-      current && admins.some((admin) => admin.id === current) ? current : admins[0]?.id ?? "",
-    );
-    return admins;
-  }, [userId]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadPermissions = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const [summary, users] = await Promise.all([
-          getDirectorPermissions(userId),
-          getBackendUsers(),
-        ]);
-        if (!cancelled) {
-          setPermissions(summary);
-          const admins = getTransferCandidateAdmins(users, userId);
-          setAdminUsers(admins);
-          setSelectedAdminId(admins[0]?.id ?? "");
-        }
-      } catch (caught) {
-        if (!cancelled) {
-          setError(caught instanceof Error ? caught.message : "加载总监权限失败");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void loadPermissions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  const handleTransferPermission = () => {
-    setTransferOpen((current) => {
-      const nextOpen = !current;
-      if (nextOpen) {
-        setLoading(true);
-        setError("");
-        void loadAdminUsers()
-          .catch((caught) => {
-            setError(caught instanceof Error ? caught.message : "加载管理员候选失败");
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      }
-      return nextOpen;
-    });
-    setMessage("");
-  };
-
-  const handleConfirmTransfer = async () => {
-    const target = adminUsers.find((user) => user.id === selectedAdminId);
-    if (!target) {
-      setMessage("请选择一个管理员账号。");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setMessage("");
-
-    try {
-      const result = await transferDirectorPermission(userId, target.id);
-      await syncLocalAdminLevelsFromBackend();
-      setMessage(`总监权限已转让给 昵称：${target.displayName} / 用户名：${target.username} / ID：${result.newDirectorId}。当前账号已不再是总监，请返回主界面或重新登录。`);
-      setPermissions(null);
-      await loadAdminUsers();
-      setTransferOpen(false);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "转让总监权限失败");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const vm = useDirectorWorkbenchPage(userId);
 
   return (
     <section className="panel">
-      <DirectorWorkbenchHeader permissionLabel={permissions?.adminLevel === "director" ? "总监管理员" : "权限校验"} />
+      <DirectorWorkbenchHeader permissionLabel={vm.permissions?.adminLevel === "director" ? "总监管理员" : "权限校验"} />
 
-      {loading ? <p className="meta">正在校验总监权限...</p> : null}
-      {error ? <p className="feedback error">{error}</p> : null}
-      {message ? <p className="feedback success">{message}</p> : null}
+      {vm.loading ? <p className="meta">正在校验总监权限...</p> : null}
+      {vm.error ? <p className="feedback error">{vm.error}</p> : null}
+      {vm.message ? <p className="feedback success">{vm.message}</p> : null}
 
       <div className="director-option-list">
         <section className="feature-card director-option-row">
@@ -129,22 +27,22 @@ export const DirectorWorkbenchPage = ({
             当前系统只允许一个账号拥有总监管理员权限。权限转让需要在同一事务中完成，避免同时出现两个总监。
           </p>
           <div className="actions">
-            <button type="button" onClick={handleTransferPermission}>
+            <button type="button" onClick={vm.handleTransferPermission}>
               转让权限
             </button>
           </div>
         </section>
 
-        {transferOpen ? (
+        {vm.transferOpen ? (
           <section className="feature-card director-transfer-panel">
             <h3>选择转让管理员</h3>
             <p className="panel-copy">只显示普通管理员账号。当前总监账号不会出现在候选列表中。</p>
-            {adminUsers.length > 0 ? (
+            {vm.adminUsers.length > 0 ? (
               <>
                 <label>
                   <span>目标管理员</span>
-                  <select value={selectedAdminId} onChange={(event) => setSelectedAdminId(event.target.value)}>
-                    {adminUsers.map((admin) => (
+                  <select value={vm.selectedAdminId} onChange={(event) => vm.setSelectedAdminId(event.target.value)}>
+                    {vm.adminUsers.map((admin) => (
                       <option key={admin.id} value={admin.id}>
                         昵称：{admin.displayName} / 用户名：{admin.username} / ID：{admin.id}
                       </option>
@@ -152,7 +50,7 @@ export const DirectorWorkbenchPage = ({
                   </select>
                 </label>
                 <div className="actions">
-                  <button type="button" onClick={() => void handleConfirmTransfer()} disabled={loading}>
+                  <button type="button" onClick={() => void vm.handleConfirmTransfer()} disabled={vm.loading}>
                     确认选择
                   </button>
                 </div>

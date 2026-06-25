@@ -26,8 +26,8 @@ import {
   resolveTextArtDesign,
   usesTextArtGradient,
 } from "../../../../../lib/art-text-styles.js";
-import { clamp, getDecorationStyle, getPanelRenderedAspectRatio } from "../../lib/panel-create-helpers.js";
-import { getButtonStateContentType } from "../../lib/panel-create-helpers.js";
+import { clamp, getDecorationStyle, getPanelRenderedAspectRatio } from "../../function/panel-create-helpers.js";
+import { getButtonStateContentType } from "../../function/panel-create-helpers.js";
 import type { PanelChildDraft } from "../../objects/panel-create-types.js";
 import type {
   TextArtGradientDirection,

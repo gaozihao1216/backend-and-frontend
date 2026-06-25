@@ -24,7 +24,7 @@ import {
   getSelectedMoveTarget,
   getSelectedResizeTarget,
   hitTestOutlinedComponent,
-} from "../lib/page-builder-helpers.js";
+} from "../function/page-builder-helpers.js";
 import {
   CLICK_DRAG_THRESHOLD_PX,
   type OutlineSelectionState,

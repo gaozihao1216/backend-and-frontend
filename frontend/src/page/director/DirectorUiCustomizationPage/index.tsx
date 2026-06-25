@@ -1,28 +1,14 @@
-import { useState } from "react";
-import { getPageConfig, savePageConfig } from "../../../lib/ui-customization.js";
 import {
   endpointOptions,
-  isDynamicPath,
-  routeTrees,
   type RouteNode,
   type SelectedRoute,
 } from "../../../objects/ui-customization/ui-route-tree.js";
 import type {
-  ButtonComponent,
-  PageConfig,
   PageLayoutType,
-  UiEndpoint,
 } from "../../../objects/ui-customization/ui-customization-objects.js";
 import { DirectorUiCustomizationHeader } from "./components/DirectorUiCustomizationHeader.js";
+import { useDirectorUiCustomizationPage } from "./hooks/useDirectorUiCustomizationPage.js";
 import type { DirectorUiCustomizationPageProps } from "./objects/director-ui-customization-page-types.js";
-
-const getEditablePageConfig = (pageId: string): PageConfig | null => {
-  const config = getPageConfig(pageId);
-  return config ? structuredClone(config) : null;
-};
-
-const isButtonComponent = (component: PageConfig["components"][number]): component is ButtonComponent =>
-  component.type === "button";
 
 const renderRouteTree = (
   node: RouteNode,
@@ -48,81 +34,17 @@ const renderRouteTree = (
 );
 
 export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizationPageProps) => {
-  const [selectedEndpoint, setSelectedEndpoint] = useState<UiEndpoint>("player");
-  const [selectedRoute, setSelectedRoute] = useState<SelectedRoute>(() => routeTrees.player);
-  const [editingConfig, setEditingConfig] = useState<PageConfig | null>(() => getEditablePageConfig(routeTrees.player.pageId));
-  const [saveMessage, setSaveMessage] = useState("");
-  const [optimizeError, setOptimizeError] = useState("");
-  const [manualOpen, setManualOpen] = useState(false);
-  const selectedTree = routeTrees[selectedEndpoint];
-  const selectedRouteIsDynamic = isDynamicPath(selectedRoute.path);
-  const buttonComponents = editingConfig?.components.filter(isButtonComponent) ?? [];
-
-  const selectRoute = (route: SelectedRoute) => {
-    setSelectedRoute(route);
-    setEditingConfig(getEditablePageConfig(route.pageId));
-    setSaveMessage("");
-    setOptimizeError("");
-  };
-
-  const handleEndpointChange = (endpoint: UiEndpoint) => {
-    setSelectedEndpoint(endpoint);
-    selectRoute(routeTrees[endpoint]);
-  };
-
-  const updateEditingConfig = (updater: (config: PageConfig) => PageConfig) => {
-    setEditingConfig((current) => current ? updater(current) : current);
-    setSaveMessage("");
-  };
-
-  const updateButtonComponent = (
-    buttonId: string,
-    updater: (button: ButtonComponent) => ButtonComponent,
-  ) => {
-    updateEditingConfig((config) => ({
-      ...config,
-      components: config.components.map((component) =>
-        component.type === "button" && component.id === buttonId ? updater(component) : component,
-      ),
-    }));
-  };
-
-  const handleSaveConfig = () => {
-    if (!editingConfig) {
-      return;
-    }
-
-    const savedConfig = savePageConfig(editingConfig);
-    setEditingConfig(structuredClone(savedConfig));
-    setSaveMessage("配置已保存到本地。");
-  };
-
-  const handleOptimizeSelectedPage = () => {
-    setOptimizeError("");
-
-    if (!editingConfig) {
-      setOptimizeError("该页面还没有动态页面配置，无法优化。");
-      return;
-    }
-
-    if (selectedRouteIsDynamic) {
-      setOptimizeError("动态模板页面需要具体页面实例后才能优化。");
-      return;
-    }
-
-    const updateBasePath = selectedRoute.path === "/" ? "" : selectedRoute.path;
-    onNavigate(`${updateBasePath}/update?pageId=${encodeURIComponent(selectedRoute.pageId)}`);
-  };
+  const vm = useDirectorUiCustomizationPage(onNavigate);
 
   return (
     <section className="panel director-ui-page">
       <DirectorUiCustomizationHeader
-        manualOpen={manualOpen}
+        manualOpen={vm.manualOpen}
         onOpenTemplates={() => onNavigate("/director_console/ui_customization/button_templates")}
-        onToggleManual={() => setManualOpen((current) => !current)}
+        onToggleManual={() => vm.setManualOpen((current) => !current)}
       />
 
-      {manualOpen ? (
+      {vm.manualOpen ? (
         <section className="director-ui-manual">
           <div>
             <h3>修改流程</h3>
@@ -157,8 +79,8 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
           <button
             key={option.id}
             type="button"
-            className={`role-card director-ui-endpoint ${option.id === selectedEndpoint ? "active" : ""}`}
-            onClick={() => handleEndpointChange(option.id)}
+            className={`role-card director-ui-endpoint ${option.id === vm.selectedEndpoint ? "active" : ""}`}
+            onClick={() => vm.handleEndpointChange(option.id)}
           >
             <strong>{option.label}</strong>
             <span>{option.description}</span>
@@ -169,34 +91,34 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
       <section className="director-ui-tree-panel">
         <div className="mini-card-header">
           <div>
-            <h3>{endpointOptions.find((option) => option.id === selectedEndpoint)?.label}页面路径</h3>
+            <h3>{endpointOptions.find((option) => option.id === vm.selectedEndpoint)?.label}页面路径</h3>
             <p className="panel-copy">根节点为主界面，只展示会进入独立页面的跳转分支。</p>
           </div>
         </div>
-        <ul className="ui-route-tree">{renderRouteTree(selectedTree, selectedRoute, selectRoute)}</ul>
+        <ul className="ui-route-tree">{renderRouteTree(vm.selectedTree, vm.selectedRoute, vm.selectRoute)}</ul>
         <div className="director-ui-route-actions">
           <div>
-            <p className="meta">已选择：{selectedRoute.label}</p>
-            <code>{selectedRoute.path}</code>
-            <p className="meta">页面配置：{editingConfig?.id ?? "未找到配置"}</p>
-            {selectedRouteIsDynamic ? <p className="feedback error">该路径需要先选择具体归档备份。</p> : null}
+            <p className="meta">已选择：{vm.selectedRoute.label}</p>
+            <code>{vm.selectedRoute.path}</code>
+            <p className="meta">页面配置：{vm.editingConfig?.id ?? "未找到配置"}</p>
+            {vm.selectedRouteIsDynamic ? <p className="feedback error">该路径需要先选择具体归档备份。</p> : null}
           </div>
           <button
             type="button"
-            onClick={() => onNavigate(selectedRoute.path)}
-            disabled={selectedRouteIsDynamic}
+            onClick={() => onNavigate(vm.selectedRoute.path)}
+            disabled={vm.selectedRouteIsDynamic}
           >
             进入该界面
           </button>
           <button
             type="button"
-            onClick={handleOptimizeSelectedPage}
-            disabled={selectedRouteIsDynamic}
+            onClick={vm.handleOptimizeSelectedPage}
+            disabled={vm.selectedRouteIsDynamic}
           >
             优化所选界面
           </button>
         </div>
-        {optimizeError ? <p className="feedback error">{optimizeError}</p> : null}
+        {vm.optimizeError ? <p className="feedback error">{vm.optimizeError}</p> : null}
       </section>
 
       <section className="director-ui-config-panel">
@@ -205,29 +127,29 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
             <h3>页面配置</h3>
             <p className="panel-copy">先编辑页面基础信息和按钮配置，保存后会写入本地配置库。</p>
           </div>
-          <button type="button" onClick={handleSaveConfig} disabled={!editingConfig}>
+          <button type="button" onClick={vm.handleSaveConfig} disabled={!vm.editingConfig}>
             保存配置
           </button>
         </div>
 
-        {editingConfig ? (
+        {vm.editingConfig ? (
           <>
             <div className="director-ui-config-summary">
               <article>
                 <span>页面 ID</span>
-                <strong>{editingConfig.id}</strong>
+                <strong>{vm.editingConfig.id}</strong>
               </article>
               <article>
                 <span>路径</span>
-                <strong>{editingConfig.path}</strong>
+                <strong>{vm.editingConfig.path}</strong>
               </article>
               <article>
                 <span>端侧</span>
-                <strong>{editingConfig.roleScope}</strong>
+                <strong>{vm.editingConfig.roleScope}</strong>
               </article>
               <article>
                 <span>组件数量</span>
-                <strong>{editingConfig.components.length}</strong>
+                <strong>{vm.editingConfig.components.length}</strong>
               </article>
             </div>
 
@@ -235,9 +157,9 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
               <label>
                 <span>页面名称</span>
                 <input
-                  value={editingConfig.name}
+                  value={vm.editingConfig.name}
                   onChange={(event) =>
-                    updateEditingConfig((config) => ({
+                    vm.updateEditingConfig((config) => ({
                       ...config,
                       name: event.target.value,
                     }))
@@ -248,9 +170,9 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
               <label>
                 <span>布局类型</span>
                 <select
-                  value={editingConfig.layout.type}
+                  value={vm.editingConfig.layout.type}
                   onChange={(event) =>
-                    updateEditingConfig((config) => ({
+                    vm.updateEditingConfig((config) => ({
                       ...config,
                       layout: {
                         ...config.layout,
@@ -268,8 +190,8 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
 
             <div className="director-ui-button-editor">
               <h4>按钮组件</h4>
-              {buttonComponents.length > 0 ? (
-                buttonComponents.map((button) => {
+              {vm.buttonComponents.length > 0 ? (
+                vm.buttonComponents.map((button) => {
                   const actionPath = button.action.type === "navigate" ? button.action.targetPath : "";
 
                   return (
@@ -283,7 +205,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
                         <input
                           value={button.label}
                           onChange={(event) =>
-                            updateButtonComponent(button.id, (current) => ({
+                            vm.updateButtonComponent(button.id, (current) => ({
                               ...current,
                               label: event.target.value,
                             }))
@@ -295,7 +217,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
                         <input
                           value={button.icon ?? ""}
                           onChange={(event) =>
-                            updateButtonComponent(button.id, (current) => ({
+                            vm.updateButtonComponent(button.id, (current) => ({
                               ...current,
                               icon: event.target.value.trim() || undefined,
                             }))
@@ -308,7 +230,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
                           value={actionPath}
                           disabled={button.action.type !== "navigate"}
                           onChange={(event) =>
-                            updateButtonComponent(button.id, (current) =>
+                            vm.updateButtonComponent(button.id, (current) =>
                               current.action.type === "navigate"
                                 ? {
                                     ...current,
@@ -334,7 +256,7 @@ export const DirectorUiCustomizationPage = ({ onNavigate }: DirectorUiCustomizat
           <p className="feedback error">未找到该页面的配置。</p>
         )}
 
-        {saveMessage ? <p className="feedback success">{saveMessage}</p> : null}
+        {vm.saveMessage ? <p className="feedback success">{vm.saveMessage}</p> : null}
       </section>
     </section>
   );

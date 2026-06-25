@@ -1,125 +1,13 @@
-import { useEffect, useState } from "react";
 import type {
   CreateShopItemRequestBody,
-  ShopItem,
   UpdateShopItemRequestBody,
 } from "../../../objects/api/api-contracts.js";
-import {
-  createShopItem,
-  deactivateShopItem,
-  listAdminShopItems,
-  updateShopItem,
-} from "../../../system/api/exports/index.js";
 import { AdminShopHeader } from "./components/AdminShopHeader.js";
+import { useAdminShopPage } from "./hooks/useAdminShopPage.js";
 import type { AdminShopPageProps } from "./objects/admin-shop-page-types.js";
 
-const emptyCreateDraft = (): CreateShopItemRequestBody => ({
-  name: "",
-  description: "",
-  price: 100,
-  currency: "coins",
-  catalogIndex: 0,
-  active: true,
-  sortOrder: 0,
-});
-
-const toUpdateDraft = (item: ShopItem): UpdateShopItemRequestBody => ({
-  name: item.name,
-  description: item.description,
-  price: item.price,
-  currency: item.currency,
-  catalogIndex: item.catalogIndex,
-  active: item.active,
-  sortOrder: item.sortOrder,
-});
-
 export const AdminShopPage = ({ userId }: AdminShopPageProps) => {
-  const [items, setItems] = useState<ShopItem[]>([]);
-  const [createDraft, setCreateDraft] = useState<CreateShopItemRequestBody>(emptyCreateDraft);
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<UpdateShopItemRequestBody | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  const loadItems = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const nextItems = await listAdminShopItems(userId);
-      setItems(nextItems);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "加载商店商品失败");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadItems();
-  }, [userId]);
-
-  const handleCreate = async () => {
-    setError("");
-    setMessage("");
-
-    try {
-      await createShopItem(userId, createDraft);
-      setCreateDraft(emptyCreateDraft());
-      setMessage("商品已创建");
-      await loadItems();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "创建商品失败");
-    }
-  };
-
-  const handleStartEdit = (item: ShopItem) => {
-    setEditingItemId(item.id);
-    setEditDraft(toUpdateDraft(item));
-    setMessage("");
-    setError("");
-  };
-
-  const handleCancelEdit = () => {
-    setEditingItemId(null);
-    setEditDraft(null);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingItemId || !editDraft) {
-      return;
-    }
-
-    setError("");
-    setMessage("");
-
-    try {
-      await updateShopItem(userId, editingItemId, editDraft);
-      setEditingItemId(null);
-      setEditDraft(null);
-      setMessage(`商品 ${editingItemId} 已更新`);
-      await loadItems();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "更新商品失败");
-    }
-  };
-
-  const handleDeactivate = async (itemId: string) => {
-    setError("");
-    setMessage("");
-
-    try {
-      await deactivateShopItem(userId, itemId);
-      if (editingItemId === itemId) {
-        handleCancelEdit();
-      }
-      setMessage(`商品 ${itemId} 已下架`);
-      await loadItems();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "下架商品失败");
-    }
-  };
+  const vm = useAdminShopPage(userId);
 
   const renderItemFields = (
     draft: CreateShopItemRequestBody | UpdateShopItemRequestBody,
@@ -194,21 +82,21 @@ export const AdminShopPage = ({ userId }: AdminShopPageProps) => {
 
   return (
     <section className="panel">
-      <AdminShopHeader itemCount={items.length} />
+      <AdminShopHeader itemCount={vm.items.length} />
 
-      <button type="button" className="secondary" onClick={() => void loadItems()} disabled={loading}>
-        {loading ? "刷新中..." : "刷新商品列表"}
+      <button type="button" className="secondary" onClick={() => void vm.loadItems()} disabled={vm.loading}>
+        {vm.loading ? "刷新中..." : "刷新商品列表"}
       </button>
 
-      {message ? <p className="feedback success">{message}</p> : null}
-      {error ? <p className="feedback error">{error}</p> : null}
+      {vm.message ? <p className="feedback success">{vm.message}</p> : null}
+      {vm.error ? <p className="feedback error">{vm.error}</p> : null}
 
       <div className="feature-grid admin-community-grid">
         <section className="feature-card">
           <h3>新建商品</h3>
-          {renderItemFields(createDraft, (next) => setCreateDraft(next as CreateShopItemRequestBody))}
+          {renderItemFields(vm.createDraft, (next) => vm.setCreateDraft(next as CreateShopItemRequestBody))}
           <div className="actions">
-            <button type="button" onClick={() => void handleCreate()} disabled={loading}>
+            <button type="button" onClick={() => void vm.handleCreate()} disabled={vm.loading}>
               创建商品
             </button>
           </div>
@@ -217,21 +105,21 @@ export const AdminShopPage = ({ userId }: AdminShopPageProps) => {
         <section className="feature-card">
           <h3>商品列表</h3>
           <div className="feature-stack">
-            {items.length === 0 && !loading ? <p>当前没有商店商品。</p> : null}
-            {items.map((item) => (
+            {vm.items.length === 0 && !vm.loading ? <p>当前没有商店商品。</p> : null}
+            {vm.items.map((item) => (
               <article key={item.id} className="mini-card">
-                {editingItemId === item.id && editDraft ? (
+                {vm.editingItemId === item.id && vm.editDraft ? (
                   <>
                     <div className="mini-card-header">
                       <strong>编辑 {item.id}</strong>
                       <span>{item.active ? "上架" : "已下架"}</span>
                     </div>
-                    {renderItemFields(editDraft, (next) => setEditDraft(next as UpdateShopItemRequestBody))}
+                    {renderItemFields(vm.editDraft, (next) => vm.setEditDraft(next as UpdateShopItemRequestBody))}
                     <div className="actions">
-                      <button type="button" onClick={() => void handleSaveEdit()} disabled={loading}>
+                      <button type="button" onClick={() => void vm.handleSaveEdit()} disabled={vm.loading}>
                         保存
                       </button>
-                      <button type="button" className="secondary" onClick={handleCancelEdit}>
+                      <button type="button" className="secondary" onClick={vm.handleCancelEdit}>
                         取消
                       </button>
                     </div>
@@ -248,15 +136,15 @@ export const AdminShopPage = ({ userId }: AdminShopPageProps) => {
                       · 货架 {item.catalogIndex} · 排序 {item.sortOrder}
                     </p>
                     <div className="actions">
-                      <button type="button" onClick={() => handleStartEdit(item)} disabled={loading}>
+                      <button type="button" onClick={() => vm.handleStartEdit(item)} disabled={vm.loading}>
                         编辑
                       </button>
                       {item.active ? (
                         <button
                           type="button"
                           className="secondary"
-                          onClick={() => void handleDeactivate(item.id)}
-                          disabled={loading}
+                          onClick={() => void vm.handleDeactivate(item.id)}
+                          disabled={vm.loading}
                         >
                           下架
                         </button>

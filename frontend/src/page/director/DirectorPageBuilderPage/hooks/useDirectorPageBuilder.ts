@@ -11,7 +11,7 @@ import {
   getLogicalPanelChildren,
   getParentPanelId,
   isPanelComponent,
-} from "../lib/page-builder-helpers.js";
+} from "../function/page-builder-helpers.js";
 import type { ResizeHandle } from "../objects/page-builder-types.js";
 import type { PageComponent, PageConfig, PanelComponent, TextComponent } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import { getUiPreviewUser } from "../../../../objects/ui-customization/ui-customization-objects.js";

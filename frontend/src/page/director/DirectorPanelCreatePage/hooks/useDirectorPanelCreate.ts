@@ -58,14 +58,14 @@ import {
   applyButtonStateContentType,
   normalizeIdPart,
   resizePatternFrame,
-} from "../lib/panel-create-helpers.js";
+} from "../function/panel-create-helpers.js";
 import { pagePreviewAspectRatio } from "../objects/panel-create-types.js";
 import {
   getPanelCreateMoveTarget,
   getPanelCreateResizeTarget,
   hitTestPanelCreateChild,
   isPanelCreateCanvasInteractiveTarget,
-} from "../lib/panel-create-canvas.js";
+} from "../function/panel-create-canvas.js";
 
 export type DirectorPanelCreateViewModel = ReturnType<typeof useDirectorPanelCreate>;
 

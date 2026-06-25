@@ -20,7 +20,7 @@ import {
   getImageAspectRatio,
   getRenderedButtonAspectRatio,
   renderPolygonImage,
-} from "../lib/button-design-helpers.js";
+} from "../function/button-design-helpers.js";
 import type {
   ButtonDesignType,
   ButtonTemplateChoice,

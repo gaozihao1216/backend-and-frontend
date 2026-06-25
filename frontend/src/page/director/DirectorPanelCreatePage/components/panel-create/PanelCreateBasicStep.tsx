@@ -19,8 +19,8 @@ import {
   resolveTextArtDesign,
   usesTextArtGradient,
 } from "../../../../../lib/art-text-styles.js";
-import { clamp, createDefaultPanelChildDrafts, getDecorationStyle, getPanelRenderedAspectRatio } from "../../lib/panel-create-helpers.js";
-import { getButtonStateContentType } from "../../lib/panel-create-helpers.js";
+import { clamp, createDefaultPanelChildDrafts, getDecorationStyle, getPanelRenderedAspectRatio } from "../../function/panel-create-helpers.js";
+import { getButtonStateContentType } from "../../function/panel-create-helpers.js";
 import type { PanelPreset } from "../../objects/panel-create-types.js";
 import { pagePreviewAspectRatio } from "../../objects/panel-create-types.js";
 

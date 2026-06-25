@@ -96,7 +96,7 @@ components/
 | 入口 | `page/director/DirectorPageBuilderPage/index.tsx` |
 | Hook | `page/director/DirectorPageBuilderPage/hooks/useDirectorPageBuilder.ts` |
 | 组件 | `page/director/DirectorPageBuilderPage/components/*` |
-| 工具/类型 | 同页面 `lib/`、同页面 `objects/`，跨页共享才放全局 `lib/` 或 `objects/` |
+| 函数/类型 | 同页面 `function/`、同页面 `objects/`，跨页共享才放全局 `lib/` 或 `objects/` |
 
 已拆分页面清单（Designer / Player 社交·备战 / Director 构建工具五页 + 面板创建）见 `page/ARCHITECTURE.md` 的「已完成拆分」表。
 

@@ -15,7 +15,7 @@ import {
   getHorizontalSlicePercent,
   getVerticalSlicePercent,
   getVisibleBoundsStyle,
-} from ".././lib/button-template-draft.js";
+} from "../function/button-template-draft.js";
 import {
   normalizeButtonTemplateCategory,
   type ButtonTemplateCategory,

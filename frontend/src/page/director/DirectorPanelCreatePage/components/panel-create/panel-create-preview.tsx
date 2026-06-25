@@ -15,7 +15,7 @@ import {
 } from "../../../../../components/ui-renderer/ui-renderer-utils.js";
 import type { PanelDecoration } from "../../../../../objects/ui-customization/ui-customization-objects.js";
 import type { ButtonStateDraft, ResizeHandle } from "../../objects/panel-create-types.js";
-import { getButtonStateContentType } from "../../lib/panel-create-helpers.js";
+import { getButtonStateContentType } from "../../function/panel-create-helpers.js";
 
 export const PanelCreateChildOutline = ({ childId }: { childId: string }) => (
   <div

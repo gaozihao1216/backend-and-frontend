@@ -5,7 +5,7 @@ import { DynamicPageHost } from "./DynamicPageHost.js";
 import { StaticLevelScreenPreview } from "../../components/level/static-level-previews.js";
 import { AdminAuditLogsPage } from "../admin/AdminAuditLogsPage/index.js";
 import { AdminCommunityPage } from "../admin/AdminCommunityPage/index.js";
-import { AdminPage } from "../admin/AdminPage/index.js";
+import { AdminProposalReviewPage } from "../admin/AdminProposalReviewPage/index.js";
 import { AdminShopPage } from "../admin/AdminShopPage/index.js";
 import { DesignerBirdLabPage } from "../designer/DesignerBirdLabPage/index.js";
 import { DesignerPortfolioPage } from "../designer/DesignerPortfolioPage/index.js";
@@ -182,7 +182,7 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
         <AdminCommunityPage nickname={user.nickname} userId={apiUserId} />
       ) : unsupportedStaticPage(pageId);
     case "admin.proposals":
-      return apiUserId ? <AdminPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
+      return apiUserId ? <AdminProposalReviewPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
     case "admin.auditLogs":
       return apiUserId ? <AdminAuditLogsPage userId={apiUserId} /> : unsupportedStaticPage(pageId);
     case "admin.shopManagement":

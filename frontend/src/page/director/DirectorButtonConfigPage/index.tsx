@@ -1,23 +1,13 @@
-import { useMemo, useState } from "react";
-import { getPageConfig, savePageConfig } from "../../../lib/ui-customization.js";
 import {
   endpointOptions,
   isDynamicPath,
-  routeTrees,
   type RouteNode,
   type SelectedRoute,
 } from "../../../objects/ui-customization/ui-route-tree.js";
-import type { ButtonComponent, ComponentAction, PageComponent, PageConfig, PanelComponent, UiEndpoint } from "../../../objects/ui-customization/ui-customization-objects.js";
+import type { PageComponent, PanelComponent } from "../../../objects/ui-customization/ui-customization-objects.js";
 import { DirectorButtonConfigHeader } from "./components/DirectorButtonConfigHeader.js";
+import { useDirectorButtonConfigPage } from "./hooks/useDirectorButtonConfigPage.js";
 import type { DirectorButtonConfigPageProps } from "./objects/director-button-config-page-types.js";
-
-const findButton = (pageConfig: PageConfig | null, componentId: string | null): ButtonComponent | null => {
-  const component = componentId ? pageConfig?.components.find((candidate) => candidate.id === componentId) : null;
-  return component?.type === "button" ? component : null;
-};
-
-const getActionMode = (action: ComponentAction): "navigate" | "openPanel" =>
-  action.type === "openPanel" ? "openPanel" : "navigate";
 
 const getPanelDisplayName = (panel: PanelComponent) =>
   panel.title?.trim() || panel.id;
@@ -86,117 +76,26 @@ const renderRouteTree = (
 );
 
 export const DirectorButtonConfigPage = ({ pageId, componentId, onBack }: DirectorButtonConfigPageProps) => {
-  const [pageConfig, setPageConfig] = useState<PageConfig | null>(() => pageId ? getPageConfig(pageId) : null);
-  const selectedButton = useMemo(() => findButton(pageConfig, componentId), [componentId, pageConfig]);
-  const [actionMode, setActionMode] = useState<"navigate" | "openPanel">(() =>
-    selectedButton ? getActionMode(selectedButton.action) : "navigate",
-  );
-  const [targetPath, setTargetPath] = useState(() =>
-    selectedButton?.action.type === "navigate" ? selectedButton.action.targetPath : "",
-  );
-  const [targetPageId, setTargetPageId] = useState(() =>
-    selectedButton?.action.type === "navigate" ? selectedButton.action.targetPageId : "",
-  );
-  const [panelId, setPanelId] = useState(() =>
-    selectedButton?.action.type === "openPanel" ? selectedButton.action.panelId : "",
-  );
-  const [routePickerOpen, setRoutePickerOpen] = useState(false);
-  const [routePickerEndpoint, setRoutePickerEndpoint] = useState<UiEndpoint>(() => pageConfig?.roleScope ?? "player");
-  const [selectedRoute, setSelectedRoute] = useState<SelectedRoute>(() => routeTrees[pageConfig?.roleScope ?? "player"]);
-  const [feedback, setFeedback] = useState("");
-
-  const availablePanels = useMemo(
-    () => pageConfig?.components.filter((component): component is PanelComponent => component.type === "panel") ?? [],
-    [pageConfig],
-  );
-  const selectedPanel = useMemo(
-    () => availablePanels.find((panel) => panel.id === panelId) ?? null,
-    [availablePanels, panelId],
-  );
-  const componentMap = useMemo(
-    () => new Map((pageConfig?.components ?? []).map((component) => [component.id, component])),
-    [pageConfig],
-  );
-  const selectedPanelChildren = selectedPanel
-    ? selectedPanel.childComponentIds.map((childId) => componentMap.get(childId)).filter((component): component is PageComponent => Boolean(component))
-    : [];
-  const routePickerTree = routeTrees[routePickerEndpoint];
-
-  const handleSelectRoute = (route: SelectedRoute) => {
-    setSelectedRoute(route);
-    if (!isDynamicPath(route.path)) {
-      setTargetPageId(route.pageId);
-      setTargetPath(route.path);
-      setRoutePickerOpen(false);
-      setFeedback("");
-    }
-  };
-
-  const handleRouteEndpointChange = (endpoint: UiEndpoint) => {
-    setRoutePickerEndpoint(endpoint);
-    setSelectedRoute(routeTrees[endpoint]);
-  };
-
-  const handleSave = () => {
-    if (!pageConfig || !selectedButton) {
-      return;
-    }
-
-    const nextAction: ComponentAction =
-      actionMode === "navigate"
-        ? {
-            type: "navigate",
-            targetPageId: targetPageId.trim() || pageConfig.id,
-            targetPath: targetPath.trim() || pageConfig.path,
-          }
-        : {
-            type: "openPanel",
-            panelId: panelId.trim(),
-          };
-
-    if (nextAction.type === "openPanel" && !nextAction.panelId) {
-      setFeedback("请选择要导出的小面板。");
-      return;
-    }
-
-    const nextPageConfig: PageConfig = {
-      ...pageConfig,
-      components: pageConfig.components.map((component) =>
-        component.id === selectedButton.id && component.type === "button"
-          ? {
-              ...component,
-              action: nextAction,
-            }
-          : component,
-      ),
-    };
-
-    const savedConfig = savePageConfig(nextPageConfig);
-    setPageConfig(savedConfig);
-    setFeedback("按钮配置已保存。");
-  };
+  const vm = useDirectorButtonConfigPage(pageId, componentId);
 
   return (
     <section className="button-config-shell">
-      <DirectorButtonConfigHeader canSave={Boolean(selectedButton)} onBack={onBack} onSave={handleSave} />
+      <DirectorButtonConfigHeader canSave={Boolean(vm.selectedButton)} onBack={onBack} onSave={vm.handleSave} />
 
       {!pageId ? <p className="feedback error">缺少 pageId，无法进入按钮配置。</p> : null}
-      {pageId && !pageConfig ? <p className="feedback error">该页面配置不存在。</p> : null}
-      {pageConfig && !selectedButton ? <p className="feedback error">当前组件不是按钮，无法配置。</p> : null}
-      {feedback ? <p className="feedback">{feedback}</p> : null}
+      {pageId && !vm.pageConfig ? <p className="feedback error">该页面配置不存在。</p> : null}
+      {vm.pageConfig && !vm.selectedButton ? <p className="feedback error">当前组件不是按钮，无法配置。</p> : null}
+      {vm.feedback ? <p className="feedback">{vm.feedback}</p> : null}
 
-      {selectedButton ? (
+      {vm.selectedButton ? (
         <div className="button-config-layout">
           <section className="button-config-panel">
             <h3>功能类型</h3>
             <label className="button-design-field">
               <span>点击动作</span>
               <select
-                value={actionMode}
-                onChange={(event) => {
-                  setActionMode(event.target.value as "navigate" | "openPanel");
-                  setFeedback("");
-                }}
+                value={vm.actionMode}
+                onChange={(event) => vm.handleActionModeChange(event.target.value as "navigate" | "openPanel")}
               >
                 <option value="navigate">转移界面</option>
                 <option value="openPanel">导出小面板</option>
@@ -204,37 +103,37 @@ export const DirectorButtonConfigPage = ({ pageId, componentId, onBack }: Direct
             </label>
           </section>
 
-          {actionMode === "navigate" ? (
+          {vm.actionMode === "navigate" ? (
             <section className="button-config-panel">
               <h3>跳转目标</h3>
-              <button type="button" className="secondary" onClick={() => setRoutePickerOpen((current) => !current)}>
+              <button type="button" className="secondary" onClick={() => vm.setRoutePickerOpen((current) => !current)}>
                 查找目标
               </button>
               <label className="button-design-field">
                 <span>目标页面 ID</span>
-                <input value={targetPageId} onChange={(event) => setTargetPageId(event.target.value)} />
+                <input value={vm.targetPageId} onChange={(event) => vm.setTargetPageId(event.target.value)} />
               </label>
               <label className="button-design-field">
                 <span>目标路径</span>
-                <input value={targetPath} onChange={(event) => setTargetPath(event.target.value)} />
+                <input value={vm.targetPath} onChange={(event) => vm.setTargetPath(event.target.value)} />
               </label>
-              {routePickerOpen ? (
+              {vm.routePickerOpen ? (
                 <section className="button-config-route-picker">
                   <div className="director-ui-endpoint-grid">
                     {endpointOptions.map((option) => (
                       <button
                         key={option.id}
                         type="button"
-                        className={`role-card director-ui-endpoint ${option.id === routePickerEndpoint ? "active" : ""}`}
-                        onClick={() => handleRouteEndpointChange(option.id)}
+                        className={`role-card director-ui-endpoint ${option.id === vm.routePickerEndpoint ? "active" : ""}`}
+                        onClick={() => vm.handleRouteEndpointChange(option.id)}
                       >
                         <strong>{option.label}</strong>
                         <span>{option.description}</span>
                       </button>
                     ))}
                   </div>
-                  <ul className="ui-route-tree">{renderRouteTree(routePickerTree, selectedRoute, handleSelectRoute)}</ul>
-                  {isDynamicPath(selectedRoute.path) ? (
+                  <ul className="ui-route-tree">{renderRouteTree(vm.routePickerTree, vm.selectedRoute, vm.handleSelectRoute)}</ul>
+                  {isDynamicPath(vm.selectedRoute.path) ? (
                     <p className="feedback error">动态模板路径需要具体实例后才能作为跳转目标。</p>
                   ) : null}
                 </section>
@@ -244,16 +143,13 @@ export const DirectorButtonConfigPage = ({ pageId, componentId, onBack }: Direct
             <section className="button-config-panel">
               <h3>小面板目标</h3>
               <div className="button-config-panel-picker">
-                {availablePanels.length > 0 ? (
-                  availablePanels.map((panel) => (
+                {vm.availablePanels.length > 0 ? (
+                  vm.availablePanels.map((panel) => (
                     <button
                       key={panel.id}
                       type="button"
-                      className={`button-config-panel-option ${panel.id === panelId ? "selected" : ""}`}
-                      onClick={() => {
-                        setPanelId(panel.id);
-                        setFeedback("");
-                      }}
+                      className={`button-config-panel-option ${panel.id === vm.panelId ? "selected" : ""}`}
+                      onClick={() => vm.selectPanel(panel.id)}
                     >
                       <strong>{getPanelDisplayName(panel)}</strong>
                       <span>{panel.id}</span>
@@ -264,22 +160,22 @@ export const DirectorButtonConfigPage = ({ pageId, componentId, onBack }: Direct
                   <p className="meta">当前页面还没有可导出的小面板。</p>
                 )}
               </div>
-              {selectedPanel ? (
+              {vm.selectedPanel ? (
                 <section className="button-config-panel-preview">
                   <div>
-                    <strong>{getPanelDisplayName(selectedPanel)}</strong>
-                    <code>{selectedPanel.id}</code>
+                    <strong>{getPanelDisplayName(vm.selectedPanel)}</strong>
+                    <code>{vm.selectedPanel.id}</code>
                   </div>
                   <div className="button-config-panel-preview-meta">
-                    <span>{selectedPanel.kind ?? "panel"}</span>
+                    <span>{vm.selectedPanel.kind ?? "panel"}</span>
                     <span>
-                      {selectedPanel.position.width.toFixed(1)} x {selectedPanel.position.height.toFixed(1)}
-                      {selectedPanel.position.unit === "px" ? "px" : "%"}
+                      {vm.selectedPanel.position.width.toFixed(1)} x {vm.selectedPanel.position.height.toFixed(1)}
+                      {vm.selectedPanel.position.unit === "px" ? "px" : "%"}
                     </span>
                   </div>
-                  {selectedPanelChildren.length > 0 ? (
+                  {vm.selectedPanelChildren.length > 0 ? (
                     <ul>
-                      {selectedPanelChildren.map((child) => (
+                      {vm.selectedPanelChildren.map((child) => (
                         <li key={child.id}>
                           <span>{getComponentTypeLabel(child)}</span>
                           <strong>{getComponentDisplayName(child)}</strong>

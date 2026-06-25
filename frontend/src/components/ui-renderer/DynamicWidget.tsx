@@ -1,4 +1,4 @@
-import { AdminProposalReviewContent } from "../../page/admin/AdminPage/components/AdminProposalReviewContent.js";
+import { AdminProposalReviewContent } from "../../page/admin/AdminProposalReviewPage/components/AdminProposalReviewContent.js";
 import type { WidgetComponent } from "../../objects/ui-customization/ui-customization-objects.js";
 import type { DynamicRendererContext } from "./ui-renderer-types.js";
 import { SharedLevelMapStageWidget } from "./SharedLevelMapStageWidget.js";
