@@ -1,13 +1,14 @@
 package microservice.player.api.social
 
+import cats.data.EitherT
 import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.social.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
-import microservice.player.support.social.PlayerSocialAccess
+import microservice.player.tables.social.PlayerFriendTable
 import microservice.player.tables.social.{PlayerPrivateMessageRow, PlayerPrivateMessageTable}
 import microservice.system.objects.enums.UserRole
 import microservice.user.support.AccessControl
@@ -33,9 +34,9 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
         // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
         // 步骤 2：校验消息内容与 receiverId 合法性
-        trimmed <- PlayerSocialAccess.requireValidMessage(receiverId, content)
+        trimmed <- requireValidMessage
         // 步骤 3：确认双方为好友关系
-        _ <- PlayerSocialAccess.requireFriendship(connection, userId, receiverId)
+        _ <- requireFriendship(connection)
         // 步骤 4：插入新私信记录
         _ <- PlanSteps.read(
           PlayerPrivateMessageTable.insert(
@@ -66,5 +67,20 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
             .toList
         )
       } yield PlayerSocialJson.toJsonMessages(PlayerMessageListResponse(messages))
+    }
+
+  private def requireValidMessage: PlanStep.Step[String] = {
+    val trimmed = content.trim
+    if (receiverId.trim.isEmpty || trimmed.isEmpty) {
+      PlanStep.fail(HttpError.badRequest("INVALID_MESSAGE", "receiverId and content are required"))
+    } else {
+      PlanStep.succeed(trimmed)
+    }
+  }
+
+  private def requireFriendship(connection: Connection): PlanStep.Step[Unit] =
+    EitherT.liftF(IO(PlayerFriendTable.exists(connection, userId, receiverId))).flatMap {
+      case false => EitherT.leftT[IO, Unit](HttpError.forbidden("You can only chat with friends"))
+      case true  => EitherT.rightT[IO, HttpError](())
     }
 }

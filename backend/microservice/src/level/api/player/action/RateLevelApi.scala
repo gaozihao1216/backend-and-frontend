@@ -1,5 +1,6 @@
 package microservice.level.api.player.action
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
@@ -7,12 +8,12 @@ import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
-import microservice.level.objects.social.Rating
+import microservice.level.objects.social.{RateLevelErrors, Rating}
 import microservice.level.tables.rating.{RatingTable}
 import microservice.level.tables.shared.{RatingRow}
 import microservice.level.tables.level.{LevelTable}
-import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.enums.UserRole
+import microservice.level.tables.shared.LevelRow
+import microservice.system.objects.enums.{LevelStatus, UserRole}
 import microservice.level.objects.player.request.RateLevelRequest
 
 /** 玩家对已发布关卡评分 APIMessage。 */
@@ -36,7 +37,7 @@ final case class RateLevelAPIMessage(
         // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
         // 步骤 2：确认关卡可评分且 score 在 1–5 范围内
-        _ <- LevelApiSupport.requireRateableLevel(connection, levelId, body.score).map(_ => ())
+        _ <- requireRateableLevel(connection).map(_ => ())
         // 步骤 3：upsert Rating 并重算 Level 平均分与评分人数
         rating <- PlanSteps.read {
           val timestamp = Instant.now().toString
@@ -67,5 +68,17 @@ final case class RateLevelAPIMessage(
           LevelRowMapper.toRating(ratingRow)
         }
       } yield rating
+    }
+
+  private def requireRateableLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[LevelRow] =
+    EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
+      case None =>
+        EitherT.leftT[IO, LevelRow](RateLevelErrors.LevelMissing(levelId).toHttpError)
+      case Some(level) if level.status != LevelStatus.Published =>
+        EitherT.leftT[IO, LevelRow](RateLevelErrors.LevelNotPublished(levelId).toHttpError)
+      case Some(_) if body.score < 1 || body.score > 5 =>
+        EitherT.leftT[IO, LevelRow](RateLevelErrors.InvalidScore(body.score).toHttpError)
+      case Some(level) =>
+        EitherT.rightT[IO, HttpError](level)
     }
 }

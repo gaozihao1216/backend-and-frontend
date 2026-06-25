@@ -35,13 +35,13 @@ backend/microservice/src/
 
 | 目录 | 职责 |
 | --- | --- |
-| `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` 编排（鉴权 → 校验 → support → 表读写） |
+| `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` 编排（鉴权 → 校验 → 私有步骤 → 表读写） |
 | `validation/` | 字段/结构校验：`validate*` → `PlanStep.Step`，`check*` 供单元测试 |
 | `objects/` | 领域对象（case class + Circe codec）；JSON 辅助如 `PlayerSocialJson` |
-| `support/` | 可复用业务规则（查表、状态机）：`require*` / `check*` |
+| `support/` | 多 API 复用辅助：mapping、seed、bootstrap、catalog、defaults、动态分派等 |
 | `routes/` | 模块 APIMessage 注册表；业务 HTTP 入口统一走 `POST /api/{apiName}` |
 | `tables/` | 数据访问；`*Row` + `*Table.scala` 读写入口 + `*TableInitializer.scala` DDL/seed |
-| `support/*` / `preparation/` | player 模块专属商店、签到、进度、钱包、备战逻辑 |
+| `support/*` / `preparation/` | player 模块内多 API 复用的商店、签到、进度、钱包、备战辅助能力 |
 
 **类型分层（目录规范）** — 完整说明、依赖图与新增 API 清单见 [`backend/microservice/MODULE-LAYOUT.md`](../backend/microservice/MODULE-LAYOUT.md)；领域对象子包见 [`OBJECTS.md`](../backend/microservice/OBJECTS.md)。
 
@@ -49,8 +49,8 @@ backend/microservice/src/
 | --- | --- | --- | --- |
 | `objects/` | `<module>/objects/` | 领域模型、枚举、错误码、API 返回类型、请求对象 | SQL、路由 |
 | `validation/` | `<module>/validation/<子域>/` | 基于 objects 的字段校验 | 访问 `Connection` / Table |
-| `support/` | `<module>/support/<子域>/` | 跨步骤可复用的查表与状态规则 | 定义 APIMessage |
-| `api/` | `<module>/api/<子域>/` | 仅 `*Api.scala`，`plan` 串联上述层 | validation/support 子目录、`object` 伴生 |
+| `support/` | `<module>/support/<子域>/` | 多 API 复用辅助、mapping、seed、bootstrap、catalog、defaults | 单 API 专用流程 |
+| `api/` | `<module>/api/<子域>` | 仅 `*Api.scala`，`plan` 串联业务步骤 | validation/support 子目录、请求对象 |
 | `tables/` | `<module>/tables/` | `*Row` 与持久化；`Row ↔ objects` | HTTP 类型 |
 
 **一次请求的数据流：**
@@ -58,10 +58,10 @@ backend/microservice/src/
 ```text
 routes  ──解析 JSON──►  objects/
    │
-   └──► api/*Api.plan ──► AccessControl → validation → support → tables → objects（返回）
+   └──► api/*Api.plan ──► AccessControl → validation → private helpers/support → tables → objects（返回）
 ```
 
-示例路径：`CreateLevelRequest` → `level/objects/design/`；`CreateLevelValidation` → `level/validation/design/`；`LevelDesignAccess` → `level/support/design/`；`UiPageAccess` → `ui/support/pages/`；`PlayerSocialAccess` → `player/support/social/`；`PlayerPreparationAccess` → `player/support/preparation/`。
+示例路径：`CreateLevelRequest` → `level/objects/design/request/`；`CreateLevelValidation` → `level/validation/design/`；单 API 专用查表/状态判断放在对应 `*Api.scala` 私有方法中；多 API 复用逻辑可保留在 `UiPageAccess`、`PlayerPreparationAccess` 等 support 文件。
 
 ## APIMessage 模式
 
@@ -75,8 +75,8 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
     PlanSteps.finish {
       for {
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
-        _ <- PlayerSocialAccess.requireValidFriendRequest(userId, friendUserId)
-        _ <- PlayerSocialAccess.requireExistingUser(connection, friendUserId)
+        _ <- requireValidFriendRequest
+        _ <- PlanSteps.runApi(UserExistsInternalAPIMessage(friendUserId), connection).map(_ => ())
         _ <- PlanSteps.read(PlayerFriendTable.insertPair(connection, userId, friendUserId))
         // ... 组装好友列表 JSON
       } yield PlayerSocialJson.toJsonFriends(...)
@@ -90,7 +90,8 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
 | --- | --- | --- |
 | `AccessControl.requireRole` / `requireAdminLevel` / `requireBoundIdentity` / `requireKnownUser` | `PlanStep.Step[A]` | 鉴权与用户存在校验 |
 | `*Validation.validate*` / `ensureKind` | `PlanStep.Step[A]` | 请求体/领域字段校验 |
-| `*Support.require*` / `*Access.require*` | `PlanStep.Step[A]` | 查表、状态机、写结果校验（如 `LevelApiSupport`、`BirdDesignAccess`、`UiPageAccess`） |
+| API 文件内私有 `require*` / `build*` | `PlanStep.Step[A]` 或纯值 | 单 API 专用查表、状态机、写结果校验 |
+| `*Support.require*` / `*Access.require*` | `PlanStep.Step[A]` | 多 API 复用步骤（如 `UiPageAccess`、`PlayerPreparationAccess`） |
 | `PlanSteps.read` / `blocking` | `PlanStep.Step[A]` | APIMessage 内仅剩的 IO 副作用（表读写、阻塞 JDBC） |
 | `PlanSteps.finish` | `IO[Either[HttpError, A]]` | plan 出口 |
 
@@ -99,7 +100,7 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
 原则：
 
 - 健康检查保留 `GET /health`；业务入口统一由 `APIMessageRouter` 分发 `POST /api/{apiName}`
-- `plan(connection)` 内完成权限、校验、table 调用；**禁止**内联 `PlanSteps.require(Either(...))` 或手写 `Left`/`toRight` 校验块
+- `plan(connection)` 内完成权限、校验、table 调用；单 API 专用的查表/状态判断优先写成当前 API 文件的私有 `require*` 方法
 - `APIMessage.run` 调用 `DatabaseSession.withTransactionEither`：`Right` 提交，`Left` 回滚（无异常驱动控制流）
 - 返回 `IO[Either[HttpError, A]]`，由 `HttpError.fromEither` 转为 HTTP 响应
 - 成功体包装为 `ApiSuccess(data)`，失败为 `ApiFailure(error)`
@@ -177,9 +178,9 @@ sbt run
 
 **共享能力**：
 
-- `tables/user/`：`UserTable` 持久化；用户资料聚合由 `user/support/UserProfileAccess` 经 `level/api/internal/user/` 拉取 level 侧数据
-- `utils/AccessControl.scala`：全项目共用的 `requireRole` / `requireAdminLevel` / `requireKnownUser`（IO 步骤）与 `check*`（同步校验）
-- `support/UserProfileAccess.scala`、`validation/BindBackendUserValidation.scala`
+- `tables/user/`：`UserTable` 持久化；用户资料聚合由 `GetUserProfileApi.plan` 经 `level/api/internal/user/` 拉取 level 侧数据
+- `support/AccessControl.scala`：全项目共用的 `requireRole` / `requireAdminLevel` / `requireKnownUser`（IO 步骤）与 `check*`（同步校验）
+- `support/UserProfileMapping.scala`、`validation/BindBackendUserValidation.scala`
 
 ### level
 
@@ -214,8 +215,7 @@ level/
 │   ├── inventory/             # BirdInventory、BirdPool
 │   └── errors/                # CreateLevelErrors
 ├── support/
-│   ├── design/LevelDesignAccess.scala
-│   └── player/LevelApiSupport.scala
+│   └── seed/
 ├── routes/
 └── tables/
 ```
@@ -272,9 +272,9 @@ admin/
 - 页面组件、按钮模板、拉伸视觉模板
 - 共享关卡地图页配置
 
-`objects/` 按子域分子包：`component/`、`button_template/`、`category/`、`stretch_template/`、`page/`；根目录保留 `UiEndpoint`、`UiCustomizationErrors`。
+`objects/` 按子域分子包：`component/`、`button_template/`、`category/`、`stretch_template/`、`page/`、`endpoint/`、`errors/`。
 
-`ui/support/` 与 `UiPagePublishSupport` 承载页面/组件/模板的 `require*` + `check*` 逻辑（如 `UiPageAccess`、`UiPageComponentAccess`、`ButtonTemplateAccess`）；签到面板奖励注册已迁至 `player/api/internal/ui/`。
+`ui/support/` 只保留页面/组件/模板的多 API 复用逻辑（如 `UiPageAccess`、`UiPageComponentAccess`、`ButtonTemplateAccess`）；签到面板奖励注册已迁至 `player/api/internal/ui/`。
 
 ### bird
 
@@ -296,8 +296,10 @@ bird/
 │   └── design/                # BirdDesignValidation
 ├── objects/
 ├── support/
+│   ├── catalog/
 │   ├── design/
-│   └── review/
+│   ├── director/
+│   └── skill_config/
 ├── routes/
 └── tables/
 ```
@@ -306,8 +308,8 @@ bird/
 
 玩家能力经 `PlayerApiMessages` 与 `LevelRoutes` 注册，业务均通过 `player/api/` 或 `level/api/` 的 APIMessage 执行：
 
-- **ui runtime**：`player/api/ui/` — 动态 UI 数据与动作；关卡地图页走 `ui/api/pages/`
-- **social**：`player/api/social/` — 好友与私信；校验逻辑在 `player/support/social/PlayerSocialAccess`
+- **ui runtime**：`player/api/ui/` — 动态 UI 数据与动作；钱包与关卡进度 data key 在 `PlayerUiRuntimeSupport` 内分派
+- **social**：`player/api/social/` — 好友与私信；好友/消息校验作为各 API 文件内私有 planner helper
 - **preparation**：`player/api/preparation/` — 鸟/弹弓备战升级
 - **levels / favorites**：`level/api/` — 已发布关卡读/写
 

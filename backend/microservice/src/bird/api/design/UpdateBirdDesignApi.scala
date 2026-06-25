@@ -1,15 +1,15 @@
 package microservice.bird.api.design
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
 import microservice.user.support.AccessControl
 import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
-import microservice.bird.support.design.BirdDesignAccess
-import microservice.bird.tables.design.BirdDesignTable
+import microservice.bird.tables.design.{BirdDesignRow, BirdDesignTable}
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.bird.validation.design.BirdDesignValidation
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.enums.{LevelStatus, UserRole}
 import microservice.bird.objects.design.request.UpdateBirdDesignRequest
@@ -35,7 +35,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
         // 步骤 1：校验用户角色/管理员级别权限
         _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
         // 步骤 2：执行业务步骤
-        existing <- BirdDesignAccess.requireEditable(connection, designerId, designId)
+        existing <- requireEditable(connection)
         // 步骤 3：执行业务步骤
         input <- BirdDesignValidation.validate(
           BirdDesignInput(
@@ -51,26 +51,47 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
           )
         )
         // 步骤 4：执行业务步骤
-        design <- BirdDesignAccess.requireUpdateResult(
-          connection,
-          {
-            val timestamp = Instant.now().toString
-            existing.copy(
-              name = input.name,
-              summary = input.summary,
-              skillName = input.skillName,
-              attack = input.attack,
-              impact = input.impact,
-              speed = input.speed,
-              tierSkillsJson = BirdDesignTable.encodeStringList(input.tierSkills),
-              previewImageUrl = input.previewImageUrl.filter(_.trim.nonEmpty).map(_.trim).getOrElse(existing.previewImageUrl),
-              mechanismTagsJson = BirdDesignTable.encodeStringList(input.mechanismTags),
-              status = LevelStatus.Draft,
-              rejectionReason = None,
-              updatedAt = timestamp
-            )
-          }
-        )
+        design <- requireUpdateResult(connection, toUpdatedRow(existing, input))
       } yield design
+    }
+
+  private def requireEditable(connection: Connection): PlanStep.Step[BirdDesignRow] =
+    EitherT.liftF(IO(BirdDesignTable.findById(connection, designId))).flatMap {
+      case None =>
+        EitherT.leftT[IO, BirdDesignRow](HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
+      case Some(row) if row.authorId != designerId =>
+        EitherT.leftT[IO, BirdDesignRow](HttpError.forbidden("Cannot edit another designer's bird design"))
+      case Some(row) if row.status != LevelStatus.Draft && row.status != LevelStatus.Rejected =>
+        EitherT.leftT[IO, BirdDesignRow](
+          HttpError.conflict("INVALID_BIRD_STATUS", "Only draft or rejected designs can be edited")
+        )
+      case Some(row) =>
+        EitherT.rightT[IO, HttpError](row)
+    }
+
+  private def toUpdatedRow(existing: BirdDesignRow, input: BirdDesignInput): BirdDesignRow = {
+    val timestamp = Instant.now().toString
+    existing.copy(
+      name = input.name,
+      summary = input.summary,
+      skillName = input.skillName,
+      attack = input.attack,
+      impact = input.impact,
+      speed = input.speed,
+      tierSkillsJson = BirdDesignTable.encodeStringList(input.tierSkills),
+      previewImageUrl = input.previewImageUrl.filter(_.trim.nonEmpty).map(_.trim).getOrElse(existing.previewImageUrl),
+      mechanismTagsJson = BirdDesignTable.encodeStringList(input.mechanismTags),
+      status = LevelStatus.Draft,
+      rejectionReason = None,
+      updatedAt = timestamp
+    )
+  }
+
+  private def requireUpdateResult(connection: Connection, updatedRow: BirdDesignRow): PlanStep.Step[BirdDesign] =
+    EitherT.liftF(IO(BirdDesignTable.updateEditable(connection, updatedRow))).flatMap {
+      case None =>
+        EitherT.leftT[IO, BirdDesign](HttpError.conflict("INVALID_BIRD_STATUS", "Bird design could not be updated"))
+      case Some(row) =>
+        EitherT.rightT[IO, HttpError](BirdDesignTable.toBirdDesign(row))
     }
 }

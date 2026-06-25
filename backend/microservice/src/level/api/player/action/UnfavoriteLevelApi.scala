@@ -1,13 +1,16 @@
 package microservice.level.api.player.action
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.user.support.AccessControl
 import microservice.level.objects.social.Favorite
-import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.enums.UserRole
+import microservice.level.tables.favorite.FavoriteTable
+import microservice.level.tables.level.LevelTable
+import microservice.level.tables.shared.LevelRow
+import microservice.system.objects.enums.{LevelStatus, UserRole}
 
 final case class UnfavoriteLevelAPIMessage(
   playerId: String,
@@ -27,9 +30,27 @@ final case class UnfavoriteLevelAPIMessage(
         // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
         // 步骤 2：确认关卡已发布
-        _ <- LevelApiSupport.requirePublishedLevel(connection, levelId).map(_ => ())
+        _ <- requirePublishedLevel(connection).map(_ => ())
         // 步骤 3：删除收藏记录并返回被删 Favorite
-        favorite <- LevelApiSupport.requireDeletedFavorite(connection, playerId, levelId)
+        favorite <- requireDeletedFavorite(connection)
       } yield favorite
+    }
+
+  private def requirePublishedLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[LevelRow] =
+    EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
+      case Some(level) if level.status == LevelStatus.Published =>
+        EitherT.rightT[IO, HttpError](level)
+      case Some(_) =>
+        EitherT.leftT[IO, LevelRow](HttpError.notFound("LEVEL_NOT_FOUND", "Published level not found"))
+      case None =>
+        EitherT.leftT[IO, LevelRow](HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
+    }
+
+  private def requireDeletedFavorite(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Favorite] =
+    EitherT.liftF(IO(FavoriteTable.delete(connection, playerId, levelId))).flatMap {
+      case None =>
+        EitherT.leftT[IO, Favorite](HttpError.notFound("FAVORITE_NOT_FOUND", "Favorite not found"))
+      case Some(favorite) =>
+        EitherT.rightT[IO, HttpError](favorite)
     }
 }

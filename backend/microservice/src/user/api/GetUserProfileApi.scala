@@ -2,11 +2,13 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
-import microservice.user.objects.profile.UserProfile
-import microservice.user.support.UserProfileAccess
+import microservice.level.api.internal.user.GetUserLevelProfileDataInternalAPIMessage
+import microservice.user.objects.profile.{GetUserProfileErrors, UserProfile, UserProfileStats}
 import microservice.user.support.AccessControl
+import microservice.user.support.UserProfileMapping
+import microservice.user.tables.user.{UserRowMapper, UserTable}
 
 /** GET /users/:profileUserId/profile 的 APIMessage。 */
 final case class GetUserProfileAPIMessage(
@@ -24,8 +26,27 @@ final case class GetUserProfileAPIMessage(
       for {
         // 步骤 1：确认 viewer 为已知用户
         _ <- AccessControl.requireKnownUser(connection, viewerUserId).map(_ => ())
-        // 步骤 2：聚合查询目标用户的 UserProfile
-        profile <- UserProfileAccess.requireProfile(connection, profileUserId)
-      } yield profile
+        // 步骤 2：校验目标用户存在
+        user <- UserTable.findById(connection, profileUserId) match {
+          case None      => PlanStep.fail(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
+          case Some(row) => PlanStep.succeed(row)
+        }
+        // 步骤 3：聚合查询目标用户的关卡与互动数据
+        levelData <- PlanSteps.runApi(GetUserLevelProfileDataInternalAPIMessage(profileUserId), connection)
+      } yield profileFromData(user, levelData)
     }
+
+  private def profileFromData(
+    user: microservice.user.tables.user.UserRow,
+    levelData: microservice.level.objects.user.UserLevelProfileData
+  ): UserProfile =
+    UserProfile(
+      user = UserRowMapper.toBackendUser(user),
+      publishedLevels = levelData.publishedLevels.map(UserProfileMapping.toPublishedLevel),
+      recentComments = levelData.recentComments.map(UserProfileMapping.toComment),
+      stats = UserProfileStats(
+        favoriteCount = levelData.favoriteCount,
+        ratingCount = levelData.ratingCount
+      )
+    )
 }

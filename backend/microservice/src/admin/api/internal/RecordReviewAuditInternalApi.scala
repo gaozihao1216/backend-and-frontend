@@ -3,7 +3,7 @@ package microservice.admin.api.internal
 import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.submission.ReviewAudit
-import microservice.admin.support.audit.ReviewAuditSupport
+import microservice.admin.tables.AdminAuditTable
 import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 
@@ -19,14 +19,16 @@ final case class RecordReviewAuditInternalAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, ReviewAudit]] =
     PlanSteps.finish {
       PlanSteps.read(
-        ReviewAuditSupport.recordReview(
-          connection,
-          targetType,
-          submissionId,
-          reviewerId,
-          decision,
-          reviewNote,
-          reviewedAt
+        ReviewAudit.from(
+          AdminAuditTable.recordReview(
+            connection = connection,
+            targetType = targetType,
+            submissionId = submissionId,
+            reviewerId = reviewerId,
+            decision = decision,
+            reviewNote = reviewNote,
+            reviewedAt = reviewedAt
+          )
         )
       )
     }

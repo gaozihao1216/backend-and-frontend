@@ -14,8 +14,8 @@
 | --- | --- | --- |
 | objects | `<module>/objects/` | 领域对象、枚举、错误码、API 返回类型、请求对象 |
 | validation | `<module>/validation/<子域>` | 对请求对象/字段的校验（无 DB） |
-| support | `<module>/support/<子域>/` | 查表与状态规则（可读 `Connection`） |
-| api | `<module>/api/<子域>/` | 仅 `*Api.scala`，编排 plan |
+| support | `<module>/support/<子域>/` | 多 API 复用辅助、mapping、seed、bootstrap、catalog、defaults |
+| api | `<module>/api/<子域>/` | 仅 `*Api.scala`，编排 plan；单 API 专用查表/状态判断作为私有方法 |
 | tables | `<module>/tables/` | `*Row` + Table 门面 |
 
 **请求对象与其他 objects 的边界**

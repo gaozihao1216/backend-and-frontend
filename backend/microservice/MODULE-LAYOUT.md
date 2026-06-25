@@ -11,7 +11,7 @@
 ├── api/              # 仅 *Api.scala：XxxAPIMessage + plan 编排
 ├── validation/       # 字段/请求校验 → PlanStep.Step
 ├── objects/          # 领域类型、请求对象、响应体、实体、错误码对象
-├── support/          # 可复用业务规则（require* / check*）
+├── support/          # 可复用辅助能力（mapping/seed/bootstrap/catalog/defaults 等）
 ├── routes/           # path/header/body 解析 → 构造 APIMessage
 └── tables/           # *Row + Table + TableInitializer
 ```
@@ -21,9 +21,8 @@
 | 目录 | 模块 | 说明 |
 | --- | --- | --- |
 | `support/bootstrap/` | 各业务模块 | `*StorageBootstrap`：DDL/表初始化，供 `system` 启动编排 |
-| `support/preparation/` | player | 备战升级逻辑（`PlayerPreparationAccess` 等） |
-| `support/{shop,checkin,progress,wallet,ui}/` | player | 商店、签到、进度、钱包、动态 UI data/action 分派 |
-| `utils/` | user | `AccessControl`（全项目共用鉴权） |
+| `support/preparation/` | player | 多 API 复用的备战目录/映射/组装能力 |
+| `support/{shop,checkin,wallet,ui}/` | player | 动态 UI data/action 复用分派、默认值与商店/签到服务能力 |
 
 `infrastructure/api/` 放框架级 `APIMessage`、`PlanStep`、`PlanSteps`，与业务 `*/api/*Api.scala` 不同。
 
@@ -47,11 +46,13 @@
 - APIMessage 的入站请求类型、返回类型与 plan 内组装的 JSON/实体均来自此处（或 `system/objects`）。
 - 请求对象可提供 Circe `Encoder`/`Decoder` + http4s `EntityDecoder`，但不写权限、查表或业务流程。
 
-### `support/` — 可复用业务规则
+### `support/` — 可复用辅助能力
 
-- 查表、状态机、组合校验：`require*` → `PlanStep.Step`，`check*` → `Either`。
-- 与 `validation/` 区别：support 可读 `Connection`、调 Table 或跨表逻辑；validation 只做字段/结构校验。
-- 示例：`level/support/design/LevelDesignAccess.scala`、`ui/support/pages/UiPageAccess.scala`、`admin/support/shop/AdminShopSupport.scala`。
+- 优先让业务流程留在对应 `*Api.scala` 的 `plan(connection)` 里。
+- 只有多 API 复用、跨模块 handoff 映射、seed/bootstrap/catalog/defaults、动态 UI 分派等能力放入 `support/`。
+- 单 API 专用的查表、状态判断、双写同步逻辑应作为该 API 文件内的私有方法，而不是新增 support 文件。
+- 与 `validation/` 区别：support 可以读 `Connection` 或调 Table；validation 只做字段/结构校验。
+- 示例：`ui/support/pages/UiPageAccess.scala`、`player/support/ui/PlayerUiRuntimeSupport.scala`、`*/support/mapping/*`。
 
 ### `routes/` — HTTP 适配
 
@@ -73,10 +74,10 @@
   routes/          req.as[CreateLevelRequest]  ──import──►  objects/
        │
        ▼
-  api/*Api.scala   plan { AccessControl → validation → support → PlanSteps.read(Table) }
+  api/*Api.scala   plan { AccessControl → validation → private plan helpers → PlanSteps.read(Table) }
        │                    │              │              │
        │                    ▼              ▼              ▼
-       │              user/utils    validation/     support/
+       │              user/support  validation/     support/
        │              AccessControl
        ▼
   objects/         返回 Level、ApiSuccess 包装等
@@ -84,17 +85,17 @@
   tables/          Row 读写，映射为 objects
 ```
 
-依赖应**单向**：`routes → objects, api`；`api → objects, validation, support, tables`；`validation → objects`；`support → tables, objects`。避免 `objects` 引用 `api`。
+依赖应**单向**：`routes → objects, api`；`api → objects, validation, support, tables`；`validation → objects`；`support → tables, objects`。避免 `objects` 引用 `api`。单 API 专用流程不要反向抽进 `support`。
 
 ## 包名与子路径对照
 
-`objects/`、`validation/`、`support/` 的子路径与对应 `api/` 子路径**语义对齐**（不必逐字相同）：
+`objects/`、`validation/`、`support/` 的子路径与对应 `api/` 子路径**语义对齐**（不必逐字相同）。如果逻辑只服务单个 API，则留在 `api/*Api.scala` 的私有方法中：
 
-| api 子路径 | 请求对象/领域对象 | validation | support（示例） |
+| api 子路径 | 请求对象/领域对象 | validation | support（仅复用时） |
 | --- | --- | --- | --- |
-| `level/api/design/` | `level/objects/design/` | `level/validation/design/` | `level/support/design/` |
+| `level/api/design/` | `level/objects/design/` | `level/validation/design/` | — |
 | `level/api/player/action/` | `level/objects/player/request/` | — | `level/support/player/` |
-| `admin/api/shop/` | `admin/objects/shop/` | `admin/validation/shop/` | `admin/support/shop/` |
+| `admin/api/shop/` | `admin/objects/shop/` | `admin/validation/shop/` | — |
 | `ui/api/pages/` | `ui/objects/pages/` | — | `ui/support/pages/` |
 | `bird/api/design/` | `bird/objects/design/` | `bird/validation/design/` | `bird/support/design/` |
 
@@ -135,8 +136,7 @@ level/
 │   └── design/            # CreateLevelValidation
 ├── objects/               # core/, terrain/, submission/, social/, design/, player/, …
 ├── support/
-│   ├── design/            # LevelDesignAccess
-│   └── player/            # LevelApiSupport
+│   └── seed/              # demo level 数据
 ├── routes/
 └── tables/
 ```

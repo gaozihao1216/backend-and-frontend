@@ -1,5 +1,6 @@
 package microservice.level.api.player.action
 
+import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
 import java.time.Instant
@@ -9,9 +10,9 @@ import microservice.user.support.AccessControl
 import microservice.level.tables.shared.LevelRowMapper
 import microservice.level.objects.social.LevelComment
 import microservice.level.tables.comment.CommentTable
-import microservice.level.tables.shared.CommentRow
-import microservice.level.support.player.LevelApiSupport
-import microservice.system.objects.enums.UserRole
+import microservice.level.tables.level.LevelTable
+import microservice.level.tables.shared.{CommentRow, LevelRow}
+import microservice.system.objects.enums.{LevelStatus, UserRole}
 import microservice.level.objects.player.request.CreateLevelCommentRequest
 
 final case class CreateCommentAPIMessage(
@@ -33,7 +34,7 @@ final case class CreateCommentAPIMessage(
         // 步骤 1：校验用户角色/管理员级别权限
         _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
         // 步骤 2：执行业务步骤
-        _ <- LevelApiSupport.requirePublishedLevel(connection, levelId).map(_ => ())
+        _ <- requirePublishedLevel(connection).map(_ => ())
         // 步骤 3：读取并组装数据
         comment <- PlanSteps.read(
           LevelRowMapper.toComment(
@@ -50,5 +51,15 @@ final case class CreateCommentAPIMessage(
           )
         )
       } yield comment
+    }
+
+  private def requirePublishedLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[LevelRow] =
+    EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
+      case Some(level) if level.status == LevelStatus.Published =>
+        EitherT.rightT[IO, HttpError](level)
+      case Some(_) =>
+        EitherT.leftT[IO, LevelRow](HttpError.notFound("LEVEL_NOT_FOUND", "Published level not found"))
+      case None =>
+        EitherT.leftT[IO, LevelRow](HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
     }
 }

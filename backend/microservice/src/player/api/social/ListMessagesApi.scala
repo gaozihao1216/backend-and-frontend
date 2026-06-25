@@ -1,12 +1,13 @@
 package microservice.player.api.social
 
+import cats.data.EitherT
 import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.social.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
-import microservice.player.support.social.PlayerSocialAccess
+import microservice.player.tables.social.PlayerFriendTable
 import microservice.player.tables.social.PlayerPrivateMessageTable
 import microservice.system.objects.enums.UserRole
 import microservice.user.support.AccessControl
@@ -31,9 +32,9 @@ final case class ListMessagesAPIMessage(userId: String, withUserId: String) exte
         // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
         // 步骤 2：校验 withUserId 非空且非自己
-        _ <- PlayerSocialAccess.requireValidChatTarget(withUserId)
+        _ <- requireValidChatTarget
         // 步骤 3：确认双方为好友关系
-        _ <- PlayerSocialAccess.requireFriendship(connection, userId, withUserId)
+        _ <- requireFriendship(connection)
         // 步骤 4：读取会话消息并标记 mine 字段
         messages <- PlanSteps.read(
           PlayerPrivateMessageTable
@@ -51,5 +52,18 @@ final case class ListMessagesAPIMessage(userId: String, withUserId: String) exte
             .toList
         )
       } yield PlayerSocialJson.toJsonMessages(PlayerMessageListResponse(messages))
+    }
+
+  private def requireValidChatTarget: PlanStep.Step[Unit] =
+    if (withUserId.trim.isEmpty) {
+      PlanStep.fail(HttpError.badRequest("INVALID_CHAT_TARGET", "withUserId is required"))
+    } else {
+      PlanStep.succeed(())
+    }
+
+  private def requireFriendship(connection: Connection): PlanStep.Step[Unit] =
+    EitherT.liftF(IO(PlayerFriendTable.exists(connection, userId, withUserId))).flatMap {
+      case false => EitherT.leftT[IO, Unit](HttpError.forbidden("You can only chat with friends"))
+      case true  => EitherT.rightT[IO, HttpError](())
     }
 }

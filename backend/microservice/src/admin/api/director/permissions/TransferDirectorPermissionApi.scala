@@ -2,13 +2,16 @@ package microservice.admin.api.director.permissions
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.admin.objects.director.permissions.DirectorTransferResult
-import microservice.admin.support.permissions.DirectorPermissionAccess
+import microservice.admin.objects.director.permissions.{DirectorTransferResult, TransferDirectorPermissionErrors}
 import microservice.user.support.AccessControl
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.enums.AdminLevel
 import microservice.admin.objects.director.permissions.request.TransferDirectorPermissionRequest
+import microservice.user.api.internal.admin.{
+  TransferDirectorAdminLevelInternalAPIMessage,
+  ValidateAdminTransferTargetInternalAPIMessage
+}
 
 /** 总监权限移交 APIMessage：当前 Director 降为 Standard，目标 Admin 升为 Director。 */
 final case class TransferDirectorPermissionAPIMessage(
@@ -29,11 +32,19 @@ final case class TransferDirectorPermissionAPIMessage(
         // 步骤 1：校验调用者为当前 Director
         _ <- AccessControl.requireAdminLevel(connection, currentDirectorId, AdminLevel.Director).map(_ => ())
         // 步骤 2：禁止将权限移交给自己
-        _ <- DirectorPermissionAccess.requireNotSelfTransfer(currentDirectorId, body.targetAdminId)
+        _ <-
+          if (body.targetAdminId == currentDirectorId) {
+            PlanStep.fail(TransferDirectorPermissionErrors.CannotTransferToSelf.toHttpError)
+          } else {
+            PlanStep.succeed(())
+          }
         // 步骤 3：确认目标用户存在且为 Standard 管理员
-        _ <- DirectorPermissionAccess.requireTargetAdmin(connection, body.targetAdminId)
+        _ <- PlanSteps.runApi(ValidateAdminTransferTargetInternalAPIMessage(body.targetAdminId), connection).map(_ => ())
         // 步骤 4：原子交换双方 adminLevel 并返回移交结果
-        result <- DirectorPermissionAccess.requireTransfer(connection, currentDirectorId, body.targetAdminId)
-      } yield result
+        result <- PlanSteps.runApi(
+          TransferDirectorAdminLevelInternalAPIMessage(currentDirectorId, body.targetAdminId),
+          connection
+        )
+      } yield DirectorTransferResult(result.fromUserId, result.toUserId)
     }
 }

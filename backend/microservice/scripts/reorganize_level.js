@@ -50,7 +50,6 @@ const moves = [
   ["objects/BirdPool.scala", "objects/inventory/BirdPool.scala"],
   ["objects/BirdInventory.scala", "objects/inventory/BirdInventory.scala"],
   ["objects/CreateLevelErrors.scala", "objects/errors/CreateLevelErrors.scala"],
-  ["utils/LevelApiSupport.scala", "support/player/LevelApiSupport.scala"],
 ];
 
 const objectPackages = {
@@ -132,11 +131,6 @@ function moveFiles() {
 }
 
 function replaceObjectImport(content) {
-  content = content.replace(
-    /import microservice\.level\.utils\.LevelApiSupport/g,
-    "import microservice.level.support.player.LevelApiSupport"
-  );
-
   content = content.replace(
     /import microservice\.level\.objects\._\s*\n/g,
     [
