@@ -19,10 +19,10 @@ import {
   resolveTextArtDesign,
   usesTextArtGradient,
 } from "../../../../../lib/art-text-styles.js";
-import { clamp, getDecorationStyle, getPanelRenderedAspectRatio } from "../../../../../lib/director-page/panel-create-helpers.js";
-import { getButtonStateContentType } from "../../../../../lib/director-page/panel-create-helpers.js";
+import { clamp, getDecorationStyle, getPanelRenderedAspectRatio } from "../../lib/panel-create-helpers.js";
+import { getButtonStateContentType } from "../../lib/panel-create-helpers.js";
 import { defaultWeeklyCheckInRewards } from "../../../../../lib/weekly-check-in-panel.js";
-import { pagePreviewAspectRatio } from "../../../../../objects/director-page/panel-create-types.js";
+import { pagePreviewAspectRatio } from "../../objects/panel-create-types.js";
 
 type StepProps = { vm: DirectorPanelCreateViewModel };
 

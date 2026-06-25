@@ -24,7 +24,7 @@ import {
   getSelectedMoveTarget,
   getSelectedResizeTarget,
   hitTestOutlinedComponent,
-} from "../../../../lib/director-page/page-builder-helpers.js";
+} from "../lib/page-builder-helpers.js";
 import {
   CLICK_DRAG_THRESHOLD_PX,
   type OutlineSelectionState,
@@ -32,7 +32,7 @@ import {
   type PageBuilderPreviewProps,
   type PageBuilderTextNodeProps,
   type PointerGestureState,
-} from "../../../../objects/director-page/page-builder-types.js";
+} from "../objects/page-builder-types.js";
 
 const PageBuilderOutline = ({
   componentId,

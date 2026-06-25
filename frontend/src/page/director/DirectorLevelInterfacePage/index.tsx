@@ -5,12 +5,7 @@ import { DirectorLevelInterfacePreviewPanel } from "./components/DirectorLevelIn
 import { DirectorLevelInterfaceToolbar } from "./components/DirectorLevelInterfaceToolbar.js";
 import { useDirectorLevelInterface } from "./hooks/useDirectorLevelInterface.js";
 import { countLevelNodes, LEVEL_MAP_PAGE_ID } from "../../../lib/level-stage-structure.js";
-
-type DirectorLevelInterfacePageProps = {
-  userId: string;
-  onBack: () => void;
-  onNavigate: (path: string) => void;
-};
+import type { DirectorLevelInterfacePageProps } from "./objects/director-level-interface-page-types.js";
 
 export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: DirectorLevelInterfacePageProps) => {
   const levelInterface = useDirectorLevelInterface(userId);

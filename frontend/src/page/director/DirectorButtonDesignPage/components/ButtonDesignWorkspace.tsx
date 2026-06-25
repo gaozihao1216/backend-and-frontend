@@ -8,7 +8,7 @@ import {
   buttonDesignPreviewHeightPx,
   defaultRenderWhiteTolerance,
   defaultWhiteTolerance,
-} from "../../../../objects/director-page/button-design-types.js";
+} from "../objects/button-design-types.js";
 import { ButtonDesignImageCropPanel } from "./ButtonDesignImageCropPanel.js";
 
 type ButtonDesignWorkspaceProps = {

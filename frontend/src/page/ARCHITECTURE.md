@@ -7,7 +7,7 @@ page/
 ├── shared/          # 渲染基础设施（双模式、静态注册表、动态 Host）
 ├── player/          # 玩家功能页（含 shared/ 跨页小组件）
 ├── admin/           # 标准管理员页
-├── designer/        # 设计师页（含 DesignerPage/ 复杂拆分）
+├── designer/        # 设计师页（含 DesignerLevelEditorPage/ 复杂拆分）
 ├── director/        # 总监控制台（含 shared/ 跨页小组件）
 └── profile/         # 用户资料
 ```
@@ -25,7 +25,7 @@ page/
 
 ## 分层约定
 
-复杂页面拆为四层（与 `designer/DesignerPage/` 相同）：
+复杂页面拆为四层（与 `designer/DesignerLevelEditorPage/` 相同）：
 
 | 层 | 路径 | 职责 |
 | --- | --- | --- |
@@ -35,8 +35,10 @@ page/
 | 域内共享组件 | `page/<domain>/shared/` | 同角色多页复用（如 `director/shared/TemplateCategoryFilter`、`player/shared/PageFeedback`） |
 | 跨域共享组件 | `components/` | 动态 UI renderer、关卡预览、App 级绑定/设置等跨页面组件 |
 | 共享 Hook | `page/shared/hooks/` | 动态 UI runtime、素材加载、模板库等跨页面 hook |
-| 工具 | `lib/<domain>-page/` 或 `lib/` | 纯函数、DOM 辅助、序列化 |
-| 类型 | `objects/<domain>-page/` | 页面级 props、draft、步骤枚举等 |
+| 页面工具 | `page/<domain>/<Name>/lib/` | 只服务该页的纯函数、DOM 辅助、序列化 |
+| 全局工具 | `lib/` | 跨页面或跨域复用的纯函数、runtime、引擎逻辑 |
+| 页面对象 | `page/<domain>/<Name>/objects/` | 页面级 props、draft、步骤枚举等 |
+| 全局对象 | `objects/` | 后端镜像 schema、API 合同、跨页共享领域对象 |
 
 **不再**使用 `component/<domain>-page/` 平铺目录；页面 UI 与 `page/<domain>/<Name>/` 同位存放。
 
@@ -46,7 +48,10 @@ page/
 
 | 页面 | Hook | 组件目录 |
 | --- | --- | --- |
-| `designer/DesignerPage/` | `hooks/useDesignerPageViewModel` + 领域 hooks | `components/design/`、`components/editor/` 等子目录 |
+| `designer/DesignerLevelEditorPage/` | `hooks/useDesignerLevelEditorViewModel` + 领域 hooks | `components/design/`、`components/editor/` 等子目录 |
+| `designer/DesignerBirdLabPage/` | `hooks/useDesignerBirdLab` | `components/` + `objects/` |
+| `designer/DesignerPortfolioPage/` | `hooks/useDesignerPortfolio` | `components/` + `objects/` |
+| `designer/DesignerResubmitPage/` | `hooks/useDesignerResubmit` | `components/` + `objects/` |
 | `player/PlayerSocialPage/` | `hooks/usePlayerSocial` | `components/` + `player/shared/PageFeedback` |
 | `player/PlayerPreparationPage/` | `hooks/usePlayerPreparation` | `components/` + `player/shared/PageFeedback` |
 | `director/DirectorLevelInterfacePage/` | `hooks/useDirectorLevelInterface` | `components/`（含地图/按钮格式编辑器） |
@@ -58,20 +63,16 @@ page/
 | `director/DirectorLevelBackgroundTemplatesPage/` | `page/shared/hooks/useDirectorTemplateLibrary` | `components/` |
 | `director/DirectorLevelAssignmentPage/` | （页内 state） | `components/BirdPoolConfigPanel` + `components/level/LevelPreviewCard` |
 | `admin/AdminPage/` | — | `components/AdminProposalReviewContent`（动态 UI widget 亦引用此路径） |
+| `admin/AdminAuditLogsPage/`、`AdminCommunityPage/`、`AdminShopPage/` | （页内 state） | `components/` + `objects/` |
+| `director/DirectorButtonConfigPage/`、`DirectorUiCustomizationPage/`、`DirectorWorkbenchPage/` | （页内 state） | `components/` + `objects/` |
+| `player/PlayerCommunityPage/`、`PlayerShopPage/` | （页内 state） | `components/` + `objects/` |
+| `profile/UserProfilePage/` | （页内 state） | `components/` + `objects/` |
 
-总监构建工具共用 `lib/director-page/`、`objects/director-page/`；通用渲染在 `components/ui-renderer/`；跨页关卡预览用 `components/level/LevelPreviewCard`。
+总监构建工具的页面私有工具与类型跟随页面放入各自 `lib/`、`objects/`；通用渲染在 `components/ui-renderer/`；跨页关卡预览用 `components/level/LevelPreviewCard`。
 
-## 仍为单文件的页面（可选后续拆分）
+## 后续拆分准则
 
-体量适中，当前保持单文件即可；若继续增长再按上表模式拆分：
-
-| 文件 | 约行数 | 说明 |
-| --- | ---: | --- |
-| `director/DirectorUiCustomizationPage.tsx` | ~350 | UI 定制总览 |
-| `director/DirectorButtonConfigPage.tsx` | ~320 | 按钮配置 |
-| `designer/DesignerBirdLabPage.tsx` | ~350 | 鸟类实验室 |
-| `player/PlayerCommunityPage.tsx` | ~190 | 社区大厅 |
-| `admin/AdminShopPage.tsx` 等 | &lt;200 | 其它管理列表页 |
+当前不再保留顶层单文件页面。目录页若继续增长，应优先把状态和副作用迁入同页 `hooks/`，再把列表、表单、工具栏等 JSX 迁入同页 `components/`。
 
 ## 已移除的遗留页
 

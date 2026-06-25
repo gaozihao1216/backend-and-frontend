@@ -11,7 +11,7 @@ import {
   getComponentTypeLabel,
   getParentPanelId,
   handleInlineScrollWheel,
-} from "../../../../lib/director-page/page-builder-helpers.js";
+} from "../lib/page-builder-helpers.js";
 
 type PageBuilderWorkspaceProps = DirectorPageBuilderState & {
   onBack: () => void;

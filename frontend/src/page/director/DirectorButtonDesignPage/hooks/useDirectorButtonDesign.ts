@@ -20,14 +20,14 @@ import {
   getImageAspectRatio,
   getRenderedButtonAspectRatio,
   renderPolygonImage,
-} from "../../../../lib/director-page/button-design-helpers.js";
+} from "../lib/button-design-helpers.js";
 import type {
   ButtonDesignType,
   ButtonTemplateChoice,
   FrameCorner,
   PreviewFrameDragState,
   ScanAreaDrawState,
-} from "../../../../objects/director-page/button-design-types.js";
+} from "../objects/button-design-types.js";
 import {
   buttonDesignPreviewHeightPx,
   defaultAutoScanStep,
@@ -38,7 +38,7 @@ import {
   defaultStaticButtonTextColor,
   defaultTextScalePercent,
   defaultWhiteTolerance,
-} from "../../../../objects/director-page/button-design-types.js";
+} from "../objects/button-design-types.js";
 
 export const useDirectorButtonDesign = (
   userId: string,

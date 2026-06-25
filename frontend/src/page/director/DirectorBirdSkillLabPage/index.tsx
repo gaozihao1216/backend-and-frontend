@@ -9,11 +9,7 @@ import {
 import type { BirdSkillSet } from "../../../lib/game-engine/skills/skill-spec.js";
 import type { DirectorBirdSkillEntry } from "../../../objects/bird/skill/director/director-bird-skill-entry.js";
 import { cloneSkillSet, createDefaultSkillSet, parseBirdSkillSet } from "../../../objects/bird/skill/director/bird-skill-helpers.js";
-
-type DirectorBirdSkillLabPageProps = {
-  userId: string;
-  onBack: () => void;
-};
+import type { DirectorBirdSkillLabPageProps } from "./objects/director-bird-skill-lab-page-types.js";
 
 const systemDefaultSkillSet = (birdType: string): BirdSkillSet | null => {
   switch (birdType) {

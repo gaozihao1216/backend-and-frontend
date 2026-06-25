@@ -1,6 +1,6 @@
 import { PageBuilderWorkspace } from "./components/PageBuilderWorkspace.js";
 import { useDirectorPageBuilder } from "./hooks/useDirectorPageBuilder.js";
-import type { DirectorPageBuilderPageProps } from "../../../objects/director-page/page-builder-types.js";
+import type { DirectorPageBuilderPageProps } from "./objects/page-builder-types.js";
 
 export const DirectorPageBuilderPage = ({
   userId,

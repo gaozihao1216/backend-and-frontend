@@ -18,11 +18,7 @@ import {
   type LevelBackgroundTemplate,
   type LevelBackgroundWeather,
 } from "../../../objects/level/level-background-template.js";
-
-type DirectorLevelBackgroundTemplatesPageProps = {
-  userId: string;
-  onBack: () => void;
-};
+import type { DirectorLevelBackgroundTemplatesPageProps } from "./objects/director-level-background-templates-page-types.js";
 
 const weatherLabel = (weather: LevelBackgroundWeather) =>
   LEVEL_BACKGROUND_WEATHER_META.find((entry) => entry.id === weather)?.label ?? weather;

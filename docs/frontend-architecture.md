@@ -14,10 +14,11 @@
 ```text
 frontend/src/
 ├── api/              # HTTP 调用，按后端模块拆分；一 API 一文件
-├── objects/          # Zod/TS 类型（后端对齐 + objects/<domain>-page/ 页面类型）
+├── objects/          # Zod/TS 类型（后端对齐 + 跨页共享领域对象）
 ├── page/             # 页面入口（按域：shared/ player/ admin/ designer/ director/ profile/）
-│   └── shared/       # 跨页面组件与 hook（components/、hooks/）
-├── lib/              # 纯逻辑；页面辅助在 lib/<domain>-page/
+│   └── shared/       # 页面渲染基础设施与跨页面 hook
+├── components/       # 跨页面复用 UI
+├── lib/              # 跨页面纯逻辑、runtime、game engine
 ├── store/            # 轻量前端状态
 ├── shared/           # 关卡种子数据等共享静态资源
 ├── styles.css
@@ -39,7 +40,7 @@ frontend/src/
 - 路径：`frontend/src/objects/<module>/…`（子目录镜像后端 `*/objects/` 布局，见 [`frontend/src/objects/ARCHITECTURE.md`](../frontend/src/objects/ARCHITECTURE.md)）
 - 类型名与 Scala 后端对象名一致（如 `Level`、`BackendUser`）
 - 后端对齐域：`system`、`auth`、`user`、`level`（含 `level/`、`social/`、`terrain/` 等子目录）、`admin`、`bird`、`player`、`ui`
-- 前端专用：`ui-customization/`（默认配置、路由树、关卡地图结构）、`*-page/`（页面编辑器类型）；关卡种子数据在 `shared/levels/`
+- 前端专用：`ui-customization/`（默认配置、路由树、关卡地图结构）；页面私有类型放在对应 `page/<domain>/<PageName>/objects/`；关卡种子数据在 `shared/levels/`
 
 前后端对齐原则：**同名 API 文件 + 同模块子路径 + 同名领域对象**（`user` 模块中挂载 `/auth` 的两个 API 在前端放在 `api/auth/`）。
 
@@ -51,7 +52,7 @@ frontend/src/
 | --- | --- |
 | `/` | 登录与角色选择 |
 | `/designer` | 设计师主页、作品集、鸟类设计 |
-| `/designer/design` | 关卡编辑器（DesignerPage） |
+| `/designer/design` | 关卡编辑器（DesignerLevelEditorPage） |
 | `/player_*`、`/community_hall`、`/levels/:id` | 玩家地图、商店、社交、备战、关卡游玩 |
 | `/admin/proposals` | 普通管理员：关卡与鸟类审核 |
 | `/director_console` | 总监管理员：UI 定制、关卡界面、技能实验室等 |
@@ -95,15 +96,15 @@ components/
 | 入口 | `page/director/DirectorPageBuilderPage/index.tsx` |
 | Hook | `page/director/DirectorPageBuilderPage/hooks/useDirectorPageBuilder.ts` |
 | 组件 | `page/director/DirectorPageBuilderPage/components/*` |
-| 工具/类型 | `lib/director-page/*`、`objects/director-page/*` |
+| 工具/类型 | 同页面 `lib/`、同页面 `objects/`，跨页共享才放全局 `lib/` 或 `objects/` |
 
 已拆分页面清单（Designer / Player 社交·备战 / Director 构建工具五页 + 面板创建）见 `page/ARCHITECTURE.md` 的「已完成拆分」表。
 
 简单页（&lt;~300 行）仍用单文件 `XxxPage.tsx`，无需强制建目录。
 
-### 3. 设计师编辑器（DesignerPage）
+### 3. 设计师编辑器（DesignerLevelEditorPage）
 
-详见 [`frontend/src/page/designer/DesignerPage/ARCHITECTURE.md`](../frontend/src/page/designer/DesignerPage/ARCHITECTURE.md)。
+详见 [`frontend/src/page/designer/DesignerLevelEditorPage/ARCHITECTURE.md`](../frontend/src/page/designer/DesignerLevelEditorPage/ARCHITECTURE.md)。
 
 职责划分：
 
@@ -113,7 +114,7 @@ components/
 
 ### 4. 玩家与总监复杂页
 
-与 DesignerPage 同一模式，state 在页面 `hooks/`，JSX 在页面 `components/`：
+与 DesignerLevelEditorPage 同一模式，state 在页面 `hooks/`，JSX 在页面 `components/`：
 
 - **玩家**：`PlayerSocialPage/`、`PlayerPreparationPage/` → `usePlayerSocial`、`usePlayerPreparation`
 - **总监**：`DirectorLevelInterfacePage/`、`DirectorPageBuilderPage/`、`DirectorButtonTemplatesPage/`、`DirectorButtonDesignPage/`、`DirectorPanelCreatePage/` → 对应 `useDirector*` hook 与 workspace 组件

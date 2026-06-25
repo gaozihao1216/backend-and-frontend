@@ -3,7 +3,7 @@ import {
   BUTTON_TEMPLATE_CATEGORIES,
   type ButtonTemplateCategory,
 } from "../../../../objects/ui/category/template-category.js";
-import type { EditorMode, SliceKey, TemplateDraft } from "../../../../objects/director-page/button-template-types.js";
+import type { EditorMode, SliceKey, TemplateDraft } from "../objects/button-template-types.js";
 import type { UiButtonTemplate } from "../../../../objects/api/api-contracts.js";
 
 type ButtonTemplateEditorModalProps = {

@@ -1,9 +1,6 @@
 import { AdminProposalReviewContent } from "./components/AdminProposalReviewContent.js";
 import { API_USERS } from "../../../lib/config.js";
-
-type AdminPageProps = {
-  userId?: string;
-};
+import type { AdminPageProps } from "./objects/admin-page-types.js";
 
 export const AdminPage = ({ userId = API_USERS.admin.id }: AdminPageProps) => (
   <section className="panel admin-review-page">

@@ -68,7 +68,7 @@ npm run dev:backend:postgres   # 仅 JDBC 后端（需 postgres:up）
 
 ### 2. 关卡编辑与游玩
 
-- **DesignerPage**：可视化 + JSON 双模式编辑；支持地形贝塞尔、障碍物、敌人、鸟库存等
+- **DesignerLevelEditorPage**：可视化 + JSON 双模式编辑；支持地形贝塞尔、障碍物、敌人、鸟库存等
 - **GameCanvas / PlayableLevelSurface**：Matter.js 物理模拟；含技能系统与障碍物破碎
 - **关卡地图**：共享 LevelMap 配置，支持总监定制节点样式与路径
 
@@ -135,7 +135,7 @@ npm run dev:backend:postgres   # 仅 JDBC 后端（需 postgres:up）
 2. 切换绑定 `admin-1` → 批准关卡
 3. 绑定 `player-1` → 地图选关 → 游玩 → 评分
 4. 绑定 `admin-director-1` → 总监控制台调整 UI → 页面构建器发布 → 切换 `player-1` 验证动态页变化 → （可选）回滚后再验证
-5. （可选）展示 DesignerPage 编辑器与鸟类设计流程
+5. （可选）展示 DesignerLevelEditorPage 编辑器与鸟类设计流程
 
 ## 验证命令
 

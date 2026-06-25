@@ -13,11 +13,7 @@ import type { DirectorLevelAssignmentBoard } from "../../../objects/admin/direct
 import type { LevelSlotAssignmentDetail } from "../../../objects/admin/director/level_assignment/assignment/level-slot-assignment.js";
 import { DEFAULT_BIRD_POOL, type BirdPool } from "../../../objects/level/inventory/bird-pool.js";
 import { LEVEL_NODE_DEFINITIONS } from "../../../objects/ui-customization/level-map-structure.js";
-
-type DirectorLevelAssignmentPageProps = {
-  userId: string;
-  onBack: () => void;
-};
+import type { DirectorLevelAssignmentPageProps } from "./objects/director-level-assignment-page-types.js";
 
 const buildAssignmentMap = (assignments: LevelSlotAssignmentDetail[]) =>
   new Map(assignments.map((entry) => [entry.assignment.levelSuffix, entry]));

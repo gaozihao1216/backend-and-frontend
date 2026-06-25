@@ -15,7 +15,7 @@ import {
   getHorizontalSlicePercent,
   getVerticalSlicePercent,
   getVisibleBoundsStyle,
-} from "../../../../lib/director-page/button-template-draft.js";
+} from ".././lib/button-template-draft.js";
 import {
   normalizeButtonTemplateCategory,
   type ButtonTemplateCategory,
@@ -27,7 +27,7 @@ import type {
   SliceKey,
   TemplateDraft,
   TemplateTab,
-} from "../../../../objects/director-page/button-template-types.js";
+} from "../objects/button-template-types.js";
 
 export const useDirectorButtonTemplates = (userId: string) => {
   const [activeTab, setActiveTab] = useState<TemplateTab>("button");

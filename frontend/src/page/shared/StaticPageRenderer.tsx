@@ -3,25 +3,25 @@ import type { AuthUser } from "../../lib/auth.js";
 import { LEVEL_MAP_PAGE_ID, LEVEL_NODE_DEFINITIONS, getLevelScreenPageId } from "../../objects/ui-customization/level-map-structure.js";
 import { DynamicPageHost } from "./DynamicPageHost.js";
 import { StaticLevelScreenPreview } from "../../components/level/static-level-previews.js";
-import { AdminAuditLogsPage } from "../admin/AdminAuditLogsPage.js";
-import { AdminCommunityPage } from "../admin/AdminCommunityPage.js";
+import { AdminAuditLogsPage } from "../admin/AdminAuditLogsPage/index.js";
+import { AdminCommunityPage } from "../admin/AdminCommunityPage/index.js";
 import { AdminPage } from "../admin/AdminPage/index.js";
-import { AdminShopPage } from "../admin/AdminShopPage.js";
-import { DesignerBirdLabPage } from "../designer/DesignerBirdLabPage.js";
-import { DesignerPortfolioPage } from "../designer/DesignerPortfolioPage.js";
-import { DesignerPage } from "../designer/DesignerPage/index.js";
+import { AdminShopPage } from "../admin/AdminShopPage/index.js";
+import { DesignerBirdLabPage } from "../designer/DesignerBirdLabPage/index.js";
+import { DesignerPortfolioPage } from "../designer/DesignerPortfolioPage/index.js";
+import { DesignerLevelEditorPage } from "../designer/DesignerLevelEditorPage/index.js";
 import { DirectorBirdSkillLabPage } from "../director/DirectorBirdSkillLabPage/index.js";
 import { DirectorButtonTemplatesPage } from "../director/DirectorButtonTemplatesPage/index.js";
 import { DirectorLevelAssignmentPage } from "../director/DirectorLevelAssignmentPage/index.js";
 import { DirectorLevelBackgroundTemplatesPage } from "../director/DirectorLevelBackgroundTemplatesPage/index.js";
 import { DirectorLevelInterfacePage } from "../director/DirectorLevelInterfacePage/index.js";
-import { DirectorUiCustomizationPage } from "../director/DirectorUiCustomizationPage.js";
-import { DirectorWorkbenchPage } from "../director/DirectorWorkbenchPage.js";
-import { PlayerCommunityPage } from "../player/PlayerCommunityPage.js";
+import { DirectorUiCustomizationPage } from "../director/DirectorUiCustomizationPage/index.js";
+import { DirectorWorkbenchPage } from "../director/DirectorWorkbenchPage/index.js";
+import { PlayerCommunityPage } from "../player/PlayerCommunityPage/index.js";
 import { PlayerPreparationPage } from "../player/PlayerPreparationPage/index.js";
-import { PlayerShopPage } from "../player/PlayerShopPage.js";
+import { PlayerShopPage } from "../player/PlayerShopPage/index.js";
 import { PlayerSocialPage } from "../player/PlayerSocialPage/index.js";
-import { UserProfilePage } from "../profile/UserProfilePage.js";
+import { UserProfilePage } from "../profile/UserProfilePage/index.js";
 
 const DESIGNER_HOME_PATH = "/designer";
 const DESIGNER_PORTFOLIO_PATH = "/designer/portfolio";
@@ -60,7 +60,7 @@ const unsupportedStaticPage = (pageId: string) => (
   </section>
 );
 
-const resolveDesignerPageMode = (pathname: string) => {
+const resolveDesignerLevelEditorMode = (pathname: string) => {
   const isArchiveJsonCheckPath =
     pathname.startsWith(DESIGNER_ARCHIVE_PATH_PREFIX)
     && pathname.endsWith(DESIGNER_ARCHIVE_JSON_CHECK_SUFFIX);
@@ -205,12 +205,12 @@ export const renderStaticPage = (pageId: string, context: StaticPageRenderContex
     case "designer.jsonCheck":
     case "designer.archive":
     case "designer.archiveJsonCheck": {
-      const { mode, archiveBackupId } = resolveDesignerPageMode(pathname);
+      const { mode, archiveBackupId } = resolveDesignerLevelEditorMode(pathname);
       const resumeLevelId = pathname === DESIGNER_DESIGN_PATH
         ? new URLSearchParams(search).get("levelId") ?? undefined
         : undefined;
       return (
-        <DesignerPage
+        <DesignerLevelEditorPage
           {...(apiUserId ? { userId: apiUserId } : {})}
           {...(resumeLevelId ? { resumeLevelId } : {})}
           mode={mode}

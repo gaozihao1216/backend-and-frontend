@@ -60,7 +60,7 @@
 ## 5. 关卡与游戏引擎
 
 - **关卡校验**：提交前检测可玩性（是否有鸟、目标、可达性）
-- **DesignerPage**：继续收敛 hook 边界，降低 `index.tsx` 编排复杂度
+- **DesignerLevelEditorPage**：继续收敛 hook 边界，降低 `index.tsx` 编排复杂度
 - **物理与技能**：更多单元测试覆盖 skill executor、fracture、settling
 - **移动端**：触控瞄准与性能（Matter.js 在低端设备上的帧率）
 

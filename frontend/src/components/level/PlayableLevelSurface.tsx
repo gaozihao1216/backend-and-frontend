@@ -5,7 +5,7 @@ import type { BirdPoolLaunchConfig } from "../../lib/game-engine/bird-pool-sessi
 import type { BirdPool } from "../../objects/level/inventory/bird-pool.js";
 import { resolveBirdPoolForLevel } from "../../lib/player-bird-pool.js";
 import { useLevelBackgroundTemplateResolution } from "../../page/shared/hooks/useLevelBackgroundTemplateResolution.js";
-import { LevelBackgroundStageLayer } from "../../page/designer/DesignerPage/components/design/LevelBackgroundStageLayer.js";
+import { LevelBackgroundStageLayer } from "../../page/designer/DesignerLevelEditorPage/components/design/LevelBackgroundStageLayer.js";
 import { GameCanvas } from "./GameCanvas.js";
 
 type PlayableLevelSurfaceProps = {

@@ -5,13 +5,9 @@ import { useDirectorButtonTemplates } from "./hooks/useDirectorButtonTemplates.j
 import {
   defaultPanelTemplateDataUrl,
   defaultPatternTemplateDataUrl,
-} from "../../../lib/director-page/button-template-draft.js";
-import { templateTabs } from "../../../objects/director-page/button-template-types.js";
-
-type DirectorButtonTemplatesPageProps = {
-  userId: string;
-  onBack: () => void;
-};
+} from "./lib/button-template-draft.js";
+import { templateTabs } from "./objects/button-template-types.js";
+import type { DirectorButtonTemplatesPageProps } from "./objects/director-button-templates-page-types.js";
 
 export const DirectorButtonTemplatesPage = ({ userId, onBack }: DirectorButtonTemplatesPageProps) => {
   const templates = useDirectorButtonTemplates(userId);

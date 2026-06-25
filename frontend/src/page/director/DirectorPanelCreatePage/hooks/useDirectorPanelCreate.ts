@@ -43,8 +43,8 @@ import type {
   PatternAdjustRefState,
   PositionDraft,
   ResizeHandle,
-} from "../../../../objects/director-page/panel-create-types.js";
-import { CLICK_DRAG_THRESHOLD_PX } from "../../../../objects/director-page/panel-create-types.js";
+} from "../objects/panel-create-types.js";
+import { CLICK_DRAG_THRESHOLD_PX } from "../objects/panel-create-types.js";
 import {
   canUseAsParentPanel,
   clamp,
@@ -58,14 +58,14 @@ import {
   applyButtonStateContentType,
   normalizeIdPart,
   resizePatternFrame,
-} from "../../../../lib/director-page/panel-create-helpers.js";
-import { pagePreviewAspectRatio } from "../../../../objects/director-page/panel-create-types.js";
+} from "../lib/panel-create-helpers.js";
+import { pagePreviewAspectRatio } from "../objects/panel-create-types.js";
 import {
   getPanelCreateMoveTarget,
   getPanelCreateResizeTarget,
   hitTestPanelCreateChild,
   isPanelCreateCanvasInteractiveTarget,
-} from "../../../../lib/director-page/panel-create-canvas.js";
+} from "../lib/panel-create-canvas.js";
 
 export type DirectorPanelCreateViewModel = ReturnType<typeof useDirectorPanelCreate>;
 

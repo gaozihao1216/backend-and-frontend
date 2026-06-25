@@ -2,10 +2,7 @@ import { usePlayerSocial } from "./hooks/usePlayerSocial.js";
 import { PageFeedback } from "../shared/PageFeedback.js";
 import { PlayerChatPanel } from "./components/PlayerChatPanel.js";
 import { PlayerFriendsList, PlayerSocialHeader } from "./components/PlayerFriendsPanel.js";
-
-type PlayerSocialPageProps = {
-  userId: string;
-};
+import type { PlayerSocialPageProps } from "./objects/player-social-page-types.js";
 
 export const PlayerSocialPage = ({ userId }: PlayerSocialPageProps) => {
   const social = usePlayerSocial(userId);

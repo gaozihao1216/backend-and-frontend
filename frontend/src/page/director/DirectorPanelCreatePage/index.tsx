@@ -1,6 +1,6 @@
 import { PanelCreateWorkspace } from "./components/PanelCreateWorkspace.js";
 import { useDirectorPanelCreate } from "./hooks/useDirectorPanelCreate.js";
-import type { DirectorPanelCreatePageProps } from "../../../objects/director-page/panel-create-types.js";
+import type { DirectorPanelCreatePageProps } from "./objects/panel-create-types.js";
 
 export const DirectorPanelCreatePage = (props: DirectorPanelCreatePageProps) => {
   const vm = useDirectorPanelCreate(props);

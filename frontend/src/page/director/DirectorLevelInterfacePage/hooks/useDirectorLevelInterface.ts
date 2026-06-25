@@ -37,7 +37,7 @@ import {
 import { LEVEL_NODE_DEFINITIONS } from "../../../../objects/ui-customization/level-map-structure.js";
 import type { ComponentPosition, PageConfig, PanelDecoration } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import { getUiPreviewUser } from "../../../../objects/ui-customization/ui-customization-objects.js";
-import type { LevelInterfaceEditor } from "../../../../objects/director-page/level-interface-types.js";
+import type { LevelInterfaceEditor } from "../objects/level-interface-types.js";
 
 export const useDirectorLevelInterface = (userId: string) => {
   const pageConfigRevision = useSyncExternalStore(

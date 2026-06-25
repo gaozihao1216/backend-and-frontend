@@ -35,14 +35,22 @@ objects/
 │   ├── category/
 │   ├── stretch_template/
 │   └── page-config.ts   # barrel re-export of ui/component + ui/page
-├── ui-customization/    # frontend-only: defaults, normalizers, route tree, level-map structure
-├── director-page/       # director editor page types (frontend-only)
-└── designer-page/       # designer editor page types (frontend-only)
+└── ui-customization/    # frontend-only: defaults, normalizers, route tree, level-map structure
+```
 
 ## Shared seed data
 
 关卡种子与内置示例不在 `objects/`，而在 `frontend/src/shared/levels/`（如 `starter-level.ts`）。
-```
+
+## Page-local objects
+
+页面私有的 props、draft、编辑器状态类型不放在全局 `objects/`。它们跟随页面放在
+`frontend/src/page/<domain>/<PageName>/objects/`，例如：
+
+- `page/designer/DesignerLevelEditorPage/objects/designer-level-editor-page-types.ts`
+- `page/director/DirectorPanelCreatePage/objects/panel-create-types.ts`
+
+如果对象被 API client、多个页面、游戏引擎或动态 UI runtime 共享，则继续保留在全局 `objects/`。
 
 ## Backend mapping
 

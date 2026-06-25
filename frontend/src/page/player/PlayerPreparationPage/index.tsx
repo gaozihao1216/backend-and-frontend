@@ -2,10 +2,7 @@ import { usePlayerPreparation } from "./hooks/usePlayerPreparation.js";
 import { PageFeedback } from "../shared/PageFeedback.js";
 import { PlayerBirdDetail, PlayerBirdPicker } from "./components/PlayerBirdPanels.js";
 import { PlayerSlingshotPanel } from "./components/PlayerSlingshotPanel.js";
-
-type PlayerPreparationPageProps = {
-  userId: string;
-};
+import type { PlayerPreparationPageProps } from "./objects/player-preparation-page-types.js";
 
 export const PlayerPreparationPage = ({ userId }: PlayerPreparationPageProps) => {
   const prep = usePlayerPreparation(userId);
