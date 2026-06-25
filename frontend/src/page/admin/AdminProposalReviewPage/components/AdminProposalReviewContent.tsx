@@ -1,5 +1,5 @@
 import { LevelPreviewCard } from "../../../../components/level/LevelPreviewCard.js";
-import { createSubmissionLevelSource } from "../../../../lib/level-repository.js";
+import { createSubmissionLevelSource } from "../../../../level/function/level-repository.js";
 import { STARTER_LEVEL_ID } from "../../../../shared/levels/starter-level.js";
 import { useAdminProposalReviewPage } from "../hooks/useAdminProposalReviewPage.js";
 

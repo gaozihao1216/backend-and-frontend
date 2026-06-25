@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getLevelTerrain, type TerrainEditMode, type TerrainBoundaryKind } from "../../../../lib/ground.js";
+import { getLevelTerrain, type TerrainEditMode, type TerrainBoundaryKind } from "../../../../level/function/ground.js";
 import type { LevelData } from "../../../../objects/level/level/level-data.js";
 import type { LevelGround } from "../../../../objects/level/terrain/level-ground.js";
 import type { LevelTerrain } from "../../../../objects/level/terrain/level-terrain.js";

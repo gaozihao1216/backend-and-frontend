@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { useDirectorTemplateLibrary } from "../../../shared/hooks/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../../shared/hooks/template/useDirectorTemplateLibrary.js";
 import {
   createButtonStateDraftPatchFromBaseTemplate,
   createButtonStateDraftPatchFromPatternTemplate,
@@ -8,16 +8,16 @@ import {
   getPanelDecorationSelectValue,
   getPatternLayerTemplateSelectValue,
   resolvePanelDecoration,
-} from "../../../../lib/director-template-select.js";
+} from "../../shared/function/director-template-select.js";
 import {
   createDefaultArtTextLayerDraft,
   createEmptyPatternLayerDraft,
   getPatternLayerFrame,
   normalizeButtonStatePatternLayerDrafts,
   type ButtonPatternLayerDraft,
-} from "../../../../lib/button-pattern-layers.js";
-import { getPageConfig, savePageConfig } from "../../../../lib/ui-customization.js";
-import { DEFAULT_STRETCH_VISUAL_FRAME } from "../../../../components/ui-renderer/ui-renderer-utils.js";
+} from "../../../shared/function/ui-design/button-pattern-layers.js";
+import { getPageConfig, savePageConfig } from "../../../shared/function/ui-config/ui-customization.js";
+import { DEFAULT_STRETCH_VISUAL_FRAME } from "../../../shared/components/ui-renderer/ui-renderer-utils.js";
 import type {
   ButtonImageFrame,
   PageConfig,
@@ -31,7 +31,7 @@ import {
   defaultWeeklyCheckInRewards,
   extractWeeklyCheckInRewards,
   WEEKLY_CHECK_IN_DAY_COUNT,
-} from "../../../../lib/weekly-check-in-panel.js";
+} from "../../shared/function/weekly-check-in-panel.js";
 import type {
   ButtonStateDraft,
   ChildPointerGesture,

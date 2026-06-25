@@ -1,12 +1,12 @@
-import { getDefaultGroundMaterialRenderConfig } from "../../../../../../lib/game-engine/draw-scene.js";
-import type { GroundMaterialRenderConfig } from "../../../../../../lib/game-engine/draw-scene.js";
+import { getDefaultGroundMaterialRenderConfig } from "../../../../../../game/engine/render/draw-scene.js";
+import type { GroundMaterialRenderConfig } from "../../../../../../game/engine/render/draw-scene.js";
 import {
   DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG,
   getDefaultBoundaryBreakpointEpsilon,
   type GroundStrokeSimplifyConfig,
-} from "../../../../../../lib/ground.js";
+} from "../../../../../../level/function/ground.js";
 import { GroundTuningPanel } from "../GroundTuningPanel.js";
-import { GROUND_TUNING_LIMITS } from "../../../../../../lib/designer-page/ground-tuning-functions.js";
+import { GROUND_TUNING_LIMITS } from "../../../function/ground/ground-tuning-functions.js";
 
 type SettingsPageProps = {
   onExitSettingsPage?: (() => void) | undefined;

@@ -12,7 +12,7 @@ import type {
   StretchVisualDesign,
   TextArtDesign,
 } from "../../../../objects/ui-customization/ui-customization-objects.js";
-import type { ButtonPatternLayerDraft, PatternLayerResizeHandle } from "../../../../lib/button-pattern-layers.js";
+import type { ButtonPatternLayerDraft, PatternLayerResizeHandle } from "../../../shared/function/ui-design/button-pattern-layers.js";
 
 export type DirectorPanelCreatePageProps = {
   userId: string;

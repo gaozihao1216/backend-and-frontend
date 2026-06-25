@@ -5,7 +5,7 @@ import {
 import { deleteStretchVisualTemplate } from "../../../../api/ui/stretchtemplates/DeleteStretchVisualTemplateApi.js";
 import { listStretchVisualTemplates } from "../../../../api/ui/stretchtemplates/ListStretchVisualTemplatesApi.js";
 import { updateStretchVisualTemplate } from "../../../../api/ui/stretchtemplates/UpdateStretchVisualTemplateApi.js";
-import { processTemplateImage, readFileAsDataUrl } from "../../../../lib/template-image-utils.js";
+import { processTemplateImage, readFileAsDataUrl } from "../../../shared/function/ui-design/template-image-utils.js";
 import {
   StretchVisualTemplateSchema,
   getDefaultStretchVisualTemplateCategory,

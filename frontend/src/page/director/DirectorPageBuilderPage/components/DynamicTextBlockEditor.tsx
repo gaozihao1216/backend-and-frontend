@@ -1,14 +1,14 @@
 import { useMemo, useState, type DragEvent } from "react";
-import { evaluateDynamicTextProgram } from "../../../../lib/dynamic-text-program.js";
+import { evaluateDynamicTextProgram } from "../../../shared/function/ui-design/dynamic-text-program.js";
 import {
   createOutputStatement,
   getMainFlowOutputStatements,
   normalizeDynamicTextProgram,
-} from "../../../../lib/dynamic-text-program-normalize.js";
+} from "../../../shared/function/ui-design/dynamic-text-program-normalize.js";
 import {
   buildUiTextRuntimeContext,
   formatUiTextRuntimeContextBlock,
-} from "../../../../lib/ui-text-runtime-context.js";
+} from "../../../shared/function/ui-config/ui-text-runtime-context.js";
 import type {
   DynamicTextProgram,
   DynamicTextStatement,

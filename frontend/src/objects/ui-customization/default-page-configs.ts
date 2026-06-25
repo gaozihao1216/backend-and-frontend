@@ -11,7 +11,7 @@ import {
 import {
   applyLevelNodeButtonFormat,
   getDefaultLevelNodeButtonFormatSettings,
-} from "../../lib/level-node-button-format.js";
+} from "../../page/shared/function/level-map/level-node-button-format.js";
 
 const applyDefaultLevelNodeButtonFormat = (
   pageId: string,

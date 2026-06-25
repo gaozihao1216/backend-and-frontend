@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState } from "react";
 import { createStretchVisualTemplate } from "../../../../api/ui/stretchtemplates/CreateStretchVisualTemplateApi.js";
-import { useDirectorTemplateLibrary } from "../../../shared/hooks/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../../shared/hooks/template/useDirectorTemplateLibrary.js";
 import {
   createLibraryTemplateSelectOptions,
   getPanelDecorationSelectValue,
   resolvePanelDecoration,
-} from "../../../../lib/director-template-select.js";
+} from "../../shared/function/director-template-select.js";
 import {
   createLevelStageCustomStyleTemplate,
   createLevelStageDecorationFromTemplate,
@@ -16,9 +16,9 @@ import {
   LEVEL_STAGE_BACKGROUND_PRESETS,
   normalizeLevelStageDecoration,
   type LevelStageBackgroundPresetId,
-} from "../../../../lib/level-stage-background.js";
-import { processTemplateImage } from "../../../../lib/template-image-utils.js";
-import { saveVisualAsset } from "../../../../lib/ui-visual-asset-store.js";
+} from "../../../shared/function/level-map/level-stage-background.js";
+import { processTemplateImage } from "../../../shared/function/ui-design/template-image-utils.js";
+import { saveVisualAsset } from "../../../shared/function/ui-config/ui-visual-asset-store.js";
 import type { PanelDecoration } from "../../../../objects/ui-customization/ui-customization-objects.js";
 
 type LevelStageBackgroundEditorProps = {

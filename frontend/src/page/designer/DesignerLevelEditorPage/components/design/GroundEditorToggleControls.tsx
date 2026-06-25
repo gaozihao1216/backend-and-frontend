@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import type { LevelGround } from "../../../../../objects/level/terrain/level-ground.js";
-import type { TerrainEditMode } from "../../../../../lib/ground.js";
+import type { TerrainEditMode } from "../../../../../level/function/ground.js";
 
 type GroundEditorToggleControlsProps = {
   terrainEditMode: TerrainEditMode;

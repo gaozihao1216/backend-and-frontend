@@ -1,5 +1,5 @@
 import { LevelEditorCanvas } from "../editor/LevelEditorCanvas.js";
-import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../../../lib/ground.js";
+import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../../../level/function/ground.js";
 import type { DesignerBackup } from "../../objects/designer-level-editor-page-types.js";
 
 type ArchivePanelProps = {

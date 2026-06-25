@@ -3,9 +3,9 @@ import {
   getSelectionFrame,
   rotateEntitiesAroundSelectionCenter,
   updateObstacleAngle,
-} from "../../../../lib/designer-level.js";
+} from "../../../../level/function/designer-level.js";
 import type { LevelData, LevelObstacle } from "../../../../objects/level/level/level-data.js";
-import { normalizeAngle } from "../../../../lib/designer-page/ground-tuning-functions.js";
+import { normalizeAngle } from "../function/ground/ground-tuning-functions.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;
 

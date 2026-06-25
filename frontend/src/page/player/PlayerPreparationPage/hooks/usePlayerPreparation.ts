@@ -4,7 +4,7 @@ import { getPlayerPreparation } from "../../../../api/player/preparation/GetPrep
 import { upgradePlayerBird } from "../../../../api/player/preparation/UpgradePreparationBirdApi.js";
 import { upgradePlayerSlingshot } from "../../../../api/player/preparation/UpgradePreparationSlingshotApi.js";
 import type { BirdUpgradeState, PlayerPreparationState } from "../../../../objects/player/preparation/player-preparation.js";
-import { readSelectedBirdType, writeSelectedBirdType } from "../../../../lib/player-bird-selection.js";
+import { readSelectedBirdType, writeSelectedBirdType } from "../../../../player/function/player-bird-selection.js";
 
 export const usePlayerPreparation = (userId: string) => {
   const [state, setState] = useState<PlayerPreparationState | null>(null);

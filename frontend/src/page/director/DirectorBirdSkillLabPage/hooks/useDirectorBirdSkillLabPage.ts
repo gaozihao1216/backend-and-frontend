@@ -5,8 +5,8 @@ import {
   BASIC_SKILLS,
   BOMB_SKILLS,
   SPLIT_SKILLS,
-} from "../../../../lib/game-engine/bird-definition.js";
-import type { BirdSkillSet } from "../../../../lib/game-engine/skills/skill-spec.js";
+} from "../../../../game/engine/bird/bird-definition.js";
+import type { BirdSkillSet } from "../../../../game/engine/skills/skill-spec.js";
 import type { DirectorBirdSkillEntry } from "../../../../objects/bird/skill/director/director-bird-skill-entry.js";
 import { cloneSkillSet, createDefaultSkillSet, parseBirdSkillSet } from "../../../../objects/bird/skill/director/bird-skill-helpers.js";
 

@@ -3,11 +3,11 @@ import {
   getEntitySnapshots,
   pasteClipboardSelection,
   removeEntity,
-} from "../../../../lib/designer-level.js";
-import type { EditorClipboardSelection, EditorTool } from "../../../../lib/designer-level.js";
-import type { TerrainBoundaryKind, TerrainEditMode } from "../../../../lib/ground.js";
+} from "../../../../level/function/designer-level.js";
+import type { EditorClipboardSelection, EditorTool } from "../../../../level/function/designer-level.js";
+import type { TerrainBoundaryKind, TerrainEditMode } from "../../../../level/function/ground.js";
 import type { LevelData } from "../../../../objects/level/level/level-data.js";
-import { handleGroundEditorDelete } from "../../../../lib/designer-page/ground-editor-actions.js";
+import { handleGroundEditorDelete } from "../function/ground/ground-editor-actions.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;
 

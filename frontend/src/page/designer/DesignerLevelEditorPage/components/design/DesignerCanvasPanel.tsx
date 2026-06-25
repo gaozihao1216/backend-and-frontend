@@ -1,7 +1,7 @@
 import { LevelEditorCanvas } from "../editor/LevelEditorCanvas.js";
 import { SelectedEntityPanel } from "../editor/SelectedEntityPanel.js";
-import type { EditorTool } from "../../../../../lib/designer-level.js";
-import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../../../lib/ground.js";
+import type { EditorTool } from "../../../../../level/function/designer-level.js";
+import type { GroundStrokeSimplifyConfig, TerrainEditMode } from "../../../../../level/function/ground.js";
 import type { LevelData } from "../../../../../objects/level/level/level-data.js";
 import type { LevelBackgroundTemplate } from "../../../../../objects/level/level-background-template.js";
 import type { StretchVisualDesign } from "../../../../../objects/ui-customization/ui-customization-objects.js";

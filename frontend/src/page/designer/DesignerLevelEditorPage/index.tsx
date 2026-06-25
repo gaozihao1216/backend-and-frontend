@@ -1,4 +1,4 @@
-import { API_USERS } from "../../../lib/config.js";
+import { API_USERS } from "../../../system/app/config.js";
 import type { DesignerLevelEditorPageProps } from "./objects/designer-level-editor-page-types.js";
 import { useDesignerLevelEditorViewModel } from "./hooks/useDesignerLevelEditorViewModel.js";
 import { LevelEditorModeRouter } from "./LevelEditorModeRouter.js";

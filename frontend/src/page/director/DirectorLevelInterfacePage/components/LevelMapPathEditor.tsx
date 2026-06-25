@@ -5,7 +5,7 @@ import {
   LEVEL_MAP_PATH_EDGE_STYLE_META,
   removeLevelMapPathEdge,
   updateLevelMapPathEdge,
-} from "../../../../lib/level-map-path.js";
+} from "../../../shared/function/level-map/level-map-path.js";
 import type { LevelMapPathDesign, LevelMapPathEdge } from "../../../../objects/ui-customization/ui-customization-objects.js";
 
 type LevelMapPathEditorProps = {

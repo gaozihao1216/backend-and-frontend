@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { getTextContentMode } from "../../../../lib/dynamic-text-program.js";
-import { getPageConfig, savePageConfig } from "../../../../lib/ui-customization.js";
-import { publishUiPageConfig, rollbackUiPageConfig } from "../../../../lib/ui-page-publish.js";
+import { getTextContentMode } from "../../../shared/function/ui-design/dynamic-text-program.js";
+import { getPageConfig, savePageConfig } from "../../../shared/function/ui-config/ui-customization.js";
+import { publishUiPageConfig, rollbackUiPageConfig } from "../../../shared/function/ui-config/ui-page-publish.js";
 import {
   canUseAsWorkingPanel,
   createChildComponentId,

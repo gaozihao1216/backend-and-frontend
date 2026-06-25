@@ -10,13 +10,13 @@ import {
   normalizeButtonStatePatternLayerDrafts,
   usesPatternLayerImage,
   type ButtonPatternLayerDraft,
-} from "../../../../lib/button-pattern-layers.js";
-import { getTemplateButtonShellStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
-import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../../components/ui-renderer/ProcessedTemplateImage.js";
+} from "../../../shared/function/ui-design/button-pattern-layers.js";
+import { getTemplateButtonShellStyle } from "../../../shared/components/ui-renderer/ui-renderer-utils.js";
+import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../shared/components/ui-renderer/ProcessedTemplateImage.js";
 import {
   LEVEL_NODE_BUTTON_MAX_FONT_SIZE,
   type LevelNodeSharedButtonDesign,
-} from "../../../../lib/level-node-button-format.js";
+} from "../../../shared/function/level-map/level-node-button-format.js";
 
 export type ButtonStateTemplatePreviewState = LevelNodeSharedButtonDesign & {
   icon?: string;

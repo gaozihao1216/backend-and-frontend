@@ -1,4 +1,4 @@
-import type { EditorTool } from "../../../../../lib/designer-level.js";
+import type { EditorTool } from "../../../../../level/function/designer-level.js";
 
 type EditorToolbarProps = {
   activeTool: EditorTool;

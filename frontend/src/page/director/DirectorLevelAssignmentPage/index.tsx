@@ -1,6 +1,6 @@
 import { BirdPoolConfigPanel } from "./components/BirdPoolConfigPanel.js";
 import { LevelPreviewCard } from "../../../components/level/LevelPreviewCard.js";
-import { createSubmissionLevelSource } from "../../../lib/level-repository.js";
+import { createSubmissionLevelSource } from "../../../level/function/level-repository.js";
 import { LEVEL_NODE_DEFINITIONS } from "../../../objects/ui-customization/level-map-structure.js";
 import { useDirectorLevelAssignmentPage } from "./hooks/useDirectorLevelAssignmentPage.js";
 import type { DirectorLevelAssignmentPageProps } from "./objects/director-level-assignment-page-types.js";

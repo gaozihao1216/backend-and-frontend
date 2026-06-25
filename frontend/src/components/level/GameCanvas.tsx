@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { drawScene } from "../../lib/game-engine/draw-scene.js";
-import { createGameSession } from "../../lib/game-engine/game-session/index.js";
-import type { BirdPoolLaunchConfig } from "../../lib/game-engine/bird-pool-session.js";
-import type { GameSnapshot } from "../../lib/game-engine/types.js";
-import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
+import { drawScene } from "../../game/engine/render/draw-scene.js";
+import { createGameSession } from "../../game/engine/game-session/index.js";
+import type { BirdPoolLaunchConfig } from "../../game/engine/bird/bird-pool-session.js";
+import type { GameSnapshot } from "../../game/engine/core/types.js";
+import { WORLD_HEIGHT, WORLD_WIDTH } from "../../game/engine/core/constants.js";
 import type { LevelData } from "../../objects/level/level/level-data.js";
 
 type GameCanvasProps = {

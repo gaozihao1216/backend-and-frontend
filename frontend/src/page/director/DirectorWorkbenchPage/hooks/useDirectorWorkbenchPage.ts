@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getBackendUsers, getDirectorPermissions, transferDirectorPermission } from "../../../../system/api/exports/index.js";
 import type { DirectorPermissionSummary, User } from "../../../../objects/api/api-contracts.js";
-import { syncLocalAdminLevelsFromBackend } from "../../../../lib/auth.js";
+import { syncLocalAdminLevelsFromBackend } from "../../../../system/app/auth.js";
 
 const getTransferCandidateAdmins = (users: User[], currentUserId: string) =>
   users.filter((user) => user.role === "admin" && user.adminLevel === "standard" && user.id !== currentUserId);

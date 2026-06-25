@@ -1,4 +1,4 @@
-import type { AuthUser } from "../../lib/auth.js";
+import type { AuthUser } from "../../system/app/auth.js";
 
 type SettingsPanelProps = {
   user: AuthUser;

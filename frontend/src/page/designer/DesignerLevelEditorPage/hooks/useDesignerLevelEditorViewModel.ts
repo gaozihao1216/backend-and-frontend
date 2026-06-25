@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { createDefaultLevelInput } from "../../../../system/api/exports/index.js";
 import { getDesignerPortfolioItemById } from "../../shared/objects/designer-portfolio-mock.js";
-import { removeEntity } from "../../../../lib/designer-level.js";
-import { createDraftLevelSource } from "../../../../lib/level-repository.js";
+import { removeEntity } from "../../../../level/function/designer-level.js";
+import { createDraftLevelSource } from "../../../../level/function/level-repository.js";
 import type { LevelData } from "../../../../objects/level/level/level-data.js";
 import type { LevelTag } from "../../../../objects/system/system-objects.js";
 import type { DesignerLevelEditorPageProps, DesignerPhase } from "../objects/designer-level-editor-page-types.js";
@@ -18,7 +18,7 @@ import { useDesignerLevelSubmission } from "./useDesignerLevelSubmission.js";
 import { useDesignerKeyboardActions } from "./useDesignerKeyboardActions.js";
 import { useDesignerGroundActions } from "./useDesignerGroundActions.js";
 import { useDesignerRotationActions } from "./useDesignerRotationActions.js";
-import { useLevelBackgroundTemplateResolution } from "../../../shared/hooks/useLevelBackgroundTemplateResolution.js";
+import { useLevelBackgroundTemplateResolution } from "../../../shared/hooks/level-background/useLevelBackgroundTemplateResolution.js";
 
 const initialDesignerLevelData = createDefaultLevelInput().data;
 

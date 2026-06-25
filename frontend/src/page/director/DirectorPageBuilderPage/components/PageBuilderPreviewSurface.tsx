@@ -5,8 +5,8 @@ import {
   getPanelTextArtContentStyle,
   isArtTextPreset,
   resolveTextArtDesign,
-} from "../../../../lib/art-text-styles.js";
-import { resolveTextComponentContent } from "../../../../lib/dynamic-text-program.js";
+} from "../../../shared/function/ui-design/art-text-styles.js";
+import { resolveTextComponentContent } from "../../../shared/function/ui-design/dynamic-text-program.js";
 import {
   getButtonBaseDesignStyle,
   getButtonImageDesignStyle,
@@ -14,7 +14,7 @@ import {
   getComponentStyle,
   getPositionStyle,
   getRootComponents,
-} from "../../../../components/ui-renderer/ui-renderer-utils.js";
+} from "../../../shared/components/ui-renderer/ui-renderer-utils.js";
 import { useDragScroll } from "../hooks/useDragScroll.js";
 import {
   createComponentMap,

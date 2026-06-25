@@ -6,7 +6,7 @@ import {
   PIG_RADIUS,
   WORLD_HEIGHT,
   WORLD_WIDTH,
-} from "../../lib/game-engine/constants.js";
+} from "../../game/engine/core/constants.js";
 
 const GROUND_Y = WORLD_HEIGHT - GROUND_HEIGHT;
 const TOWER_X = WORLD_WIDTH * 0.72;

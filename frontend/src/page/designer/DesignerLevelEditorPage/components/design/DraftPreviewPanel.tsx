@@ -1,5 +1,5 @@
 import { LevelPreviewCard } from "../../../../../components/level/LevelPreviewCard.js";
-import { createDraftLevelSource } from "../../../../../lib/level-repository.js";
+import { createDraftLevelSource } from "../../../../../level/function/level-repository.js";
 import type { LevelData } from "../../../../../objects/level/level/level-data.js";
 import type { LevelTag } from "../../../../../objects/system/system-objects.js";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getPageConfig, savePageConfig } from "../../../../lib/ui-customization.js";
+import { getPageConfig, savePageConfig } from "../../../shared/function/ui-config/ui-customization.js";
 import {
   isDynamicPath,
   routeTrees,

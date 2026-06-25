@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { LevelData } from "../../../../objects/level/level/level-data.js";
-import { cloneLevelData } from "../../../../lib/designer-page/draft-functions.js";
+import { cloneLevelData } from "../function/draft/draft-functions.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;
 

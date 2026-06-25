@@ -9,16 +9,16 @@ import {
   getPatternLayerFrameBoxStyle,
   normalizeButtonStatePatternLayerDrafts,
   usesPatternLayerImage,
-} from "../../../../lib/button-pattern-layers.js";
+} from "../../../shared/function/ui-design/button-pattern-layers.js";
 import {
   movePatternFrame,
   PATTERN_LAYER_RESIZE_HANDLES,
   resizePatternFrame,
   type PatternLayerResizeHandle,
-} from "../../../../lib/pattern-frame-adjust.js";
-import { LEVEL_NODE_BUTTON_MAX_FONT_SIZE } from "../../../../lib/level-node-button-format.js";
-import { getTemplateButtonShellStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
-import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../../components/ui-renderer/ProcessedTemplateImage.js";
+} from "../../../shared/function/ui-design/pattern-frame-adjust.js";
+import { LEVEL_NODE_BUTTON_MAX_FONT_SIZE } from "../../../shared/function/level-map/level-node-button-format.js";
+import { getTemplateButtonShellStyle } from "../../../shared/components/ui-renderer/ui-renderer-utils.js";
+import { ProcessedTemplateBackground, ProcessedTemplateBase } from "../../../shared/components/ui-renderer/ProcessedTemplateImage.js";
 import type { ButtonStateTemplatePreviewState } from "./button-state-template-preview.js";
 
 type LevelNodeButtonStatePreviewProps = {

@@ -1,6 +1,6 @@
 import { EditorToolbar } from "../editor/EditorToolbar.js";
 import { RotationKnob } from "../editor/RotationKnob.js";
-import type { EditorTool } from "../../../../../lib/designer-level.js";
+import type { EditorTool } from "../../../../../level/function/designer-level.js";
 
 type DesignerEntityControlsProps = {
   activeTool: EditorTool;

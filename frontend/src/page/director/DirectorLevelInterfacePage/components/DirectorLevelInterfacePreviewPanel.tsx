@@ -1,9 +1,9 @@
 import { LevelMapLayoutPreview } from "./LevelMapLayoutPreview.js";
-import type { LevelMapPathEditContext } from "../../../../components/ui-renderer/ui-renderer-types.js";
+import type { LevelMapPathEditContext } from "../../../shared/components/ui-renderer/ui-renderer-types.js";
 import {
   LEVEL_NODE_PROGRESS_STATE_META,
   type LevelNodeProgressStateId,
-} from "../../../../lib/level-node-button-format.js";
+} from "../../../shared/function/level-map/level-node-button-format.js";
 import { LEVEL_NODE_DEFINITIONS } from "../../../../objects/ui-customization/level-map-structure.js";
 import type { ComponentPosition, PageConfig, UiPreviewUser } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import type { LevelInterfaceEditor } from "../objects/level-interface-types.js";

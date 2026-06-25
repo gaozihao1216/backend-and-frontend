@@ -1,5 +1,5 @@
 import { AdminProposalReviewContent } from "./components/AdminProposalReviewContent.js";
-import { API_USERS } from "../../../lib/config.js";
+import { API_USERS } from "../../../system/app/config.js";
 import type { AdminProposalReviewPageProps } from "./objects/admin-proposal-review-page-types.js";
 
 export const AdminProposalReviewPage = ({ userId = API_USERS.admin.id }: AdminProposalReviewPageProps) => (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ensureBackendBoundAuthUser, type AuthUser } from "../../lib/auth.js";
+import { ensureBackendBoundAuthUser, type AuthUser } from "../../system/app/auth.js";
 
 type BackendBindingPanelProps = {
   title: string;

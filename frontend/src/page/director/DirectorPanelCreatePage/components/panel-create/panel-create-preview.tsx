@@ -8,11 +8,11 @@ import {
   getPatternLayerFrameBoxStyle,
   normalizeButtonStatePatternLayerDrafts,
   usesPatternLayerImage,
-} from "../../../../../lib/button-pattern-layers.js";
+} from "../../../../shared/function/ui-design/button-pattern-layers.js";
 import {
   getButtonBaseDesignStyle,
   getStretchVisualDesignStyle,
-} from "../../../../../components/ui-renderer/ui-renderer-utils.js";
+} from "../../../../shared/components/ui-renderer/ui-renderer-utils.js";
 import type { PanelDecoration } from "../../../../../objects/ui-customization/ui-customization-objects.js";
 import type { ButtonStateDraft, ResizeHandle } from "../../objects/panel-create-types.js";
 import { getButtonStateContentType } from "../../function/panel-create-helpers.js";

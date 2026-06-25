@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import type { LevelSource } from "../../lib/level-repository.js";
-import { WORLD_HEIGHT, WORLD_WIDTH } from "../../lib/game-engine/constants.js";
-import type { BirdPoolLaunchConfig } from "../../lib/game-engine/bird-pool-session.js";
+import type { LevelSource } from "../../level/function/level-repository.js";
+import { WORLD_HEIGHT, WORLD_WIDTH } from "../../game/engine/core/constants.js";
+import type { BirdPoolLaunchConfig } from "../../game/engine/bird/bird-pool-session.js";
 import type { BirdPool } from "../../objects/level/inventory/bird-pool.js";
-import { resolveBirdPoolForLevel } from "../../lib/player-bird-pool.js";
-import { useLevelBackgroundTemplateResolution } from "../../page/shared/hooks/useLevelBackgroundTemplateResolution.js";
+import { resolveBirdPoolForLevel } from "../../player/function/player-bird-pool.js";
+import { useLevelBackgroundTemplateResolution } from "../../page/shared/hooks/level-background/useLevelBackgroundTemplateResolution.js";
 import { LevelBackgroundStageLayer } from "../../page/designer/DesignerLevelEditorPage/components/design/LevelBackgroundStageLayer.js";
 import { GameCanvas } from "./GameCanvas.js";
 

@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import type { BirdSkillSet, BirdSkillStage } from "../../../../lib/game-engine/skills/skill-spec.js";
-import { SKILL_TEMPLATE_CATALOG } from "../../../../lib/game-engine/skills/skill-template-catalog.js";
+import type { BirdSkillSet, BirdSkillStage } from "../../../../game/engine/skills/skill-spec.js";
+import { SKILL_TEMPLATE_CATALOG } from "../../../../game/engine/skills/skill-template-catalog.js";
 import type { DirectorBirdSkillEntry } from "../../../../objects/bird/skill/director/director-bird-skill-entry.js";
 import { appendSpec, cloneSkillSet, moveSpec, removeSpec, updateSpec, updateStage } from "../../../../objects/bird/skill/director/bird-skill-helpers.js";
-import { formatSpecSummary } from "../../../../lib/game-engine/skills/skill-param-metadata.js";
+import { formatSpecSummary } from "../../../../game/engine/skills/skill-param-metadata.js";
 import { getSkillTemplateLabel, SkillBlockParamEditor } from "./BirdSkillBlockParamEditor.js";
 import { BirdSkillTestArena } from "./BirdSkillTestArena.js";
-import { readFileAsDataUrl } from "../../../../lib/template-image-utils.js";
+import { readFileAsDataUrl } from "../../../shared/function/ui-design/template-image-utils.js";
 
 type BirdSkillScratchEditorProps = {
   entry: DirectorBirdSkillEntry;

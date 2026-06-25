@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { useDirectorTemplateLibrary } from "../../../shared/hooks/useDirectorTemplateLibrary.js";
-import { processButtonBaseDesign, processStretchVisualDesign } from "../../../../lib/template-image-utils.js";
+import { useDirectorTemplateLibrary } from "../../../shared/hooks/template/useDirectorTemplateLibrary.js";
+import { processButtonBaseDesign, processStretchVisualDesign } from "../../../shared/function/ui-design/template-image-utils.js";
 import {
   createLibraryTemplateSelectOptions,
   createButtonStateDraftPatchFromBaseTemplate,
   createButtonStateDraftPatchFromPatternTemplate,
-} from "../../../../lib/director-template-select.js";
+} from "../../shared/function/director-template-select.js";
 import {
   createPatternLayerFromTemplate,
 } from "./button-state-template-preview.js";
@@ -21,7 +21,7 @@ import {
   type LevelNodeButtonFormatSettings,
   type LevelNodeProgressStateId,
   type LevelNodeStateButtonDesign,
-} from "../../../../lib/level-node-button-format.js";
+} from "../../../shared/function/level-map/level-node-button-format.js";
 import { LEVEL_NODE_DEFINITIONS } from "../../../../objects/ui-customization/level-map-structure.js";
 
 type LevelNodeButtonFormatEditorProps = {

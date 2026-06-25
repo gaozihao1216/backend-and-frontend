@@ -1,6 +1,6 @@
 import type { Level } from "../../objects/level/level/level.js";
 import type { BirdPool } from "../../objects/level/inventory/bird-pool.js";
-import { createPublishedLevelSource, type LevelSource } from "../../lib/level-repository.js";
+import { createPublishedLevelSource, type LevelSource } from "../../level/function/level-repository.js";
 import { PlayableLevelSurface } from "./PlayableLevelSurface.js";
 
 type LevelPreviewCardProps = {

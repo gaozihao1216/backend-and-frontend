@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
-import { useDirectorTemplateLibrary } from "../../../shared/hooks/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../../shared/hooks/template/useDirectorTemplateLibrary.js";
 import {
   createLibraryTemplateSelectOptions,
   formatTemplateSelectValue,
   resolvePanelDecoration,
-} from "../../../../lib/director-template-select.js";
+} from "../../shared/function/director-template-select.js";
 import {
   createPanelBackgroundDesignFromTemplate,
   toggleCloudPatternDesign,
-} from "../../../../lib/level-background-template-render.js";
+} from "../../../shared/function/level-background/level-background-template-render.js";
 import {
   getPatternTemplateCategoryLabel,
   normalizePanelTemplateCategory,

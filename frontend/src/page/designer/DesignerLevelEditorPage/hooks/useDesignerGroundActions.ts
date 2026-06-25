@@ -8,8 +8,8 @@ import {
   removeTerrainVoidSpan,
   reorderTerrainBoundaryPoint,
   setTerrainBoundaryType,
-} from "../../../../lib/ground.js";
-import type { TerrainBoundaryKind, TerrainEditMode } from "../../../../lib/ground.js";
+} from "../../../../level/function/ground.js";
+import type { TerrainBoundaryKind, TerrainEditMode } from "../../../../level/function/ground.js";
 import type { LevelData } from "../../../../objects/level/level/level-data.js";
 
 type ApplyLevelDataUpdate = (updater: LevelData | ((current: LevelData) => LevelData)) => void;

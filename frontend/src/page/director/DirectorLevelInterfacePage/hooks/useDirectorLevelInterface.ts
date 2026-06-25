@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { LevelMapPathEditContext } from "../../../../components/ui-renderer/ui-renderer-types.js";
-import { getPageConfig, getPageConfigRevision, subscribePageConfigStore } from "../../../../lib/ui-customization.js";
-import { setSharedLevelMapPersistenceUser } from "../../../../lib/shared-level-map-persistence.js";
+import type { LevelMapPathEditContext } from "../../../shared/components/ui-renderer/ui-renderer-types.js";
+import { getPageConfig, getPageConfigRevision, subscribePageConfigStore } from "../../../shared/function/ui-config/ui-customization.js";
+import { setSharedLevelMapPersistenceUser } from "../../../shared/function/ui-config/shared-level-map-persistence.js";
 import {
   applyLevelNodeButtonFormat,
   createPreviewLevelProgressUiData,
@@ -9,31 +9,31 @@ import {
   syncLevelNodeButtonFormat,
   type LevelNodeButtonFormatSettings,
   type LevelNodeProgressStateId,
-} from "../../../../lib/level-node-button-format.js";
+} from "../../../shared/function/level-map/level-node-button-format.js";
 import {
   applyLevelStageDecoration,
   getDefaultLevelStageDecoration,
   getLevelStageDecorationFromStore,
   normalizeLevelStageDecoration,
   syncLevelStageBackground,
-} from "../../../../lib/level-stage-background.js";
+} from "../../../shared/function/level-map/level-stage-background.js";
 import {
   extractLevelNodeButtonLayouts,
   syncLevelNodeButtonLayout,
   updateLevelNodeButtonPositionInPage,
-} from "../../../../lib/level-node-button-layout.js";
+} from "../../../shared/function/level-map/level-node-button-layout.js";
 import {
   applyLevelMapPathDesign,
   createLevelMapPathEdge,
   getLevelMapPathDesignFromStore,
   syncLevelMapPathDesign,
-} from "../../../../lib/level-map-path.js";
+} from "../../../shared/function/level-map/level-map-path.js";
 import type { LevelMapPathDesign } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import {
   countLevelNodes,
   findStagePanel,
   LEVEL_MAP_PAGE_ID,
-} from "../../../../lib/level-stage-structure.js";
+} from "../../../shared/function/level-map/level-stage-structure.js";
 import { LEVEL_NODE_DEFINITIONS } from "../../../../objects/ui-customization/level-map-structure.js";
 import type { ComponentPosition, PageConfig, PanelDecoration } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import { getUiPreviewUser } from "../../../../objects/ui-customization/ui-customization-objects.js";

@@ -1,6 +1,6 @@
-import type { DirectorPanelCreateViewModel } from "../.././hooks/useDirectorPanelCreate.js";
+import type { DirectorPanelCreateViewModel } from "../../hooks/useDirectorPanelCreate.js";
 import { PanelCreateChildOutline, renderButtonPreviewContent, renderButtonPreviewLayers, renderPanelBackgroundLayer } from "./panel-create-preview.js";
-import { resolvePanelDecoration } from "../../../../../lib/director-template-select.js";
+import { resolvePanelDecoration } from "../../../shared/function/director-template-select.js";
 import {
   getPanelTextArtContainerClassName,
   getPanelTextArtContainerStyle,
@@ -18,10 +18,10 @@ import {
   TEXT_ART_PRESET_OPTIONS,
   resolveTextArtDesign,
   usesTextArtGradient,
-} from "../../../../../lib/art-text-styles.js";
+} from "../../../../shared/function/ui-design/art-text-styles.js";
 import { clamp, getDecorationStyle, getPanelRenderedAspectRatio } from "../../function/panel-create-helpers.js";
 import { getButtonStateContentType } from "../../function/panel-create-helpers.js";
-import { defaultWeeklyCheckInRewards } from "../../../../../lib/weekly-check-in-panel.js";
+import { defaultWeeklyCheckInRewards } from "../../../shared/function/weekly-check-in-panel.js";
 import { pagePreviewAspectRatio } from "../../objects/panel-create-types.js";
 
 type StepProps = { vm: DirectorPanelCreateViewModel };

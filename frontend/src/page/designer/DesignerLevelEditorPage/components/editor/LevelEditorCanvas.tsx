@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { LevelData, LevelEnemy, LevelObstacle } from "../../../../../objects/level/level/level-data.js";
-import { WORLD_HEIGHT, WORLD_WIDTH } from "../../../../../lib/game-engine/constants.js";
+import { WORLD_HEIGHT, WORLD_WIDTH } from "../../../../../game/engine/core/constants.js";
 import {
   addEntityToSelection,
   addObstacleFromCorners,
@@ -33,7 +33,7 @@ import {
   type EditorEntity,
   type EditorSelectionBox,
   type EditorTool,
-} from "../../../../../lib/designer-level.js";
+} from "../../../../../level/function/designer-level.js";
 import {
   addTerrainVoidSpan,
   createTerrainBoundaryFromStroke,
@@ -47,7 +47,7 @@ import {
   updateTerrainBoundaryPoint,
   type GroundStrokeSimplifyConfig,
   type TerrainEditMode,
-} from "../../../../../lib/ground.js";
+} from "../../../../../level/function/ground.js";
 import type { LevelBackgroundTemplate } from "../../../../../objects/level/level-background-template.js";
 import type { StretchVisualDesign } from "../../../../../objects/ui-customization/ui-customization-objects.js";
 import { LevelBackgroundStageLayer } from "../design/LevelBackgroundStageLayer.js";

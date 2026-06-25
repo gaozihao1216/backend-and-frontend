@@ -1,4 +1,4 @@
-import { BirdSkillSetSchema, type BirdSkillSet, type BirdSkillStage, type SkillSpec } from "../../../../lib/game-engine/skills/skill-spec.js";
+import { BirdSkillSetSchema, type BirdSkillSet, type BirdSkillStage, type SkillSpec } from "../../../../game/engine/skills/skill-spec.js";
 
 export const parseBirdSkillSet = (value: unknown): BirdSkillSet | null => {
   const parsed = BirdSkillSetSchema.safeParse(value);

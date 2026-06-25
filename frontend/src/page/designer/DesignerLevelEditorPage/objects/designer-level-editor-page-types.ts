@@ -1,5 +1,5 @@
-import type { GroundMaterialRenderConfig } from "../../../../lib/game-engine/draw-scene.js";
-import type { GroundStrokeSimplifyConfig } from "../../../../lib/ground.js";
+import type { GroundMaterialRenderConfig } from "../../../../game/engine/render/draw-scene.js";
+import type { GroundStrokeSimplifyConfig } from "../../../../level/function/ground.js";
 import type { LevelData } from "../../../../objects/level/level/level-data.js";
 import type { LevelTag } from "../../../../objects/system/system-objects.js";
 

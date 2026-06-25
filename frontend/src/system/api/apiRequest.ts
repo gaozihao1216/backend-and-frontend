@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { API_BASE_URL } from "../../lib/config.js";
+import { API_BASE_URL } from "../app/config.js";
 import { ApiErrorSchema, createSuccessResponseSchema } from "./contracts.js";
 
 const REQUEST_TIMEOUT_MS = 10_000;

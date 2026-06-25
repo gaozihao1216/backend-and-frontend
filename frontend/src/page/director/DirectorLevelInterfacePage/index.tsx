@@ -4,7 +4,7 @@ import { LevelStageBackgroundEditor } from "./components/LevelStageBackgroundEdi
 import { DirectorLevelInterfacePreviewPanel } from "./components/DirectorLevelInterfacePreviewPanel.js";
 import { DirectorLevelInterfaceToolbar } from "./components/DirectorLevelInterfaceToolbar.js";
 import { useDirectorLevelInterface } from "./hooks/useDirectorLevelInterface.js";
-import { countLevelNodes, LEVEL_MAP_PAGE_ID } from "../../../lib/level-stage-structure.js";
+import { countLevelNodes, LEVEL_MAP_PAGE_ID } from "../../shared/function/level-map/level-stage-structure.js";
 import type { DirectorLevelInterfacePageProps } from "./objects/director-level-interface-page-types.js";
 
 export const DirectorLevelInterfacePage = ({ userId, onBack, onNavigate }: DirectorLevelInterfacePageProps) => {

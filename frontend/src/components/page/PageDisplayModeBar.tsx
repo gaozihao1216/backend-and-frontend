@@ -1,5 +1,5 @@
-import type { PageDisplayMode } from "../../lib/page-render-mode.js";
-import { pageDisplayModeLabels } from "../../lib/page-render-mode.js";
+import type { PageDisplayMode } from "../../page/shared/function/ui-config/page-render-mode.js";
+import { pageDisplayModeLabels } from "../../page/shared/function/ui-config/page-render-mode.js";
 
 type PageDisplayModeBarProps = {
   mode: PageDisplayMode;

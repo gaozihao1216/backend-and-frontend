@@ -1,16 +1,16 @@
-import type { DirectorPanelCreateViewModel } from "../.././hooks/useDirectorPanelCreate.js";
+import type { DirectorPanelCreateViewModel } from "../../hooks/useDirectorPanelCreate.js";
 import {
   createDefaultArtTextLayerDraft,
   createEmptyPatternLayerDraft,
   getPatternLayerFrame,
   normalizeButtonStatePatternLayerDrafts,
   type ButtonPatternLayerDraft,
-} from "../../../../../lib/button-pattern-layers.js";
+} from "../../../../shared/function/ui-design/button-pattern-layers.js";
 import {
   getButtonBaseTemplateSelectValue,
   getPatternLayerTemplateSelectValue,
   resolvePanelDecoration,
-} from "../../../../../lib/director-template-select.js";
+} from "../../../shared/function/director-template-select.js";
 import {
   getButtonPreviewStyle,
   getButtonStatePreviewClassName,
@@ -36,7 +36,7 @@ import {
   TEXT_ART_PRESET_OPTIONS,
   resolveTextArtDesign,
   usesTextArtGradient,
-} from "../../../../../lib/art-text-styles.js";
+} from "../../../../shared/function/ui-design/art-text-styles.js";
 import { clamp, getDecorationStyle, getPanelRenderedAspectRatio } from "../../function/panel-create-helpers.js";
 import { getButtonStateContentType } from "../../function/panel-create-helpers.js";
 import type { PanelPreset } from "../../objects/panel-create-types.js";

@@ -8,12 +8,12 @@ import { DirectorButtonDesignPage } from "./page/director/DirectorButtonDesignPa
 import { DirectorButtonConfigPage } from "./page/director/DirectorButtonConfigPage/index.js";
 import { DirectorPanelCreatePage } from "./page/director/DirectorPanelCreatePage/index.js";
 import { DirectorPageBuilderPage } from "./page/director/DirectorPageBuilderPage/index.js";
-import { PageDualModeHost } from "./page/shared/PageDualModeHost.js";
-import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./lib/auth.js";
-import { compactStoredPageConfigVisualAssets, compactStoredRoleHomePageConfigs } from "./lib/ui-customization.js";
-import { hydrateSharedLevelMapFromApi } from "./lib/shared-level-map-persistence.js";
-import { isPageBuilderPath, resolveHomePageId, resolvePageId } from "./lib/page-id-resolver.js";
-import { checkRouteAccess } from "./lib/route-access.js";
+import { PageDualModeHost } from "./page/shared/PageDualModeHost/index.js";
+import { persistAuthSession, readPersistedAuthUser, type AuthUser } from "./system/app/auth.js";
+import { compactStoredPageConfigVisualAssets, compactStoredRoleHomePageConfigs } from "./page/shared/function/ui-config/ui-customization.js";
+import { hydrateSharedLevelMapFromApi } from "./page/shared/function/ui-config/shared-level-map-persistence.js";
+import { isPageBuilderPath, resolveHomePageId, resolvePageId } from "./system/app/page-id-resolver.js";
+import { checkRouteAccess } from "./system/app/route-access.js";
 
 // 当前项目没有引入完整前端路由框架，而是用最小化的 pathname 分流。
 // 这样实现足够轻量，也方便把设计器页面与主页逻辑拆开。

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { listButtonTemplates } from "../../../../system/api/exports/index.js";
 import type { UiButtonTemplate } from "../../../../objects/api/api-contracts.js";
-import { getPageConfig, savePageConfig } from "../../../../lib/ui-customization.js";
+import { getPageConfig, savePageConfig } from "../../../shared/function/ui-config/ui-customization.js";
 import type { ButtonImageDesign, ImagePolygonPoint } from "../../../../objects/ui-customization/ui-customization-objects.js";
 import {
   clampImageFrame,

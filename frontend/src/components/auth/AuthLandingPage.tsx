@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API_USERS, type FrontendRole } from "../../lib/config.js";
+import { API_USERS, type FrontendRole } from "../../system/app/config.js";
 import {
   ensureBackendBoundAuthUser,
   getCurrentDirectorAccountHint,
@@ -10,7 +10,7 @@ import {
   type AuthUser,
   type LoginInput,
   type RegisterInput,
-} from "../../lib/auth.js";
+} from "../../system/app/auth.js";
 
 type AuthLandingPageProps = {
   onAuthenticated: (user: AuthUser) => void;

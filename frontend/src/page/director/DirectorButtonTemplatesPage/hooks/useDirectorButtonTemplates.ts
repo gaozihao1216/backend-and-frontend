@@ -6,7 +6,7 @@ import {
   updateButtonTemplate,
 } from "../../../../system/api/exports/index.js";
 import type { UiButtonTemplate } from "../../../../objects/api/api-contracts.js";
-import { processTemplateImage, readFileAsDataUrl } from "../../../../lib/template-image-utils.js";
+import { processTemplateImage, readFileAsDataUrl } from "../../../shared/function/ui-design/template-image-utils.js";
 import {
   createDefaultDraft,
   createDraftFromTemplate,

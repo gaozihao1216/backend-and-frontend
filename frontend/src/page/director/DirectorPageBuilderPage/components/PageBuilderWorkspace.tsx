@@ -1,8 +1,8 @@
 import { PageBuilderTextObjectEditor } from "./PageBuilderTextObjectEditor.js";
-import { DynamicPageRenderer } from "../../../../components/ui-renderer/index.js";
+import { DynamicPageRenderer } from "../../../shared/components/ui-renderer/index.js";
 import { PageBuilderPreview } from "./PageBuilderPreviewSurface.js";
-import { isStaticPageSupported } from "../../../../page/shared/StaticPageRenderer.js";
-import { UiActualPagePreview } from "../../../../page/shared/UiActualPagePreview.js";
+import { isStaticPageSupported } from "../../../shared/StaticPageRenderer/index.js";
+import { UiActualPagePreview } from "../../../shared/UiActualPagePreview/index.js";
 import type { DirectorPageBuilderState } from "../hooks/useDirectorPageBuilder.js";
 import {
   canUseAsWorkingPanel,

@@ -1,16 +1,16 @@
 import { useMemo, useState } from "react";
-import { useDirectorTemplateLibrary } from "../../../shared/hooks/useDirectorTemplateLibrary.js";
+import { useDirectorTemplateLibrary } from "../../../shared/hooks/template/useDirectorTemplateLibrary.js";
 import {
   createLevelBackgroundTemplateDraft,
   deleteLevelBackgroundTemplate,
   listLevelBackgroundTemplates,
   resetLevelBackgroundTemplates,
   upsertLevelBackgroundTemplate,
-} from "../../../../lib/level-background-template-store.js";
+} from "../../../shared/function/level-background/level-background-template-store.js";
 import {
   resolveLevelBackgroundCloudDesigns,
   resolveLevelBackgroundPanelDesign,
-} from "../../../../lib/level-background-template-render.js";
+} from "../../../shared/function/level-background/level-background-template-render.js";
 import {
   LEVEL_BACKGROUND_WEATHER_META,
   type LevelBackgroundTemplate,

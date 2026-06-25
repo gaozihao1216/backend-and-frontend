@@ -3,18 +3,18 @@ import {
   getDefaultGroundMaterialRenderConfig,
   setGroundMaterialRenderConfig,
   type GroundMaterialRenderConfig,
-} from "../../../../lib/game-engine/draw-scene.js";
+} from "../../../../game/engine/render/draw-scene.js";
 import {
   DEFAULT_GROUND_STROKE_SIMPLIFY_CONFIG,
   getDefaultBoundaryBreakpointEpsilon,
   setBoundaryBreakpointEpsilon,
   type GroundStrokeSimplifyConfig,
-} from "../../../../lib/ground.js";
+} from "../../../../level/function/ground.js";
 import {
   sanitizeBoundaryBreakpointEpsilon,
   sanitizeGroundMaterialRenderConfig,
   sanitizeGroundStrokeSimplifyConfig,
-} from "../../../../lib/designer-page/ground-tuning-functions.js";
+} from "../function/ground/ground-tuning-functions.js";
 import type { DesignerGroundTuningStorage } from "../objects/designer-level-editor-page-types.js";
 
 export const DESIGNER_GROUND_TUNING_STORAGE_KEY = "ugc-level-platform.designer-ground-tuning.v1";

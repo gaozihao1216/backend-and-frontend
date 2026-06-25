@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { SharedLevelMapRenderer } from "../../../../components/ui-renderer/SharedLevelMapRenderer.js";
+import { SharedLevelMapRenderer } from "../../../shared/components/ui-renderer/SharedLevelMapRenderer.js";
 import {
   moveComponentPosition,
   resizeComponentPosition,
   type ComponentResizeHandle,
-} from "../../../../lib/component-position-adjust.js";
+} from "../../../shared/function/ui-design/component-position-adjust.js";
 import {
   getLevelSuffixFromNodeButton,
   isLevelNodeButtonComponent,
-} from "../../../../lib/level-node-button-format.js";
-import type { LevelMapLayoutEditContext, LevelMapPathEditContext } from "../../../../components/ui-renderer/ui-renderer-types.js";
+} from "../../../shared/function/level-map/level-node-button-format.js";
+import type { LevelMapLayoutEditContext, LevelMapPathEditContext } from "../../../shared/components/ui-renderer/ui-renderer-types.js";
 import type { ComponentPosition, PageConfig, UiPreviewUser } from "../../../../objects/ui-customization/ui-customization-objects.js";
 
 type LevelMapLayoutPreviewProps = {

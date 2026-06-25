@@ -1,7 +1,7 @@
 import { ListStretchVisualTemplatesResponseDataSchema, type UiStretchVisualTemplate } from "../../../objects/api/api-contracts.js";
 import { request } from "../../../system/api/legacyRequest.js";
 import type { StretchVisualTemplateKind } from "../../../objects/ui/stretch_template/stretch-visual-template.js";
-import { stretchTemplateApiPath } from "../../../lib/ui/stretch-template-paths.js";
+import { stretchTemplateApiPath } from "./function/stretch-template-paths.js";
 
 export class ListStretchVisualTemplatesApi {
   path(kind: StretchVisualTemplateKind): string {

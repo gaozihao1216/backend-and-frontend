@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
-import { getStretchVisualDesignStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
-import { useVisualAsset } from "../../../shared/hooks/useVisualAsset.js";
+import { getStretchVisualDesignStyle } from "../../../shared/components/ui-renderer/ui-renderer-utils.js";
+import { useVisualAsset } from "../../../shared/hooks/visual-asset/useVisualAsset.js";
 import {
   createLevelBackgroundCloudSprites,
   getLevelBackgroundGradientStyle,
   type LevelBackgroundCloudSprite,
-} from "../../../../lib/level-background-template-render.js";
+} from "../../../shared/function/level-background/level-background-template-render.js";
 import type { LevelBackgroundTemplate } from "../../../../objects/level/level-background-template.js";
 import type { StretchVisualDesign } from "../../../../objects/ui-customization/ui-customization-objects.js";
 

@@ -1,11 +1,11 @@
 import type { ComponentAction, PageComponent, PageConfig } from "../ui/page-config.js";
 import { createAdminProposalsPageConfig } from "./admin-proposals-structure.js";
-import { isRoleLevelMapSyncPageId } from "../../lib/level-map-sync.js";
+import { isRoleLevelMapSyncPageId } from "../../page/shared/function/level-map/level-map-sync.js";
 import {
   applyLevelNodeButtonFormat,
   extractLevelNodeButtonFormatSettings,
   isLevelNodeButtonComponent,
-} from "../../lib/level-node-button-format.js";
+} from "../../page/shared/function/level-map/level-node-button-format.js";
 import {
   LEVEL_MAP_STAGE_WIDGET_POSITION,
   LEVEL_MAP_STAGE_WIDGET_STYLE,
@@ -16,8 +16,8 @@ import {
 } from "./level-map-structure.js";
 import {
   normalizeLevelStageDecoration,
-} from "../../lib/level-stage-background.js";
-import { findStagePanel } from "../../lib/level-stage-structure.js";
+} from "../../page/shared/function/level-map/level-stage-background.js";
+import { findStagePanel } from "../../page/shared/function/level-map/level-stage-structure.js";
 
 const isPanel = (component: PageComponent) => component.type === "panel";
 

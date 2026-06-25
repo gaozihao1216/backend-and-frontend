@@ -3,13 +3,13 @@ import {
   getButtonStateHasPatternLayers,
   normalizeButtonStatePatternLayerDrafts,
   serializePatternLayersForStateOption,
-} from "../../../../lib/button-pattern-layers.js";
-import { getStretchVisualDesignStyle } from "../../../../components/ui-renderer/ui-renderer-utils.js";
-import { isArtTextPreset, resolveTextArtDesign } from "../../../../lib/art-text-styles.js";
+} from "../../../shared/function/ui-design/button-pattern-layers.js";
+import { getStretchVisualDesignStyle } from "../../../shared/components/ui-renderer/ui-renderer-utils.js";
+import { isArtTextPreset, resolveTextArtDesign } from "../../../shared/function/ui-design/art-text-styles.js";
 import {
   createDefaultWeeklyCheckInChildDrafts,
   weeklyCheckInButtonStates,
-} from "../../../../lib/weekly-check-in-panel.js";
+} from "../../shared/function/weekly-check-in-panel.js";
 import type {
   ButtonImageFrame,
   ButtonStateOption,

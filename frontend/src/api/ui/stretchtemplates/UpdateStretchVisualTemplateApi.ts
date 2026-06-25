@@ -4,7 +4,7 @@ import {
   type UiStretchVisualTemplate,
 } from "../../../objects/api/api-contracts.js";
 import { request } from "../../../system/api/legacyRequest.js";
-import { stretchTemplateItemApiPath } from "../../../lib/ui/stretch-template-paths.js";
+import { stretchTemplateItemApiPath } from "./function/stretch-template-paths.js";
 
 export class UpdateStretchVisualTemplateApi {
   path(templateId: string, template: UiStretchVisualTemplate): string {

@@ -1,6 +1,6 @@
-import type { SkillSpec } from "../../../../lib/game-engine/skills/skill-spec.js";
-import { SKILL_TEMPLATE_CATALOG } from "../../../../lib/game-engine/skills/skill-template-catalog.js";
-import { SKILL_PARAM_FIELDS, type SkillParamField } from "../../../../lib/game-engine/skills/skill-param-metadata.js";
+import type { SkillSpec } from "../../../../game/engine/skills/skill-spec.js";
+import { SKILL_TEMPLATE_CATALOG } from "../../../../game/engine/skills/skill-template-catalog.js";
+import { SKILL_PARAM_FIELDS, type SkillParamField } from "../../../../game/engine/skills/skill-param-metadata.js";
 
 type SkillBlockParamEditorProps = {
   spec: SkillSpec;

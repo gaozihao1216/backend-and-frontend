@@ -12,9 +12,9 @@ import {
   TEXT_ART_GRADIENT_INTENSITY_OPTIONS,
   TEXT_ART_PRESET_OPTIONS,
   usesTextArtGradient,
-} from "../../../../lib/art-text-styles.js";
-import { getTextContentMode } from "../../../../lib/dynamic-text-program.js";
-import { normalizeDynamicTextProgram } from "../../../../lib/dynamic-text-program-normalize.js";
+} from "../../../shared/function/ui-design/art-text-styles.js";
+import { getTextContentMode } from "../../../shared/function/ui-design/dynamic-text-program.js";
+import { normalizeDynamicTextProgram } from "../../../shared/function/ui-design/dynamic-text-program-normalize.js";
 import type { TextContentMode } from "../../../../objects/ui-customization/dynamic-text-program.js";
 import { createDefaultDynamicTextProgram } from "../../../../objects/ui-customization/dynamic-text-program.js";
 import type { TextComponent, UiEndpoint } from "../../../../objects/ui-customization/ui-customization-objects.js";
