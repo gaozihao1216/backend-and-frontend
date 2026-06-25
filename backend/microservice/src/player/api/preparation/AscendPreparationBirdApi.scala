@@ -1,12 +1,21 @@
 package microservice.player.api.preparation
 
+import cats.data.EitherT
 import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
+import microservice.bird.api.internal.player.{
+  GetBirdSkillConfigMapInternalAPIMessage,
+  ListPublishedBirdCatalogEntriesInternalAPIMessage,
+  ListSystemBirdCatalogEntriesInternalAPIMessage
+}
+import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.support.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
-import microservice.player.objects.preparation.PlayerPreparationJson
+import microservice.player.objects.preparation.{BirdSkillConfigView, PlayerPreparationJson}
+import microservice.player.objects.wallet.PlayerWallet
+import microservice.player.support.catalog.PreparationCatalogMapping
+import microservice.player.support.preparation.{BirdCatalogEntry, PlayerPreparationCatalog, PlayerPreparationSupport}
 import microservice.player.tables.preparation.PlayerPreparationTable
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.enums.UserRole
@@ -26,7 +35,7 @@ final case class AscendPreparationBirdAPIMessage(userId: String, birdType: Strin
         // 步骤 1：校验调用者为 Player
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
         // 步骤 2：从 Catalog 加载鸟种信息
-        entry <- PlayerPreparationAccess.requireCatalogEntry(connection, birdType)
+        entry <- requireCatalogEntry(connection)
         // 步骤 3：确保玩家鸟种升阶记录存在（初始化默认值）
         _ <- PlanSteps.read(PlayerPreparationTable.ensureBirdDefaults(connection, userId, Vector(entry.birdType)))
         // 步骤 4：获取或创建玩家钱包
@@ -34,18 +43,61 @@ final case class AscendPreparationBirdAPIMessage(userId: String, birdType: Strin
         // 步骤 5：读取当前鸟种阶位
         currentTier <- PlanSteps.read(PlayerPreparationTable.listBirdTiers(connection, userId).getOrElse(birdType, 1))
         // 步骤 6：确认未达最高阶位
-        _ <- PlayerPreparationAccess.requireBirdBelowMaxTier(currentTier)
+        _ <- requireBirdBelowMaxTier(currentTier)
         cost = PlayerPreparationTable.ascendCost(currentTier)
         // 步骤 7：确认钱包碎片足够支付升阶费用
-        _ <- PlayerPreparationAccess.requireFragments(wallet, cost)
+        _ <- requireFragments(wallet, cost)
         // 步骤 8：执行鸟种阶位 +1
-        _ <- PlayerPreparationAccess.requireAscendBird(connection, userId, birdType)
+        _ <- requireAscendBird(connection)
         updatedWallet = wallet.copy(fragments = wallet.fragments - cost)
         // 步骤 9：扣减碎片并持久化钱包
         _ <- PlanSteps.read(PlayerWalletTable.save(connection, userId, updatedWallet))
-        catalog <- PlayerPreparationAccess.requireCatalog(connection)
-        skillConfigs <- PlayerPreparationAccess.requireSkillConfigMap(connection)
+        catalog <- requireCatalog(connection)
+        skillConfigs <- requireSkillConfigMap(connection)
         response <- PlanSteps.read(PlayerPreparationSupport.buildResponse(connection, userId, updatedWallet, catalog, skillConfigs))
       } yield PlayerPreparationJson.toJson(response)
+    }
+
+  private def requireCatalog(connection: Connection): PlanStep.Step[Vector[BirdCatalogEntry]] =
+    for {
+      system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
+      published <- PlanSteps.runApi(ListPublishedBirdCatalogEntriesInternalAPIMessage(), connection)
+    } yield PlayerPreparationCatalog.merge(
+      system.map(PreparationCatalogMapping.toSystemSnapshot),
+      published.map(PreparationCatalogMapping.toPublishedSnapshot)
+    )
+
+  private def requireCatalogEntry(connection: Connection): PlanStep.Step[BirdCatalogEntry] =
+    for {
+      catalog <- requireCatalog(connection)
+      entry <- PlayerPreparationCatalog.find(catalog, birdType) match {
+        case None    => PlanStep.fail(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
+        case Some(e) => PlanStep.succeed(e)
+      }
+    } yield entry
+
+  private def requireSkillConfigMap(connection: Connection): PlanStep.Step[Map[String, BirdSkillConfigView]] =
+    PlanSteps
+      .runApi(GetBirdSkillConfigMapInternalAPIMessage(), connection)
+      .map(_.view.mapValues(PreparationCatalogMapping.toSkillConfigView).toMap)
+
+  private def requireBirdBelowMaxTier(currentTier: Int): PlanStep.Step[Unit] =
+    if (currentTier >= PlayerPreparationTable.maxTier) {
+      PlanStep.fail(HttpError.conflict("MAX_TIER", "Bird is already at max tier"))
+    } else {
+      PlanStep.succeed(())
+    }
+
+  private def requireFragments(wallet: PlayerWallet, cost: Int): PlanStep.Step[Unit] =
+    if (wallet.fragments < cost) {
+      PlanStep.fail(HttpError.conflict("INSUFFICIENT_FRAGMENTS", s"Need $cost fragments to upgrade"))
+    } else {
+      PlanStep.succeed(())
+    }
+
+  private def requireAscendBird(connection: Connection): PlanStep.Step[Unit] =
+    EitherT.liftF(IO(PlayerPreparationTable.ascendBird(connection, userId, birdType))).flatMap {
+      case Left(message) => EitherT.leftT[IO, Unit](HttpError.badRequest("INVALID_BIRD", message))
+      case Right(_)      => EitherT.rightT[IO, HttpError](())
     }
 }

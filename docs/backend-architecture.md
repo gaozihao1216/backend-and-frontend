@@ -61,7 +61,7 @@ routes  ──解析 JSON──►  objects/
    └──► api/*Api.plan ──► AccessControl → validation → private helpers/support → tables → objects（返回）
 ```
 
-示例路径：`CreateLevelRequest` → `level/objects/design/request/`；`CreateLevelValidation` → `level/validation/design/`；单 API 专用查表/状态判断放在对应 `*Api.scala` 私有方法中；多 API 复用逻辑可保留在 `UiPageAccess`、`PlayerPreparationAccess` 等 support 文件。
+示例路径：`CreateLevelRequest` → `level/objects/design/request/`；`CreateLevelValidation` → `level/validation/design/`；单 API 专用查表/状态判断放在对应 `*Api.scala` 私有方法中；多 API 复用逻辑可保留在 `UiPageAccess`、`PlayerPreparationSupport` 等 support 文件。
 
 ## APIMessage 模式
 
@@ -91,7 +91,7 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
 | `AccessControl.requireRole` / `requireAdminLevel` / `requireBoundIdentity` / `requireKnownUser` | `PlanStep.Step[A]` | 鉴权与用户存在校验 |
 | `*Validation.validate*` / `ensureKind` | `PlanStep.Step[A]` | 请求体/领域字段校验 |
 | API 文件内私有 `require*` / `build*` | `PlanStep.Step[A]` 或纯值 | 单 API 专用查表、状态机、写结果校验 |
-| `*Support.require*` / `*Access.require*` | `PlanStep.Step[A]` | 多 API 复用步骤（如 `UiPageAccess`、`PlayerPreparationAccess`） |
+| `*Support.require*` / `*Access.require*` | `PlanStep.Step[A]` | 多 API 复用步骤（如 `UiPageAccess`、`PlayerPreparationSupport`） |
 | `PlanSteps.read` / `blocking` | `PlanStep.Step[A]` | APIMessage 内仅剩的 IO 副作用（表读写、阻塞 JDBC） |
 | `PlanSteps.finish` | `IO[Either[HttpError, A]]` | plan 出口 |
 

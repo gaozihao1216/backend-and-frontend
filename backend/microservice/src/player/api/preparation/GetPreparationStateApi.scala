@@ -3,10 +3,16 @@ package microservice.player.api.preparation
 import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
+import microservice.bird.api.internal.player.{
+  GetBirdSkillConfigMapInternalAPIMessage,
+  ListPublishedBirdCatalogEntriesInternalAPIMessage,
+  ListSystemBirdCatalogEntriesInternalAPIMessage
+}
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.objects.preparation.PlayerPreparationJson
-import microservice.player.support.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
+import microservice.player.objects.preparation.{BirdSkillConfigView, PlayerPreparationJson}
+import microservice.player.support.catalog.PreparationCatalogMapping
+import microservice.player.support.preparation.{BirdCatalogEntry, PlayerPreparationCatalog, PlayerPreparationSupport}
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.enums.UserRole
 import microservice.user.support.AccessControl
@@ -32,9 +38,25 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
         _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
         // 步骤 2：获取或创建玩家钱包记录
         wallet <- PlanSteps.read(PlayerWalletTable.getOrCreate(connection, userId))
-        catalog <- PlayerPreparationAccess.requireCatalog(connection)
-        skillConfigs <- PlayerPreparationAccess.requireSkillConfigMap(connection)
+        catalog <- requireCatalog(connection)
+        skillConfigs <- requireSkillConfigMap(connection)
         response <- PlanSteps.read(PlayerPreparationSupport.buildResponse(connection, userId, wallet, catalog, skillConfigs))
       } yield PlayerPreparationJson.toJson(response)
     }
+
+  private def requireCatalog(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Vector[BirdCatalogEntry]] =
+    for {
+      system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
+      published <- PlanSteps.runApi(ListPublishedBirdCatalogEntriesInternalAPIMessage(), connection)
+    } yield PlayerPreparationCatalog.merge(
+      system.map(PreparationCatalogMapping.toSystemSnapshot),
+      published.map(PreparationCatalogMapping.toPublishedSnapshot)
+    )
+
+  private def requireSkillConfigMap(
+    connection: Connection
+  ): microservice.infrastructure.api.PlanStep.Step[Map[String, BirdSkillConfigView]] =
+    PlanSteps
+      .runApi(GetBirdSkillConfigMapInternalAPIMessage(), connection)
+      .map(_.view.mapValues(PreparationCatalogMapping.toSkillConfigView).toMap)
 }

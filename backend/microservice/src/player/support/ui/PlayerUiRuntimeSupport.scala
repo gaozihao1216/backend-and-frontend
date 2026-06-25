@@ -4,14 +4,18 @@ import cats.effect.IO
 import io.circe.Json
 import io.circe.syntax._
 import java.sql.Connection
+import java.time.{DayOfWeek, LocalDate, ZoneOffset}
 import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.PlanStep.Step
 import microservice.infrastructure.http.HttpError
+import microservice.player.objects.checkin.{CheckInSlotReward, WeeklyCheckInProgress}
+import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
 import microservice.player.tables.progress.legacy_check_in.PlayerLegacyCheckInTable
 import microservice.player.tables.progress.level_progress.PlayerLevelProgressTable
 import microservice.player.tables.shop.ShopTable
 import microservice.player.tables.wallet.PlayerWalletTable
-import microservice.player.support.checkin.PlayerWeeklyCheckInService
+import microservice.player.tables.weekly_check_in.PlayerWeeklyCheckInTable
+import microservice.player.support.checkin.PlayerCheckInDefaults
 
 /** 动态 UI data/action 分派与 legacy 签到辅助。
   *
@@ -24,6 +28,8 @@ private[player] object PlayerUiRuntimeSupport {
   private val WalletDataKey = "player.wallet"
   private val ShopDataKey = "player.shop"
   private val ShopPurchaseActionKey = "player.shop.purchase"
+  private val WeeklyCheckInDataKey = "player.weeklyCheckIn"
+  private val WeeklyCheckInClaimActionKey = "player.weeklyCheckIn.claim"
 
   private val LevelSuffixes = Vector(
     "level01", "level02", "level03", "level04", "level05",
@@ -33,8 +39,8 @@ private[player] object PlayerUiRuntimeSupport {
   /** 分派 UI data 请求并返回 JSON 载荷。 */
   def requireData(connection: Connection, userId: String, apiKey: String, params: Map[String, String]): Step[Json] =
     apiKey match {
-      case PlayerWeeklyCheckInService.dataApiKey =>
-        PlayerWeeklyCheckInService.requireData(connection, userId)
+      case WeeklyCheckInDataKey =>
+        PlanStep.succeed(buildWeeklyCheckInPayload(connection, userId, panelId = None))
       case LevelProgressDataKey =>
         requireLevelProgressData(connection, userId)
       case WalletDataKey =>
@@ -50,8 +56,8 @@ private[player] object PlayerUiRuntimeSupport {
   /** 分派 UI action 请求并返回 JSON 结果。 */
   def requireAction(connection: Connection, userId: String, apiKey: String, params: Map[String, String]): Step[Json] =
     apiKey match {
-      case PlayerWeeklyCheckInService.claimActionKey =>
-        PlayerWeeklyCheckInService.requireExecuteClaim(connection, userId, params)
+      case WeeklyCheckInClaimActionKey =>
+        requireWeeklyCheckInClaim(connection, userId, params)
       case ShopPurchaseActionKey =>
         requireShopPurchase(connection, userId, params)
       case LegacyCheckInClaimActionKey =>
@@ -160,6 +166,96 @@ private[player] object PlayerUiRuntimeSupport {
       "items" -> Json.arr(items: _*),
       "purchases" -> Json.arr(purchases.map(Json.fromString): _*)
     )
+  }
+
+  private def requireWeeklyCheckInClaim(
+    connection: Connection,
+    userId: String,
+    params: Map[String, String]
+  ): Step[Json] = {
+    val panelId = params.getOrElse("panelId", PlayerCheckInDefaults.roleHomeCheckInPanelId)
+    val slot = params.get("slot").flatMap(value => scala.util.Try(value.toInt).toOption).getOrElse(0)
+
+    if (panelId.isEmpty || slot < 1 || slot > 7) {
+      PlanStep.fail(HttpError.badRequest("INVALID_CHECK_IN_PARAMS", "panelId and slot (1-7) are required"))
+    } else {
+      val weekKey = currentWeekKey()
+      val progress = currentProgress(connection, userId, weekKey)
+      val signedCount = progress.signedSlots.size
+      val activeSlot =
+        if (!progress.signedToday && signedCount < 7) signedCount + 1
+        else -1
+
+      if (slot != activeSlot) {
+        PlanStep.fail(HttpError.conflict("CHECK_IN_SLOT_NOT_READY", s"Slot $slot is not claimable right now"))
+      } else {
+        val rewards = CheckInPanelRewardTable
+          .listByPanelId(connection, panelId)
+          .lift(slot - 1)
+          .getOrElse(CheckInSlotReward())
+
+        val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+        PlayerWalletTable.save(
+          connection,
+          userId,
+          wallet.copy(
+            coins = wallet.coins + rewards.coins,
+            gems = wallet.gems + rewards.gems,
+            fragments = wallet.fragments + rewards.fragments
+          )
+        )
+
+        PlayerWeeklyCheckInTable.save(
+          connection,
+          userId,
+          progress.copy(
+            signedSlots = progress.signedSlots + slot,
+            signedToday = true
+          )
+        )
+
+        PlanStep.succeed(buildWeeklyCheckInPayload(connection, userId, Some(panelId)))
+      }
+    }
+  }
+
+  private def buildWeeklyCheckInPayload(connection: Connection, userId: String, panelId: Option[String]): Json = {
+    val weekKey = currentWeekKey()
+    val progress = currentProgress(connection, userId, weekKey)
+    val signedCount = progress.signedSlots.size
+    val activeSlot =
+      if (!progress.signedToday && signedCount < 7) signedCount + 1
+      else -1
+    val wallet = PlayerWalletTable.getOrCreate(connection, userId)
+    val slotStatuses = (1 to 7).map { slot =>
+      val status =
+        if (progress.signedSlots.contains(slot)) "claimed"
+        else if (slot == activeSlot) "ready"
+        else "locked"
+      slot.toString -> Json.fromString(status)
+    }.toMap
+
+    Json.obj(
+      "signedCount" -> Json.fromInt(signedCount),
+      "activeSlot" -> Json.fromInt(activeSlot),
+      "signedToday" -> Json.fromBoolean(progress.signedToday),
+      "wallet" -> Json.obj(
+        "coins" -> Json.fromInt(wallet.coins),
+        "gems" -> Json.fromInt(wallet.gems),
+        "fragments" -> Json.fromInt(wallet.fragments)
+      ),
+      "slots" -> Json.obj(slotStatuses.toSeq: _*),
+      "panelId" -> panelId.fold(Json.Null)(Json.fromString)
+    )
+  }
+
+  private def currentProgress(connection: Connection, userId: String, weekKey: String): WeeklyCheckInProgress =
+    PlayerWeeklyCheckInTable.getOrCreate(connection, userId, weekKey)
+
+  private def currentWeekKey(): String = {
+    val today = LocalDate.now(ZoneOffset.UTC)
+    val weekStart = today.`with`(DayOfWeek.MONDAY)
+    weekStart.toString
   }
 
   private def resolveLevelStatus(clearedLevels: Set[String], suffix: String): String =

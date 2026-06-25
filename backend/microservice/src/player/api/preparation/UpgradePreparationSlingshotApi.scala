@@ -1,12 +1,21 @@
 package microservice.player.api.preparation
 
+import cats.data.EitherT
 import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
+import microservice.bird.api.internal.player.{
+  GetBirdSkillConfigMapInternalAPIMessage,
+  ListPublishedBirdCatalogEntriesInternalAPIMessage,
+  ListSystemBirdCatalogEntriesInternalAPIMessage
+}
+import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
-import microservice.player.support.preparation.{PlayerPreparationAccess, PlayerPreparationSupport}
-import microservice.player.objects.preparation.PlayerPreparationJson
+import microservice.player.objects.preparation.{BirdSkillConfigView, PlayerPreparationJson}
+import microservice.player.objects.wallet.PlayerWallet
+import microservice.player.support.catalog.PreparationCatalogMapping
+import microservice.player.support.preparation.{BirdCatalogEntry, PlayerPreparationCatalog, PlayerPreparationSupport}
 import microservice.player.tables.preparation.PlayerPreparationTable
 import microservice.player.tables.wallet.PlayerWalletTable
 import microservice.system.objects.enums.UserRole
@@ -30,18 +39,52 @@ final case class UpgradePreparationSlingshotAPIMessage(userId: String) extends A
         // 步骤 3：读取当前弹弓等级
         currentLevel <- PlanSteps.read(PlayerPreparationTable.getSlingshotLevel(connection, userId))
         // 步骤 4：确认未达最高等级
-        _ <- PlayerPreparationAccess.requireSlingshotBelowMaxLevel(currentLevel)
+        _ <- requireSlingshotBelowMaxLevel(currentLevel)
         cost = PlayerPreparationTable.upgradeCost(currentLevel)
         // 步骤 5：确认钱包金币足够支付升级费用
-        _ <- PlayerPreparationAccess.requireCoins(wallet, cost)
+        _ <- requireCoins(wallet, cost)
         // 步骤 6：执行弹弓等级 +1
-        _ <- PlayerPreparationAccess.requireUpgradeSlingshot(connection, userId)
+        _ <- requireUpgradeSlingshot(connection)
         updatedWallet = wallet.copy(coins = wallet.coins - cost)
         // 步骤 7：扣减金币并持久化钱包
         _ <- PlanSteps.read(PlayerWalletTable.save(connection, userId, updatedWallet))
-        catalog <- PlayerPreparationAccess.requireCatalog(connection)
-        skillConfigs <- PlayerPreparationAccess.requireSkillConfigMap(connection)
+        catalog <- requireCatalog(connection)
+        skillConfigs <- requireSkillConfigMap(connection)
         response <- PlanSteps.read(PlayerPreparationSupport.buildResponse(connection, userId, updatedWallet, catalog, skillConfigs))
       } yield PlayerPreparationJson.toJson(response)
     }
+
+  private def requireSlingshotBelowMaxLevel(currentLevel: Int): PlanStep.Step[Unit] =
+    if (currentLevel >= PlayerPreparationTable.maxLevel) {
+      PlanStep.fail(HttpError.conflict("MAX_LEVEL", "Slingshot is already at max level"))
+    } else {
+      PlanStep.succeed(())
+    }
+
+  private def requireCoins(wallet: PlayerWallet, cost: Int): PlanStep.Step[Unit] =
+    if (wallet.coins < cost) {
+      PlanStep.fail(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
+    } else {
+      PlanStep.succeed(())
+    }
+
+  private def requireUpgradeSlingshot(connection: Connection): PlanStep.Step[Unit] =
+    EitherT.liftF(IO(PlayerPreparationTable.upgradeSlingshot(connection, userId))).flatMap {
+      case Left(message) => EitherT.leftT[IO, Unit](HttpError.badRequest("INVALID_SLINGSHOT", message))
+      case Right(_)      => EitherT.rightT[IO, HttpError](())
+    }
+
+  private def requireCatalog(connection: Connection): PlanStep.Step[Vector[BirdCatalogEntry]] =
+    for {
+      system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
+      published <- PlanSteps.runApi(ListPublishedBirdCatalogEntriesInternalAPIMessage(), connection)
+    } yield PlayerPreparationCatalog.merge(
+      system.map(PreparationCatalogMapping.toSystemSnapshot),
+      published.map(PreparationCatalogMapping.toPublishedSnapshot)
+    )
+
+  private def requireSkillConfigMap(connection: Connection): PlanStep.Step[Map[String, BirdSkillConfigView]] =
+    PlanSteps
+      .runApi(GetBirdSkillConfigMapInternalAPIMessage(), connection)
+      .map(_.view.mapValues(PreparationCatalogMapping.toSkillConfigView).toMap)
 }
