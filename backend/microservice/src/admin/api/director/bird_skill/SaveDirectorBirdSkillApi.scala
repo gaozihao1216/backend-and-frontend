@@ -22,7 +22,7 @@ final case class SaveDirectorBirdSkillAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, AdminBirdSkillConfig]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         config <- PlanSteps.runApi(
           SaveDirectorBirdSkillInternalAPIMessage(
             userId = userId,

@@ -29,7 +29,7 @@ final case class GetLevelCommentsAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验用户角色/管理员级别权限
-        _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, playerId, UserRole.Player))
         // 步骤 2：执行业务步骤
         _ <- requirePublishedLevel(connection).map(_ => ())
         // 步骤 3：读取并组装数据
@@ -37,7 +37,7 @@ final case class GetLevelCommentsAPIMessage(
       } yield comments
     }
 
-  private def requirePublishedLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[LevelRow] =
+  private def requirePublishedLevel(connection: Connection): cats.data.EitherT[IO, HttpError, LevelRow] =
     EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
       case Some(level) if level.status == LevelStatus.Published =>
         EitherT.rightT[IO, HttpError](level)

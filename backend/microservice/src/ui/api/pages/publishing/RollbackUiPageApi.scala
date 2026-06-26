@@ -30,7 +30,7 @@ final case class RollbackUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 委托 UiPagePublishSupport 完成回滚
         page <- PlanSteps.fromEither(UiPagePublishSupport.requireRollback(connection, pageId))
       } yield page

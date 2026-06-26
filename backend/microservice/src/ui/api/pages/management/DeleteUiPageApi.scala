@@ -30,7 +30,7 @@ final case class DeleteUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 步骤 2：删除页面及其全部组件，返回被删 PageConfig
         page <- PlanSteps.fromEither(UiPageAccess.requireDeletePage(connection, pageId))
       } yield page

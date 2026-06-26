@@ -33,7 +33,7 @@ final case class CreateUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 步骤 2：校验 page id 唯一及 id/name/path 必填字段
         _ <- PlanSteps.fromEither(UiPageAccess.requireCreatePage(connection, body.page))
         // 步骤 3：trim 字段后插入 UiPageRow 并映射为 PageConfig

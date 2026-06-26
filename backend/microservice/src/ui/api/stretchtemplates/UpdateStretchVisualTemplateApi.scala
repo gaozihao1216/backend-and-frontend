@@ -38,7 +38,7 @@ final case class UpdateStretchVisualTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 查找现有行并校验 kind
         existing <- PlanSteps.fromEither(
           StretchVisualTemplateAccess.requireExistingForKind(connection, templateId, expectedKind)

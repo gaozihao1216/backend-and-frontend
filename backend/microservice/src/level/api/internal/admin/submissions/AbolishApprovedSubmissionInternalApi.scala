@@ -28,7 +28,7 @@ final case class AbolishApprovedSubmissionInternalAPIMessage(
       } yield result
     }
 
-  private def requireAbolishableSubmission(connection: Connection): microservice.infrastructure.api.PlanStep.Step[SubmissionRow] =
+  private def requireAbolishableSubmission(connection: Connection): cats.data.EitherT[IO, HttpError, SubmissionRow] =
     EitherT.liftF(IO(SubmissionTable.findById(connection, submissionId))).flatMap {
       case None =>
         EitherT.leftT[IO, SubmissionRow](HttpError.notFound("SUBMISSION_NOT_FOUND", s"Submission not found: $submissionId"))
@@ -40,7 +40,7 @@ final case class AbolishApprovedSubmissionInternalAPIMessage(
         EitherT.rightT[IO, HttpError](submission)
     }
 
-  private def abolishSubmission(connection: Connection, submission: SubmissionRow): microservice.infrastructure.api.PlanStep.Step[Unit] =
+  private def abolishSubmission(connection: Connection, submission: SubmissionRow): cats.data.EitherT[IO, HttpError, Unit] =
     PlanSteps.read {
       val timestamp = Instant.now().toString
       val abolishNote = note.filter(_.trim.nonEmpty).map(_.trim)
@@ -64,7 +64,7 @@ final case class AbolishApprovedSubmissionInternalAPIMessage(
       ()
     }
 
-  private def requireSubmissionWithLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[SubmissionWithLevel] =
+  private def requireSubmissionWithLevel(connection: Connection): cats.data.EitherT[IO, HttpError, SubmissionWithLevel] =
     EitherT.liftF(IO(SubmissionTable.findById(connection, submissionId))).flatMap {
       case None =>
         EitherT.leftT[IO, SubmissionWithLevel](

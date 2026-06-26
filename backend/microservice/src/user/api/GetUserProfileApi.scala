@@ -2,7 +2,7 @@ package microservice.user.api
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.{HttpError}
 import microservice.level.api.internal.user.GetUserLevelProfileDataInternalAPIMessage
 import microservice.user.objects.profile.{GetUserProfileErrors, UserProfile, UserProfileStats}
@@ -25,11 +25,11 @@ final case class GetUserProfileAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：确认 viewer 为已知用户
-        _ <- AccessControl.requireKnownUser(connection, viewerUserId).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireKnownUser(connection, viewerUserId))
         // 步骤 2：校验目标用户存在
         user <- UserTable.findById(connection, profileUserId) match {
-          case None      => PlanStep.fail(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
-          case Some(row) => PlanStep.succeed(row)
+          case None      => PlanSteps.reject(GetUserProfileErrors.UserMissing(profileUserId).toHttpError)
+          case Some(row) => PlanSteps.accept(row)
         }
         // 步骤 3：聚合查询目标用户的关卡与互动数据
         levelData <- PlanSteps.runApi(GetUserLevelProfileDataInternalAPIMessage(profileUserId), connection)

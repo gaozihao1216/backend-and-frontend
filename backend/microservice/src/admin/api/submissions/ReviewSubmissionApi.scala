@@ -24,7 +24,7 @@ final case class ReviewSubmissionAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, ReviewedSubmission]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         timestamp = Instant.now().toString
         reviewed <- PlanSteps.runApi(
           ReviewLevelSubmissionInternalAPIMessage(

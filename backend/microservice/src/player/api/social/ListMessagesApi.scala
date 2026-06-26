@@ -4,7 +4,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.social.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
 import microservice.player.tables.social.PlayerFriendTable
@@ -30,7 +30,7 @@ final case class ListMessagesAPIMessage(userId: String, withUserId: String) exte
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         // 步骤 2：校验 withUserId 非空且非自己
         _ <- requireValidChatTarget
         // 步骤 3：确认双方为好友关系
@@ -54,14 +54,14 @@ final case class ListMessagesAPIMessage(userId: String, withUserId: String) exte
       } yield PlayerSocialJson.toJsonMessages(PlayerMessageListResponse(messages))
     }
 
-  private def requireValidChatTarget: PlanStep.Step[Unit] =
+  private def requireValidChatTarget: cats.data.EitherT[IO, HttpError, Unit] =
     if (withUserId.trim.isEmpty) {
-      PlanStep.fail(HttpError.badRequest("INVALID_CHAT_TARGET", "withUserId is required"))
+      PlanSteps.reject(HttpError.badRequest("INVALID_CHAT_TARGET", "withUserId is required"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def requireFriendship(connection: Connection): PlanStep.Step[Unit] =
+  private def requireFriendship(connection: Connection): cats.data.EitherT[IO, HttpError, Unit] =
     EitherT.liftF(IO(PlayerFriendTable.exists(connection, userId, withUserId))).flatMap {
       case false => EitherT.leftT[IO, Unit](HttpError.forbidden("You can only chat with friends"))
       case true  => EitherT.rightT[IO, HttpError](())

@@ -23,7 +23,7 @@ final case class RegisterCheckInPanelRewardsAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         _ <- PlanSteps.runApi(
           RegisterCheckInPanelRewardsInternalAPIMessage(
             panelId,

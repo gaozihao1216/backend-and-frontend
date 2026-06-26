@@ -29,7 +29,7 @@ final case class ListButtonTemplatesAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 列出全部按钮模板
         templates <- PlanSteps.read(
           ButtonTemplateTable.listAll(connection).map(ButtonTemplateRowMapper.toButtonTemplate).toList

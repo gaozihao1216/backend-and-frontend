@@ -9,7 +9,7 @@ import microservice.bird.objects.design.{BirdDesign, BirdDesignInput}
 import microservice.bird.tables.design.{BirdDesignRow, BirdDesignTable}
 import microservice.bird.tables.submission.BirdSubmissionTable
 import microservice.bird.validation.design.BirdDesignValidation
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.enums.{LevelStatus, UserRole}
 import microservice.bird.objects.design.request.UpdateBirdDesignRequest
@@ -33,7 +33,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
     PlanSteps.finish {
       for {
         // 步骤 1：校验用户角色/管理员级别权限
-        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, designerId, UserRole.Designer))
         // 步骤 2：执行业务步骤
         existing <- requireEditable(connection)
         // 步骤 3：执行业务步骤
@@ -55,7 +55,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
       } yield design
     }
 
-  private def requireEditable(connection: Connection): PlanStep.Step[BirdDesignRow] =
+  private def requireEditable(connection: Connection): cats.data.EitherT[IO, HttpError, BirdDesignRow] =
     EitherT.liftF(IO(BirdDesignTable.findById(connection, designId))).flatMap {
       case None =>
         EitherT.leftT[IO, BirdDesignRow](HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
@@ -87,7 +87,7 @@ final case class UpdateBirdDesignAPIMessage(designerId: String, designId: String
     )
   }
 
-  private def requireUpdateResult(connection: Connection, updatedRow: BirdDesignRow): PlanStep.Step[BirdDesign] =
+  private def requireUpdateResult(connection: Connection, updatedRow: BirdDesignRow): cats.data.EitherT[IO, HttpError, BirdDesign] =
     EitherT.liftF(IO(BirdDesignTable.updateEditable(connection, updatedRow))).flatMap {
       case None =>
         EitherT.leftT[IO, BirdDesign](HttpError.conflict("INVALID_BIRD_STATUS", "Bird design could not be updated"))

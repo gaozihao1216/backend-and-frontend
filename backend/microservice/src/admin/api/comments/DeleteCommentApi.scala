@@ -20,7 +20,7 @@ final case class DeleteCommentAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, AdminLevelComment]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         comment <- PlanSteps.runApi(DeleteCommentInternalAPIMessage(commentId), connection)
       } yield LevelHandoffMapping.toLevelComment(comment)
     }

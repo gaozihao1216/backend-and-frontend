@@ -22,7 +22,7 @@ final case class UnassignLevelSlotAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, LevelSlotAssignment]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         _ <- EitherT(DirectorLevelAssignmentSupport.requireSupportedSuffix(levelSuffix))
         slot <- PlanSteps.runApi(UnassignSlotInternalAPIMessage(levelSuffix), connection)
       } yield LevelHandoffMapping.toSlotAssignment(slot)

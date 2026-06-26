@@ -28,7 +28,7 @@ final case class ListAdminAuditLogsAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Standard 及以上管理员
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         // 步骤 2：按 submissionId > reviewerId > 全量 读取审计 Row
         baseRows <- PlanSteps.read(
           submissionId.filter(_.trim.nonEmpty) match {

@@ -32,7 +32,7 @@ final case class PublishUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 委托 UiPagePublishSupport 完成发布与快照写入
         page <- PlanSteps.fromEither(UiPagePublishSupport.requirePublish(connection, pageId, body.page))
       } yield page

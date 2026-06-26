@@ -36,14 +36,14 @@ backend/microservice/src/
 | 目录 | 职责 |
 | --- | --- |
 | `api/` | **仅** `*Api.scala`：`XxxAPIMessage` + `plan` 编排（鉴权 → 校验 → 私有步骤 → 表读写） |
-| `validation/` | 字段/结构校验：`validate*` → `PlanStep.Step`，`check*` 供单元测试 |
-| `objects/` | 领域对象（case class + Circe codec）；JSON 辅助如 `PlayerSocialJson` |
+| `validation/` | 字段/结构校验：`validate*` 返回 `IO[Either[HttpError, A]]` |
+| `objects/` | 领域对象、请求对象、响应对象、错误对象、Circe codec |
 | `support/` | 多 API 复用辅助：mapping、seed、bootstrap、catalog、defaults、动态分派等 |
 | `routes/` | 模块 APIMessage 注册表；业务 HTTP 入口统一走 `POST /api/{apiName}` |
 | `tables/` | 数据访问；`*Row` + `*Table.scala` 读写入口 + `*TableInitializer.scala` DDL/seed |
 | `support/*` / `preparation/` | player 模块内多 API 复用的商店、签到、进度、钱包、备战辅助能力 |
 
-**类型分层（目录规范）** — 完整说明、依赖图与新增 API 清单见 [`backend/microservice/MODULE-LAYOUT.md`](../backend/microservice/MODULE-LAYOUT.md)；领域对象子包见 [`OBJECTS.md`](../backend/microservice/OBJECTS.md)。
+**类型分层（目录规范）** — 完整规范见 [`backend-structure-standard.md`](./backend-structure-standard.md)；后端目录入口见 [`backend/microservice/MODULE-LAYOUT.md`](../backend/microservice/MODULE-LAYOUT.md)；领域对象子包见 [`OBJECTS.md`](../backend/microservice/OBJECTS.md)。
 
 | 层 | 路径 | 做什么 | 不做什么 |
 | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         _ <- requireValidFriendRequest
         _ <- PlanSteps.runApi(UserExistsInternalAPIMessage(friendUserId), connection).map(_ => ())
         _ <- PlanSteps.read(PlayerFriendTable.insertPair(connection, userId, friendUserId))
@@ -84,23 +84,23 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
 }
 ```
 
-`PlanStep` / `PlanSteps`（`EitherT[IO, HttpError, A]`）把 plan 写成可读的步骤剧本：
+`PlanSteps` 在 API 内部把 `IO[Either[HttpError, A]]` 串成可读流程；普通业务文件不再暴露额外流程类型。
 
-| 步骤来源 | 返回类型 | 用途 |
+| 来源 | 返回类型 | 用途 |
 | --- | --- | --- |
-| `AccessControl.requireRole` / `requireAdminLevel` / `requireBoundIdentity` / `requireKnownUser` | `PlanStep.Step[A]` | 鉴权与用户存在校验 |
-| `*Validation.validate*` / `ensureKind` | `PlanStep.Step[A]` | 请求体/领域字段校验 |
-| API 文件内私有 `require*` / `build*` | `PlanStep.Step[A]` 或纯值 | 单 API 专用查表、状态机、写结果校验 |
-| `*Support.require*` / `*Access.require*` | `PlanStep.Step[A]` | 多 API 复用步骤（如 `UiPageAccess`、`PlayerPreparationSupport`） |
-| `PlanSteps.read` / `blocking` | `PlanStep.Step[A]` | APIMessage 内仅剩的 IO 副作用（表读写、阻塞 JDBC） |
+| `AccessControl.requireRole` / `requireAdminLevel` / `requireBoundIdentity` / `requireKnownUser` | `IO[Either[HttpError, A]]` | 鉴权与用户存在校验 |
+| `*Validation.validate*` / `ensureKind` | `IO[Either[HttpError, A]]` | 请求体/领域字段校验 |
+| `*Support.require*` / `*Access.require*` | `IO[Either[HttpError, A]]` | 多 API 复用能力 |
+| API 文件内私有 `require*` / `build*` | `EitherT[IO, HttpError, A]` 或纯值 | 单 API 专用查表、状态机、写结果校验 |
+| `PlanSteps.read` / `blocking` | `EitherT[IO, HttpError, A]` | APIMessage 内表读写和阻塞 JDBC |
 | `PlanSteps.finish` | `IO[Either[HttpError, A]]` | plan 出口 |
 
-`PlanSteps.require` / `attempt` 仍作为 `PlanStep.fromEither` 的基础设施封装保留（测试与内部实现可用），**APIMessage 禁止直接调用**；同步 `Either` 逻辑应落在各模块的 `check*` 方法中，经 `require*` 注入步骤链。
+APIMessage 中不再引入旧的流程包装类型。support、validation、AccessControl 的边界统一为 `IO[Either]`，API 内通过 `PlanSteps.fromEither(...)` 接入。
 
 原则：
 
 - 健康检查保留 `GET /health`；业务入口统一由 `APIMessageRouter` 分发 `POST /api/{apiName}`
-- `plan(connection)` 内完成权限、校验、table 调用；单 API 专用的查表/状态判断优先写成当前 API 文件的私有 `require*` 方法
+- `plan(connection)` 内完成权限、校验、table 调用；单 API 专用的查表/状态判断优先写成当前 API 文件的私有方法
 - `APIMessage.run` 调用 `DatabaseSession.withTransactionEither`：`Right` 提交，`Left` 回滚（无异常驱动控制流）
 - 返回 `IO[Either[HttpError, A]]`，由 `HttpError.fromEither` 转为 HTTP 响应
 - 成功体包装为 `ApiSuccess(data)`，失败为 `ApiFailure(error)`
@@ -126,10 +126,10 @@ final case class AddFriendAPIMessage(userId: String, friendUserId: String) exten
 
 ## 权限模型
 
-- `AccessControl.requireRole(connection, userId, role)`：校验 player / designer / admin（返回 `PlanStep.Step[UserRow]`）
-- `AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard | Director)`：管理员分级（返回 `PlanStep.Step[UserRow]`）
+- `AccessControl.requireRole(connection, userId, role)`：校验 player / designer / admin，返回 `IO[Either[HttpError, UserRow]]`
+- `AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard | Director)`：管理员分级，返回 `IO[Either[HttpError, UserRow]]`
 - `AccessControl.requireKnownUser(connection, userId)`：仅校验用户存在（不限 role，用于玩家读 UI 页、资料查询等）
-- `AccessControl.checkRole` / `checkAdminLevel` / `checkBoundIdentity` / `checkKnownUser`：同步 `Either` 实现，供单元测试与 IO 步骤复用
+- `AccessControl.checkRole` / `checkAdminLevel` / `checkBoundIdentity` / `checkKnownUser`：同步 `Either` 实现，供单元测试和 `require*` 方法复用
   - **Standard**：关卡/鸟类投稿审核、评论管理
   - **Director**：UI 定制、关卡槽位分配、鸟类技能配置等
 
@@ -179,7 +179,7 @@ sbt run
 **共享能力**：
 
 - `tables/user/`：`UserTable` 持久化；用户资料聚合由 `GetUserProfileApi.plan` 经 `level/api/internal/user/` 拉取 level 侧数据
-- `support/AccessControl.scala`：全项目共用的 `requireRole` / `requireAdminLevel` / `requireKnownUser`（IO 步骤）与 `check*`（同步校验）
+- `support/AccessControl.scala`：全项目共用的 `requireRole` / `requireAdminLevel` / `requireKnownUser`（`IO[Either]`）与 `check*`（同步校验）
 - `support/UserProfileMapping.scala`、`validation/BindBackendUserValidation.scala`
 
 ### level
@@ -193,7 +193,7 @@ sbt run
 
 - 已发布关卡列表/详情、评分、收藏、评论
 
-目录按角色与数据域分子包（`body`/`validation` 与 `api` 同级，不在 `api/` 下）：
+目录按角色与数据域分子包；请求对象归入 `objects/.../request/`：
 
 ```text
 level/
@@ -202,18 +202,17 @@ level/
 │   └── player/
 │       ├── read/              # 已发布关卡、评论、收藏列表
 │       └── action/            # 评分、收藏、评论写入
-├── body/
-│   ├── design/                # CreateLevelRequest、SubmitLevelRequest
-│   └── player/                # RateLevelRequest、CreateLevelCommentRequest
-├── validation/
-│   └── design/                # CreateLevelValidation
 ├── objects/
+│   ├── design/request/        # CreateLevelRequest、SubmitLevelRequest
+│   ├── player/request/        # RateLevelRequest、CreateLevelCommentRequest
 │   ├── level/                 # Level、LevelData、GameWorld
 │   ├── terrain/               # 地形、障碍物、敌人
 │   ├── submission/            # Submission、SubmissionWithLevel
 │   ├── social/                # Rating、LevelComment、Favorite
 │   ├── inventory/             # BirdInventory、BirdPool
 │   └── errors/                # CreateLevelErrors
+├── validation/
+│   └── design/                # CreateLevelValidation
 ├── support/
 │   └── seed/
 ├── routes/
@@ -245,16 +244,13 @@ admin/
 │       ├── permissions/
 │       ├── level_assignment/
 │       └── bird_skill/
-├── body/
-│   ├── shop/                  # CreateShopItemRequest、UpdateShopItemRequest
-│   ├── submissions/           # ReviewSubmissionRequest
-│   └── director/
-│       ├── permissions/
-│       ├── level_assignment/
-│       └── bird_skill/
+├── objects/
+│   ├── shop/                  # 商品对象与 Create/Update 请求对象
+│   ├── submission/            # 审核对象与 ReviewSubmissionRequest
+│   ├── director/              # permissions、level_assignment、bird_skill
+│   └── audit/
 ├── validation/
 │   └── shop/                  # AdminShopItemValidation
-├── objects/
 ├── support/
 │   ├── comments/
 │   ├── shop/
@@ -289,12 +285,12 @@ bird/
 ├── api/
 │   ├── design/                # CRUD + Submit（仅 *Api.scala）
 │   └── review/
-├── body/
-│   ├── design/                # CreateBirdDesignRequest、UpdateBirdDesignRequest
-│   └── review/                # ReviewBirdSubmissionRequest
+├── objects/
+│   ├── design/                # BirdDesign 与 Create/Update 请求对象
+│   ├── submission/            # BirdSubmission 与审核请求对象
+│   └── skill/
 ├── validation/
 │   └── design/                # BirdDesignValidation
-├── objects/
 ├── support/
 │   ├── catalog/
 │   ├── design/

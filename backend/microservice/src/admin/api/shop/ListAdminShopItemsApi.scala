@@ -17,7 +17,7 @@ final case class ListAdminShopItemsAPIMessage(userId: String) extends APIWithTok
   override def plan(connection: Connection): IO[Either[HttpError, List[AdminShopItem]]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         items <- PlanSteps.runApi(ListShopItemsInternalAPIMessage(), connection)
       } yield items.map(PlayerHandoffMapping.toShopItem)
     }

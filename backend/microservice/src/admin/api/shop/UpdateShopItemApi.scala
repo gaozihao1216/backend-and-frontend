@@ -21,7 +21,7 @@ final case class UpdateShopItemAPIMessage(userId: String, itemId: String, body: 
   override def plan(connection: Connection): IO[Either[HttpError, AdminShopItem]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         input <- EitherT(AdminShopItemValidation.validateUpdate(body))
         item <- PlanSteps.runApi(
           UpdateShopItemInternalAPIMessage(

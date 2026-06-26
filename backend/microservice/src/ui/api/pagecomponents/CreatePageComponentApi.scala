@@ -32,7 +32,7 @@ final case class CreatePageComponentAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 步骤 2：确认页面存在且 component.id 不重复
         _ <- PlanSteps.fromEither(UiPageComponentAccess.requirePageForNewComponent(connection, pageId, body.component.id))
         // 步骤 3：追加组件并返回更新后的 PageConfig

@@ -2,7 +2,7 @@ package microservice.player.api.internal.ui
 
 import cats.effect.IO
 import java.sql.Connection
-import microservice.infrastructure.api.{APIMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.checkin.CheckInSlotReward
 import microservice.player.tables.check_in_panel_reward.CheckInPanelRewardTable
@@ -15,12 +15,12 @@ final case class RegisterCheckInPanelRewardsInternalAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, Unit]] =
     PlanSteps.finish {
       if (panelId.trim.isEmpty) {
-        PlanStep.fail(HttpError.badRequest("INVALID_PANEL", "panelId is required"))
+        PlanSteps.reject(HttpError.badRequest("INVALID_PANEL", "panelId is required"))
       } else if (slots.size != 7) {
-        PlanStep.fail(HttpError.badRequest("INVALID_SLOTS", "Exactly 7 slot rewards are required"))
+        PlanSteps.reject(HttpError.badRequest("INVALID_SLOTS", "Exactly 7 slot rewards are required"))
       } else {
         CheckInPanelRewardTable.replacePanelRewards(connection, panelId, slots)
-        PlanStep.succeed(())
+        PlanSteps.accept(())
       }
     }
 }

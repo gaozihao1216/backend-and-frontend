@@ -9,7 +9,7 @@ import microservice.admin.api.internal.RecordReviewAuditInternalAPIMessage
 import microservice.bird.objects.submission.ReviewedBirdSubmission
 import microservice.bird.tables.design.BirdDesignTable
 import microservice.bird.tables.submission.{BirdSubmissionRow, BirdSubmissionTable}
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.enums.{AdminLevel, AuditTargetType, LevelStatus, SubmissionStatus}
 import microservice.bird.objects.submission.request.ReviewBirdSubmissionRequest
@@ -30,7 +30,7 @@ final case class ReviewBirdSubmissionAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Standard 及以上管理员
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         // 步骤 2：确认鸟类投稿处于待审状态
         submission <- requirePendingSubmission(connection)
         // 步骤 3：校验审核决策（通过/拒绝）与 reviewNote 合法性
@@ -55,7 +55,7 @@ final case class ReviewBirdSubmissionAPIMessage(
       } yield ReviewedBirdSubmission.fromSubmission(BirdSubmissionTable.toBirdSubmission(reviewed))
     }
 
-  private def requirePendingSubmission(connection: Connection): PlanStep.Step[BirdSubmissionRow] =
+  private def requirePendingSubmission(connection: Connection): cats.data.EitherT[IO, HttpError, BirdSubmissionRow] =
     EitherT.liftF(IO(BirdSubmissionTable.findById(connection, submissionId))).flatMap {
       case None =>
         EitherT.leftT(HttpError.notFound("BIRD_SUBMISSION_NOT_FOUND", s"Bird submission not found: $submissionId"))
@@ -63,16 +63,16 @@ final case class ReviewBirdSubmissionAPIMessage(
         EitherT.rightT(row)
     }
 
-  private def requireReviewDecision(submission: BirdSubmissionRow): PlanStep.Step[Unit] =
+  private def requireReviewDecision(submission: BirdSubmissionRow): cats.data.EitherT[IO, HttpError, Unit] =
     if (submission.status != SubmissionStatus.PendingReview) {
-      PlanStep.fail(HttpError.conflict("SUBMISSION_ALREADY_REVIEWED", s"Submission already reviewed: ${submission.id}"))
+      PlanSteps.reject(HttpError.conflict("SUBMISSION_ALREADY_REVIEWED", s"Submission already reviewed: ${submission.id}"))
     } else if (body.status != SubmissionStatus.Approved && body.status != SubmissionStatus.Rejected) {
-      PlanStep.fail(HttpError.badRequest("INVALID_REVIEW_STATUS", "Review status must be approved or rejected"))
+      PlanSteps.reject(HttpError.badRequest("INVALID_REVIEW_STATUS", "Review status must be approved or rejected"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def requireUpdatedSubmission(connection: Connection, reviewedAt: String): PlanStep.Step[BirdSubmissionRow] =
+  private def requireUpdatedSubmission(connection: Connection, reviewedAt: String): cats.data.EitherT[IO, HttpError, BirdSubmissionRow] =
     EitherT.liftF(
       IO(
         BirdSubmissionTable.updateReview(
@@ -95,7 +95,7 @@ final case class ReviewBirdSubmissionAPIMessage(
     connection: Connection,
     submission: BirdSubmissionRow,
     updatedAt: String
-  ): PlanStep.Step[Unit] = {
+  ): cats.data.EitherT[IO, HttpError, Unit] = {
     val targetStatus =
       if (body.status == SubmissionStatus.Approved) LevelStatus.Published else LevelStatus.Rejected
     val publishedAt = if (body.status == SubmissionStatus.Approved) Some(updatedAt) else None

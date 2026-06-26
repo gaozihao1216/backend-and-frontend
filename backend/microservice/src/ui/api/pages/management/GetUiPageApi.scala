@@ -30,7 +30,7 @@ final case class GetUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 步骤 2：按 pageId 读取 PageConfig（含 layout 与 components）
         page <- PlanSteps.fromEither(UiPageAccess.requirePage(connection, pageId))
       } yield page

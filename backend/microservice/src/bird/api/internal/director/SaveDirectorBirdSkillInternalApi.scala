@@ -6,7 +6,7 @@ import io.circe.Json
 import microservice.bird.objects.skill.config.BirdSkillConfig
 import microservice.bird.support.catalog.BirdCatalogReadSupport
 import microservice.bird.tables.skill_config.BirdSkillConfigTable
-import microservice.infrastructure.api.{APIMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 
 /** 模块间 API：保存鸟种技能配置；由 admin HTTP API 调用，不挂路由。 */
@@ -33,22 +33,22 @@ final case class SaveDirectorBirdSkillInternalAPIMessage(
       )
     }
 
-  private def requireKnownBird(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Unit] =
+  private def requireKnownBird(connection: Connection): cats.data.EitherT[IO, HttpError, Unit] =
     if (BirdCatalogReadSupport.listDirectorCatalogEntries(connection).exists(_.birdType == birdType)) {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     } else {
-      PlanStep.fail(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
+      PlanSteps.reject(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
     }
 
-  private def requireSkillsJson: microservice.infrastructure.api.PlanStep.Step[Json] =
+  private def requireSkillsJson: cats.data.EitherT[IO, HttpError, Json] =
     skills.hcursor.downField("stages").focus match {
       case None =>
-        PlanStep.fail(HttpError.badRequest("INVALID_SKILLS", "skills.stages is required"))
+        PlanSteps.reject(HttpError.badRequest("INVALID_SKILLS", "skills.stages is required"))
       case Some(stages) if !stages.isArray =>
-        PlanStep.fail(HttpError.badRequest("INVALID_SKILLS", "skills.stages must be an array"))
+        PlanSteps.reject(HttpError.badRequest("INVALID_SKILLS", "skills.stages must be an array"))
       case Some(stages) if stages.asArray.exists(_.isEmpty) =>
-        PlanStep.fail(HttpError.badRequest("INVALID_SKILLS", "skills.stages must not be empty"))
+        PlanSteps.reject(HttpError.badRequest("INVALID_SKILLS", "skills.stages must not be empty"))
       case _ =>
-        PlanStep.succeed(skills)
+        PlanSteps.accept(skills)
     }
 }

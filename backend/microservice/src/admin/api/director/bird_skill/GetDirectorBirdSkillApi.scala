@@ -20,7 +20,7 @@ final case class GetDirectorBirdSkillAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, AdminDirectorBirdSkillEntry]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         skillEntry <- PlanSteps.runApi(GetDirectorBirdSkillInternalAPIMessage(birdType), connection)
       } yield BirdHandoffMapping.toDirectorBirdSkillEntry(skillEntry)
     }

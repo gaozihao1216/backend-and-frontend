@@ -3,7 +3,7 @@ package microservice.level.api.internal.admin.assignment
 import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
-import microservice.infrastructure.api.{APIMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.objects.slot.SlotAssignment
 import microservice.level.tables.shared.LevelSlotAssignmentRow
@@ -17,16 +17,16 @@ final case class UnassignSlotInternalAPIMessage(levelSuffix: String) extends API
         existing <- requireAssignmentForSuffix(connection)
         _ <-
           if (LevelSlotAssignmentTable.deleteBySuffix(connection, levelSuffix)) {
-            PlanStep.succeed(())
+            PlanSteps.accept(())
           } else {
-            PlanStep.fail(HttpError.notFound("LEVEL_ASSIGNMENT_NOT_FOUND", s"No assignment found for slot: $levelSuffix"))
+            PlanSteps.reject(HttpError.notFound("LEVEL_ASSIGNMENT_NOT_FOUND", s"No assignment found for slot: $levelSuffix"))
           }
       } yield SlotAssignment.from(existing)
     }
 
   private def requireAssignmentForSuffix(
     connection: Connection
-  ): microservice.infrastructure.api.PlanStep.Step[LevelSlotAssignmentRow] =
+  ): cats.data.EitherT[IO, HttpError, LevelSlotAssignmentRow] =
     EitherT.liftF(IO(LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix))).flatMap {
       case None =>
         EitherT.leftT[IO, LevelSlotAssignmentRow](

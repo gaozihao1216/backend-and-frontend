@@ -9,7 +9,6 @@ import microservice.bird.api.internal.player.{
   ListPublishedBirdCatalogEntriesInternalAPIMessage,
   ListSystemBirdCatalogEntriesInternalAPIMessage
 }
-import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.preparation.{BirdSkillConfigView, PlayerPreparationJson}
@@ -33,7 +32,7 @@ final case class UpgradePreparationSlingshotAPIMessage(userId: String) extends A
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         // 步骤 2：获取或创建玩家钱包
         wallet <- PlanSteps.read(PlayerWalletTable.getOrCreate(connection, userId))
         // 步骤 3：读取当前弹弓等级
@@ -54,27 +53,27 @@ final case class UpgradePreparationSlingshotAPIMessage(userId: String) extends A
       } yield PlayerPreparationJson.toJson(response)
     }
 
-  private def requireSlingshotBelowMaxLevel(currentLevel: Int): PlanStep.Step[Unit] =
+  private def requireSlingshotBelowMaxLevel(currentLevel: Int): cats.data.EitherT[IO, HttpError, Unit] =
     if (currentLevel >= PlayerPreparationTable.maxLevel) {
-      PlanStep.fail(HttpError.conflict("MAX_LEVEL", "Slingshot is already at max level"))
+      PlanSteps.reject(HttpError.conflict("MAX_LEVEL", "Slingshot is already at max level"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def requireCoins(wallet: PlayerWallet, cost: Int): PlanStep.Step[Unit] =
+  private def requireCoins(wallet: PlayerWallet, cost: Int): cats.data.EitherT[IO, HttpError, Unit] =
     if (wallet.coins < cost) {
-      PlanStep.fail(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
+      PlanSteps.reject(HttpError.conflict("INSUFFICIENT_COINS", s"Need $cost coins to upgrade"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def requireUpgradeSlingshot(connection: Connection): PlanStep.Step[Unit] =
+  private def requireUpgradeSlingshot(connection: Connection): cats.data.EitherT[IO, HttpError, Unit] =
     EitherT.liftF(IO(PlayerPreparationTable.upgradeSlingshot(connection, userId))).flatMap {
       case Left(message) => EitherT.leftT[IO, Unit](HttpError.badRequest("INVALID_SLINGSHOT", message))
       case Right(_)      => EitherT.rightT[IO, HttpError](())
     }
 
-  private def requireCatalog(connection: Connection): PlanStep.Step[Vector[BirdCatalogEntry]] =
+  private def requireCatalog(connection: Connection): cats.data.EitherT[IO, HttpError, Vector[BirdCatalogEntry]] =
     for {
       system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
       published <- PlanSteps.runApi(ListPublishedBirdCatalogEntriesInternalAPIMessage(), connection)
@@ -83,7 +82,7 @@ final case class UpgradePreparationSlingshotAPIMessage(userId: String) extends A
       published.map(PreparationCatalogMapping.toPublishedSnapshot)
     )
 
-  private def requireSkillConfigMap(connection: Connection): PlanStep.Step[Map[String, BirdSkillConfigView]] =
+  private def requireSkillConfigMap(connection: Connection): cats.data.EitherT[IO, HttpError, Map[String, BirdSkillConfigView]] =
     PlanSteps
       .runApi(GetBirdSkillConfigMapInternalAPIMessage(), connection)
       .map(_.view.mapValues(PreparationCatalogMapping.toSkillConfigView).toMap)

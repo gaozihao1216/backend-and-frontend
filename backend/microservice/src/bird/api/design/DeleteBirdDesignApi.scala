@@ -23,7 +23,7 @@ final case class DeleteBirdDesignAPIMessage(designerId: String, designId: String
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Designer
-        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, designerId, UserRole.Designer))
         // 步骤 2：确认设计可删除（作者匹配且为 Draft）
         existing <- requireDeletable(connection)
         // 步骤 3：执行删除并返回被删设计快照
@@ -31,7 +31,7 @@ final case class DeleteBirdDesignAPIMessage(designerId: String, designId: String
       } yield design
     }
 
-  private def requireDeletable(connection: Connection): microservice.infrastructure.api.PlanStep.Step[BirdDesignRow] =
+  private def requireDeletable(connection: Connection): cats.data.EitherT[IO, HttpError, BirdDesignRow] =
     EitherT.liftF(IO(BirdDesignTable.findById(connection, designId))).flatMap {
       case None =>
         EitherT.leftT[IO, BirdDesignRow](HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
@@ -46,7 +46,7 @@ final case class DeleteBirdDesignAPIMessage(designerId: String, designId: String
   private def requireDeleteResult(
     connection: Connection,
     existing: BirdDesignRow
-  ): microservice.infrastructure.api.PlanStep.Step[BirdDesign] =
+  ): cats.data.EitherT[IO, HttpError, BirdDesign] =
     EitherT.liftF(IO(BirdDesignTable.deleteDraft(connection, designId, designerId))).flatMap {
       case true =>
         EitherT.rightT[IO, HttpError](BirdDesignTable.toBirdDesign(existing))

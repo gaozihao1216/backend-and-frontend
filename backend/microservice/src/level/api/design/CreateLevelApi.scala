@@ -33,7 +33,7 @@ final case class CreateLevelAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Designer
-        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, designerId, UserRole.Designer))
         // 步骤 2：校验 title/description/tags/data 等创建字段
         validated <- EitherT(CreateLevelValidation.validate(body))
         // 步骤 3：分配 id 并插入 LevelRow（status=Draft），映射为 Level

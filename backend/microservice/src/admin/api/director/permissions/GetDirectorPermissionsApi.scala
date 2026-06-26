@@ -24,7 +24,7 @@ final case class GetDirectorPermissionsAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验 Director 权限并加载 User 记录
-        user <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
+        user <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
       // 返回权限摘要；canManageUiCustomization 对 Director 恒为 true
       } yield DirectorPermissionSummary(
         userId = user.id,

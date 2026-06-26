@@ -46,7 +46,7 @@ final case class AssignSlotInternalAPIMessage(
       }
     }
 
-  private def requireApprovedSubmission(connection: Connection): microservice.infrastructure.api.PlanStep.Step[SubmissionRow] =
+  private def requireApprovedSubmission(connection: Connection): cats.data.EitherT[IO, HttpError, SubmissionRow] =
     EitherT.liftF(IO(SubmissionTable.findById(connection, submissionId))).flatMap {
       case None =>
         EitherT.leftT[IO, SubmissionRow](HttpError.notFound("SUBMISSION_NOT_FOUND", s"Submission not found: $submissionId"))
@@ -58,7 +58,7 @@ final case class AssignSlotInternalAPIMessage(
         EitherT.rightT[IO, HttpError](submission)
     }
 
-  private def requireLinkedLevel(connection: Connection, levelId: String): microservice.infrastructure.api.PlanStep.Step[Unit] =
+  private def requireLinkedLevel(connection: Connection, levelId: String): cats.data.EitherT[IO, HttpError, Unit] =
     EitherT.liftF(IO(LevelTable.findById(connection, levelId).isDefined)).flatMap {
       case false => EitherT.leftT[IO, Unit](HttpError.notFound("LEVEL_NOT_FOUND", s"Linked level not found: $levelId"))
       case true  => EitherT.rightT[IO, HttpError](())

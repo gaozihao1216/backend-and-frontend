@@ -35,7 +35,7 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         // 步骤 2：获取或创建玩家钱包记录
         wallet <- PlanSteps.read(PlayerWalletTable.getOrCreate(connection, userId))
         catalog <- requireCatalog(connection)
@@ -45,7 +45,7 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
     }
 
   /** 合并系统鸟与已发布玩家鸟，形成准备页可展示的完整鸟目录。 */
-  private def requireCatalog(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Vector[BirdCatalogEntry]] =
+  private def requireCatalog(connection: Connection): cats.data.EitherT[IO, HttpError, Vector[BirdCatalogEntry]] =
     for {
       system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
       published <- PlanSteps.runApi(ListPublishedBirdCatalogEntriesInternalAPIMessage(), connection)
@@ -57,7 +57,7 @@ final case class GetPreparationStateAPIMessage(userId: String) extends APIWithTo
   /** 读取鸟技能配置，并转换成准备页响应中使用的轻量视图。 */
   private def requireSkillConfigMap(
     connection: Connection
-  ): microservice.infrastructure.api.PlanStep.Step[Map[String, BirdSkillConfigView]] =
+  ): cats.data.EitherT[IO, HttpError, Map[String, BirdSkillConfigView]] =
     PlanSteps
       .runApi(GetBirdSkillConfigMapInternalAPIMessage(), connection)
       .map(_.view.mapValues(PreparationCatalogMapping.toSkillConfigView).toMap)

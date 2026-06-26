@@ -33,7 +33,7 @@ final case class UpdatePageComponentAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 步骤 2：确认页面与目标组件均存在
         _ <- PlanSteps.fromEither(UiPageComponentAccess.requirePageWithComponent(connection, pageId, componentId))
         // 步骤 3：更新组件并返回更新后的 PageConfig

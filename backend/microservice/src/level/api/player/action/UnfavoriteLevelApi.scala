@@ -28,7 +28,7 @@ final case class UnfavoriteLevelAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, playerId, UserRole.Player))
         // 步骤 2：确认关卡已发布
         _ <- requirePublishedLevel(connection).map(_ => ())
         // 步骤 3：删除收藏记录并返回被删 Favorite
@@ -36,7 +36,7 @@ final case class UnfavoriteLevelAPIMessage(
       } yield favorite
     }
 
-  private def requirePublishedLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[LevelRow] =
+  private def requirePublishedLevel(connection: Connection): cats.data.EitherT[IO, HttpError, LevelRow] =
     EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
       case Some(level) if level.status == LevelStatus.Published =>
         EitherT.rightT[IO, HttpError](level)
@@ -46,7 +46,7 @@ final case class UnfavoriteLevelAPIMessage(
         EitherT.leftT[IO, LevelRow](HttpError.notFound("LEVEL_NOT_FOUND", s"Level not found: $levelId"))
     }
 
-  private def requireDeletedFavorite(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Favorite] =
+  private def requireDeletedFavorite(connection: Connection): cats.data.EitherT[IO, HttpError, Favorite] =
     EitherT.liftF(IO(FavoriteTable.delete(connection, playerId, levelId))).flatMap {
       case None =>
         EitherT.leftT[IO, Favorite](HttpError.notFound("FAVORITE_NOT_FOUND", "Favorite not found"))

@@ -35,7 +35,7 @@ final case class RateLevelAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, playerId, UserRole.Player).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, playerId, UserRole.Player))
         // 步骤 2：确认关卡可评分且 score 在 1–5 范围内
         _ <- requireRateableLevel(connection).map(_ => ())
         // 步骤 3：upsert Rating 并重算 Level 平均分与评分人数
@@ -70,7 +70,7 @@ final case class RateLevelAPIMessage(
       } yield rating
     }
 
-  private def requireRateableLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[LevelRow] =
+  private def requireRateableLevel(connection: Connection): cats.data.EitherT[IO, HttpError, LevelRow] =
     EitherT.liftF(IO(LevelTable.findById(connection, levelId))).flatMap {
       case None =>
         EitherT.leftT[IO, LevelRow](RateLevelErrors.LevelMissing(levelId).toHttpError)

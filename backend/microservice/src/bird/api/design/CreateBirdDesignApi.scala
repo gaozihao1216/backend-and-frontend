@@ -29,7 +29,7 @@ final case class CreateBirdDesignAPIMessage(designerId: String, body: CreateBird
     PlanSteps.finish {
       for {
         // 步骤 1：校验 Designer 角色
-        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, designerId, UserRole.Designer))
         // 步骤 2：校验 name/summary/stats/tierSkills 等字段
         input <- EitherT(BirdDesignValidation.validate(toInput(body)))
         // 步骤 3：校验通过后 insert BirdDesignRow

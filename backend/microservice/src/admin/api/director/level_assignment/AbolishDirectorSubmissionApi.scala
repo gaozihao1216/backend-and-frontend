@@ -23,7 +23,7 @@ final case class AbolishDirectorSubmissionAPIMessage(
   override def plan(connection: Connection): IO[Either[HttpError, AdminSubmissionWithLevel]] =
     PlanSteps.finish {
       for {
-        user <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director)
+        user <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         timestamp = java.time.Instant.now().toString
         abolishNote = body.note.filter(_.trim.nonEmpty).map(_.trim)
         result <- PlanSteps.runApi(

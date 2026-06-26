@@ -18,7 +18,7 @@ final case class ListFriendsAPIMessage(userId: String) extends APIWithTokenMessa
   override def plan(connection: Connection): IO[Either[HttpError, Json]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         friendIds <- PlanSteps.read(PlayerFriendTable.listFriendUserIds(connection, userId))
         summaries <- PlanSteps.runApi(ListUserDisplaySummariesInternalAPIMessage(friendIds.toList), connection)
         friends = summaries.map(summary => PlayerFriendSummary(summary.userId, summary.displayName, "linked"))

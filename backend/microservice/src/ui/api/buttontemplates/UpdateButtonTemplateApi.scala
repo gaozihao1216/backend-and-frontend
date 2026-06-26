@@ -36,7 +36,7 @@ final case class UpdateButtonTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 查找现有模板行
         existing <- PlanSteps.fromEither(ButtonTemplateAccess.requireExisting(connection, templateId))
         // 规范化并强制 id 为路径 templateId

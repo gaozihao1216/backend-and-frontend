@@ -9,7 +9,6 @@ import microservice.bird.api.internal.player.{
   ListPublishedBirdCatalogEntriesInternalAPIMessage,
   ListSystemBirdCatalogEntriesInternalAPIMessage
 }
-import microservice.infrastructure.api.PlanStep
 import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.preparation.{BirdSkillConfigView, PlayerPreparationJson}
@@ -33,7 +32,7 @@ final case class AscendPreparationBirdAPIMessage(userId: String, birdType: Strin
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         // 步骤 2：从 Catalog 加载鸟种信息
         entry <- requireCatalogEntry(connection)
         // 步骤 3：确保玩家鸟种升阶记录存在（初始化默认值）
@@ -58,7 +57,7 @@ final case class AscendPreparationBirdAPIMessage(userId: String, birdType: Strin
       } yield PlayerPreparationJson.toJson(response)
     }
 
-  private def requireCatalog(connection: Connection): PlanStep.Step[Vector[BirdCatalogEntry]] =
+  private def requireCatalog(connection: Connection): cats.data.EitherT[IO, HttpError, Vector[BirdCatalogEntry]] =
     for {
       system <- PlanSteps.runApi(ListSystemBirdCatalogEntriesInternalAPIMessage(), connection)
       published <- PlanSteps.runApi(ListPublishedBirdCatalogEntriesInternalAPIMessage(), connection)
@@ -67,35 +66,35 @@ final case class AscendPreparationBirdAPIMessage(userId: String, birdType: Strin
       published.map(PreparationCatalogMapping.toPublishedSnapshot)
     )
 
-  private def requireCatalogEntry(connection: Connection): PlanStep.Step[BirdCatalogEntry] =
+  private def requireCatalogEntry(connection: Connection): cats.data.EitherT[IO, HttpError, BirdCatalogEntry] =
     for {
       catalog <- requireCatalog(connection)
       entry <- PlayerPreparationCatalog.find(catalog, birdType) match {
-        case None    => PlanStep.fail(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
-        case Some(e) => PlanStep.succeed(e)
+        case None    => PlanSteps.reject(HttpError.notFound("UNKNOWN_BIRD", s"Unknown bird type: $birdType"))
+        case Some(e) => PlanSteps.accept(e)
       }
     } yield entry
 
-  private def requireSkillConfigMap(connection: Connection): PlanStep.Step[Map[String, BirdSkillConfigView]] =
+  private def requireSkillConfigMap(connection: Connection): cats.data.EitherT[IO, HttpError, Map[String, BirdSkillConfigView]] =
     PlanSteps
       .runApi(GetBirdSkillConfigMapInternalAPIMessage(), connection)
       .map(_.view.mapValues(PreparationCatalogMapping.toSkillConfigView).toMap)
 
-  private def requireBirdBelowMaxTier(currentTier: Int): PlanStep.Step[Unit] =
+  private def requireBirdBelowMaxTier(currentTier: Int): cats.data.EitherT[IO, HttpError, Unit] =
     if (currentTier >= PlayerPreparationTable.maxTier) {
-      PlanStep.fail(HttpError.conflict("MAX_TIER", "Bird is already at max tier"))
+      PlanSteps.reject(HttpError.conflict("MAX_TIER", "Bird is already at max tier"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def requireFragments(wallet: PlayerWallet, cost: Int): PlanStep.Step[Unit] =
+  private def requireFragments(wallet: PlayerWallet, cost: Int): cats.data.EitherT[IO, HttpError, Unit] =
     if (wallet.fragments < cost) {
-      PlanStep.fail(HttpError.conflict("INSUFFICIENT_FRAGMENTS", s"Need $cost fragments to upgrade"))
+      PlanSteps.reject(HttpError.conflict("INSUFFICIENT_FRAGMENTS", s"Need $cost fragments to upgrade"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def requireAscendBird(connection: Connection): PlanStep.Step[Unit] =
+  private def requireAscendBird(connection: Connection): cats.data.EitherT[IO, HttpError, Unit] =
     EitherT.liftF(IO(PlayerPreparationTable.ascendBird(connection, userId, birdType))).flatMap {
       case Left(message) => EitherT.leftT[IO, Unit](HttpError.badRequest("INVALID_BIRD", message))
       case Right(_)      => EitherT.rightT[IO, HttpError](())

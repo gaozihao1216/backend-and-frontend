@@ -31,7 +31,7 @@ final case class ListUiPagesAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 按 endpoint 过滤或返回全部页面行
         pages <- PlanSteps.read {
           val rows = endpoint match {

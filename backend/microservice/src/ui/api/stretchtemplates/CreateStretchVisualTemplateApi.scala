@@ -37,7 +37,7 @@ final case class CreateStretchVisualTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 规范化并按路由强制 kind
         template <- PlanSteps.read(StretchVisualTemplateValidation.sanitize(body.template.copy(kind = expectedKind)))
         // 二次校验 kind 与路由一致

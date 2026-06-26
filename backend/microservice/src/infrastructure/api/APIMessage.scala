@@ -73,7 +73,7 @@ trait APIWithTokenMessage[A] extends APIMessage[A] {
   final def runAuthenticated(headerUserId: String, databaseSession: DatabaseSession): IO[Either[HttpError, A]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireBoundIdentity(headerUserId, token)
+        _ <- PlanSteps.fromEither(AccessControl.requireBoundIdentity(headerUserId, token))
         result <- EitherT(run(databaseSession))
       } yield result
     }

@@ -18,7 +18,7 @@ final case class GetPendingSubmissionsAPIMessage(userId: String)
   override def plan(connection: Connection): IO[Either[HttpError, List[AdminSubmissionWithLevel]]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         submissions <- PlanSteps.runApi(ListPendingSubmissionsWithLevelInternalAPIMessage(), connection)
       } yield submissions.map(LevelHandoffMapping.toSubmissionWithLevel)
     }

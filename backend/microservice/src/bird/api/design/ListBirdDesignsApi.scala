@@ -31,7 +31,7 @@ final case class ListBirdDesignsAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验用户角色/管理员级别权限
-        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, designerId, UserRole.Designer))
         // 步骤 2：读取并组装数据
         designs <- PlanSteps.read(
           BirdDesignTable

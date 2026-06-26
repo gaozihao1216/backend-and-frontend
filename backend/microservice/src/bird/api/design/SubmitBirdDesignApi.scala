@@ -31,7 +31,7 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Designer
-        _ <- AccessControl.requireRole(connection, designerId, UserRole.Designer).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, designerId, UserRole.Designer))
         // 步骤 2：确认设计处于可提交状态且无重复待审投稿
         _ <- requireSubmittable(connection)
         // 步骤 3：更新设计状态并创建 BirdSubmission 记录
@@ -39,7 +39,7 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
       } yield submission
     }
 
-  private def requireSubmittable(connection: Connection): microservice.infrastructure.api.PlanStep.Step[Unit] =
+  private def requireSubmittable(connection: Connection): cats.data.EitherT[IO, HttpError, Unit] =
     EitherT.liftF(IO(BirdDesignTable.findById(connection, designId))).flatMap {
       case None =>
         EitherT.leftT[IO, Unit](HttpError.notFound("BIRD_DESIGN_NOT_FOUND", s"Bird design not found: $designId"))
@@ -55,7 +55,7 @@ final case class SubmitBirdDesignAPIMessage(designerId: String, designId: String
         EitherT.rightT[IO, HttpError](())
     }
 
-  private def requireSubmitResult(connection: Connection): microservice.infrastructure.api.PlanStep.Step[BirdSubmission] = {
+  private def requireSubmitResult(connection: Connection): cats.data.EitherT[IO, HttpError, BirdSubmission] = {
     val timestamp = Instant.now().toString
     EitherT.liftF(
       IO(

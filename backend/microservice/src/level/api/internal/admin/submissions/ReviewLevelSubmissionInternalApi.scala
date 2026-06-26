@@ -3,7 +3,7 @@ package microservice.level.api.internal.admin.submissions
 import cats.data.EitherT
 import cats.effect.IO
 import java.sql.Connection
-import microservice.infrastructure.api.{APIMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.level.objects.submission.Submission
 import microservice.level.tables.level.LevelTable
@@ -29,22 +29,22 @@ final case class ReviewLevelSubmissionInternalAPIMessage(
       } yield LevelRowMapper.toSubmission(updated)
     }
 
-  private def findPending(connection: Connection, submissionId: String): PlanStep.Step[SubmissionRow] =
+  private def findPending(connection: Connection, submissionId: String): cats.data.EitherT[IO, HttpError, SubmissionRow] =
     EitherT.liftF(IO(SubmissionTable.findById(connection, submissionId))).flatMap {
       case None      => EitherT.leftT(HttpError.notFound("SUBMISSION_NOT_FOUND", s"Submission not found: $submissionId"))
       case Some(row) => EitherT.rightT(row)
     }
 
-  private def validateDecision(submission: SubmissionRow, status: SubmissionStatus): PlanStep.Step[Unit] =
+  private def validateDecision(submission: SubmissionRow, status: SubmissionStatus): cats.data.EitherT[IO, HttpError, Unit] =
     if (submission.status != SubmissionStatus.PendingReview) {
-      PlanStep.fail(HttpError.conflict("SUBMISSION_ALREADY_REVIEWED", s"Submission already reviewed: ${submission.id}"))
+      PlanSteps.reject(HttpError.conflict("SUBMISSION_ALREADY_REVIEWED", s"Submission already reviewed: ${submission.id}"))
     } else if (status != SubmissionStatus.Approved && status != SubmissionStatus.Rejected) {
-      PlanStep.fail(HttpError.badRequest("INVALID_REVIEW_STATUS", s"Invalid review status: $status"))
+      PlanSteps.reject(HttpError.badRequest("INVALID_REVIEW_STATUS", s"Invalid review status: $status"))
     } else {
-      PlanStep.succeed(())
+      PlanSteps.accept(())
     }
 
-  private def updateSubmission(connection: Connection): PlanStep.Step[SubmissionRow] =
+  private def updateSubmission(connection: Connection): cats.data.EitherT[IO, HttpError, SubmissionRow] =
     EitherT.liftF(
       IO(
         SubmissionTable.updateReview(
@@ -61,7 +61,7 @@ final case class ReviewLevelSubmissionInternalAPIMessage(
       case Some(row) => EitherT.rightT(row)
     }
 
-  private def syncLevel(connection: Connection, submission: SubmissionRow): PlanStep.Step[Unit] = {
+  private def syncLevel(connection: Connection, submission: SubmissionRow): cats.data.EitherT[IO, HttpError, Unit] = {
     val targetStatus =
       if (status == SubmissionStatus.Approved) LevelStatus.Published else LevelStatus.Rejected
     val publishedAt = if (status == SubmissionStatus.Approved) Some(reviewedAt) else None

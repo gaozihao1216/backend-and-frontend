@@ -23,7 +23,7 @@ import microservice.level.api.internal.admin.submissions.{
   * 槽位后缀校验、分配看板构建和跨模块对象转换都属于同一组业务编排。
   */
 private[admin] object DirectorLevelAssignmentSupport {
-  /** 校验槽位后缀是否合法；support 对外统一返回 IO[Either]，不暴露 PlanStep 类型。 */
+  /** 校验槽位后缀是否合法；support 对外统一返回 IO[Either]，不暴露内部流程类型。 */
   def requireSupportedSuffix(levelSuffix: String): IO[Either[HttpError, Unit]] =
     IO.pure {
       if (LevelSlotCatalog.isSupported(levelSuffix)) Right(())

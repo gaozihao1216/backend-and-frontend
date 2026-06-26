@@ -31,7 +31,7 @@ final case class ListStretchVisualTemplatesAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 按 kind 过滤列出模板
         templates <- PlanSteps.read(
           StretchVisualTemplateTable

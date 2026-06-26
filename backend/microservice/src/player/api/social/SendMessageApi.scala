@@ -5,7 +5,7 @@ import cats.effect.IO
 import io.circe.Json
 import java.sql.Connection
 import java.time.Instant
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.player.objects.social.{PlayerMessageListResponse, PlayerPrivateMessageView, PlayerSocialJson}
 import microservice.player.tables.social.PlayerFriendTable
@@ -32,7 +32,7 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player)
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         // 步骤 2：校验消息内容与 receiverId 合法性
         trimmed <- requireValidMessage
         // 步骤 3：确认双方为好友关系
@@ -69,16 +69,16 @@ final case class SendMessageAPIMessage(userId: String, receiverId: String, conte
       } yield PlayerSocialJson.toJsonMessages(PlayerMessageListResponse(messages))
     }
 
-  private def requireValidMessage: PlanStep.Step[String] = {
+  private def requireValidMessage: cats.data.EitherT[IO, HttpError, String] = {
     val trimmed = content.trim
     if (receiverId.trim.isEmpty || trimmed.isEmpty) {
-      PlanStep.fail(HttpError.badRequest("INVALID_MESSAGE", "receiverId and content are required"))
+      PlanSteps.reject(HttpError.badRequest("INVALID_MESSAGE", "receiverId and content are required"))
     } else {
-      PlanStep.succeed(trimmed)
+      PlanSteps.accept(trimmed)
     }
   }
 
-  private def requireFriendship(connection: Connection): PlanStep.Step[Unit] =
+  private def requireFriendship(connection: Connection): cats.data.EitherT[IO, HttpError, Unit] =
     EitherT.liftF(IO(PlayerFriendTable.exists(connection, userId, receiverId))).flatMap {
       case false => EitherT.leftT[IO, Unit](HttpError.forbidden("You can only chat with friends"))
       case true  => EitherT.rightT[IO, HttpError](())

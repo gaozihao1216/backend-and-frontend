@@ -29,7 +29,7 @@ final case class GetPlayerUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：确认 userId 为已知用户
-        _ <- AccessControl.requireKnownUser(connection, userId).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireKnownUser(connection, userId))
         // 步骤 2：读取已发布的 PageConfig 供玩家端渲染
         page <- PlanSteps.fromEither(UiPagePublishSupport.requirePublishedPage(connection, pageId))
       } yield page

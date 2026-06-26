@@ -24,7 +24,7 @@ final case class UpdateSlotBirdPoolInternalAPIMessage(
 
   private def requireAssignmentForSuffix(
     connection: Connection
-  ): microservice.infrastructure.api.PlanStep.Step[LevelSlotAssignmentRow] =
+  ): cats.data.EitherT[IO, HttpError, LevelSlotAssignmentRow] =
     EitherT.liftF(IO(LevelSlotAssignmentTable.findBySuffix(connection, levelSuffix))).flatMap {
       case None =>
         EitherT.leftT[IO, LevelSlotAssignmentRow](

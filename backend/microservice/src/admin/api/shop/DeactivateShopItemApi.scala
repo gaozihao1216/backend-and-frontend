@@ -17,7 +17,7 @@ final case class DeactivateShopItemAPIMessage(userId: String, itemId: String) ex
   override def plan(connection: Connection): IO[Either[HttpError, AdminShopItem]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         item <- PlanSteps.runApi(DeactivateShopItemInternalAPIMessage(itemId), connection)
       } yield PlayerHandoffMapping.toShopItem(item)
     }

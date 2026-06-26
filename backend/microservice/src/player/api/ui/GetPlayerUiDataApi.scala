@@ -25,7 +25,7 @@ final case class GetPlayerUiDataAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为 Player
-        _ <- AccessControl.requireRole(connection, userId, UserRole.Player).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
         // 步骤 2：按 apiKey 与 params 解析并返回动态 UI 数据
         payload <- PlanSteps.fromEither(PlayerUiRuntimeSupport.requireData(connection, userId, apiKey, params))
       } yield payload

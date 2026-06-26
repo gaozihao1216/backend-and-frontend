@@ -4,7 +4,7 @@ import cats.effect.IO
 import java.sql.Connection
 import microservice.admin.objects.director.permissions.{DirectorTransferResult, TransferDirectorPermissionErrors}
 import microservice.user.support.AccessControl
-import microservice.infrastructure.api.{APIWithTokenMessage, PlanStep, PlanSteps}
+import microservice.infrastructure.api.{APIWithTokenMessage, PlanSteps}
 import microservice.infrastructure.http.HttpError
 import microservice.system.objects.enums.AdminLevel
 import microservice.admin.objects.director.permissions.request.TransferDirectorPermissionRequest
@@ -30,13 +30,13 @@ final case class TransferDirectorPermissionAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验调用者为当前 Director
-        _ <- AccessControl.requireAdminLevel(connection, currentDirectorId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, currentDirectorId, AdminLevel.Director))
         // 步骤 2：禁止将权限移交给自己
         _ <-
           if (body.targetAdminId == currentDirectorId) {
-            PlanStep.fail(TransferDirectorPermissionErrors.CannotTransferToSelf.toHttpError)
+            PlanSteps.reject(TransferDirectorPermissionErrors.CannotTransferToSelf.toHttpError)
           } else {
-            PlanStep.succeed(())
+            PlanSteps.accept(())
           }
         // 步骤 3：确认目标用户存在且为 Standard 管理员
         _ <- PlanSteps.runApi(ValidateAdminTransferTargetInternalAPIMessage(body.targetAdminId), connection).map(_ => ())

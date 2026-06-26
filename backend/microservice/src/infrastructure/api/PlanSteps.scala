@@ -6,7 +6,7 @@ import java.sql.Connection
 import microservice.infrastructure.http.HttpError
 import microservice.user.support.AccessControl
 
-/** [[APIMessage.plan]] 内部的步骤组合工具（基于 [[PlanStep.Step]]）。
+/** [[APIMessage.plan]] 内部的流程组合工具（基于 EitherT[IO, HttpError, A]）。
   *
   * == 设计意图 ==
   * 用 `for` 推导式将多步业务（鉴权 → 校验 → 读表 → 写表 → 组装响应）写成线性流程，
@@ -17,7 +17,7 @@ import microservice.user.support.AccessControl
   * override def plan(connection: Connection): IO[Either[HttpError, Response]] =
   *   PlanSteps.finish {
   *     for {
-  *       _      <- AccessControl.requireRole(connection, userId, UserRole.Player)
+  *       _      <- PlanSteps.fromEither(AccessControl.requireRole(connection, userId, UserRole.Player))
   *       body   <- SomeValidation.validate(requestBody)
   *       entity <- SomeAccess.requireExisting(connection, body.id)
   *       _      <- PlanSteps.read(SomeTable.insert(connection, entity))
@@ -38,28 +38,34 @@ import microservice.user.support.AccessControl
   * - [[microservice.user.support.AccessControl]]：角色与身份绑定校验
   */
 object PlanSteps {
-  type Step[A] = PlanStep.Step[A]
-
   /** 执行同步读操作（Table 查询、内存集合访问等），结果包装为 `Right`。 */
-  def read[A](run: => A): Step[A] =
-    PlanStep.liftF(IO(run))
+  def read[A](run: => A): EitherT[IO, HttpError, A] =
+    EitherT.liftF(IO(run))
 
   /** 在 `IO.blocking` 线程池中执行可能阻塞的操作（JDBC 批量写入、文件 I/O 等）。 */
-  def blocking[A](run: => A): Step[A] =
-    PlanStep.liftBlocking(run)
+  def blocking[A](run: => A): EitherT[IO, HttpError, A] =
+    EitherT.liftF(IO.blocking(run))
 
   /** 在同一 `Connection` / 事务内执行另一模块的 [[APIMessage]]（模块间调用入口）。 */
-  def runApi[A](api: APIMessage[A], connection: Connection): Step[A] =
+  def runApi[A](api: APIMessage[A], connection: Connection): EitherT[IO, HttpError, A] =
     EitherT(api.plan(connection))
 
   /** 接入 support/validation 暴露的 IO[Either] 结果，保持 API plan 内部仍可线性编排。 */
-  def fromEither[A](run: IO[Either[HttpError, A]]): Step[A] =
+  def fromEither[A](run: IO[Either[HttpError, A]]): EitherT[IO, HttpError, A] =
     EitherT(run)
 
-  /** 将完整的 `Step` 链还原为 `IO[Either[HttpError, A]]`，供 [[APIMessage.plan]] 返回。
+  /** 在 API plan 内短路返回业务错误。 */
+  def reject[A](error: HttpError): EitherT[IO, HttpError, A] =
+    EitherT.leftT(error)
+
+  /** 在 API plan 内注入一个成功值。 */
+  def accept[A](value: A): EitherT[IO, HttpError, A] =
+    EitherT.rightT(value)
+
+  /** 将完整流程还原为 `IO[Either[HttpError, A]]`，供 [[APIMessage.plan]] 返回。
     *
     * 每个 plan 实现应以 `PlanSteps.finish { for { ... } yield ... }` 结尾。
     */
-  def finish[A](plan: Step[A]): IO[Either[HttpError, A]] =
+  def finish[A](plan: EitherT[IO, HttpError, A]): IO[Either[HttpError, A]] =
     plan.value
 }

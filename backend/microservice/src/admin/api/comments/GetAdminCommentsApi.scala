@@ -17,7 +17,7 @@ final case class GetAdminCommentsAPIMessage(userId: String) extends APIWithToken
   override def plan(connection: Connection): IO[Either[HttpError, List[AdminLevelComment]]] =
     PlanSteps.finish {
       for {
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Standard))
         comments <- PlanSteps.runApi(ListAllCommentsInternalAPIMessage(), connection)
       } yield comments.map(LevelHandoffMapping.toLevelComment)
     }

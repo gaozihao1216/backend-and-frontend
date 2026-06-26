@@ -35,7 +35,7 @@ final case class CreateButtonTemplateAPIMessage(
     PlanSteps.finish {
       for {
         // 校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 规范化字符串字段
         template <- PlanSteps.read(ButtonTemplateValidation.sanitize(body.template))
         // id 不可重复

@@ -17,7 +17,7 @@ final case class GetSubmissionWithLevelInternalAPIMessage(submissionId: String) 
       requireSubmissionWithLevel(connection)
     }
 
-  private def requireSubmissionWithLevel(connection: Connection): microservice.infrastructure.api.PlanStep.Step[SubmissionWithLevel] =
+  private def requireSubmissionWithLevel(connection: Connection): cats.data.EitherT[IO, HttpError, SubmissionWithLevel] =
     EitherT.liftF(IO(SubmissionTable.findById(connection, submissionId))).flatMap {
       case None =>
         EitherT.leftT[IO, SubmissionWithLevel](

@@ -32,7 +32,7 @@ final case class UpdateUiPageAPIMessage(
     PlanSteps.finish {
       for {
         // 步骤 1：校验总监权限
-        _ <- AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director).map(_ => ())
+        _ <- PlanSteps.fromEither(AccessControl.requireAdminLevel(connection, userId, AdminLevel.Director))
         // 步骤 2：校验 name/path 等更新字段
         _ <- PlanSteps.fromEither(UiPageAccess.requireUpdateFields(body.page))
         // 步骤 3：按 pageId upsert 页面配置
